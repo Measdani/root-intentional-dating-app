@@ -19,20 +19,20 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
-  const { logout, session, currentAdminView, setCurrentAdminView } = useAdmin();
+  const { logout, session } = useAdmin();
   const { setCurrentView } = useApp();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'users', label: 'Users', icon: Users },
-    { id: 'assessments', label: 'Assessments', icon: ClipboardCheck },
-    { id: 'content', label: 'Content', icon: FileText },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'admin-dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'admin-users', label: 'Users', icon: Users },
+    { id: 'admin-assessments', label: 'Assessments', icon: ClipboardCheck },
+    { id: 'admin-content', label: 'Content', icon: FileText },
+    { id: 'admin-settings', label: 'Settings', icon: Settings },
   ];
 
   const handleNavClick = (view: string) => {
-    setCurrentAdminView(view);
+    setCurrentView(view as any);
     setSidebarOpen(false);
   };
 
@@ -66,16 +66,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentAdminView === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-[#D9FF3D]/10 text-[#D9FF3D]'
-                    : 'text-[#A9B5AA] hover:bg-[#1A211A] hover:text-[#F6FFF2]'
-                }`}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-[#A9B5AA] hover:bg-[#1A211A] hover:text-[#F6FFF2]"
               >
                 <Icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>
@@ -117,8 +112,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <Menu className="w-6 h-6" />
             </button>
             <h2 className="text-xl font-display font-bold text-[#F6FFF2] ml-4 lg:ml-0 flex-1">
-              {navItems.find((item) => item.id === currentAdminView)?.label ||
-                'Admin Panel'}
+              Admin Panel
             </h2>
             <div className="text-sm text-[#A9B5AA]">
               {new Date().toLocaleDateString()}
