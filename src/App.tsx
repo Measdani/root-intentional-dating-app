@@ -16,6 +16,8 @@ import AdminLoginSection from '@/sections/AdminLoginSection';
 import AdminLayout from '@/components/AdminLayout';
 import AdminUsersSection from '@/sections/AdminUsersSection';
 import AdminDashboardSection from '@/sections/AdminDashboardSection';
+import AdminAssessmentsSection from '@/sections/AdminAssessmentsSection';
+import AdminContentSection from '@/sections/AdminContentSection';
 import EmailModal from '@/components/EmailModal';
 import AdminAccessButton from '@/components/AdminAccessButton';
 
@@ -36,9 +38,11 @@ const AppContent: React.FC = () => {
           case 'admin-users':
             return <AdminUsersSection />;
           case 'admin-assessments':
-            return <div className="p-8"><p className="text-[#A9B5AA]">Assessment management coming soon...</p></div>;
+            return <AdminAssessmentsSection />;
+            
           case 'admin-content':
-            return <div className="p-8"><p className="text-[#A9B5AA]">Content management coming soon...</p></div>;
+            return <AdminContentSection />;
+            
           case 'admin-settings':
             return <div className="p-8"><p className="text-[#A9B5AA]">Settings coming soon...</p></div>;
           default:
