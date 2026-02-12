@@ -206,11 +206,13 @@ const ProfileDetailSection: React.FC = () => {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[#F6FFF2] text-sm">Shared Values</span>
-                        <span className="text-[#D9FF3D] text-sm font-medium">{sharedValues.length} of {selectedUser.values.length}</span>
+                        <span className={`text-sm font-medium ${sharedValues.length === 0 ? 'text-[#A9B5AA]' : 'text-[#D9FF3D]'}`}>
+                          {sharedValues.length === 0 ? 'Different value set' : `${sharedValues.length} of ${selectedUser.values.length}`}
+                        </span>
                       </div>
                       <div className="h-2 bg-[#0B0F0C] rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#D9FF3D] rounded-full"
+                          className={`h-full rounded-full ${sharedValues.length === 0 ? 'bg-[#A9B5AA]' : 'bg-[#D9FF3D]'}`}
                           style={{ width: `${(sharedValues.length / selectedUser.values.length) * 100}%` }}
                         />
                       </div>
