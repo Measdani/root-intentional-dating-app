@@ -11,6 +11,7 @@ export interface User {
   };
   values: string[];
   growthFocus: string;
+  relationshipVision?: string;
   alignmentScore?: number;
   photoUrl?: string;
   bio?: string;

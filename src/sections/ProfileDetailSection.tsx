@@ -119,11 +119,19 @@ const ProfileDetailSection: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-10">
               {/* Left Column */}
               <div>
-                {/* Bio */}
+                {/* Relationship Vision */}
+                {selectedUser.relationshipVision && (
+                  <div className="mb-8 bg-[#1A211A]/50 rounded-2xl p-6 border border-[#D9FF3D]/20">
+                    <h3 className="font-mono-label text-[#D9FF3D] mb-3">✨ Relationship Vision</h3>
+                    <p className="text-[#F6FFF2] leading-relaxed text-sm">{selectedUser.relationshipVision}</p>
+                  </div>
+                )}
+
+                {/* Bio / About */}
                 {selectedUser.bio && (
                   <div className="mb-8">
                     <h3 className="font-mono-label text-[#A9B5AA] mb-3">About</h3>
-                    <p className="text-[#F6FFF2] leading-relaxed">{selectedUser.bio}</p>
+                    <p className="text-[#F6FFF2] leading-relaxed text-sm">{selectedUser.bio}</p>
                   </div>
                 )}
 
@@ -150,9 +158,10 @@ const ProfileDetailSection: React.FC = () => {
                 </div>
 
                 {/* Growth Focus */}
-                <div>
-                  <h3 className="font-mono-label text-[#A9B5AA] mb-3">Current Growth Focus</h3>
-                  <p className="text-[#F6FFF2]">{selectedUser.growthFocus}</p>
+                <div className="bg-[#1A211A]/50 rounded-2xl p-6">
+                  <h3 className="font-mono-label text-[#A9B5AA] mb-3">Working On</h3>
+                  <p className="text-[#F6FFF2] font-medium">{selectedUser.growthFocus}</p>
+                  <p className="text-xs text-[#A9B5AA] mt-3">Actively developing this area for stronger relationships.</p>
                 </div>
               </div>
 
@@ -174,14 +183,14 @@ const ProfileDetailSection: React.FC = () => {
                     </div>
 
                     <div>
-                      <p className="text-xs text-[#A9B5AA] mb-1">Wants Children</p>
+                      <p className="text-xs text-[#A9B5AA] mb-1">Future Children</p>
                       <p className="text-[#F6FFF2] capitalize">
                         {selectedUser.familyAlignment.wantsChildren.replace(/-/g, ' ')}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-[#A9B5AA] mb-1">Open to Partner with Parent</p>
+                      <p className="text-xs text-[#A9B5AA] mb-1">Open to Partner with Children</p>
                       <p className="text-[#F6FFF2] capitalize">
                         {selectedUser.familyAlignment.openToPartnerWithParent.replace(/-/g, ' ')}
                       </p>
@@ -191,31 +200,33 @@ const ProfileDetailSection: React.FC = () => {
 
                 {/* Alignment Breakdown */}
                 <div className="bg-[#1A211A]/50 rounded-2xl p-6">
-                  <h3 className="font-mono-label text-[#A9B5AA] mb-4">Alignment Breakdown</h3>
+                  <h3 className="font-mono-label text-[#A9B5AA] mb-4">Compatibility</h3>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#F6FFF2] text-sm">Shared Values</span>
-                      <span className="text-[#D9FF3D]">{sharedValues.length} of {selectedUser.values.length}</span>
-                    </div>
-                    <div className="h-2 bg-[#0B0F0C] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#D9FF3D] rounded-full"
-                        style={{ width: `${(sharedValues.length / selectedUser.values.length) * 100}%` }}
-                      />
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[#F6FFF2] text-sm">Shared Values</span>
+                        <span className="text-[#D9FF3D] text-sm font-medium">{sharedValues.length} of {selectedUser.values.length}</span>
+                      </div>
+                      <div className="h-2 bg-[#0B0F0C] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#D9FF3D] rounded-full"
+                          style={{ width: `${(sharedValues.length / selectedUser.values.length) * 100}%` }}
+                        />
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-2">
                       <span className="text-[#F6FFF2] text-sm">Family Intent</span>
-                      <span className={selectedUser.familyAlignment.wantsChildren === currentUser.familyAlignment.wantsChildren ? 'text-[#D9FF3D]' : 'text-[#A9B5AA]'}>
-                        {selectedUser.familyAlignment.wantsChildren === currentUser.familyAlignment.wantsChildren ? 'Aligned' : 'Different'}
+                      <span className={selectedUser.familyAlignment.wantsChildren === currentUser.familyAlignment.wantsChildren ? 'text-[#D9FF3D]' : 'text-yellow-400'}>
+                        {selectedUser.familyAlignment.wantsChildren === currentUser.familyAlignment.wantsChildren ? 'Aligned' : 'Needs Discussion'}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between pt-2">
-                      <span className="text-[#F6FFF2] text-sm">Partnership Goal</span>
+                      <span className="text-[#F6FFF2] text-sm">Partnership Vision</span>
                       <span className={selectedUser.partnershipIntent === currentUser.partnershipIntent ? 'text-[#D9FF3D]' : 'text-[#A9B5AA]'}>
-                        {selectedUser.partnershipIntent === currentUser.partnershipIntent ? 'Matched' : 'Similar'}
+                        {selectedUser.partnershipIntent === currentUser.partnershipIntent ? 'Aligned' : 'Compatible'}
                       </span>
                     </div>
                   </div>
