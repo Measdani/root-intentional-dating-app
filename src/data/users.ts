@@ -16,6 +16,7 @@ export const sampleUsers: User[] = [
     growthFocus: 'Deepening emotional intimacy',
     bio: 'Therapist who believes in the power of vulnerability. Looking for someone who values inner work as much as outer adventure.',
     alignmentScore: 94,
+    photoUrl: 'https://i.pravatar.cc/300?u=maya&img=1',
   },
   {
     id: 'u2',
@@ -32,6 +33,7 @@ export const sampleUsers: User[] = [
     growthFocus: 'Patience in conflict',
     bio: 'Single dad and software engineer. I have learned that love is a practice, not a feeling. Seeking a partner for the long journey.',
     alignmentScore: 91,
+    photoUrl: 'https://i.pravatar.cc/300?u=james&img=2',
   },
   {
     id: 'u3',
@@ -48,6 +50,7 @@ export const sampleUsers: User[] = [
     growthFocus: 'Receiving love',
     bio: 'Writer and meditation practitioner. I believe the best relationships are two whole people choosing each other daily.',
     alignmentScore: 88,
+    photoUrl: 'https://i.pravatar.cc/300?u=sofia&img=3',
   },
   {
     id: 'u4',
@@ -64,6 +67,7 @@ export const sampleUsers: User[] = [
     growthFocus: 'Vulnerability with strength',
     bio: 'Nonprofit director who has done the work to understand my patterns. Ready to build something intentional and lasting.',
     alignmentScore: 96,
+    photoUrl: 'https://i.pravatar.cc/300?u=david&img=4',
   },
   {
     id: 'u5',
@@ -80,6 +84,7 @@ export const sampleUsers: User[] = [
     growthFocus: 'Balancing independence and intimacy',
     bio: 'Doctor and mother of one. My child is my priority, and I am looking for a partner who understands that and has space for us both.',
     alignmentScore: 89,
+    photoUrl: 'https://i.pravatar.cc/300?u=rachel&img=5',
   },
   {
     id: 'u6',
@@ -96,6 +101,7 @@ export const sampleUsers: User[] = [
     growthFocus: 'Communicating needs directly',
     bio: 'Architect who believes good design applies to relationships too. Looking for someone to build a life with, one honest conversation at a time.',
     alignmentScore: 85,
+    photoUrl: 'https://i.pravatar.cc/300?u=marcus&img=6',
   },
 ];
 

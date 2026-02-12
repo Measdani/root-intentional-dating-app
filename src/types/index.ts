@@ -72,3 +72,16 @@ export interface MembershipTier {
   badge?: string;
   features: string[];
 }
+
+export interface UserInteraction {
+  fromUserId: string;
+  toUserId: string;
+  message: string;
+  timestamp: number;
+  photosUnlocked: boolean;
+}
+
+export interface InteractionState {
+  sentInterests: Record<string, UserInteraction>;
+  receivedInterests: Record<string, UserInteraction>;
+}

@@ -1,13 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { ArrowLeft, MapPin, Heart, MessageCircle, Shield, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Heart, MessageCircle, Shield, Users, Lock } from 'lucide-react';
+import ExpressInterestModal from '@/components/ExpressInterestModal';
 
 const ProfileDetailSection: React.FC = () => {
-  const { selectedUser, currentUser, setCurrentView, setSelectedUser } = useApp();
+  const { selectedUser, currentUser, setCurrentView, setSelectedUser, expressInterest, hasExpressedInterest, arePhotosUnlocked } = useApp();
+  const [showModal, setShowModal] = useState(false);
 
   if (!selectedUser) return null;
 
   const sharedValues = selectedUser.values.filter(v => currentUser.values.includes(v));
+  const photosUnlocked = arePhotosUnlocked(selectedUser.id);
+  const interestSent = hasExpressedInterest(selectedUser.id);
+
+  const handleExpressInterest = (message: string) => {
+    expressInterest(selectedUser.id, message);
+  };
 
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
@@ -42,10 +50,27 @@ const ProfileDetailSection: React.FC = () => {
           {/* Profile Header */}
           <div className="p-8 md:p-10 border-b border-[#1A211A]">
             <div className="flex flex-col md:flex-row md:items-center gap-6">
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#D9FF3D] to-[#a8cc2d] flex items-center justify-center">
-                <span className="text-[#0B0F0C] font-display text-4xl md:text-5xl">
-                  {selectedUser.name[0]}
-                </span>
+              <div className="relative w-24 h-24 md:w-32 md:h-32 flex-shrink-0">
+                {photosUnlocked && selectedUser.photoUrl ? (
+                  <img
+                    src={selectedUser.photoUrl}
+                    alt={selectedUser.name}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <>
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-[#D9FF3D] to-[#a8cc2d] flex items-center justify-center">
+                      <span className="text-[#0B0F0C] font-display text-4xl md:text-5xl">
+                        {selectedUser.name[0]}
+                      </span>
+                    </div>
+                    {!photosUnlocked && (
+                      <div className="absolute inset-0 bg-[#0B0F0C]/30 rounded-full flex items-center justify-center">
+                        <Lock className="w-8 h-8 text-[#F6FFF2]" />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="flex-1">
@@ -71,10 +96,20 @@ const ProfileDetailSection: React.FC = () => {
                 <button className="w-12 h-12 rounded-full border border-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:border-[#D9FF3D] hover:text-[#D9FF3D] transition-colors">
                   <Heart className="w-5 h-5" />
                 </button>
-                <button className="px-6 py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  Express Interest
-                </button>
+                {interestSent ? (
+                  <div className="px-6 py-3 bg-green-600 text-white rounded-full font-medium flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Interest Sent
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowModal(true)}
+                    className="px-6 py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Express Interest
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -190,6 +225,14 @@ const ProfileDetailSection: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Express Interest Modal */}
+      <ExpressInterestModal
+        isOpen={showModal}
+        targetUser={selectedUser}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleExpressInterest}
+      />
     </div>
   );
 };

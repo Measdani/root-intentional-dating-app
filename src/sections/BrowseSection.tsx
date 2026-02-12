@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal } from 'lucide-react';
+import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal, Lock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import type { User } from '@/types';
 
 const BrowseSection: React.FC = () => {
-  const { users, setSelectedUser, setCurrentView } = useApp();
+  const { users, setSelectedUser, setCurrentView, hasExpressedInterest, arePhotosUnlocked } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
@@ -90,13 +91,37 @@ const BrowseSection: React.FC = () => {
               style={{ animationDelay: `${idx * 100}ms` }}
             >
               {/* Card Header */}
-              <div className="p-5">
+              <div className="p-5 relative">
+                {/* Interest Sent Badge */}
+                {hasExpressedInterest(user.id) && (
+                  <div className="absolute top-3 left-3 z-10">
+                    <Badge className="bg-green-600 text-white">Interest Sent</Badge>
+                  </div>
+                )}
+
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D9FF3D] to-[#a8cc2d] flex items-center justify-center">
-                      <span className="text-[#0B0F0C] font-display text-lg">
-                        {user.name[0]}
-                      </span>
+                    <div className="relative w-12 h-12 flex-shrink-0">
+                      {arePhotosUnlocked(user.id) && user.photoUrl ? (
+                        <img
+                          src={user.photoUrl}
+                          alt={user.name}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <>
+                          <div className="w-full h-full rounded-full bg-gradient-to-br from-[#D9FF3D] to-[#a8cc2d] flex items-center justify-center">
+                            <span className="text-[#0B0F0C] font-display text-lg">
+                              {user.name[0]}
+                            </span>
+                          </div>
+                          {!arePhotosUnlocked(user.id) && (
+                            <div className="absolute inset-0 bg-[#0B0F0C]/30 rounded-full flex items-center justify-center">
+                              <Lock className="w-4 h-4 text-[#F6FFF2]" />
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                     <div>
                       <h3 className="text-[#F6FFF2] font-semibold">{user.name}, {user.age}</h3>
