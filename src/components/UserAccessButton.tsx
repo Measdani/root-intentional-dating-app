@@ -14,7 +14,7 @@ const UserAccessButton: React.FC = () => {
     }
   }, [currentView]);
 
-  if (currentView.startsWith('admin-') || !currentView.includes('browse') && !currentView.includes('profile')) {
+  if (currentView.startsWith('admin-') || currentView === 'user-login') {
     return null;
   }
 
