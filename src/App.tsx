@@ -17,21 +17,18 @@ import AdminLayout from '@/components/AdminLayout';
 import AdminUsersSection from '@/sections/AdminUsersSection';
 import AdminDashboardSection from '@/sections/AdminDashboardSection';
 import EmailModal from '@/components/EmailModal';
+import AdminAccessButton from '@/components/AdminAccessButton';
 
 const AppContent: React.FC = () => {
   const { currentView } = useApp();
   const { session } = useAdmin();
 
-  // Render different views based on currentView state
   const renderView = () => {
-    // Handle admin routes
     if (currentView.startsWith('admin-')) {
-      // Check authentication
       if (!session.isAuthenticated) {
         return <AdminLoginSection />;
       }
 
-      // Render admin views wrapped in layout
       const renderAdminView = () => {
         switch (currentView) {
           case 'admin-dashboard':
@@ -52,7 +49,6 @@ const AppContent: React.FC = () => {
       return <AdminLayout>{renderAdminView()}</AdminLayout>;
     }
 
-    // Regular app views
     switch (currentView) {
       case 'assessment-result':
         return <AssessmentResultSection />;
@@ -66,10 +62,7 @@ const AppContent: React.FC = () => {
       default:
         return (
           <main className="relative">
-            {/* Grain Overlay */}
             <div className="grain-overlay" />
-
-            {/* Landing Page Sections */}
             <HeroSection />
             <ProblemSection />
             <AssessmentSection />
@@ -85,7 +78,12 @@ const AppContent: React.FC = () => {
   return (
     <div className="relative bg-[#0B0F0C] min-h-screen">
       {renderView()}
-      {!currentView.startsWith('admin-') && <EmailModal />}
+      {!currentView.startsWith('admin-') && (
+        <>
+          <EmailModal />
+          <AdminAccessButton />
+        </>
+      )}
     </div>
   );
 };
