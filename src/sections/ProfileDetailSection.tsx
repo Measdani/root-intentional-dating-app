@@ -127,6 +127,14 @@ const ProfileDetailSection: React.FC = () => {
                   </div>
                 )}
 
+                {/* Communication Style */}
+                {selectedUser.communicationStyle && (
+                  <div className="mb-8 bg-[#1A211A]/50 rounded-2xl p-6">
+                    <h3 className="font-mono-label text-[#A9B5AA] mb-3">How They Communicate</h3>
+                    <p className="text-[#F6FFF2] leading-relaxed text-sm">{selectedUser.communicationStyle}</p>
+                  </div>
+                )}
+
                 {/* Bio / About */}
                 {selectedUser.bio && (
                   <div className="mb-8">

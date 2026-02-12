@@ -12,6 +12,7 @@ export interface User {
   values: string[];
   growthFocus: string;
   relationshipVision?: string;
+  communicationStyle?: string;
   alignmentScore?: number;
   photoUrl?: string;
   bio?: string;
