@@ -18,14 +18,20 @@ import AdminUsersSection from '@/sections/AdminUsersSection';
 import AdminDashboardSection from '@/sections/AdminDashboardSection';
 import AdminAssessmentsSection from '@/sections/AdminAssessmentsSection';
 import AdminContentSection from '@/sections/AdminContentSection';
+import UserLoginSection from '@/sections/UserLoginSection';
 import EmailModal from '@/components/EmailModal';
 import AdminAccessButton from '@/components/AdminAccessButton';
+import UserAccessButton from '@/components/UserAccessButton';
 
 const AppContent: React.FC = () => {
   const { currentView } = useApp();
   const { session } = useAdmin();
 
   const renderView = () => {
+    if (currentView === 'user-login') {
+      return <UserLoginSection />;
+    }
+
     if (currentView.startsWith('admin-')) {
       if (!session.isAuthenticated) {
         return <AdminLoginSection />;
@@ -39,10 +45,8 @@ const AppContent: React.FC = () => {
             return <AdminUsersSection />;
           case 'admin-assessments':
             return <AdminAssessmentsSection />;
-            
           case 'admin-content':
             return <AdminContentSection />;
-            
           case 'admin-settings':
             return <div className="p-8"><p className="text-[#A9B5AA]">Settings coming soon...</p></div>;
           default:
@@ -82,10 +86,11 @@ const AppContent: React.FC = () => {
   return (
     <div className="relative bg-[#0B0F0C] min-h-screen">
       {renderView()}
-      {!currentView.startsWith('admin-') && (
+      {!currentView.startsWith('admin-') && currentView !== 'user-login' && (
         <>
           <EmailModal />
           <AdminAccessButton />
+          <UserAccessButton />
         </>
       )}
     </div>

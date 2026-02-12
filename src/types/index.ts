@@ -61,7 +61,8 @@ export type AppView =
   | 'admin-users'
   | 'admin-assessments'
   | 'admin-content'
-  | 'admin-settings';
+  | 'admin-settings'
+  | 'user-login';
 
 export interface MembershipTier {
   id: string;
