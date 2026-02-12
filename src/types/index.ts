@@ -48,7 +48,20 @@ export interface GrowthResource {
   estimatedTime: string;
 }
 
-export type AppView = 'landing' | 'assessment' | 'assessment-result' | 'growth-mode' | 'browse' | 'profile' | 'membership';
+export type AppView =
+  | 'landing'
+  | 'assessment'
+  | 'assessment-result'
+  | 'growth-mode'
+  | 'browse'
+  | 'profile'
+  | 'membership'
+  | 'admin-login'
+  | 'admin-dashboard'
+  | 'admin-users'
+  | 'admin-assessments'
+  | 'admin-content'
+  | 'admin-settings';
 
 export interface MembershipTier {
   id: string;
