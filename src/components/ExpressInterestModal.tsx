@@ -23,7 +23,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
   if (!isOpen || !targetUser) return null;
 
   const messageLength = message.length;
-  const minLength = 20;
+  const minLength = 120;
   const maxLength = 500;
   const isValidLength = messageLength >= minLength && messageLength <= maxLength;
   const isReady = isValidLength && !isSubmitting;
@@ -115,15 +115,21 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
             {/* Message Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-[#F6FFF2] mb-2">
-                  Write a thoughtful message to unlock their photos
+                <label className="block text-sm text-[#F6FFF2] mb-3">
+                  This profile values intention. Share a meaningful introduction to continue.
                 </label>
+                {targetUser.alignmentScore && (
+                  <p className="text-xs text-[#D9FF3D] mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#D9FF3D]" />
+                    You share {targetUser.alignmentScore}% alignment — lead with that.
+                  </p>
+                )}
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value.slice(0, maxLength))}
-                  placeholder="Tell them what caught your attention..."
+                  placeholder="Tell them what stood out to you and why..."
                   className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] placeholder:text-[#A9B5AA]/50 focus:outline-none focus:border-[#D9FF3D] transition-colors resize-none"
-                  rows={5}
+                  rows={6}
                 />
               </div>
 
@@ -134,7 +140,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                     <>
                       <div className="w-2 h-2 rounded-full bg-red-500" />
                       <span className="text-red-400">
-                        Minimum {minLength} characters
+                        Minimum 120 characters — meaningful introductions only.
                       </span>
                     </>
                   ) : (
@@ -163,7 +169,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                 ) : (
                   <>
                     <MessageCircle className="w-4 h-4" />
-                    Send Message & Unlock Photos
+                    Send Introduction
                   </>
                 )}
               </button>
