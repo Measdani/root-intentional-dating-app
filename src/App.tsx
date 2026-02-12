@@ -14,6 +14,7 @@ import ProfileDetailSection from '@/sections/ProfileDetailSection';
 import GrowthModeSection from '@/sections/GrowthModeSection';
 import AdminLoginSection from '@/sections/AdminLoginSection';
 import AdminLayout from '@/components/AdminLayout';
+import AdminUsersSection from '@/sections/AdminUsersSection';
 import AdminDashboardSection from '@/sections/AdminDashboardSection';
 import EmailModal from '@/components/EmailModal';
 
@@ -36,7 +37,7 @@ const AppContent: React.FC = () => {
           case 'admin-dashboard':
             return <AdminDashboardSection />;
           case 'admin-users':
-            return <div className="p-8"><p className="text-[#A9B5AA]">Users management coming soon...</p></div>;
+            return <AdminUsersSection />;
           case 'admin-assessments':
             return <div className="p-8"><p className="text-[#A9B5AA]">Assessment management coming soon...</p></div>;
           case 'admin-content':
