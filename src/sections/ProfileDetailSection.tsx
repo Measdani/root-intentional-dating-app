@@ -96,20 +96,6 @@ const ProfileDetailSection: React.FC = () => {
                 <button className="w-12 h-12 rounded-full border border-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:border-[#D9FF3D] hover:text-[#D9FF3D] transition-colors">
                   <Heart className="w-5 h-5" />
                 </button>
-                {interestSent ? (
-                  <div className="px-6 py-3 bg-green-600 text-white rounded-full font-medium flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4" />
-                    Interest Sent
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowModal(true)}
-                    className="px-6 py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-full font-medium hover:scale-105 transition-transform flex items-center gap-2"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Express Interest
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -124,6 +110,26 @@ const ProfileDetailSection: React.FC = () => {
                   <div className="mb-8 bg-[#1A211A]/50 rounded-2xl p-6 border border-[#D9FF3D]/20">
                     <h3 className="font-mono-label text-[#D9FF3D] mb-3">✨ Relationship Vision</h3>
                     <p className="text-[#F6FFF2] leading-relaxed text-sm">{selectedUser.relationshipVision}</p>
+                  </div>
+                )}
+
+                {/* Express Interest Button */}
+                {!interestSent && (
+                  <div className="mb-8">
+                    <button
+                      onClick={() => setShowModal(true)}
+                      className="w-full py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Express Interest
+                    </button>
+                  </div>
+                )}
+
+                {interestSent && (
+                  <div className="mb-8 py-3.5 px-6 bg-green-600 text-white rounded-2xl font-medium flex items-center justify-center gap-2 text-center">
+                    <MessageCircle className="w-4 h-4" />
+                    Interest Sent
                   </div>
                 )}
 
