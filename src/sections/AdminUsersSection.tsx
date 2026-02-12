@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { toast } from 'sonner';
 import { useAdmin } from '@/store/AdminContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Eye, Trash2, Lock, Unlock } from 'lucide-react';
 import { mockAdminUsers } from '@/data/adminUsers';
 import type { UserStatus, AssessmentStatus } from '@/types/admin';
@@ -15,6 +17,7 @@ const AdminUsersSection: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const itemsPerPage = 10;
 
   const displayUsers = users.length > 0 ? users : mockAdminUsers;
@@ -43,6 +46,18 @@ const AdminUsersSection: React.FC = () => {
     failed: 'bg-red-500/10 text-red-300 border-red-500/30',
     'not-taken': 'bg-gray-500/10 text-gray-300 border-gray-500/30',
     'in-progress': 'bg-blue-500/10 text-blue-300 border-blue-500/30',
+  };
+
+  const handleStatusUpdate = (userId: string, newStatus: UserStatus) => {
+    updateUserStatus(userId, newStatus);
+    const action = newStatus === 'suspended' ? 'suspended' : 'activated';
+    toast.success(`User ${action} successfully`);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    deleteUser(userId);
+    setDeleteConfirm(null);
+    toast.success('User deleted successfully');
   };
 
   return (
@@ -88,9 +103,9 @@ const AdminUsersSection: React.FC = () => {
                 <TableCell className="text-center text-[#F6FFF2]">{user.assessmentScore || '-'}</TableCell>
                 <TableCell>
                   <div className="flex gap-2 justify-center">
-                    <Button size="sm" variant="ghost" onClick={() => setSelectedUser(user)} className="text-[#D9FF3D] hover:bg-[#D9FF3D]/10"><Eye className="w-4 h-4" /></Button>
-                    {user.status === 'active' ? (<Button size="sm" variant="ghost" onClick={() => updateUserStatus(user.id, 'suspended')} className="text-yellow-400 hover:bg-yellow-500/10"><Lock className="w-4 h-4" /></Button>) : user.status === 'suspended' ? (<Button size="sm" variant="ghost" onClick={() => updateUserStatus(user.id, 'active')} className="text-green-400 hover:bg-green-500/10"><Unlock className="w-4 h-4" /></Button>) : null}
-                    <Button size="sm" variant="ghost" onClick={() => deleteUser(user.id)} className="text-red-400 hover:bg-red-500/10"><Trash2 className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => { setSelectedUser(user); toast.info(`Viewing ${user.name}`); }} className="text-[#D9FF3D] hover:bg-[#D9FF3D]/10"><Eye className="w-4 h-4" /></Button>
+                    {user.status === 'active' ? (<Button size="sm" variant="ghost" onClick={() => handleStatusUpdate(user.id, 'suspended')} className="text-yellow-400 hover:bg-yellow-500/10"><Lock className="w-4 h-4" /></Button>) : user.status === 'suspended' ? (<Button size="sm" variant="ghost" onClick={() => handleStatusUpdate(user.id, 'active')} className="text-green-400 hover:bg-green-500/10"><Unlock className="w-4 h-4" /></Button>) : null}
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteConfirm(user.id)} className="text-red-400 hover:bg-red-500/10"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -106,6 +121,19 @@ const AdminUsersSection: React.FC = () => {
           <Button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="bg-[#D9FF3D] text-[#0B0F0C] hover:scale-105">Next</Button>
         </div>
       )}
+
+      <AlertDialog open={deleteConfirm !== null} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent className="bg-[#111611] border-[#1A211A]">
+          <AlertDialogTitle className="text-[#F6FFF2]">Delete User</AlertDialogTitle>
+          <AlertDialogDescription className="text-[#A9B5AA]">
+            Are you sure you want to delete this user? This action cannot be undone.
+          </AlertDialogDescription>
+          <div className="flex gap-4 justify-end pt-4">
+            <AlertDialogCancel className="bg-[#0B0F0C] border-[#1A211A] text-[#F6FFF2] hover:bg-[#1A211A]">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteConfirm && handleDeleteUser(deleteConfirm)} className="bg-red-600 hover:bg-red-700 text-white">Delete</AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

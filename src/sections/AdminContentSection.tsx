@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,7 +23,7 @@ const AdminContentSection: React.FC = () => {
         <TabsContent value="resources" className="space-y-4">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Growth Resources ({resources.length})</h3>
-            <Button className="bg-[#D9FF3D] text-[#0B0F0C]"><Plus className="w-4 h-4 mr-2" />Add Resource</Button>
+            <Button onClick={() => toast.success('New resource added')} className="bg-[#D9FF3D] text-[#0B0F0C]"><Plus className="w-4 h-4 mr-2" />Add Resource</Button>
           </div>
 
           <div className="space-y-4">
@@ -38,8 +39,8 @@ const AdminContentSection: React.FC = () => {
                     <p className="text-xs text-[#A9B5AA]">Est. time: {resource.estimatedTime}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" className="text-[#D9FF3D]"><Edit2 className="w-4 h-4" /></Button>
-                    <Button size="sm" variant="ghost" className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => toast.info(`Editing ${resource.title}`)} className="text-[#D9FF3D]"><Edit2 className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => toast.success('Resource deleted')} className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </div>
               </Card>
@@ -50,7 +51,7 @@ const AdminContentSection: React.FC = () => {
         <TabsContent value="membership" className="space-y-4">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Membership Tiers</h3>
-            <Button className="bg-[#D9FF3D] text-[#0B0F0C]"><Plus className="w-4 h-4 mr-2" />Add Tier</Button>
+            <Button onClick={() => toast.success('New tier added')} className="bg-[#D9FF3D] text-[#0B0F0C]"><Plus className="w-4 h-4 mr-2" />Add Tier</Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -59,8 +60,8 @@ const AdminContentSection: React.FC = () => {
                 <div className="flex justify-between items-start mb-4">
                   <h4 className="text-lg font-semibold text-[#F6FFF2]">{tier.name}</h4>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" className="text-[#D9FF3D]"><Edit2 className="w-4 h-4" /></Button>
-                    <Button size="sm" variant="ghost" className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => toast.info(`Editing ${tier.name}`)} className="text-[#D9FF3D]"><Edit2 className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => toast.success('Tier deleted')} className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </div>
 

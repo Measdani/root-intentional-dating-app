@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,7 +53,7 @@ const AdminAssessmentsSection: React.FC = () => {
             <label className="block text-sm text-[#F6FFF2] mb-3">Pass Threshold: {passThreshold}%</label>
             <input type="range" min="50" max="100" value={passThreshold} onChange={(e) => setPassThreshold(parseInt(e.target.value))} className="w-full accent-[#D9FF3D]" />
             <p className="text-xs text-[#A9B5AA] mt-3">Users need {passThreshold}% to pass the assessment</p>
-            <Button className="w-full mt-6 bg-[#D9FF3D] text-[#0B0F0C]">Save Settings</Button>
+            <Button onClick={() => toast.success(`Pass threshold updated to ${passThreshold}%`)} className="w-full mt-6 bg-[#D9FF3D] text-[#0B0F0C]">Save Settings</Button>
           </Card>
         </TabsContent>
 

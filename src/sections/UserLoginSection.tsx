@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,15 +22,17 @@ const UserLoginSection: React.FC = () => {
 
     try {
       const user = testUsers.find(u => u.email === email && u.password === password);
-      
+
       if (!user) {
         setError('Invalid email or password');
+        toast.error('Invalid email or password');
         setIsLoading(false);
         return;
       }
 
       localStorage.setItem('currentUser', JSON.stringify(user));
-      
+      toast.success(`Welcome back, ${user.name}!`);
+
       if (user.assessmentPassed) {
         setCurrentView('browse');
       } else {
@@ -44,6 +47,7 @@ const UserLoginSection: React.FC = () => {
     const user = testUsers.find(u => u.email === userEmail);
     if (user) {
       localStorage.setItem('currentUser', JSON.stringify(user));
+      toast.success(`Welcome, ${user.name}!`);
       if (user.assessmentPassed) {
         setCurrentView('browse');
       } else {

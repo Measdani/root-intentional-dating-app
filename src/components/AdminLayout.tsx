@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'sonner';
 import { useAdmin } from '@/store/AdminContext';
 import { useApp } from '@/store/AppContext';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const handleLogout = () => {
     logout();
+    toast.success('You have been logged out');
     setCurrentView('landing');
   };
 

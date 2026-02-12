@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { useAdmin } from '@/store/AdminContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +25,10 @@ const AdminLoginSection: React.FC = () => {
 
     const success = await login(email, password);
     if (success) {
+      toast.success('Welcome to Admin Panel');
       setCurrentView('admin-dashboard');
+    } else {
+      toast.error('Invalid credentials');
     }
   };
 

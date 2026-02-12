@@ -1,6 +1,7 @@
 import React from 'react';
 import { AppProvider, useApp } from '@/store/AppContext';
 import { AdminProvider, useAdmin } from '@/store/AdminContext';
+import { Toaster } from 'sonner';
 import HeroSection from '@/sections/HeroSection';
 import ProblemSection from '@/sections/ProblemSection';
 import AssessmentSection from '@/sections/AssessmentSection';
@@ -93,6 +94,7 @@ const AppContent: React.FC = () => {
           <UserAccessButton />
         </>
       )}
+      <Toaster theme="dark" position="bottom-right" />
     </div>
   );
 };
