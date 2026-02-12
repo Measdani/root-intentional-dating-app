@@ -19,7 +19,7 @@ const UserAccessButton: React.FC = () => {
   }
 
   return (
-    <div className="fixed top-8 right-8 z-40">
+    <div className="fixed top-24 right-8 z-40">
       <div className="relative">
         <button
           onClick={() => {
