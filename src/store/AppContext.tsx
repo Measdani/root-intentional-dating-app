@@ -168,8 +168,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const responseMessage: ConversationMessage = {
         id: `msg_${Date.now()}`,
-        fromUserId: currentUser.id,
-        toUserId: fromUserId,
+        fromUserId: fromUserId,  // The OTHER user is responding
+        toUserId: currentUser.id,  // Response goes to current user
         message,
         timestamp: Date.now(),
         messageType: 'response',
