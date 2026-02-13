@@ -169,8 +169,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const responseMessage: ConversationMessage = {
         id: `msg_${Date.now()}`,
-        fromUserId: fromUserId,  // The OTHER user is responding
-        toUserId: currentUser.id,  // Response goes to current user
+        fromUserId: currentUser.id,  // Current user is responding
+        toUserId: fromUserId,  // Response goes to the other user
         message,
         timestamp: Date.now(),
         messageType: 'response',
@@ -178,12 +178,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const allMessages = [...baseInteraction.messages, responseMessage];
 
-      // Check if both messages are 120+ characters
-      const initialMsg = allMessages[0];
-      const responseMsg = allMessages[allMessages.length - 1];
-      const initialMsgValid = initialMsg.message.length >= 120;
-      const responseMsgValid = responseMsg.message.length >= 120;
-      const bothValid = initialMsgValid && responseMsgValid;
+      // Check if BOTH users have sent messages with 120+ characters
+      const userAMessages = allMessages.filter(m => m.fromUserId === baseInteraction.fromUserId);
+      const userBMessages = allMessages.filter(m => m.fromUserId === baseInteraction.toUserId);
+
+      const userAHasSufficient = userAMessages.some(m => m.message.length >= 120);
+      const userBHasSufficient = userBMessages.some(m => m.message.length >= 120);
+      const bothValid = userAHasSufficient && userBHasSufficient;
 
       const updatedInteraction: UserInteraction = {
         ...baseInteraction,
