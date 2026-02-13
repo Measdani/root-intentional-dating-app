@@ -118,91 +118,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAssessmentResult(null);
   }, []);
 
-  const responseTemplates = [
-    "Thanks for reaching out! I really appreciate your thoughtful message. I'd love to learn more about you too. What drew you to my profile in particular?",
-    "Your message stood out to me. I'm curious to hear more about what resonated with you. Our values seem to align really well from what I can see.",
-    "I'm glad you took the time to write something meaningful. Your growth focus really speaks to me. What's been most impactful for you on that journey?",
-  ];
-
-  // Simulate response from other user
-  const simulateUserResponse = useCallback((fromUserId: string) => {
-    const randomMessage = responseTemplates[Math.floor(Math.random() * responseTemplates.length)];
-
-    setInteractions(prev => {
-      const sentInterest = prev.sentInterests[fromUserId];
-      if (!sentInterest) return prev;
-
-      const responseMessage: ConversationMessage = {
-        id: `msg_${Date.now()}`,
-        fromUserId: fromUserId,
-        toUserId: currentUser.id,
-        message: randomMessage,
-        timestamp: Date.now(),
-        messageType: 'response',
-      };
-
-      const updatedInteraction: UserInteraction = {
-        ...sentInterest,
-        messages: [...sentInterest.messages, responseMessage],
-        status: 'both_messaged',
-        updatedAt: Date.now(),
-      };
-
-      return {
-        ...prev,
-        sentInterests: {
-          ...prev.sentInterests,
-          [fromUserId]: updatedInteraction,
-        },
-        receivedInterests: {
-          ...prev.receivedInterests,
-          [fromUserId]: updatedInteraction,
-        },
-      };
-    });
-  }, [currentUser.id]);
-
-  // Simulate other user granting consent
-  const simulateOtherUserConsent = useCallback((conversationId: string) => {
-    setInteractions(prev => {
-      const updateInteraction = (interaction: UserInteraction): UserInteraction => {
-        if (interaction.conversationId !== conversationId) return interaction;
-
-        const updatedConsent = {
-          fromUser: {
-            ...interaction.photoConsent.fromUser,
-            hasConsented: true,
-            consentTimestamp: interaction.photoConsent.fromUser.consentTimestamp || Date.now(),
-          },
-          toUser: {
-            ...interaction.photoConsent.toUser,
-            hasConsented: true,
-            consentTimestamp: interaction.photoConsent.toUser.consentTimestamp || Date.now(),
-          },
-        };
-
-        return {
-          ...interaction,
-          photoConsent: updatedConsent,
-          photosUnlocked: true,
-          status: 'photos_unlocked',
-          updatedAt: Date.now(),
-        };
-      };
-
-      const updatedSent = Object.fromEntries(
-        Object.entries(prev.sentInterests).map(([k, v]) => [k, updateInteraction(v)])
-      );
-      const updatedReceived = Object.fromEntries(
-        Object.entries(prev.receivedInterests).map(([k, v]) => [k, updateInteraction(v)])
-      );
-
-      return {
-        sentInterests: updatedSent,
-        receivedInterests: updatedReceived,
-      };
-    });
-  }, []);
+  // NOTE: Auto-response and auto-consent features removed
+  // All messaging and consent decisions are now controlled by users only
 
   const expressInterest = useCallback((toUserId: string, message: string) => {
     const conversationId = `conv_${currentUser.id}_${toUserId}_${Date.now()}`;
@@ -242,7 +159,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // NOTE: Auto-response feature disabled to allow natural conversation flow
     // Users should reply manually without system auto-generating responses
-  }, [currentUser.id, simulateUserResponse]);
+  }, [currentUser.id]);
 
   const respondToInterest = useCallback((fromUserId: string, message: string) => {
     setInteractions(prev => {
@@ -329,12 +246,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     });
 
-    // Simulate other user consent after delay
-    const timeout = setTimeout(() => {
-      simulateOtherUserConsent(conversationId);
-    }, 2000);
-    timeoutRefs.current.push(timeout);
-  }, [currentUser.id, simulateOtherUserConsent]);
+    // NOTE: Auto-consent simulation removed. Other user must manually click "Yes" to unlock photos.
+  }, [currentUser.id]);
 
   const hasExpressedInterest = useCallback((userId: string): boolean => {
     return userId in interactions.sentInterests;
