@@ -163,8 +163,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const respondToInterest = useCallback((fromUserId: string, message: string) => {
     setInteractions(prev => {
-      const receivedInterest = prev.receivedInterests[fromUserId];
-      if (!receivedInterest) return prev;
+      // Try to find conversation in receivedInterests first, then sentInterests
+      let baseInteraction = prev.receivedInterests[fromUserId] || prev.sentInterests[fromUserId];
+      if (!baseInteraction) return prev;
 
       const responseMessage: ConversationMessage = {
         id: `msg_${Date.now()}`,
@@ -175,7 +176,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         messageType: 'response',
       };
 
-      const allMessages = [...receivedInterest.messages, responseMessage];
+      const allMessages = [...baseInteraction.messages, responseMessage];
 
       // Check if both messages are 120+ characters
       const initialMsg = allMessages[0];
@@ -185,7 +186,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const bothValid = initialMsgValid && responseMsgValid;
 
       const updatedInteraction: UserInteraction = {
-        ...receivedInterest,
+        ...baseInteraction,
         messages: allMessages,
         status: bothValid ? 'both_messaged' : 'pending_response',
         updatedAt: Date.now(),
@@ -202,11 +203,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         [fromUserId]: updatedInteraction,
       };
 
-      // Also update the conversation if it exists in the other user's sentInterests
+      // Also update the conversation if it exists elsewhere by conversationId
       // (in case the current user initiated the conversation)
       Object.entries(prev.sentInterests).forEach(([key, interaction]) => {
-        if (interaction.conversationId === receivedInterest.conversationId) {
+        if (interaction.conversationId === baseInteraction.conversationId) {
           updatedSentInterests[key] = updatedInteraction;
+        }
+      });
+      Object.entries(prev.receivedInterests).forEach(([key, interaction]) => {
+        if (interaction.conversationId === baseInteraction.conversationId) {
+          updatedReceivedInterests[key] = updatedInteraction;
         }
       });
 
