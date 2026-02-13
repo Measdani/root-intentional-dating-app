@@ -240,11 +240,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
     }));
 
-    // Simulate response after delay
-    const timeout = setTimeout(() => {
-      simulateUserResponse(toUserId);
-    }, 3000);
-    timeoutRefs.current.push(timeout);
+    // NOTE: Auto-response feature disabled to allow natural conversation flow
+    // Users should reply manually without system auto-generating responses
   }, [currentUser.id, simulateUserResponse]);
 
   const respondToInterest = useCallback((fromUserId: string, message: string) => {
