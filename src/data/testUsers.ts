@@ -18,7 +18,7 @@ export const testUsers = [
     alignmentScore: 87,
     assessmentPassed: true,
     assessmentScore: 87,
-    photoUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=maya_chen&backgroundColor=random',
+    photoUrl: 'https://api.dicebear.com/7.x/lorelei/svg?seed=maya_chen&backgroundColor=random',
   },
   {
     id: 'user-passed-male-1',
@@ -39,7 +39,7 @@ export const testUsers = [
     alignmentScore: 82,
     assessmentPassed: true,
     assessmentScore: 88,
-    photoUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=alex_rivera&backgroundColor=random',
+    photoUrl: 'https://api.dicebear.com/7.x/lorelei/svg?seed=alex_rivera&backgroundColor=random',
   },
   {
     id: 'user-failed-1',
@@ -60,6 +60,6 @@ export const testUsers = [
     alignmentScore: undefined,
     assessmentPassed: false,
     assessmentScore: 65,
-    photoUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=james_wilson&backgroundColor=random',
+    photoUrl: 'https://api.dicebear.com/7.x/lorelei/svg?seed=james_wilson&backgroundColor=random',
   },
 ];
