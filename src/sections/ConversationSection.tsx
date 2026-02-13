@@ -48,7 +48,6 @@ const ConversationSection: React.FC = () => {
 
   // Get the first (initial) message
   const initialMessage = selectedConversation.messages[0];
-  const hasResponse = selectedConversation.messages.length > 1;
 
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
