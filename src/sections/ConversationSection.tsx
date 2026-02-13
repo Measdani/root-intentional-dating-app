@@ -187,18 +187,16 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {/* Action Button */}
-        {(selectedConversation.status === 'pending_response' || hasResponse) && selectedConversation.status !== 'photos_unlocked' && (
+        {/* Action Button - Only show Send Response before they reply */}
+        {selectedConversation.status === 'pending_response' && (
           <div className="flex gap-4 mt-8">
-            {selectedConversation.status === 'pending_response' && (
-              <button
-                onClick={() => setShowResponseModal(true)}
-                className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Send Response
-              </button>
-            )}
+            <button
+              onClick={() => setShowResponseModal(true)}
+              className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Send Response
+            </button>
           </div>
         )}
       </main>
