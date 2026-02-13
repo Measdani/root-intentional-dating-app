@@ -1,4 +1,4 @@
-// Trigger Vercel rebuild with all latest code
+// Force Vercel rebuild - lorelei avatars + new login profile (alex@test.com)
 import React from 'react';
 import { AppProvider, useApp } from '@/store/AppContext';
 import { AdminProvider, useAdmin } from '@/store/AdminContext';
