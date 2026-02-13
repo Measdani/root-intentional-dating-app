@@ -53,7 +53,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<UserInteraction | null>(null);
-  const [currentUser] = useState<User>(defaultUser);
+
+  // Check localStorage for logged-in user (from demo login), otherwise use default
+  const [currentUser] = useState<User>(() => {
+    try {
+      const savedUser = localStorage.getItem('currentUser');
+      if (savedUser) {
+        return JSON.parse(savedUser) as User;
+      }
+    } catch (error) {
+      console.error('Failed to load user from localStorage:', error);
+    }
+    return defaultUser;
+  });
+
   const [users] = useState<User[]>(sampleUsers);
   const [hasJoinedList, setHasJoinedList] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
