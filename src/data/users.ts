@@ -115,6 +115,25 @@ export const sampleUsers: User[] = [
     alignmentScore: 85,
     photoUrl: 'https://i.pravatar.cc/300?u=marcus&img=6',
   },
+  {
+    id: 'u7',
+    name: 'Alex',
+    age: 32,
+    city: 'San Francisco, CA',
+    partnershipIntent: 'marriage',
+    familyAlignment: {
+      hasChildren: false,
+      wantsChildren: 'wants',
+      openToPartnerWithParent: 'comfortable',
+    },
+    values: ['Honesty', 'Growth', 'Kindness', 'Depth', 'Adventure'],
+    growthFocus: 'Building meaningful connections',
+    relationshipVision: 'A partnership rooted in mutual respect, emotional honesty, and shared growth.',
+    communicationStyle: 'Open and direct. Values deep conversations. Patient listener who processes emotions thoughtfully.',
+    bio: 'Software engineer with a passion for building things that matter. Looking for someone ready for real connection and growth.',
+    alignmentScore: 91,
+    photoUrl: 'https://i.pravatar.cc/300?u=alex&img=7',
+  },
 ];
 
 // Export the first user (Maya) as the current user for testing
