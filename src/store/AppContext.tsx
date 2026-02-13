@@ -191,16 +191,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updatedAt: Date.now(),
       };
 
+      // Update both receivedInterests and sentInterests for this user
+      const updatedReceivedInterests = {
+        ...prev.receivedInterests,
+        [fromUserId]: updatedInteraction,
+      };
+
+      const updatedSentInterests = {
+        ...prev.sentInterests,
+        [fromUserId]: updatedInteraction,
+      };
+
+      // Also update the conversation if it exists in the other user's sentInterests
+      // (in case the current user initiated the conversation)
+      Object.entries(prev.sentInterests).forEach(([key, interaction]) => {
+        if (interaction.conversationId === receivedInterest.conversationId) {
+          updatedSentInterests[key] = updatedInteraction;
+        }
+      });
+
       return {
         ...prev,
-        receivedInterests: {
-          ...prev.receivedInterests,
-          [fromUserId]: updatedInteraction,
-        },
-        sentInterests: {
-          ...prev.sentInterests,
-          [fromUserId]: updatedInteraction,
-        },
+        receivedInterests: updatedReceivedInterests,
+        sentInterests: updatedSentInterests,
       };
     });
   }, [currentUser.id]);
