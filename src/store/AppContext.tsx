@@ -175,10 +175,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         messageType: 'response',
       };
 
+      const allMessages = [...receivedInterest.messages, responseMessage];
+
+      // Check if both messages are 120+ characters
+      const initialMsg = allMessages[0];
+      const responseMsg = allMessages[allMessages.length - 1];
+      const initialMsgValid = initialMsg.message.length >= 120;
+      const responseMsgValid = responseMsg.message.length >= 120;
+      const bothValid = initialMsgValid && responseMsgValid;
+
       const updatedInteraction: UserInteraction = {
         ...receivedInterest,
-        messages: [...receivedInterest.messages, responseMessage],
-        status: 'both_messaged',
+        messages: allMessages,
+        status: bothValid ? 'both_messaged' : 'pending_response',
         updatedAt: Date.now(),
       };
 
