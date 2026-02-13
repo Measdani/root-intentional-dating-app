@@ -48,6 +48,8 @@ const BrowseSection: React.FC = () => {
             <p className="text-[#A9B5AA] text-xs">
               {filteredUsers.length} curated matches
             </p>
+            {/* Current User Display */}
+            <p className="text-[10px] text-[#D9FF3D] mt-1">Logged in as: <span className="font-semibold">{currentUser.name}</span></p>
           </div>
 
           <div className="flex items-center gap-4">
