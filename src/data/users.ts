@@ -136,8 +136,10 @@ export const sampleUsers: User[] = [
   },
 ];
 
-// Export the first user (Maya) as the current user for testing
-export const currentUser: User = sampleUsers[0];
+// Current user selection for testing - use user ID instead of index since array gets sorted
+// Change 'u1' to 'u7' to test as Alex instead of Maya
+const CURRENT_USER_ID = 'u1'; // 'u1' = Maya, 'u7' = Alex
+export const currentUser: User = sampleUsers.find(u => u.id === CURRENT_USER_ID) || sampleUsers[0];
 
 export const calculateAlignmentScore = (user1: User, user2: User): number => {
   let score = 70; // Base score
