@@ -42,7 +42,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
     onSubmit(message);
 
     // Show success toast
-    toast.success(`Your message was sent to ${targetUser.name}! Their photos are now visible.`);
+    toast.success(`Your message was sent to ${targetUser.name}!`);
 
     // Close after showing success
     setTimeout(() => {
@@ -82,9 +82,9 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
             <div className="w-16 h-16 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-[#D9FF3D]" />
             </div>
-            <h3 className="font-display text-2xl text-[#F6FFF2] mb-2">Photos Unlocked!</h3>
+            <h3 className="font-display text-2xl text-[#F6FFF2] mb-2">Message Sent!</h3>
             <p className="text-[#A9B5AA] text-sm">
-              Your message was sent to {targetUser.name}
+              Your introduction was sent to {targetUser.name}. Photos unlock when you both send meaningful messages and consent.
             </p>
           </div>
         ) : (
