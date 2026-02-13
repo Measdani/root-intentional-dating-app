@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import type { User } from '@/types';
 
 const BrowseSection: React.FC = () => {
-  const { users, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest } = useApp();
+  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
@@ -17,6 +17,8 @@ const BrowseSection: React.FC = () => {
   ];
 
   const filteredUsers = users.filter(user => {
+    // Exclude current user from browse list
+    if (user.id === currentUser.id) return false;
     if (selectedFilter === 'high') return (user.alignmentScore || 0) >= 90;
     if (selectedFilter === 'wants-children') return user.familyAlignment.wantsChildren === 'wants';
     if (selectedFilter === 'no-children') return !user.familyAlignment.hasChildren;

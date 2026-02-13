@@ -117,20 +117,8 @@ export const sampleUsers: User[] = [
   },
 ];
 
-export const currentUser: User = {
-  id: 'current',
-  name: 'You',
-  age: 32,
-  city: 'Your City',
-  partnershipIntent: 'marriage',
-  familyAlignment: {
-    hasChildren: false,
-    wantsChildren: 'wants',
-    openToPartnerWithParent: 'comfortable',
-  },
-  values: ['Growth', 'Honesty', 'Family', 'Kindness', 'Presence'],
-  growthFocus: 'Building emotional safety',
-};
+// Export the first user (Maya) as the current user for testing
+export const currentUser: User = sampleUsers[0];
 
 export const calculateAlignmentScore = (user1: User, user2: User): number => {
   let score = 70; // Base score
