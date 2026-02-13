@@ -78,9 +78,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Load interactions from localStorage on mount
+  // Uses shared storage so all users can see each other's messages (for testing)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('rooted_user_interactions');
+      const saved = localStorage.getItem('rooted_shared_interactions');
       if (saved) {
         setInteractions(JSON.parse(saved));
       }
@@ -104,10 +105,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // Save interactions to localStorage whenever they change
+  // Save interactions to shared localStorage so all users can see messages
   useEffect(() => {
     try {
-      localStorage.setItem('rooted_user_interactions', JSON.stringify(interactions));
+      localStorage.setItem('rooted_shared_interactions', JSON.stringify(interactions));
     } catch (error) {
       console.error('Failed to save interactions:', error);
     }
