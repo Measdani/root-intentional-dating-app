@@ -138,6 +138,12 @@ const UserLoginSection: React.FC = () => {
               ✓ Maya (Passed Assessment)
             </Button>
             <Button
+              onClick={() => handleDemoLogin('alex@test.com')}
+              className="w-full bg-green-600/20 text-green-300 border border-green-500/30 hover:bg-green-600/30"
+            >
+              ✓ Alex (Passed Assessment)
+            </Button>
+            <Button
               onClick={() => handleDemoLogin('james@test.com')}
               className="w-full bg-orange-600/20 text-orange-300 border border-orange-500/30 hover:bg-orange-600/30"
             >
@@ -156,7 +162,7 @@ const UserLoginSection: React.FC = () => {
 
           <div className="bg-[#0B0F0C] p-4 rounded-lg text-xs text-[#A9B5AA]">
             <p className="font-semibold text-[#F6FFF2] mb-2">Test Credentials:</p>
-            <p>Email: maya@test.com / james@test.com</p>
+            <p>Email: maya@test.com / alex@test.com / james@test.com</p>
             <p>Password: password123</p>
           </div>
         </div>
