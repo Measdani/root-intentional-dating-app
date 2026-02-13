@@ -4,11 +4,12 @@ import { assessmentQuestions, followUpQuestions, calculateAssessmentResult } fro
 import { ChevronRight, AlertCircle } from 'lucide-react';
 
 const AssessmentSection: React.FC = () => {
-  const { 
-    assessmentAnswers, 
-    addAssessmentAnswer, 
-    setAssessmentResult, 
-    setCurrentView 
+  const {
+    assessmentAnswers,
+    addAssessmentAnswer,
+    setAssessmentResult,
+    saveAssessmentDate,
+    setCurrentView
   } = useApp();
   
   const [isVisible, setIsVisible] = useState(false);
@@ -66,6 +67,7 @@ const AssessmentSection: React.FC = () => {
         const finalAnswers = [...assessmentAnswers, { questionId: currentQuestion.id, score, redFlag }];
         const result = calculateAssessmentResult(finalAnswers);
         setAssessmentResult(result);
+        saveAssessmentDate();
         setCurrentView('assessment-result');
         setIsTransitioning(false);
       }

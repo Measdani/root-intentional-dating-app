@@ -25,6 +25,9 @@ interface AppContextType extends AppState {
   expressInterest: (toUserId: string, message: string) => void;
   hasExpressedInterest: (userId: string) => boolean;
   arePhotosUnlocked: (userId: string) => boolean;
+  saveAssessmentDate: () => void;
+  getNextRetakeDate: () => Date | null;
+  canRetakeAssessment: () => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -100,6 +103,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return hasExpressedInterest(userId);
   }, [currentUser.id, hasExpressedInterest]);
 
+  const saveAssessmentDate = useCallback(() => {
+    try {
+      localStorage.setItem('rooted_last_assessment_date', Date.now().toString());
+    } catch (error) {
+      console.error('Failed to save assessment date:', error);
+    }
+  }, []);
+
+  const getNextRetakeDate = useCallback((): Date | null => {
+    try {
+      const lastDate = localStorage.getItem('rooted_last_assessment_date');
+      if (!lastDate) return null;
+      const timestamp = parseInt(lastDate, 10);
+      const nextDate = new Date(timestamp);
+      nextDate.setMonth(nextDate.getMonth() + 6);
+      return nextDate;
+    } catch (error) {
+      console.error('Failed to get next retake date:', error);
+      return null;
+    }
+  }, []);
+
+  const canRetakeAssessment = useCallback((): boolean => {
+    const nextRetakeDate = getNextRetakeDate();
+    if (!nextRetakeDate) return true; // If no previous assessment, can retake
+    return new Date() >= nextRetakeDate;
+  }, [getNextRetakeDate]);
+
   const value: AppContextType = {
     currentView,
     assessmentAnswers,
@@ -120,6 +151,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     expressInterest,
     hasExpressedInterest,
     arePhotosUnlocked,
+    saveAssessmentDate,
+    getNextRetakeDate,
+    canRetakeAssessment,
   };
 
   return (

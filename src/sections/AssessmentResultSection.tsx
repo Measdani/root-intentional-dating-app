@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
-import { Check, AlertTriangle, TrendingUp, RotateCcw } from 'lucide-react';
+import { Check, AlertTriangle, TrendingUp, RotateCcw, Lock } from 'lucide-react';
 
 const AssessmentResultSection: React.FC = () => {
-  const { assessmentResult, setCurrentView, resetAssessment } = useApp();
+  const { assessmentResult, setCurrentView, resetAssessment, canRetakeAssessment, getNextRetakeDate } = useApp();
 
   if (!assessmentResult) return null;
 
@@ -13,6 +13,17 @@ const AssessmentResultSection: React.FC = () => {
     } else {
       setCurrentView('growth-mode');
     }
+  };
+
+  const canRetake = useMemo(() => canRetakeAssessment(), [canRetakeAssessment]);
+  const nextRetakeDate = useMemo(() => getNextRetakeDate(), [getNextRetakeDate]);
+
+  const formatRetakeDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
   const handleRetake = () => {
@@ -149,13 +160,25 @@ const AssessmentResultSection: React.FC = () => {
               {assessmentResult.passed ? 'Explore Profiles' : 'Enter Growth Mode'}
             </button>
             {!assessmentResult.passed && (
-              <button
-                onClick={handleRetake}
-                className="btn-outline flex items-center justify-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Retake Assessment
-              </button>
+              canRetake ? (
+                <button
+                  onClick={handleRetake}
+                  className="btn-outline flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Retake Assessment
+                </button>
+              ) : (
+                <div className="flex-1 sm:flex-1 px-4 py-3.5 bg-[#1A211A]/50 border border-[#1A211A] rounded-lg flex items-center justify-center gap-3">
+                  <Lock className="w-4 h-4 text-[#A9B5AA]" />
+                  <div className="text-center sm:text-left">
+                    <p className="text-sm text-[#F6FFF2] font-medium">Assessment Locked</p>
+                    <p className="text-xs text-[#A9B5AA]">
+                      You can retake on {nextRetakeDate ? formatRetakeDate(nextRetakeDate) : 'later'}
+                    </p>
+                  </div>
+                </div>
+              )
             )}
           </div>
         </div>
