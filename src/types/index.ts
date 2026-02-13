@@ -57,6 +57,8 @@ export type AppView =
   | 'growth-mode'
   | 'browse'
   | 'profile'
+  | 'inbox'
+  | 'conversation'
   | 'membership'
   | 'admin-login'
   | 'admin-dashboard'
@@ -64,6 +66,7 @@ export type AppView =
   | 'admin-assessments'
   | 'admin-content'
   | 'admin-settings'
+  | 'admin-reports'
   | 'user-login';
 
 export interface MembershipTier {
@@ -75,15 +78,52 @@ export interface MembershipTier {
   features: string[];
 }
 
-export interface UserInteraction {
+export interface ConversationMessage {
+  id: string;
   fromUserId: string;
   toUserId: string;
   message: string;
   timestamp: number;
+  messageType: 'initial' | 'response';
+}
+
+export interface PhotoConsent {
+  userId: string;
+  hasConsented: boolean;
+  consentTimestamp?: number;
+}
+
+export interface UserInteraction {
+  fromUserId: string;
+  toUserId: string;
+  conversationId: string;
+  messages: ConversationMessage[];
+  photoConsent: {
+    fromUser: PhotoConsent;
+    toUser: PhotoConsent;
+  };
   photosUnlocked: boolean;
+  status: 'pending_response' | 'both_messaged' | 'awaiting_consent' | 'photos_unlocked';
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface InteractionState {
   sentInterests: Record<string, UserInteraction>;
   receivedInterests: Record<string, UserInteraction>;
 }
+
+// Export all report-related types
+export type {
+  ReportReason,
+  ReportStatus,
+  ReportSeverity,
+  ReportActionType,
+  ReportAction,
+  Report,
+  SuspensionRecord,
+  BlockedUser,
+  UserReportHistory,
+  ReportStatistics,
+  ReportFilters,
+} from './report';

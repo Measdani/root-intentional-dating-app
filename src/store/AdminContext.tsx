@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import type { AdminUser, AdminSession, UserWithAdminData, UserStatus, UserFilters, AnalyticsSnapshot } from '@/types/admin';
-import type { AssessmentQuestion, GrowthResource, MembershipTier } from '@/types/index';
+import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, ReportStatistics, ReportFilters } from '@/types/index';
 import { mockAdminUsers, mockAdminCredentials } from '@/data/admins';
 
 interface AdminContextType {
@@ -17,6 +17,12 @@ interface AdminContextType {
   isLoading: boolean;
   error: string | null;
 
+  // Report-related
+  reports: Report[];
+  reportStats?: ReportStatistics;
+  selectedReport: Report | null;
+  reportFilters: ReportFilters;
+
   // Auth methods
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -27,6 +33,13 @@ interface AdminContextType {
   deleteUser: (userId: string) => void;
   updateUser: (userId: string, data: Partial<UserWithAdminData>) => void;
   setSelectedUser: (user: UserWithAdminData | null) => void;
+
+  // Report methods
+  getReports: () => Report[];
+  getPendingReports: () => Report[];
+  getReportById: (reportId: string) => Report | null;
+  setSelectedReport: (report: Report | null) => void;
+  setReportFilters: (filters: ReportFilters) => void;
 
   // UI methods
   setCurrentAdminView: (view: string) => void;
@@ -64,6 +77,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [currentAdminView, setCurrentAdminView] = useState('dashboard');
   const [selectedUser, setSelectedUser] = useState<UserWithAdminData | null>(null);
+
+  // Reports state
+  const [reports, setReports] = useState<Report[]>([]);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [reportFilters, setReportFilters] = useState<ReportFilters>({});
   const [filters, setFilters] = useState<UserFilters>({ searchTerm: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +111,26 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // Fall back to empty state
       }
     }
+
+    // Load reports from localStorage
+    try {
+      const savedReports = localStorage.getItem('rooted-admin-reports');
+      if (savedReports) {
+        setReports(JSON.parse(savedReports));
+      }
+    } catch {
+      // Fall back to empty state
+    }
+
+    // Listen for new reports from user context
+    const handleNewReport = (event: CustomEvent) => {
+      setReports(prev => [...prev, event.detail]);
+    };
+
+    window.addEventListener('new-report' as any, handleNewReport as EventListener);
+    return () => {
+      window.removeEventListener('new-report' as any, handleNewReport as EventListener);
+    };
   }, []);
 
   // Save session to localStorage
@@ -198,6 +236,66 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [saveData]
   );
 
+  // Report management methods
+  const getReports = useCallback((): Report[] => {
+    return reports;
+  }, [reports]);
+
+  const getPendingReports = useCallback((): Report[] => {
+    return reports.filter((r) => r.status === 'pending');
+  }, [reports]);
+
+  const getReportById = useCallback(
+    (reportId: string): Report | null => {
+      return reports.find((r) => r.id === reportId) || null;
+    },
+    [reports]
+  );
+
+  // Compute report statistics
+  const reportStats = useMemo((): ReportStatistics => {
+    const totalReports = reports.length;
+    const pendingReports = reports.filter((r) => r.status === 'pending').length;
+    const resolvedReports = reports.filter((r) => r.status === 'resolved').length;
+    const dismissedReports = reports.filter((r) => r.status === 'dismissed').length;
+
+    // Calculate average resolution time (in hours)
+    const resolvedWithTime = reports.filter((r) => r.status === 'resolved' && r.resolvedAt);
+    const avgResolutionTime = resolvedWithTime.length > 0
+      ? Math.round(
+          resolvedWithTime.reduce((sum, r) => {
+            if (r.resolvedAt) {
+              return sum + (r.resolvedAt - r.createdAt);
+            }
+            return sum;
+          }, 0) / resolvedWithTime.length / (60 * 60 * 1000)
+        )
+      : 0;
+
+    // Calculate top reported users
+    const userReportCounts: Record<string, number> = {};
+    reports.forEach((r) => {
+      userReportCounts[r.reportedUserId] = (userReportCounts[r.reportedUserId] || 0) + 1;
+    });
+    const topReportedUsers = Object.entries(userReportCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([userId, reportCount]) => ({ userId, reportCount }));
+
+    return {
+      totalReports,
+      pendingReports,
+      resolvedReports,
+      dismissedReports,
+      averageResolutionTime: avgResolutionTime,
+      reportsByReason: reports.reduce((acc, r) => {
+        acc[r.reason] = (acc[r.reason] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      topReportedUsers,
+    };
+  }, [reports]);
+
   const value: AdminContextType = {
     session,
     users,
@@ -211,6 +309,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     filters,
     isLoading,
     error,
+    reports,
+    reportStats,
+    selectedReport,
+    reportFilters,
     login,
     logout,
     checkPermission,
@@ -221,6 +323,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentAdminView,
     setFilters,
     setError,
+    getReports,
+    getPendingReports,
+    getReportById,
+    setSelectedReport,
+    setReportFilters,
   };
 
   return (

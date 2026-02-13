@@ -1,8 +1,8 @@
 export type AdminRole = 'super-admin' | 'admin' | 'moderator';
 
 export interface AdminPermission {
-  resource: 'users' | 'assessments' | 'content' | 'analytics' | 'settings';
-  actions: ('view' | 'create' | 'edit' | 'delete')[];
+  resource: 'users' | 'assessments' | 'content' | 'analytics' | 'settings' | 'reports';
+  actions: ('view' | 'create' | 'edit' | 'delete' | 'resolve')[];
 }
 
 export interface AdminUser {
@@ -20,6 +20,8 @@ export interface AdminSession {
   isAuthenticated: boolean;
   loginTime: string | null;
 }
+
+import type { SuspensionRecord } from './report';
 
 export type UserStatus = 'active' | 'pending' | 'suspended' | 'inactive';
 export type AssessmentStatus = 'passed' | 'failed' | 'not-taken' | 'in-progress';
@@ -48,6 +50,16 @@ export interface UserWithAdminData {
   assessmentScore?: number;
   suspensionReason?: string;
   notes?: string;
+
+  // Report-related fields
+  reportHistory?: {
+    reportsReceived: number;
+    reportsFiled: number;
+    isFlagged: boolean;
+    lastReportDate?: number;
+  };
+  suspensionHistory?: SuspensionRecord[];
+  currentSuspension?: SuspensionRecord;
 }
 
 export interface AnalyticsSnapshot {

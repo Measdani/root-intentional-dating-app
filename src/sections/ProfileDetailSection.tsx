@@ -1,20 +1,29 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { ArrowLeft, MapPin, Heart, MessageCircle, Shield, Users, Lock } from 'lucide-react';
+import { ArrowLeft, MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag } from 'lucide-react';
 import ExpressInterestModal from '@/components/ExpressInterestModal';
+import ReportUserModal from '@/components/ReportUserModal';
 
 const ProfileDetailSection: React.FC = () => {
-  const { selectedUser, currentUser, setCurrentView, setSelectedUser, expressInterest, hasExpressedInterest, arePhotosUnlocked } = useApp();
+  const { selectedUser, currentUser, setCurrentView, setSelectedUser, setSelectedConversation, expressInterest, arePhotosUnlocked, getConversation, reportUser, blockUser } = useApp();
   const [showModal, setShowModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   if (!selectedUser) return null;
 
   const sharedValues = selectedUser.values.filter(v => currentUser.values.includes(v));
   const photosUnlocked = arePhotosUnlocked(selectedUser.id);
-  const interestSent = hasExpressedInterest(selectedUser.id);
+  const conversation = getConversation(selectedUser.id);
 
   const handleExpressInterest = (message: string) => {
     expressInterest(selectedUser.id, message);
+  };
+
+  const handleViewConversation = () => {
+    if (conversation) {
+      setSelectedConversation(conversation);
+      setCurrentView('conversation');
+    }
   };
 
   return (
@@ -93,6 +102,13 @@ const ProfileDetailSection: React.FC = () => {
               </div>
 
               <div className="flex gap-3">
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  className="w-12 h-12 rounded-full border border-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:border-red-400 hover:text-red-400 transition-colors"
+                  title="Report User"
+                >
+                  <Flag className="w-5 h-5" />
+                </button>
                 <button className="w-12 h-12 rounded-full border border-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:border-[#D9FF3D] hover:text-[#D9FF3D] transition-colors">
                   <Heart className="w-5 h-5" />
                 </button>
@@ -113,8 +129,8 @@ const ProfileDetailSection: React.FC = () => {
                   </div>
                 )}
 
-                {/* Express Interest Button */}
-                {!interestSent && (
+                {/* Express Interest / Conversation Button */}
+                {!conversation ? (
                   <div className="mb-8">
                     <button
                       onClick={() => setShowModal(true)}
@@ -124,12 +140,15 @@ const ProfileDetailSection: React.FC = () => {
                       Express Interest
                     </button>
                   </div>
-                )}
-
-                {interestSent && (
-                  <div className="mb-8 py-3.5 px-6 bg-green-600 text-white rounded-2xl font-medium flex items-center justify-center gap-2 text-center">
-                    <MessageCircle className="w-4 h-4" />
-                    Interest Sent
+                ) : (
+                  <div className="mb-8 flex gap-3">
+                    <button
+                      onClick={handleViewConversation}
+                      className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      {conversation.status === 'pending_response' ? 'Message Sent' : 'View Conversation'}
+                    </button>
                   </div>
                 )}
 
@@ -259,6 +278,20 @@ const ProfileDetailSection: React.FC = () => {
         targetUser={selectedUser}
         onClose={() => setShowModal(false)}
         onSubmit={handleExpressInterest}
+      />
+
+      {/* Report User Modal */}
+      <ReportUserModal
+        isOpen={showReportModal}
+        reportedUser={selectedUser}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={async (reason, details) => {
+          await reportUser(selectedUser.id, reason, details);
+          if (reason === 'underage' || reason === 'safety-concern') {
+            blockUser(selectedUser.id, reason);
+          }
+          setShowReportModal(false);
+        }}
       />
     </div>
   );

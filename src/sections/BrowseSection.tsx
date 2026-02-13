@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal, Lock } from 'lucide-react';
+import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal, Lock, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@/types';
 
 const BrowseSection: React.FC = () => {
-  const { users, setSelectedUser, setCurrentView, hasExpressedInterest, arePhotosUnlocked } = useApp();
+  const { users, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
@@ -48,13 +48,26 @@ const BrowseSection: React.FC = () => {
             </p>
           </div>
 
-          <button
-            onClick={() => setFilterOpen(!filterOpen)}
-            className={`flex items-center gap-2 text-sm ${filterOpen ? 'text-[#D9FF3D]' : 'text-[#A9B5AA]'}`}
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            Filter
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setCurrentView('inbox')}
+              className="relative flex items-center gap-2 text-sm text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+            >
+              <Mail className="w-4 h-4" />
+              {getUnreadCount() > 0 && (
+                <span className="absolute -top-2 -right-2 w-5 h-5 bg-[#D9FF3D] text-[#0B0F0C] text-xs rounded-full flex items-center justify-center font-medium">
+                  {getUnreadCount()}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setFilterOpen(!filterOpen)}
+              className={`flex items-center gap-2 text-sm ${filterOpen ? 'text-[#D9FF3D]' : 'text-[#A9B5AA]'}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Filter
+            </button>
+          </div>
         </div>
 
         {/* Filter Panel */}

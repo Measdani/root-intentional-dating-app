@@ -1,0 +1,233 @@
+import React, { useState } from 'react';
+import { useApp } from '@/store/AppContext';
+import { ArrowLeft, MessageCircle, Lock, Flag } from 'lucide-react';
+import PhotoConsentPrompt from '@/components/PhotoConsentPrompt';
+import ResponseModal from '@/components/ResponseModal';
+import ReportUserModal from '@/components/ReportUserModal';
+
+const ConversationSection: React.FC = () => {
+  const { selectedConversation, setCurrentView, respondToInterest, grantPhotoConsent, users, currentUser, reportUser, blockUser } = useApp();
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+
+  if (!selectedConversation) {
+    return (
+      <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[#A9B5AA]">Conversation not found</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Determine the other user
+  const otherUserId = selectedConversation.fromUserId === currentUser.id
+    ? selectedConversation.toUserId
+    : selectedConversation.fromUserId;
+
+  const otherUser = users.find(u => u.id === otherUserId);
+
+  if (!otherUser) {
+    return (
+      <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[#A9B5AA]">User not found</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleResponseSubmit = (message: string) => {
+    respondToInterest(otherUserId, message);
+    setShowResponseModal(false);
+  };
+
+  const handleConsentClick = () => {
+    grantPhotoConsent(selectedConversation.conversationId);
+  };
+
+  // Get the first (initial) message
+  const initialMessage = selectedConversation.messages[0];
+  const hasResponse = selectedConversation.messages.length > 1;
+
+  return (
+    <div className="min-h-screen bg-[#0B0F0C]">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <button
+            onClick={() => setCurrentView('inbox')}
+            className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Back</span>
+          </button>
+
+          <div className="text-center">
+            <h1 className="font-display text-lg text-[#F6FFF2]">
+              {otherUser.name}
+            </h1>
+            <p className="text-xs text-[#A9B5AA]">
+              {otherUser.age} • {otherUser.city} • {otherUser.alignmentScore}% Alignment
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="text-[#A9B5AA] hover:text-red-400 transition-colors"
+            title="Report User"
+          >
+            <Flag className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-2xl mx-auto px-6 py-8">
+        {/* User Avatar & Profile */}
+        <div className="text-center mb-10">
+          <div className="w-24 h-24 rounded-full mx-auto mb-4 relative">
+            {selectedConversation.photosUnlocked && otherUser.photoUrl ? (
+              <img
+                src={otherUser.photoUrl}
+                alt={otherUser.name}
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <>
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-[#D9FF3D] to-[#a8cc2d] flex items-center justify-center">
+                  <span className="text-[#0B0F0C] font-display text-4xl">
+                    {otherUser.name[0]}
+                  </span>
+                </div>
+                {!selectedConversation.photosUnlocked && (
+                  <div className="absolute inset-0 bg-[#0B0F0C]/30 rounded-full flex items-center justify-center">
+                    <Lock className="w-6 h-6 text-[#F6FFF2]" />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <h2 className="font-display text-2xl text-[#F6FFF2]">
+            {otherUser.name}, {otherUser.age}
+          </h2>
+        </div>
+
+        {/* Messages */}
+        <div className="space-y-4 mb-10">
+          {selectedConversation.messages.map((msg) => {
+            const isCurrentUser = msg.fromUserId === currentUser.id;
+            return (
+              <div
+                key={msg.id}
+                className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-xs px-4 py-3 rounded-2xl ${
+                    isCurrentUser
+                      ? 'bg-[#D9FF3D] text-[#0B0F0C]'
+                      : 'bg-[#1A211A] text-[#F6FFF2]'
+                  }`}
+                >
+                  <p className="text-sm leading-relaxed">{msg.message}</p>
+                  <p className={`text-xs mt-2 opacity-70 ${isCurrentUser ? 'text-[#0B0F0C]' : 'text-[#A9B5AA]'}`}>
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Status-based rendering */}
+        {selectedConversation.status === 'pending_response' && (
+          <div className="bg-[#111611] rounded-2xl border border-[#1A211A] p-8 text-center">
+            <p className="text-[#A9B5AA] mb-6">Waiting for their response...</p>
+            <div className="inline-flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-[#D9FF3D] animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-[#D9FF3D] animate-pulse delay-100" />
+              <div className="w-2 h-2 rounded-full bg-[#D9FF3D] animate-pulse delay-200" />
+            </div>
+          </div>
+        )}
+
+        {selectedConversation.status === 'both_messaged' && (
+          <div className="mb-8">
+            <PhotoConsentPrompt
+              conversation={selectedConversation}
+              currentUserId={currentUser.id}
+              otherUserName={otherUser.name}
+              onConsent={handleConsentClick}
+            />
+          </div>
+        )}
+
+        {selectedConversation.status === 'awaiting_consent' && (
+          <div className="mb-8">
+            <PhotoConsentPrompt
+              conversation={selectedConversation}
+              currentUserId={currentUser.id}
+              otherUserName={otherUser.name}
+              onConsent={handleConsentClick}
+            />
+          </div>
+        )}
+
+        {selectedConversation.status === 'photos_unlocked' && (
+          <div className="bg-[#111611] rounded-2xl border border-[#D9FF3D]/30 p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">🎉</span>
+            </div>
+            <h3 className="font-display text-xl text-[#F6FFF2] mb-2">
+              Photos unlocked!
+            </h3>
+            <p className="text-[#A9B5AA] text-sm">
+              You can now see each other's photos. Continue the conversation!
+            </p>
+          </div>
+        )}
+
+        {/* Action Button */}
+        {(selectedConversation.status === 'pending_response' || hasResponse) && selectedConversation.status !== 'photos_unlocked' && (
+          <div className="flex gap-4 mt-8">
+            {selectedConversation.status === 'pending_response' && (
+              <button
+                onClick={() => setShowResponseModal(true)}
+                className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Send Response
+              </button>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Response Modal */}
+      <ResponseModal
+        isOpen={showResponseModal}
+        senderUser={otherUser}
+        originalMessage={initialMessage}
+        onClose={() => setShowResponseModal(false)}
+        onSubmit={handleResponseSubmit}
+      />
+
+      {/* Report User Modal */}
+      <ReportUserModal
+        isOpen={showReportModal}
+        reportedUser={otherUser}
+        conversationId={selectedConversation.conversationId}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={async (reason, details) => {
+          await reportUser(otherUser.id, reason, details, selectedConversation.conversationId);
+          if (reason === 'underage' || reason === 'safety-concern') {
+            blockUser(otherUser.id, reason);
+          }
+          setShowReportModal(false);
+        }}
+      />
+    </div>
+  );
+};
+
+export default ConversationSection;

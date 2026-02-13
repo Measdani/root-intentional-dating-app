@@ -12,11 +12,14 @@ import GrowthSection from '@/sections/GrowthSection';
 import MembershipSection from '@/sections/MembershipSection';
 import BrowseSection from '@/sections/BrowseSection';
 import ProfileDetailSection from '@/sections/ProfileDetailSection';
+import InboxSection from '@/sections/InboxSection';
+import ConversationSection from '@/sections/ConversationSection';
 import GrowthModeSection from '@/sections/GrowthModeSection';
 import AdminLoginSection from '@/sections/AdminLoginSection';
 import AdminLayout from '@/components/AdminLayout';
 import AdminUsersSection from '@/sections/AdminUsersSection';
 import AdminDashboardSection from '@/sections/AdminDashboardSection';
+import AdminReportsSection from '@/sections/AdminReportsSection';
 import AdminAssessmentsSection from '@/sections/AdminAssessmentsSection';
 import AdminContentSection from '@/sections/AdminContentSection';
 import UserLoginSection from '@/sections/UserLoginSection';
@@ -44,6 +47,8 @@ const AppContent: React.FC = () => {
             return <AdminDashboardSection />;
           case 'admin-users':
             return <AdminUsersSection />;
+          case 'admin-reports':
+            return <AdminReportsSection />;
           case 'admin-assessments':
             return <AdminAssessmentsSection />;
           case 'admin-content':
@@ -65,6 +70,10 @@ const AppContent: React.FC = () => {
         return <BrowseSection />;
       case 'profile':
         return <ProfileDetailSection />;
+      case 'inbox':
+        return <InboxSection />;
+      case 'conversation':
+        return <ConversationSection />;
       case 'growth-mode':
         return <GrowthModeSection />;
       case 'landing':

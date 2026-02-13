@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   Users,
+  Flag,
   ClipboardCheck,
   FileText,
   Settings,
@@ -27,6 +28,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navItems = [
     { id: 'admin-dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'admin-users', label: 'Users', icon: Users },
+    { id: 'admin-reports', label: 'Reports', icon: Flag },
     { id: 'admin-assessments', label: 'Assessments', icon: ClipboardCheck },
     { id: 'admin-content', label: 'Content', icon: FileText },
     { id: 'admin-settings', label: 'Settings', icon: Settings },
