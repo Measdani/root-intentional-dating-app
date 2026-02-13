@@ -52,7 +52,10 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
           Ready to Reveal?
         </h3>
         <p className="text-[#A9B5AA] text-sm mb-4">
-          You've both shared meaningful messages with 120+ characters. Now you can both agree to reveal your photos to get to know each other better.
+          {conversation.fromUserId === currentUserId
+            ? `You started the conversation with ${otherUserName}. They've responded thoughtfully. Ready to see each other's photos?`
+            : `${otherUserName} started the conversation with you. You've both shared meaningful messages. Ready to see each other's photos?`
+          }
         </p>
         <p className="text-xs text-[#D9FF3D] bg-[#D9FF3D]/10 rounded-lg px-3 py-2 inline-block">
           ⚠️ Photos only unlock when BOTH of you click "Yes"
