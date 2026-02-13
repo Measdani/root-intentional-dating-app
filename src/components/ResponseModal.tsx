@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import type { User } from '@/types';
+import type { User, ConversationMessage } from '@/types';
 import { X, Check, MessageCircle, Loader2 } from 'lucide-react';
 
-interface ExpressInterestModalProps {
+interface ResponseModalProps {
   isOpen: boolean;
-  targetUser: User | null;
+  senderUser: User | null;
+  originalMessage: ConversationMessage | null;
   onClose: () => void;
   onSubmit: (message: string) => void;
 }
 
-const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
+const ResponseModal: React.FC<ResponseModalProps> = ({
   isOpen,
-  targetUser,
+  senderUser,
+  originalMessage,
   onClose,
   onSubmit,
 }) => {
@@ -20,7 +22,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  if (!isOpen || !targetUser) return null;
+  if (!isOpen || !senderUser || !originalMessage) return null;
 
   const messageLength = message.length;
   const minLength = 120;
@@ -42,7 +44,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
     onSubmit(message);
 
     // Show success toast
-    toast.success(`Your message was sent to ${targetUser.name}! Their photos are now visible.`);
+    toast.success(`Your response was sent to ${senderUser.name}!`);
 
     // Close after showing success
     setTimeout(() => {
@@ -54,7 +56,6 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
 
   const handleClose = () => {
     if (!isSubmitting && !isSuccess) {
-      // Could add confirmation dialog here if message has content
       onClose();
       setMessage('');
       setIsSuccess(false);
@@ -82,9 +83,9 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
             <div className="w-16 h-16 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-[#D9FF3D]" />
             </div>
-            <h3 className="font-display text-2xl text-[#F6FFF2] mb-2">Photos Unlocked!</h3>
+            <h3 className="font-display text-2xl text-[#F6FFF2] mb-2">Message Sent!</h3>
             <p className="text-[#A9B5AA] text-sm">
-              Your message was sent to {targetUser.name}
+              Your response was sent to {senderUser.name}
             </p>
           </div>
         ) : (
@@ -94,29 +95,37 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
               <div className="flex justify-center mb-4">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D9FF3D] to-[#a8cc2d] flex items-center justify-center flex-shrink-0">
                   <span className="text-[#0B0F0C] font-display text-2xl">
-                    {targetUser.name[0]}
+                    {senderUser.name[0]}
                   </span>
                 </div>
               </div>
               <h3 className="font-display text-2xl text-[#F6FFF2] mb-1">
-                Express Interest to {targetUser.name}
+                Reply to {senderUser.name}
               </h3>
               <p className="text-[#A9B5AA] text-sm">
-                {targetUser.age} • {targetUser.city}
+                {senderUser.age} • {senderUser.city}
               </p>
-              {targetUser.alignmentScore && (
+              {senderUser.alignmentScore && (
                 <div className="mt-3 flex items-center justify-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-[#D9FF3D]" />
-                  <span className="text-[#D9FF3D] font-medium">{targetUser.alignmentScore}% Alignment</span>
+                  <span className="text-[#D9FF3D] font-medium">{senderUser.alignmentScore}% Alignment</span>
                 </div>
               )}
+            </div>
+
+            {/* Original Message */}
+            <div className="mb-6 p-4 bg-[#0B0F0C]/50 rounded-xl border border-[#1A211A]">
+              <p className="text-xs text-[#A9B5AA] mb-2 uppercase tracking-wider">Their Message</p>
+              <p className="text-[#F6FFF2] text-sm leading-relaxed">
+                {originalMessage.message}
+              </p>
             </div>
 
             {/* Message Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm text-[#F6FFF2] mb-3 font-medium">
-                  This profile values intention. Share a meaningful introduction to continue.
+                  Share a thoughtful response to continue the conversation.
                 </label>
                 <div className="bg-[#0B0F0C]/50 rounded-lg px-3 py-2 mb-3 border border-[#D9FF3D]/20">
                   <p className="text-xs text-[#D9FF3D] flex items-start gap-2">
@@ -126,16 +135,16 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                     </span>
                   </p>
                 </div>
-                {targetUser.alignmentScore && (
+                {senderUser.alignmentScore && (
                   <p className="text-xs text-[#D9FF3D] mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#D9FF3D]" />
-                    You share {targetUser.alignmentScore}% alignment — lead with that.
+                    You share {senderUser.alignmentScore}% alignment — lean into that.
                   </p>
                 )}
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value.slice(0, maxLength))}
-                  placeholder="Tell them what stood out to you and why..."
+                  placeholder="What would you like to say in response..."
                   className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] placeholder:text-[#A9B5AA]/50 focus:outline-none focus:border-[#D9FF3D] transition-colors resize-none"
                   rows={6}
                 />
@@ -148,7 +157,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                     <>
                       <div className="w-2 h-2 rounded-full bg-red-500" />
                       <span className="text-red-400">
-                        Minimum 120 characters — meaningful introductions only.
+                        Minimum 120 characters — meaningful responses only.
                       </span>
                     </>
                   ) : (
@@ -177,7 +186,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                 ) : (
                   <>
                     <MessageCircle className="w-4 h-4" />
-                    Send Introduction
+                    Send Response
                   </>
                 )}
               </button>
@@ -185,7 +194,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
 
             {/* Helper Text */}
             <p className="text-center text-[#A9B5AA]/50 text-xs mt-4">
-              Be genuine and authentic. Good messages increase your chances of connecting.
+              Be genuine and authentic. Good conversations build real connections.
             </p>
           </>
         )}
@@ -194,4 +203,4 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
   );
 };
 
-export default ExpressInterestModal;
+export default ResponseModal;
