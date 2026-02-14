@@ -157,9 +157,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // StorageEvent doesn't fire in same tab, so we need to manually reload
   useEffect(() => {
     try {
+      console.log('useEffect triggered: reloading interactions for user', currentUser.id);
       const saved = localStorage.getItem('rooted_shared_interactions');
+      console.log('Retrieved from localStorage:', saved);
       if (saved) {
-        setInteractions(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        console.log('Parsed interactions:', parsed);
+        setInteractions(parsed);
+        console.log('✅ Interactions reloaded for user', currentUser.id);
+      } else {
+        console.log('No interactions found in localStorage for user', currentUser.id);
       }
     } catch (error) {
       console.error('Failed to reload interactions on user change:', error);
