@@ -16,6 +16,7 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
   onConsent,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [deferred, setDeferred] = useState(false);
   const currentUserConsented = conversation.photoConsent.fromUser.userId === currentUserId
     ? conversation.photoConsent.fromUser.hasConsented
     : conversation.photoConsent.toUser.hasConsented;
@@ -63,7 +64,7 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
       </div>
 
       {/* Buttons */}
-      {!currentUserConsented ? (
+      {!currentUserConsented && !deferred ? (
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <button
             onClick={() => {
@@ -76,12 +77,25 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
             Yes, let's connect
           </button>
           <button
+            onClick={() => setDeferred(true)}
             className="flex-1 py-3.5 bg-[#1A211A] text-[#F6FFF2] rounded-xl font-medium hover:bg-[#2A312A] transition-colors"
           >
             Not yet
           </button>
         </div>
       ) : null}
+
+      {deferred && !currentUserConsented && (
+        <div className="mb-6 p-4 bg-[#0B0F0C] rounded-xl border border-[#1A211A] text-center">
+          <p className="text-[#A9B5AA] text-sm mb-2">No problem! You can change your mind anytime.</p>
+          <button
+            onClick={() => setDeferred(false)}
+            className="text-[#D9FF3D] text-sm hover:underline transition-colors"
+          >
+            Ready now?
+          </button>
+        </div>
+      )}
 
       {/* Consent Status - Clear visual representation */}
       <div className="space-y-2 bg-[#0B0F0C]/50 rounded-xl p-4">
