@@ -74,25 +74,25 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
             disabled={isLoading}
             className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100"
           >
-            Yes, let's connect
+            Yes — Reveal together
           </button>
           <button
             onClick={() => setDeferred(true)}
             className="flex-1 py-3.5 bg-[#1A211A] text-[#F6FFF2] rounded-xl font-medium hover:bg-[#2A312A] transition-colors"
           >
-            Not yet
+            Keep building connection
           </button>
         </div>
       ) : null}
 
       {deferred && !currentUserConsented && (
         <div className="mb-6 p-4 bg-[#0B0F0C] rounded-xl border border-[#1A211A] text-center">
-          <p className="text-[#A9B5AA] text-sm mb-2">No problem! You can change your mind anytime.</p>
+          <p className="text-[#A9B5AA] text-sm mb-2">That's totally fine. Let's build the connection first.</p>
           <button
             onClick={() => setDeferred(false)}
             className="text-[#D9FF3D] text-sm hover:underline transition-colors"
           >
-            Ready now?
+            Change your mind?
           </button>
         </div>
       )}
@@ -110,7 +110,7 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
             {deferred && !currentUserConsented && <Check className="w-3 h-3 text-[#0B0F0C]" />}
           </div>
           <span className="text-[#F6FFF2] text-sm font-medium">
-            You: {currentUserConsented ? '✓ Ready to reveal' : deferred ? '✓ Thinking it over' : 'Not yet ready'}
+            You: {currentUserConsented ? '✓ Ready to reveal' : deferred ? '✓ Building connection first' : 'Deciding...'}
           </span>
         </div>
 
