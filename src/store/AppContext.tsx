@@ -334,19 +334,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [getConversation]);
 
   const needsResponse = useCallback((userId: string): boolean => {
-    const conversation = interactions.receivedInterests[userId];
-    return conversation?.status === 'pending_response';
-  }, [interactions.receivedInterests]);
+    // Check if there's a conversation where currentUser is the recipient and needs to respond
+    const conversation = getConversation(userId);
+    return conversation?.toUserId === currentUser.id && conversation?.status === 'pending_response';
+  }, [currentUser.id, getConversation]);
 
   const getReceivedInterests = useCallback((): UserInteraction[] => {
-    return Object.values(interactions.receivedInterests);
-  }, [interactions.receivedInterests]);
+    // Get all conversations and filter for ones where currentUser is the recipient
+    const allInteractions = [
+      ...Object.values(interactions.sentInterests),
+      ...Object.values(interactions.receivedInterests),
+    ];
+    const uniqueConversations = Array.from(new Map(
+      allInteractions.map(i => [i.conversationId, i])
+    ).values());
+    return uniqueConversations.filter(i => i.toUserId === currentUser.id);
+  }, [currentUser.id, interactions]);
 
   const getUnreadCount = useCallback((): number => {
-    return Object.values(interactions.receivedInterests).filter(
+    const receivedInterests = getReceivedInterests();
+    return receivedInterests.filter(
       conv => conv.status === 'pending_response'
     ).length;
-  }, [interactions.receivedInterests]);
+  }, [getReceivedInterests]);
 
   const saveAssessmentDate = useCallback(() => {
     try {
