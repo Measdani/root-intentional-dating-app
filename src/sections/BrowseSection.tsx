@@ -232,7 +232,9 @@ const BrowseSection: React.FC = () => {
                     className="flex-1 py-2.5 bg-[#F6FFF2] text-[#0B0F0C] rounded-full text-sm font-medium hover:bg-[#D9FF3D] transition-colors flex items-center justify-center gap-2"
                   >
                     <Eye className="w-4 h-4" />
-                    {conversation && conversation.status === 'pending_response' ? 'Waiting...' : 'View Profile'}
+                    {conversation && conversation.status === 'pending_response'
+                      ? (conversation.fromUserId === currentUser.id ? 'Waiting...' : 'Respond')
+                      : 'View Profile'}
                   </button>
                   <button className="w-10 h-10 rounded-full border border-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:border-[#D9FF3D] hover:text-[#D9FF3D] transition-colors">
                     <Heart className="w-4 h-4" />
