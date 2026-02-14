@@ -6,7 +6,7 @@ import { calculateAlignmentScore } from '@/data/users';
 import type { User } from '@/types';
 
 const BrowseSection: React.FC = () => {
-  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest } = useApp();
+  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
@@ -126,7 +126,10 @@ const BrowseSection: React.FC = () => {
       {/* Profiles Grid */}
       <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredUsers.map((user, idx) => (
+          {filteredUsers.map((user, idx) => {
+            const conversation = getConversation(user.id);
+
+            return (
             <div
               key={user.id}
               className="bg-[#111611] rounded-[24px] border border-[#1A211A] overflow-hidden hover:border-[#D9FF3D]/30 transition-all duration-300 group"
@@ -135,9 +138,16 @@ const BrowseSection: React.FC = () => {
               {/* Card Header */}
               <div className="p-5 relative">
                 {/* Interest Sent Badge */}
-                {hasExpressedInterest(user.id) && (
+                {hasExpressedInterest(user.id) && !conversation && (
                   <div className="absolute top-3 left-3 z-10">
                     <Badge className="bg-green-600 text-white">Interest Sent</Badge>
+                  </div>
+                )}
+
+                {/* Waiting for Response Badge */}
+                {conversation && conversation.status === 'pending_response' && (
+                  <div className="absolute top-3 left-3 z-10">
+                    <Badge className="bg-amber-600 text-white">Waiting for response</Badge>
                   </div>
                 )}
 
@@ -222,7 +232,7 @@ const BrowseSection: React.FC = () => {
                     className="flex-1 py-2.5 bg-[#F6FFF2] text-[#0B0F0C] rounded-full text-sm font-medium hover:bg-[#D9FF3D] transition-colors flex items-center justify-center gap-2"
                   >
                     <Eye className="w-4 h-4" />
-                    View Profile
+                    {conversation && conversation.status === 'pending_response' ? 'Waiting...' : 'View Profile'}
                   </button>
                   <button className="w-10 h-10 rounded-full border border-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:border-[#D9FF3D] hover:text-[#D9FF3D] transition-colors">
                     <Heart className="w-4 h-4" />
@@ -230,7 +240,8 @@ const BrowseSection: React.FC = () => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {filteredUsers.length === 0 && (
