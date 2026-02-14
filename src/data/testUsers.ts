@@ -6,6 +6,7 @@ export const testUsers = [
     name: 'Maya Chen',
     age: 28,
     city: 'San Francisco',
+    gender: 'female' as const,
     bio: 'Adventure seeker and artist',
     partnershipIntent: 'marriage' as const,
     familyAlignment: {
@@ -27,6 +28,7 @@ export const testUsers = [
     name: 'Alex Rivera',
     age: 30,
     city: 'Denver',
+    gender: 'male' as const,
     bio: 'Entrepreneur focused on personal growth and meaningful connections',
     partnershipIntent: 'marriage' as const,
     familyAlignment: {
@@ -48,6 +50,7 @@ export const testUsers = [
     name: 'James Wilson',
     age: 32,
     city: 'Austin',
+    gender: 'male' as const,
     bio: 'Tech enthusiast',
     partnershipIntent: 'long-term' as const,
     familyAlignment: {

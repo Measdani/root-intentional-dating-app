@@ -6,6 +6,7 @@ export const sampleUsers: User[] = [
     name: 'Maya',
     age: 31,
     city: 'Portland, OR',
+    gender: 'female',
     partnershipIntent: 'marriage',
     familyAlignment: {
       hasChildren: false,
@@ -25,6 +26,7 @@ export const sampleUsers: User[] = [
     name: 'James',
     age: 34,
     city: 'Denver, CO',
+    gender: 'male',
     partnershipIntent: 'life-partnership',
     familyAlignment: {
       hasChildren: true,
@@ -44,6 +46,7 @@ export const sampleUsers: User[] = [
     name: 'Sofia',
     age: 29,
     city: 'Austin, TX',
+    gender: 'female',
     partnershipIntent: 'long-term',
     familyAlignment: {
       hasChildren: false,
@@ -63,6 +66,7 @@ export const sampleUsers: User[] = [
     name: 'David',
     age: 37,
     city: 'Seattle, WA',
+    gender: 'male',
     partnershipIntent: 'marriage',
     familyAlignment: {
       hasChildren: false,
@@ -82,6 +86,7 @@ export const sampleUsers: User[] = [
     name: 'Rachel',
     age: 33,
     city: 'Minneapolis, MN',
+    gender: 'female',
     partnershipIntent: 'life-partnership',
     familyAlignment: {
       hasChildren: true,
@@ -101,6 +106,7 @@ export const sampleUsers: User[] = [
     name: 'Marcus',
     age: 30,
     city: 'Chicago, IL',
+    gender: 'male',
     partnershipIntent: 'long-term',
     familyAlignment: {
       hasChildren: false,
@@ -120,6 +126,7 @@ export const sampleUsers: User[] = [
     name: 'Alex',
     age: 32,
     city: 'San Francisco, CA',
+    gender: 'male',
     partnershipIntent: 'marriage',
     familyAlignment: {
       hasChildren: false,

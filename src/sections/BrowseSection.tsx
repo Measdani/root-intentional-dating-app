@@ -27,6 +27,9 @@ const BrowseSection: React.FC = () => {
   const filteredUsers = usersWithUpdatedScores.filter(user => {
     // Exclude current user from browse list
     if (user.id === currentUser.id) return false;
+    // Show only opposite gender
+    const oppositeGender = currentUser.gender === 'male' ? 'female' : 'male';
+    if (user.gender !== oppositeGender) return false;
     if (selectedFilter === 'high') return (user.alignmentScore || 0) >= 90;
     if (selectedFilter === 'wants-children') return user.familyAlignment.wantsChildren === 'wants';
     if (selectedFilter === 'no-children') return !user.familyAlignment.hasChildren;

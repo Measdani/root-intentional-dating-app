@@ -3,6 +3,7 @@ export interface User {
   name: string;
   age: number;
   city: string;
+  gender: 'male' | 'female';
   partnershipIntent: 'marriage' | 'long-term' | 'life-partnership';
   familyAlignment: {
     hasChildren: boolean;

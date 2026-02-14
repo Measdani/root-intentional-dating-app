@@ -5,13 +5,24 @@ import { ArrowLeft, MessageCircle, Check, Clock, Flag } from 'lucide-react';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const InboxSection: React.FC = () => {
-  const { setCurrentView, getReceivedInterests, interactions, users, setSelectedConversation, reportUser, blockUser } = useApp();
+  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, reportUser, blockUser } = useApp();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingUser, setReportingUser] = useState<User | null>(null);
 
-  const receivedInterests = getReceivedInterests();
-  const sentInterests = Object.values(interactions.sentInterests);
+  // Determine sent vs received based on currentUser dynamically
+  const allInteractions = [
+    ...Object.values(interactions.sentInterests),
+    ...Object.values(interactions.receivedInterests),
+  ];
+
+  // Filter unique conversations and classify as sent/received based on currentUser
+  const uniqueConversations = Array.from(new Map(
+    allInteractions.map(i => [i.conversationId, i])
+  ).values());
+
+  const sentInterests = uniqueConversations.filter(i => i.fromUserId === currentUser.id);
+  const receivedInterests = uniqueConversations.filter(i => i.toUserId === currentUser.id);
 
   const displayedInterests = activeTab === 'received' ? receivedInterests : sentInterests;
 
