@@ -210,8 +210,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const respondToInterest = useCallback((fromUserId: string, message: string) => {
     setInteractions(prev => {
-      // Try to find conversation in receivedInterests first, then sentInterests
-      let baseInteraction = prev.receivedInterests[fromUserId] || prev.sentInterests[fromUserId];
+      // Find the conversation with this user (could be keyed by either user ID)
+      let baseInteraction =
+        prev.receivedInterests[fromUserId] ||
+        prev.sentInterests[fromUserId] ||
+        // Search all interactions if not found by simple key
+        Object.values(prev.receivedInterests).find(i => i.fromUserId === fromUserId || i.toUserId === fromUserId) ||
+        Object.values(prev.sentInterests).find(i => i.fromUserId === fromUserId || i.toUserId === fromUserId);
+
       if (!baseInteraction) return prev;
 
       const responseMessage: ConversationMessage = {
