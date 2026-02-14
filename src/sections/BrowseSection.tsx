@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal, Lock, Mail } from 'lucide-react';
+import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal, Lock, Mail, LogOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@/types';
 
@@ -28,6 +28,11 @@ const BrowseSection: React.FC = () => {
   const handleViewProfile = (user: User) => {
     setSelectedUser(user);
     setCurrentView('profile');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('currentUser');
+    setCurrentView('landing');
   };
 
   return (
@@ -70,6 +75,13 @@ const BrowseSection: React.FC = () => {
             >
               <SlidersHorizontal className="w-4 h-4" />
               Filter
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-sm text-[#A9B5AA] hover:text-red-400 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
