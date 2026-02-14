@@ -36,12 +36,15 @@ const InboxSection: React.FC = () => {
 
   const displayedInterests = activeTab === 'received' ? receivedInterests : sentInterests;
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, interest: any) => {
+    // Check if current user is the one who sent the initial message
+    const userSentIt = interest.fromUserId === currentUser.id;
+
     switch (status) {
       case 'pending_response':
         return {
-          label: 'Respond',
-          color: 'bg-blue-600 text-white',
+          label: userSentIt ? 'Waiting for response' : 'Respond',
+          color: userSentIt ? 'bg-amber-600 text-white' : 'bg-blue-600 text-white',
           icon: MessageCircle,
         };
       case 'both_messaged':
@@ -167,7 +170,7 @@ const InboxSection: React.FC = () => {
               const otherUser = getOtherUser(interest);
               if (!otherUser) return null;
 
-              const badge = getStatusBadge(interest.status);
+              const badge = getStatusBadge(interest.status, interest);
               const BadgeIcon = badge.icon;
               const firstMessage = interest.messages[0];
 
