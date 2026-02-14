@@ -199,8 +199,8 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {/* Continue Message Button - Show when conversation is active (both_messaged or later) */}
-        {(selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent' || selectedConversation.status === 'photos_unlocked') && (
+        {/* Continue Message Button - Show when in both_messaged or after photos unlocked */}
+        {(selectedConversation.status === 'both_messaged' || selectedConversation.status === 'photos_unlocked') && (
           <div className="flex gap-4 mt-8">
             <button
               onClick={() => setShowResponseModal(true)}
