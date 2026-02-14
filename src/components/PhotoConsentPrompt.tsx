@@ -105,11 +105,12 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
 
         {/* Your Status */}
         <div className="flex items-center gap-2">
-          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${currentUserConsented ? 'bg-[#D9FF3D]' : 'bg-[#1A211A]'}`}>
+          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${currentUserConsented || deferred ? 'bg-[#D9FF3D]' : 'bg-[#1A211A]'}`}>
             {currentUserConsented && <Check className="w-3 h-3 text-[#0B0F0C]" />}
+            {deferred && !currentUserConsented && <Check className="w-3 h-3 text-[#0B0F0C]" />}
           </div>
           <span className="text-[#F6FFF2] text-sm font-medium">
-            You: {currentUserConsented ? '✓ Ready to reveal' : 'Not yet ready'}
+            You: {currentUserConsented ? '✓ Ready to reveal' : deferred ? '✓ Thinking it over' : 'Not yet ready'}
           </span>
         </div>
 
