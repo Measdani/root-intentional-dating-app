@@ -217,6 +217,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     console.log('newInteraction created:', newInteraction);
+    console.log('About to call setInteractions...');
 
     setInteractions(prev => {
       console.log('setInteractions callback called with prev:', prev);
