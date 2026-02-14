@@ -55,7 +55,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedConversation, setSelectedConversation] = useState<UserInteraction | null>(null);
 
   // Check localStorage for logged-in user (from demo login), otherwise use default
-  const [currentUser] = useState<User>(() => {
+  // Use state + effect to make it reactive when user logs in/out
+  const [currentUser, setCurrentUserState] = useState<User>(() => {
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
@@ -66,6 +67,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return defaultUser;
   });
+
+  // Update currentUser when localStorage changes (on login/logout)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          setCurrentUserState(JSON.parse(savedUser) as User);
+        } else {
+          setCurrentUserState(defaultUser);
+        }
+      } catch (error) {
+        console.error('Failed to update user from localStorage:', error);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const [users] = useState<User[]>(sampleUsers);
   const [hasJoinedList, setHasJoinedList] = useState(false);
