@@ -45,7 +45,7 @@ const BrowseSection: React.FC = () => {
     localStorage.removeItem('currentUser');
     // Dispatch custom event to trigger AppContext to revert to default user
     window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
-    setCurrentView('landing');
+    setCurrentView('user-login');
   };
 
   return (
