@@ -122,13 +122,13 @@ const ConversationSection: React.FC = () => {
                 className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-xs px-4 py-3 rounded-2xl ${
+                  className={`max-w-md px-4 py-3 rounded-2xl ${
                     isCurrentUser
                       ? 'bg-[#D9FF3D] text-[#0B0F0C]'
                       : 'bg-[#1A211A] text-[#F6FFF2]'
                   }`}
                 >
-                  <p className="text-sm leading-relaxed">{msg.message}</p>
+                  <p className="text-sm leading-relaxed break-words">{msg.message}</p>
                   <p className={`text-xs mt-2 opacity-70 ${isCurrentUser ? 'text-[#0B0F0C]' : 'text-[#A9B5AA]'}`}>
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -186,7 +186,7 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {/* Action Button - Only show Send Response if current user didn't initiate */}
+        {/* Action Button - Only show Respond if current user didn't initiate */}
         {selectedConversation.status === 'pending_response' && selectedConversation.fromUserId !== currentUser.id && (
           <div className="flex gap-4 mt-8">
             <button
@@ -194,7 +194,20 @@ const ConversationSection: React.FC = () => {
               className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
             >
               <MessageCircle className="w-4 h-4" />
-              Send Response
+              Respond
+            </button>
+          </div>
+        )}
+
+        {/* Continue Message Button - Show when conversation is active (both_messaged or later) */}
+        {(selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent' || selectedConversation.status === 'photos_unlocked') && (
+          <div className="flex gap-4 mt-8">
+            <button
+              onClick={() => setShowResponseModal(true)}
+              className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Continue Message
             </button>
           </div>
         )}

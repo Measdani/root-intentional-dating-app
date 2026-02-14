@@ -17,6 +17,33 @@ const ProfileDetailSection: React.FC = () => {
 
   const handleExpressInterest = (message: string) => {
     expressInterest(selectedUser.id, message);
+    // Close modal and navigate to conversation view
+    setShowModal(false);
+    // Create conversation object to navigate to it
+    const conversationId = `conv_${[currentUser.id, selectedUser.id].sort().join('_')}`;
+    const newConversation = {
+      fromUserId: currentUser.id,
+      toUserId: selectedUser.id,
+      conversationId,
+      messages: [{
+        id: `msg_${Date.now()}`,
+        fromUserId: currentUser.id,
+        toUserId: selectedUser.id,
+        message,
+        timestamp: Date.now(),
+        messageType: 'initial' as const,
+      }],
+      photoConsent: {
+        fromUser: { userId: currentUser.id, hasConsented: false },
+        toUser: { userId: selectedUser.id, hasConsented: false },
+      },
+      photosUnlocked: false,
+      status: 'pending_response' as const,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    setSelectedConversation(newConversation);
+    setCurrentView('conversation');
   };
 
   const handleViewConversation = () => {
