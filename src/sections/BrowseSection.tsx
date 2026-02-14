@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal, Lock, Mail, LogOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { calculateAlignmentScore } from '@/data/users';
 import type { User } from '@/types';
 
 const BrowseSection: React.FC = () => {
@@ -16,7 +17,14 @@ const BrowseSection: React.FC = () => {
     { id: 'no-children', label: 'No Children' },
   ];
 
-  const filteredUsers = users.filter(user => {
+  // Recalculate alignment scores based on current user
+  const usersWithUpdatedScores = users.map(user => ({
+    ...user,
+    alignmentScore: user.id === currentUser.id ? user.alignmentScore :
+      calculateAlignmentScore(currentUser, user)
+  })).sort((a, b) => (b.alignmentScore || 0) - (a.alignmentScore || 0));
+
+  const filteredUsers = usersWithUpdatedScores.filter(user => {
     // Exclude current user from browse list
     if (user.id === currentUser.id) return false;
     if (selectedFilter === 'high') return (user.alignmentScore || 0) >= 90;
