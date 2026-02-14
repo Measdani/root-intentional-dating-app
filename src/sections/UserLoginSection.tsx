@@ -31,6 +31,12 @@ const UserLoginSection: React.FC = () => {
       }
 
       localStorage.setItem('currentUser', JSON.stringify(user));
+      // Trigger custom event so AppContext knows to update currentUser
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'currentUser',
+        newValue: JSON.stringify(user),
+        oldValue: null,
+      }));
       toast.success(`Welcome back, ${user.name}!`);
 
       if (user.assessmentPassed) {
@@ -47,6 +53,12 @@ const UserLoginSection: React.FC = () => {
     const user = testUsers.find(u => u.email === userEmail);
     if (user) {
       localStorage.setItem('currentUser', JSON.stringify(user));
+      // Trigger custom event so AppContext knows to update currentUser
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'currentUser',
+        newValue: JSON.stringify(user),
+        oldValue: null,
+      }));
       toast.success(`Welcome, ${user.name}!`);
       if (user.assessmentPassed) {
         setCurrentView('browse');
