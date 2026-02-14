@@ -312,13 +312,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // NOTE: Auto-consent simulation removed. Other user must manually click "Yes" to unlock photos.
   }, [currentUser.id]);
 
-  const hasExpressedInterest = useCallback((userId: string): boolean => {
-    return userId in interactions.sentInterests;
-  }, [interactions.sentInterests]);
-
   const getConversation = useCallback((userId: string): UserInteraction | null => {
     return interactions.sentInterests[userId] || interactions.receivedInterests[userId] || null;
   }, [interactions]);
+
+  const hasExpressedInterest = useCallback((userId: string): boolean => {
+    // Check if current user initiated the conversation with this user
+    const conversation = getConversation(userId);
+    return conversation?.fromUserId === currentUser.id;
+  }, [currentUser.id, getConversation]);
 
   const arePhotosUnlocked = useCallback((userId: string): boolean => {
     if (userId === currentUser.id) return true;
