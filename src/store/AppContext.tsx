@@ -83,8 +83,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
+    // Listen for both storage events (from other tabs) and custom user-login event (same tab)
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('user-login', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('user-login', handleStorageChange);
+    };
   }, []);
 
   const [users] = useState<User[]>(sampleUsers);
