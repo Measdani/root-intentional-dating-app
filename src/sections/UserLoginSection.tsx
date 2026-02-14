@@ -156,10 +156,10 @@ const UserLoginSection: React.FC = () => {
               ✓ Alex (Passed Assessment)
             </Button>
             <Button
-              onClick={() => handleDemoLogin('james@test.com')}
-              className="w-full bg-orange-600/20 text-orange-300 border border-orange-500/30 hover:bg-orange-600/30"
+              onClick={() => handleDemoLogin('rachel@test.com')}
+              className="w-full bg-green-600/20 text-green-300 border border-green-500/30 hover:bg-green-600/30"
             >
-              ✗ James (Needs Growth)
+              ✓ Rachel (Passed Assessment)
             </Button>
           </div>
 
