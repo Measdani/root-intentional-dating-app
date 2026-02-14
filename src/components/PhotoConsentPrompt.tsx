@@ -33,10 +33,10 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
           <Sparkles className="w-8 h-8 text-[#D9FF3D]" />
         </div>
         <h3 className="font-display text-2xl text-[#F6FFF2] mb-2">
-          Photos Unlocked! 📸
+          Connected! 🎉
         </h3>
         <p className="text-[#A9B5AA] text-sm">
-          You can now see each other's photos. Enjoy getting to know one another!
+          You can now see each other's photos. Continue building something meaningful together.
         </p>
       </div>
     );
@@ -49,12 +49,12 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
           <MessageSquare className="w-8 h-8 text-[#D9FF3D]" />
         </div>
         <h3 className="font-display text-xl text-[#F6FFF2] mb-3">
-          Ready to Reveal?
+          Show Your True Self
         </h3>
         <p className="text-[#A9B5AA] text-sm mb-4">
           {conversation.fromUserId === currentUserId
-            ? `You started the conversation with ${otherUserName}. They've responded thoughtfully. Ready to see each other's photos?`
-            : `${otherUserName} started the conversation with you. You've both shared meaningful messages. Ready to see each other's photos?`
+            ? `${otherUserName} has engaged thoughtfully with you. You've both shown you're serious about connecting. Ready to see each other?`
+            : `You've both shared meaningful messages and real intentions. ${otherUserName} is ready to see who you are. Ready to show them?`
           }
         </p>
         <p className="text-xs text-[#D9FF3D] bg-[#D9FF3D]/10 rounded-lg px-3 py-2 inline-block">
@@ -73,12 +73,12 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
             disabled={isLoading}
             className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100"
           >
-            Yes, reveal my photos
+            Yes, let's connect
           </button>
           <button
             className="flex-1 py-3.5 bg-[#1A211A] text-[#F6FFF2] rounded-xl font-medium hover:bg-[#2A312A] transition-colors"
           >
-            Keep photos private
+            Not yet
           </button>
         </div>
       ) : null}
