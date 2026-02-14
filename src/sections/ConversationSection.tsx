@@ -139,7 +139,7 @@ const ConversationSection: React.FC = () => {
         </div>
 
         {/* Status-based rendering */}
-        {selectedConversation.status === 'pending_response' && (
+        {selectedConversation.status === 'pending_response' && selectedConversation.fromUserId === currentUser.id && (
           <div className="bg-[#111611] rounded-2xl border border-[#1A211A] p-8 text-center">
             <p className="text-[#A9B5AA] mb-6">Waiting for their response...</p>
             <div className="inline-flex items-center gap-1">
@@ -186,8 +186,8 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {/* Action Button - Only show Send Response before they reply */}
-        {selectedConversation.status === 'pending_response' && (
+        {/* Action Button - Only show Send Response if current user didn't initiate */}
+        {selectedConversation.status === 'pending_response' && selectedConversation.fromUserId !== currentUser.id && (
           <div className="flex gap-4 mt-8">
             <button
               onClick={() => setShowResponseModal(true)}
