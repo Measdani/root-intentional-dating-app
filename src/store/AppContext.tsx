@@ -218,6 +218,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ...prev.sentInterests,
           [toUserId]: newInteraction,
         },
+        receivedInterests: {
+          ...prev.receivedInterests,
+          [currentUser.id]: newInteraction,
+        },
       };
       console.log('setInteractions new state:', updated);
       return updated;
