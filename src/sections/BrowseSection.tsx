@@ -6,7 +6,7 @@ import { calculateAlignmentScore } from '@/data/users';
 import type { User } from '@/types';
 
 const BrowseSection: React.FC = () => {
-  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation } = useApp();
+  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, setSelectedConversation } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
@@ -36,9 +36,16 @@ const BrowseSection: React.FC = () => {
     return true;
   });
 
-  const handleViewProfile = (user: User) => {
-    setSelectedUser(user);
-    setCurrentView('profile');
+  const handleBrowseAction = (user: User, conversation: any) => {
+    if (conversation && conversation.status === 'pending_response') {
+      // Show conversation view for both "Waiting..." and "Respond"
+      setSelectedConversation(conversation);
+      setCurrentView('conversation');
+    } else {
+      // Show profile detail for "View Profile"
+      setSelectedUser(user);
+      setCurrentView('profile');
+    }
   };
 
   const handleLogout = () => {
@@ -128,6 +135,7 @@ const BrowseSection: React.FC = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUsers.map((user, idx) => {
             const conversation = getConversation(user.id);
+            console.log(`Browse-${user.name}(${user.id}):`, conversation ? '✅ FOUND' : '❌ NULL');
 
             return (
             <div
@@ -228,7 +236,7 @@ const BrowseSection: React.FC = () => {
                 {/* Actions */}
                 <div className="flex gap-3">
                   <button
-                    onClick={() => handleViewProfile(user)}
+                    onClick={() => handleBrowseAction(user, conversation)}
                     className="flex-1 py-2.5 bg-[#F6FFF2] text-[#0B0F0C] rounded-full text-sm font-medium hover:bg-[#D9FF3D] transition-colors flex items-center justify-center gap-2"
                   >
                     <Eye className="w-4 h-4" />
