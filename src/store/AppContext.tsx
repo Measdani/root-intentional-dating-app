@@ -143,6 +143,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [blockedUsers]);
 
+  // Reload interactions when currentUser changes (for user login/logout)
+  // StorageEvent doesn't fire in same tab, so we need to manually reload
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('rooted_shared_interactions');
+      if (saved) {
+        setInteractions(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Failed to reload interactions on user change:', error);
+    }
+  }, [currentUser.id]);
+
   const addAssessmentAnswer = useCallback((questionId: string, score: number, redFlag?: boolean) => {
     setAssessmentAnswers(prev => [...prev, { questionId, score, redFlag }]);
   }, []);
