@@ -127,10 +127,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Save interactions to shared localStorage so all users can see messages
   useEffect(() => {
+    console.log('Save interactions useEffect triggered with:', interactions);
     try {
-      localStorage.setItem('rooted_shared_interactions', JSON.stringify(interactions));
+      console.log('Stringifying interactions...');
+      const json = JSON.stringify(interactions);
+      console.log('Successfully stringified. JSON length:', json.length);
+      console.log('Calling localStorage.setItem...');
+      localStorage.setItem('rooted_shared_interactions', json);
+      console.log('✅ Interactions saved successfully to localStorage');
+      console.log('Saved JSON:', json);
     } catch (error) {
-      console.error('Failed to save interactions:', error);
+      console.error('❌ Failed to save interactions:', error);
+      console.error('Error type:', error instanceof Error ? error.name : typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Interactions object:', interactions);
     }
   }, [interactions]);
 
@@ -169,6 +179,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // All messaging and consent decisions are now controlled by users only
 
   const expressInterest = useCallback((toUserId: string, message: string) => {
+    console.log('expressInterest called:', { toUserId, message, currentUserId: currentUser.id });
+
     const conversationId = `conv_${currentUser.id}_${toUserId}_${Date.now()}`;
     const messageId = `msg_${Date.now()}`;
 
@@ -196,13 +208,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updatedAt: Date.now(),
     };
 
-    setInteractions(prev => ({
-      ...prev,
-      sentInterests: {
-        ...prev.sentInterests,
-        [toUserId]: newInteraction,
-      },
-    }));
+    console.log('newInteraction created:', newInteraction);
+
+    setInteractions(prev => {
+      console.log('setInteractions callback called with prev:', prev);
+      const updated = {
+        ...prev,
+        sentInterests: {
+          ...prev.sentInterests,
+          [toUserId]: newInteraction,
+        },
+      };
+      console.log('setInteractions new state:', updated);
+      return updated;
+    });
 
     // NOTE: Auto-response feature disabled to allow natural conversation flow
     // Users should reply manually without system auto-generating responses
