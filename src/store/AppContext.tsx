@@ -188,7 +188,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const expressInterest = useCallback((toUserId: string, message: string) => {
     console.log('expressInterest called:', { toUserId, message, currentUserId: currentUser.id });
 
-    const conversationId = `conv_${currentUser.id}_${toUserId}_${Date.now()}`;
+    // Create deterministic conversationId using sorted user pair so both users share same thread
+    const conversationId = `conv_${[currentUser.id, toUserId].sort().join('_')}`;
     const messageId = `msg_${Date.now()}`;
 
     const initialMessage: ConversationMessage = {
