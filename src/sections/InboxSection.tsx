@@ -16,13 +16,23 @@ const InboxSection: React.FC = () => {
     ...Object.values(interactions.receivedInterests),
   ];
 
+  console.log('InboxSection - currentUser:', currentUser.id);
+  console.log('InboxSection - interactions.sentInterests:', interactions.sentInterests);
+  console.log('InboxSection - interactions.receivedInterests:', interactions.receivedInterests);
+  console.log('InboxSection - allInteractions:', allInteractions);
+
   // Filter unique conversations and classify as sent/received based on currentUser
   const uniqueConversations = Array.from(new Map(
     allInteractions.map(i => [i.conversationId, i])
   ).values());
 
+  console.log('InboxSection - uniqueConversations:', uniqueConversations);
+
   const sentInterests = uniqueConversations.filter(i => i.fromUserId === currentUser.id);
   const receivedInterests = uniqueConversations.filter(i => i.toUserId === currentUser.id);
+
+  console.log('InboxSection - sentInterests (filtered):', sentInterests);
+  console.log('InboxSection - receivedInterests (filtered):', receivedInterests);
 
   const displayedInterests = activeTab === 'received' ? receivedInterests : sentInterests;
 
