@@ -361,6 +361,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     });
 
+    // Update selectedConversation if it matches the conversation being updated
+    setSelectedConversation(prev => {
+      if (!prev || prev.conversationId !== conversationId) return prev;
+
+      const updatedConsent = {
+        fromUser: {
+          ...prev.photoConsent.fromUser,
+          hasConsented: prev.photoConsent.fromUser.userId === currentUser.id
+            ? true
+            : prev.photoConsent.fromUser.hasConsented,
+          consentTimestamp: prev.photoConsent.fromUser.userId === currentUser.id
+            ? Date.now()
+            : prev.photoConsent.fromUser.consentTimestamp,
+        },
+        toUser: {
+          ...prev.photoConsent.toUser,
+          hasConsented: prev.photoConsent.toUser.userId === currentUser.id
+            ? true
+            : prev.photoConsent.toUser.hasConsented,
+          consentTimestamp: prev.photoConsent.toUser.userId === currentUser.id
+            ? Date.now()
+            : prev.photoConsent.toUser.consentTimestamp,
+        },
+      };
+
+      const bothConsented = updatedConsent.fromUser.hasConsented && updatedConsent.toUser.hasConsented;
+
+      return {
+        ...prev,
+        photoConsent: updatedConsent,
+        photosUnlocked: bothConsented,
+        status: bothConsented ? 'photos_unlocked' : 'awaiting_consent',
+        updatedAt: Date.now(),
+      };
+    });
+
     // NOTE: Auto-consent simulation removed. Other user must manually click "Yes" to unlock photos.
   }, [currentUser.id]);
 
