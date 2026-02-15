@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Clock, Sparkles, MessageSquare } from 'lucide-react';
+import { Check, Clock, MessageSquare } from 'lucide-react';
 import type { UserInteraction } from '@/types';
 
 interface PhotoConsentPromptProps {
@@ -30,22 +30,6 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
     : conversation.photoConsent.fromUser.hasConsented;
 
   const bothConsented = currentUserConsented && otherUserConsented;
-
-  if (bothConsented) {
-    return (
-      <div className="bg-[#111611] rounded-2xl border border-[#D9FF3D]/30 p-8 text-center">
-        <div className="w-16 h-16 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center mx-auto mb-4">
-          <Sparkles className="w-8 h-8 text-[#D9FF3D]" />
-        </div>
-        <h3 className="font-display text-2xl text-[#F6FFF2] mb-2">
-          Connected! 🎉
-        </h3>
-        <p className="text-[#A9B5AA] text-sm">
-          You can now see each other's photos. Continue building something meaningful together.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-[#111611] rounded-2xl border border-[#1A211A] p-8">
