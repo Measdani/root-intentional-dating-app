@@ -34,10 +34,12 @@ const GrowthModeSection: React.FC = () => {
     g6: 40,
   });
 
-  // Filter users who haven't passed assessment (growth-mode pool)
+  // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   const growthModeUsers = useMemo(() => {
-    return users.filter(u => !u.assessmentPassed && u.id !== currentUser.id);
-  }, [users, currentUser.id]);
+    return users.filter(
+      u => !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender
+    );
+  }, [users, currentUser.id, currentUser.gender]);
 
   // Map categories to icons
   const getCategoryIcon = (category: string) => {
@@ -272,10 +274,10 @@ const GrowthModeSection: React.FC = () => {
 
             {(() => {
               const receivedInterests = getReceivedInterests();
-              // Filter to only growth-mode matches
+              // Filter to only growth-mode matches (opposite gender)
               const growthModeMatches = receivedInterests
                 .map(interest => users.find(u => u.id === interest.fromUserId))
-                .filter((u) => u && !u.assessmentPassed && u.id !== currentUser.id);
+                .filter((u) => u && !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender);
 
               return growthModeMatches.length > 0 ? (
                 <div className="space-y-4">
