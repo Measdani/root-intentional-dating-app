@@ -346,7 +346,7 @@ const ConversationSection: React.FC = () => {
                   </li>
                   <li className="flex gap-2">
                     <span>•</span>
-                    <span>Screenshot this conversation</span>
+                    <span>Screenshot the conversation between you and the person you're meeting</span>
                   </li>
                 </ul>
               </div>
@@ -356,7 +356,7 @@ const ConversationSection: React.FC = () => {
               onClick={() => setShowSafetyModal(false)}
               className="w-full py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
             >
-              ✔ Got it
+              Got it
             </button>
           </div>
         </div>
