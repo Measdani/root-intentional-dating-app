@@ -199,7 +199,7 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent' || selectedConversation.status === 'photos_unlocked') && (
+        {shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent' || (selectedConversation.status === 'photos_unlocked' && !showCongrats)) && (
           <div className="mb-8">
             <PhotoConsentPrompt
               conversation={selectedConversation}
