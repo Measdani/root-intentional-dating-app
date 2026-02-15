@@ -339,11 +339,12 @@ const ProfileDetailSection: React.FC = () => {
         reportedUser={selectedUser}
         onClose={() => setShowReportModal(false)}
         onSubmit={async (reason, details) => {
+          setShowReportModal(false);
           await reportUser(selectedUser.id, reason, details);
           if (reason === 'underage' || reason === 'safety-concern') {
             blockUser(selectedUser.id, reason);
           }
-          setShowReportModal(false);
+          // Show the success message screen
           setReportSubmitted(true);
         }}
       />
