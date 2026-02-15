@@ -200,7 +200,6 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
                   <span className="text-xs font-medium text-[#D9FF3D]">PRIORITY SUPPORT</span>
                 </div>
               )}
-            </div>
 
             {/* Support Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
