@@ -14,15 +14,20 @@ const ProfileDetailSection: React.FC = () => {
   // Redirect if trying to view a blocked user's profile
   if (isUserBlocked(selectedUser.id)) {
     return (
-      <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-[#A9B5AA] mb-4">This user is no longer available.</p>
+      <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <h2 className="font-display text-2xl text-[#F6FFF2] mb-4">Report Submitted</h2>
+          <div className="space-y-4 text-[#A9B5AA] mb-6">
+            <p>Thank you for your report. We take all reports seriously and will review this promptly.</p>
+            <p>The reported user is no longer in your search history or able to contact you.</p>
+            <p>If you need further assistance or have additional information, please reach out to support.</p>
+          </div>
           <button
             onClick={() => {
               setSelectedUser(null);
               setCurrentView('browse');
             }}
-            className="text-[#D9FF3D] hover:underline transition-colors"
+            className="w-full py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform"
           >
             Back to browse
           </button>
