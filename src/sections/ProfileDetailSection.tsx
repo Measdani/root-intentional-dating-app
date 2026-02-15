@@ -341,9 +341,8 @@ const ProfileDetailSection: React.FC = () => {
         onSubmit={async (reason, details) => {
           setShowReportModal(false);
           await reportUser(selectedUser.id, reason, details);
-          if (reason === 'underage' || reason === 'safety-concern') {
-            blockUser(selectedUser.id, reason);
-          }
+          // Block user from browse for any report reason
+          blockUser(selectedUser.id, reason);
           // Show the success message screen
           setReportSubmitted(true);
         }}
