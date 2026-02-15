@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { ArrowLeft, BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X } from 'lucide-react';
 
 const GrowthModeSection: React.FC = () => {
-  const { assessmentResult, setCurrentView, resetAssessment } = useApp();
+  const { assessmentResult, setCurrentView, resetAssessment, currentUser } = useApp();
+  const [dismissNotification, setDismissNotification] = useState(false);
   const [activeResource, setActiveResource] = useState<string | null>(null);
 
   const handleRetake = () => {
@@ -38,6 +39,27 @@ const GrowthModeSection: React.FC = () => {
           <div className="w-16" />
         </div>
       </header>
+
+      {/* Account Status Notification */}
+      {currentUser.userStatus === 'needs-growth' && !dismissNotification && (
+        <div className="bg-orange-600/20 border-t border-orange-500/30">
+          <div className="max-w-4xl mx-auto px-6 py-4 flex items-start gap-4">
+            <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-orange-300 font-semibold mb-1">Account Status: Growth Mode</h3>
+              <p className="text-orange-200/80 text-sm">
+                Your account has transitioned to Growth Mode. You must complete one of the learning paths below before you can resume browsing and matching. This is an opportunity to strengthen your relationship foundation.
+              </p>
+            </div>
+            <button
+              onClick={() => setDismissNotification(true)}
+              className="flex-shrink-0 text-orange-300 hover:text-orange-200 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-10">

@@ -155,6 +155,7 @@ export const sampleUsers: User[] = [
     photoUrl: 'https://i.pravatar.cc/300?u=alex&img=7',
     membershipTier: 'annual',
     email: 'alex@example.com',
+    userStatus: 'needs-growth',
   },
 ];
 
