@@ -60,7 +60,7 @@ const HeroSection: React.FC = () => {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
             >
-              ROOTED
+              ROOTED HEARTS
             </h1>
             <p
               className={`text-[clamp(16px,2vw,24px)] text-[#A9B5AA] max-w-md mx-auto mb-10 transition-all duration-700 delay-500 ${
