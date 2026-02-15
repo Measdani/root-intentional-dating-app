@@ -199,23 +199,7 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {shouldShowPrompt && selectedConversation.status === 'both_messaged' && (
-          <div className="mb-8">
-            <PhotoConsentPrompt
-              conversation={selectedConversation}
-              currentUserId={currentUser.id}
-              otherUserName={otherUser.name}
-              onConsent={handleConsentClick}
-              onChoiceMade={() => {
-                setShowConsentPrompt(false);
-                setHasUserMadeChoice(true);
-              }}
-              onWithdraw={handleWithdrawConsent}
-            />
-          </div>
-        )}
-
-        {shouldShowPrompt && selectedConversation.status === 'awaiting_consent' && (
+        {shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent' || selectedConversation.status === 'photos_unlocked') && (
           <div className="mb-8">
             <PhotoConsentPrompt
               conversation={selectedConversation}
