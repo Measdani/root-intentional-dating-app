@@ -7,6 +7,10 @@ const GrowthModeSection: React.FC = () => {
   const { assessmentResult, setCurrentView, resetAssessment, currentUser } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
   const [activeResource, setActiveResource] = useState<string | null>(null);
+  const [resources] = useState(() => {
+    const saved = localStorage.getItem('growth-resources');
+    return saved ? JSON.parse(saved) : growthResources;
+  });
   const [pathProgress] = useState<Record<string, number>>({
     g1: 75,
     g2: 100,
@@ -229,7 +233,7 @@ const GrowthModeSection: React.FC = () => {
           <h3 className="font-mono-label text-[#F6FFF2] mb-2">Complete 2 Paths in 6 Months to Re-enter Matchmaking</h3>
           <p className="text-[#A9B5AA] text-sm mb-6">Work through these guided resources at your own pace to develop essential skills for lasting connections.</p>
           <div className="grid md:grid-cols-2 gap-4">
-            {growthResources.map((resource) => {
+            {resources.map((resource: any) => {
               const status = getPathStatus(resource.id);
               const progress = pathProgress[resource.id] || 0;
               const isCompleted = progress === 100;

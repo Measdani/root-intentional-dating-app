@@ -10,13 +10,21 @@ import { growthResources, membershipTiers } from '@/data/assessment';
 import type { GrowthResource } from '@/types';
 
 const AdminContentSection: React.FC = () => {
-  const [resources, setResources] = useState<GrowthResource[]>(growthResources);
+  const [resources, setResources] = useState<GrowthResource[]>(() => {
+    const saved = localStorage.getItem('growth-resources');
+    return saved ? JSON.parse(saved) : growthResources;
+  });
   const [tiers] = useState(membershipTiers);
   const [showForm, setShowForm] = useState(false);
   const [selectedResource, setSelectedResource] = useState<GrowthResource | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<GrowthResource>>({});
   const [newOutcome, setNewOutcome] = useState('');
+
+  // Save resources to localStorage whenever they change
+  React.useEffect(() => {
+    localStorage.setItem('growth-resources', JSON.stringify(resources));
+  }, [resources]);
 
   const handleAddNew = () => {
     setFormData({
