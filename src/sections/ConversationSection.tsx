@@ -6,7 +6,7 @@ import ResponseModal from '@/components/ResponseModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const ConversationSection: React.FC = () => {
-  const { selectedConversation, setCurrentView, respondToInterest, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser } = useApp();
+  const { selectedConversation, setCurrentView, respondToInterest, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked } = useApp();
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
@@ -59,6 +59,23 @@ const ConversationSection: React.FC = () => {
       <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center">
         <div className="text-center">
           <p className="text-[#A9B5AA]">User not found</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Prevent viewing conversations with blocked users
+  if (isUserBlocked(otherUserId)) {
+    return (
+      <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[#A9B5AA] mb-4">This conversation is no longer available.</p>
+          <button
+            onClick={() => setCurrentView('inbox')}
+            className="text-[#D9FF3D] hover:underline transition-colors"
+          >
+            Back to inbox
+          </button>
         </div>
       </div>
     );

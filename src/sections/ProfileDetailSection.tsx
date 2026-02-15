@@ -5,11 +5,31 @@ import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const ProfileDetailSection: React.FC = () => {
-  const { selectedUser, currentUser, setCurrentView, setSelectedUser, setSelectedConversation, expressInterest, arePhotosUnlocked, getConversation, reportUser, blockUser } = useApp();
+  const { selectedUser, currentUser, setCurrentView, setSelectedUser, setSelectedConversation, expressInterest, arePhotosUnlocked, getConversation, reportUser, blockUser, isUserBlocked } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
   if (!selectedUser) return null;
+
+  // Redirect if trying to view a blocked user's profile
+  if (isUserBlocked(selectedUser.id)) {
+    return (
+      <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[#A9B5AA] mb-4">This user is no longer available.</p>
+          <button
+            onClick={() => {
+              setSelectedUser(null);
+              setCurrentView('browse');
+            }}
+            className="text-[#D9FF3D] hover:underline transition-colors"
+          >
+            Back to browse
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const sharedValues = selectedUser.values.filter(v => currentUser.values.includes(v));
   const photosUnlocked = arePhotosUnlocked(selectedUser.id);
