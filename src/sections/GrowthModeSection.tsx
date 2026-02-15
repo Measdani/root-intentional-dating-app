@@ -176,8 +176,8 @@ const GrowthModeSection: React.FC = () => {
 
         {/* Growth Resources */}
         <div className="mb-12">
-          <h3 className="font-mono-label text-[#F6FFF2] mb-2">Complete One Path Below to Re-enter Matchmaking</h3>
-          <p className="text-[#A9B5AA] text-sm mb-6">These guided resources help you develop practical skills. Work through at your own pace.</p>
+          <h3 className="font-mono-label text-[#F6FFF2] mb-2">Complete 2 Paths in 6 Months to Re-enter Matchmaking</h3>
+          <p className="text-[#A9B5AA] text-sm mb-6">Work through these guided resources at your own pace to develop essential skills for lasting connections.</p>
           <div className="grid md:grid-cols-2 gap-4">
             {growthResources.map((resource) => (
               <div
