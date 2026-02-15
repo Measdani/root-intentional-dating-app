@@ -20,6 +20,7 @@ const GrowthModeSection: React.FC = () => {
   const [dismissNotification, setDismissNotification] = useState(false);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources'>('browse');
+  const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
   const [resources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
@@ -214,7 +215,8 @@ const GrowthModeSection: React.FC = () => {
                 {growthModeUsers.map((user) => (
                   <div
                     key={user.id}
-                    className="bg-[#111611] rounded-[20px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors group"
+                    onClick={() => setSelectedProfileUser(user)}
+                    className="bg-[#111611] rounded-[20px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors group cursor-pointer"
                   >
                     <div className="mb-4">
                       <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
@@ -237,7 +239,10 @@ const GrowthModeSection: React.FC = () => {
                     </div>
 
                     <button
-                      onClick={() => expressInterest(user.id, '')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        expressInterest(user.id, '');
+                      }}
                       className="w-full py-2 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors flex items-center justify-center gap-2 group-hover:gap-3"
                     >
                       Express Interest
@@ -540,6 +545,99 @@ const GrowthModeSection: React.FC = () => {
         modules={selectedResourceForModal?.modules || []}
         onClose={() => setSelectedResourceForModal(null)}
       />
+
+      {/* Profile Modal */}
+      {selectedProfileUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-[#0B0F0C]/80 backdrop-blur-sm"
+            onClick={() => setSelectedProfileUser(null)}
+          />
+
+          {/* Profile Card */}
+          <div className="relative bg-[#111611] rounded-[28px] border border-[#1A211A] p-8 w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in">
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedProfileUser(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Profile Header */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-display text-[#F6FFF2] mb-2">
+                {selectedProfileUser.name}, {selectedProfileUser.age}
+              </h2>
+              <p className="text-[#A9B5AA] text-sm mb-3">{selectedProfileUser.city}</p>
+              <span className="text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded inline-block">
+                Growth Mode
+              </span>
+            </div>
+
+            {/* Bio */}
+            <div className="mb-6">
+              <p className="text-sm text-[#F6FFF2] font-medium mb-2">About</p>
+              <p className="text-[#A9B5AA] text-sm leading-relaxed">{selectedProfileUser.bio}</p>
+            </div>
+
+            {/* Values */}
+            <div className="mb-6">
+              <p className="text-sm text-[#F6FFF2] font-medium mb-3">Values</p>
+              <div className="flex flex-wrap gap-2">
+                {selectedProfileUser.values?.map((value: string, idx: number) => (
+                  <span key={idx} className="text-xs bg-[#1A211A] text-[#A9B5AA] px-3 py-1 rounded">
+                    {value}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Growth Focus */}
+            <div className="mb-6">
+              <p className="text-sm text-[#F6FFF2] font-medium mb-2">Growth Focus</p>
+              <p className="text-[#A9B5AA] text-sm">{selectedProfileUser.growthFocus}</p>
+            </div>
+
+            {/* Communication Style */}
+            <div className="mb-6">
+              <p className="text-sm text-[#F6FFF2] font-medium mb-2">Communication Style</p>
+              <p className="text-[#A9B5AA] text-sm">{selectedProfileUser.communicationStyle}</p>
+            </div>
+
+            {/* Relationship Vision */}
+            <div className="mb-6">
+              <p className="text-sm text-[#F6FFF2] font-medium mb-2">Relationship Vision</p>
+              <p className="text-[#A9B5AA] text-sm">{selectedProfileUser.relationshipVision}</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3 pt-6 border-t border-[#1A211A]">
+              <button
+                onClick={() => {
+                  setSelectedUser(selectedProfileUser);
+                  setCurrentView('conversation');
+                  setSelectedProfileUser(null);
+                }}
+                className="w-full py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:bg-[#E8FF66] transition-colors flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Send Message
+              </button>
+              <button
+                onClick={() => {
+                  // TODO: Implement report functionality
+                  setSelectedProfileUser(null);
+                }}
+                className="w-full py-3 bg-[#1A211A] text-[#A9B5AA] rounded-lg font-medium hover:text-[#F6FFF2] transition-colors"
+              >
+                Report User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
