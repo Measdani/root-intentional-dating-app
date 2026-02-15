@@ -54,7 +54,7 @@ const BackgroundCheckModal: React.FC<BackgroundCheckModalProps> = ({
       <div className="absolute inset-0 bg-[#0B0F0C]/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-[#111611] rounded-[28px] border border-[#1A211A] p-8 w-full max-w-md animate-scale-in">
+      <div className="relative bg-[#111611] rounded-[28px] border border-[#1A211A] p-8 w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in">
         {/* Close Button */}
         {step === 'intro' && (
           <button
