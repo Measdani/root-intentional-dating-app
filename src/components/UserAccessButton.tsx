@@ -11,6 +11,8 @@ const UserAccessButton: React.FC = () => {
     const user = localStorage.getItem('currentUser');
     if (user) {
       setCurrentUser(JSON.parse(user));
+    } else {
+      setCurrentUser(null);
     }
   }, [currentView]);
 
