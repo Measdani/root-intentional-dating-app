@@ -10,6 +10,7 @@ const ConversationSection: React.FC = () => {
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showConsentPrompt, setShowConsentPrompt] = useState(true);
+  const [hasUserMadeChoice, setHasUserMadeChoice] = useState(false);
 
   if (!selectedConversation) {
     return (
@@ -49,6 +50,7 @@ const ConversationSection: React.FC = () => {
 
   const handleWithdrawConsent = () => {
     withdrawPhotoConsent(selectedConversation.conversationId);
+    setHasUserMadeChoice(true);
   };
 
   // Get the first (initial) message
@@ -59,9 +61,9 @@ const ConversationSection: React.FC = () => {
     ? selectedConversation.photoConsent.fromUser.hasConsented
     : selectedConversation.photoConsent.toUser.hasConsented;
 
-  // Only show prompt if they haven't consented yet
-  // (Once they make a choice, don't show it again unless they click Photo Consent button)
-  const shouldShowPrompt = showConsentPrompt && !currentUserConsented;
+  // Only show prompt if they haven't made ANY choice yet (not consented and not deferred)
+  // (Once they click "Yes", "Keep building", or "Withdraw", don't show it again unless they click Photo Consent button)
+  const shouldShowPrompt = showConsentPrompt && !currentUserConsented && !hasUserMadeChoice;
 
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
@@ -88,7 +90,10 @@ const ConversationSection: React.FC = () => {
           <div className="flex items-center gap-3">
             {!shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && (
               <button
-                onClick={() => setShowConsentPrompt(true)}
+                onClick={() => {
+                  setShowConsentPrompt(true);
+                  setHasUserMadeChoice(false);
+                }}
                 className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
                 title="Photo Consent"
               >
@@ -182,7 +187,10 @@ const ConversationSection: React.FC = () => {
               currentUserId={currentUser.id}
               otherUserName={otherUser.name}
               onConsent={handleConsentClick}
-              onChoiceMade={() => setShowConsentPrompt(false)}
+              onChoiceMade={() => {
+                setShowConsentPrompt(false);
+                setHasUserMadeChoice(true);
+              }}
               onWithdraw={handleWithdrawConsent}
             />
           </div>
@@ -195,7 +203,10 @@ const ConversationSection: React.FC = () => {
               currentUserId={currentUser.id}
               otherUserName={otherUser.name}
               onConsent={handleConsentClick}
-              onChoiceMade={() => setShowConsentPrompt(false)}
+              onChoiceMade={() => {
+                setShowConsentPrompt(false);
+                setHasUserMadeChoice(true);
+              }}
               onWithdraw={handleWithdrawConsent}
             />
           </div>
@@ -229,7 +240,7 @@ const ConversationSection: React.FC = () => {
         )}
 
         {/* Continue Message Button - Show after user makes photo consent choice or after photos unlocked */}
-        {((selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && !showConsentPrompt) || selectedConversation.status === 'photos_unlocked' ? (
+        {((selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && hasUserMadeChoice) || selectedConversation.status === 'photos_unlocked' ? (
           <div className="flex gap-4 mt-8">
             <button
               onClick={() => setShowResponseModal(true)}
