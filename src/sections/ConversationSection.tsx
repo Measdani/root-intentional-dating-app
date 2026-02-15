@@ -73,14 +73,9 @@ const ConversationSection: React.FC = () => {
   // Get the first (initial) message
   const initialMessage = selectedConversation.messages[0];
 
-  // Check if current user has already consented
-  const currentUserConsented = selectedConversation.photoConsent.fromUser.userId === currentUser.id
-    ? selectedConversation.photoConsent.fromUser.hasConsented
-    : selectedConversation.photoConsent.toUser.hasConsented;
-
-  // Only show prompt if they haven't made ANY choice yet (not consented and not deferred)
-  // (Once they click "Yes", "Keep building", or "Withdraw", don't show it again unless they click Photo Consent button)
-  const shouldShowPrompt = showConsentPrompt && !currentUserConsented && !hasUserMadeChoice;
+  // Show prompt if showConsentPrompt is true AND they haven't made a choice
+  // (Clicking Photo Consent resets hasUserMadeChoice to false, which reopens the prompt)
+  const shouldShowPrompt = showConsentPrompt && !hasUserMadeChoice;
 
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
