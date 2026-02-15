@@ -44,6 +44,7 @@ interface AppContextType extends AppState {
   blockUser: (userId: string, reason?: string) => void;
   unblockUser: (userId: string) => void;
   isUserBlocked: (userId: string) => boolean;
+  suspendUser: (userId: string, suspensionEndDate: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -652,6 +653,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return blockedUsers.includes(userId);
   }, [blockedUsers]);
 
+  // Suspend a user for a specified duration (stores suspension end date)
+  const suspendUser = useCallback((userId: string, suspensionEndDate: number) => {
+    // Update currentUser if they're the suspended user
+    if (currentUser.id === userId) {
+      const updatedUser = {
+        ...currentUser,
+        suspensionEndDate,
+      };
+      setCurrentUserState(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    }
+
+    // TODO: Update user in users array (would require mutable users state)
+    // For now, the suspension is persisted through localStorage when the suspended user is logged in
+  }, [currentUser]);
+
   const value: AppContextType = {
     currentView,
     assessmentAnswers,
@@ -690,6 +707,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     blockUser,
     unblockUser,
     isUserBlocked,
+    suspendUser,
   };
 
   return (

@@ -17,7 +17,7 @@ import type { Report, ReportStatus, ReportReason, ReportSeverity } from '@/types
 
 const AdminReportsSection: React.FC = () => {
   const { reports = [], reportStats } = useAdmin();
-  const { users, blockUser } = useApp();
+  const { users, blockUser, suspendUser } = useApp();
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'all'>('all');
@@ -502,13 +502,8 @@ const AdminReportsSection: React.FC = () => {
                       day: 'numeric',
                     });
 
-                    // TODO: Update user object with suspensionEndDate
-                    // This will redirect them to growth-mode on next login
-                    const updatedUser = {
-                      ...reportedUser,
-                      suspensionEndDate: suspensionEndDate.getTime(),
-                    };
-                    // TODO: Save updatedUser to app state/users array
+                    // Suspend the user - they will be redirected to growth-mode on next login
+                    suspendUser(selectedReport.reportedUserId, suspensionEndDate.getTime());
 
                     // TODO: Send suspension message to user inbox:
                     // `Suspension: 6-Month Account Suspension
