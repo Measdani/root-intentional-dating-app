@@ -114,6 +114,9 @@ const ConversationSection: React.FC = () => {
                   setShowConsentPrompt(true);
                   setHasUserMadeChoice(false);
                   setShowCongrats(false);
+                  if (selectedConversation) {
+                    localStorage.setItem(`congrats_shown_${currentUser.id}_${selectedConversation.conversationId}`, 'true');
+                  }
                 }}
                 className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
                 title="Photo Consent"
