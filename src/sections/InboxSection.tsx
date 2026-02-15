@@ -105,7 +105,15 @@ const InboxSection: React.FC = () => {
           </button>
 
           <div className="text-center">
-            <h1 className="font-display text-xl text-[#F6FFF2]">Inbox</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="font-display text-xl text-[#F6FFF2]">Inbox</h1>
+              {getUnreadNotifications().length > 0 && (
+                <div className="relative flex items-center">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                  <div className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-pulse opacity-75" />
+                </div>
+              )}
+            </div>
           </div>
 
           <button
