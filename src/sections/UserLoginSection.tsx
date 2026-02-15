@@ -85,7 +85,7 @@ const UserLoginSection: React.FC = () => {
         <div className="p-8 space-y-6">
           <div className="space-y-2 text-center">
             <h1 className="text-3xl font-display font-bold text-[#F6FFF2]">
-              Welcome to Rooted
+              Welcome to Rooted Hearts
             </h1>
             <p className="text-sm text-[#A9B5AA]">
               Sign in to browse profiles

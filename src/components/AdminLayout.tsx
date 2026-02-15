@@ -56,7 +56,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         {/* Sidebar header */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-[#1A211A]">
           <h1 className="text-lg font-display font-bold text-[#D9FF3D]">
-            Rooted
+            Rooted Hearts
           </h1>
           <button
             onClick={() => setSidebarOpen(false)}

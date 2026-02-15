@@ -131,7 +131,7 @@ const MembershipSection: React.FC = () => {
 
           <div className="mt-8 pt-6 border-t border-[#0B0F0C]/10 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-[#0B0F0C]/40 text-xs">
-              © 2026 Rooted. All rights reserved.
+              © 2026 Rooted Hearts. All rights reserved.
             </p>
             <div className="flex items-center gap-2 text-[#0B0F0C]/40 text-xs">
               <Sparkles className="w-3 h-3" />

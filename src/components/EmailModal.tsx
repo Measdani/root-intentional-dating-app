@@ -115,7 +115,7 @@ const EmailModal: React.FC = () => {
             </form>
 
             <p className="text-center text-[#A9B5AA]/50 text-xs mt-4">
-              By joining, you agree to receive updates about Rooted.
+              By joining, you agree to receive updates about Rooted Hearts.
             </p>
           </>
         )}

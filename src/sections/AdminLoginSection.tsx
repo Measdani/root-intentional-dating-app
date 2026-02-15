@@ -48,7 +48,7 @@ const AdminLoginSection: React.FC = () => {
               Admin Panel
             </h1>
             <p className="text-sm text-[#A9B5AA]">
-              Sign in to manage the Rooted platform
+              Sign in to manage the Rooted Hearts platform
             </p>
           </div>
 
@@ -70,13 +70,13 @@ const AdminLoginSection: React.FC = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@rooted.app"
+                placeholder="admin@rootedhearts.app"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-[#0B0F0C] border-[#1A211A] text-[#F6FFF2] placeholder-[#A9B5AA]/50"
               />
               <p className="text-xs text-[#A9B5AA]">
-                Try: sarah@rooted.app, marcus@rooted.app, or emma@rooted.app
+                Try: sarah@rootedhearts.app, marcus@rootedhearts.app, or emma@rootedhearts.app
               </p>
             </div>
 
