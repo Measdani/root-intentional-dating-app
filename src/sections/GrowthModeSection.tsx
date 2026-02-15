@@ -220,12 +220,14 @@ const GrowthModeSection: React.FC = () => {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={handleRetake}
-            className="btn-primary"
-          >
-            Retake Assessment
-          </button>
+          {currentUser.userStatus === 'needs-growth' && (
+            <button
+              onClick={handleRetake}
+              className="btn-primary"
+            >
+              Retake Assessment
+            </button>
+          )}
           <button
             onClick={() => setCurrentView('landing')}
             className="btn-outline"
