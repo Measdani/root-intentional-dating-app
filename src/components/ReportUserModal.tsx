@@ -35,7 +35,7 @@ const REPORT_REASONS: { value: ReportReason; label: string; description: string 
   {
     value: 'safety-concern',
     label: 'Safety Concern',
-    description: 'Immediate safety threat or dangerous behavior',
+    description: 'Threats of harm, stalking, coercion, or behavior that makes you feel unsafe',
   },
   {
     value: 'hateful-conduct',
@@ -44,8 +44,8 @@ const REPORT_REASONS: { value: ReportReason; label: string; description: string 
   },
   {
     value: 'underage',
-    label: 'Underage User',
-    description: 'User appears to be under 18 years old',
+    label: 'Age Misrepresentation',
+    description: 'This user may be misrepresenting their age or appears under platform requirements',
   },
   {
     value: 'other',
@@ -133,9 +133,14 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
               <Check className="w-8 h-8 text-[#D9FF3D]" />
             </div>
             <h3 className="font-display text-2xl text-[#F6FFF2] mb-2">Report Submitted</h3>
-            <p className="text-[#A9B5AA] text-sm">
+            <p className="text-[#A9B5AA] text-sm mb-3">
               Thank you for helping keep our community safe. We'll review your report.
             </p>
+            {shouldBlock && (
+              <div className="p-3 bg-[#0B0F0C]/50 rounded-lg border border-[#1A211A] text-xs text-[#A9B5AA]">
+                ✓ {reportedUser.name} has been blocked. You won't receive messages from them.
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -246,6 +251,27 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
                   <label htmlFor="block-user" className="text-sm text-[#A9B5AA] cursor-pointer flex-1">
                     Block this user so they can't contact me
                   </label>
+                </div>
+              )}
+
+              {/* What Happens Next */}
+              {selectedReason && (
+                <div className="p-4 bg-[#0B0F0C] rounded-lg border border-[#1A211A]">
+                  <h4 className="text-sm font-medium text-[#F6FFF2] mb-2">What Happens Next</h4>
+                  <ul className="text-xs text-[#A9B5AA] space-y-1.5">
+                    <li className="flex gap-2">
+                      <span className="text-[#D9FF3D]">•</span>
+                      <span>Our team will review your report within 24-48 hours</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-[#D9FF3D]">•</span>
+                      <span>You will not receive any personal update about this user</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-[#D9FF3D]">•</span>
+                      <span>If this is a safety emergency, contact local authorities immediately</span>
+                    </li>
+                  </ul>
                 </div>
               )}
 
