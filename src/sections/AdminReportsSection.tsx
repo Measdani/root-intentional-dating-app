@@ -16,7 +16,7 @@ import {
 import type { Report, ReportStatus, ReportReason, ReportSeverity } from '@/types';
 
 const AdminReportsSection: React.FC = () => {
-  const { reports = [], reportStats } = useAdmin();
+  const { reports = [], reportStats, updateReportStatus } = useAdmin();
   const { users, suspendUser, removeUser, addNotification } = useApp();
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
@@ -414,7 +414,7 @@ const AdminReportsSection: React.FC = () => {
               <div className="border-t border-[#1A211A] pt-4 flex gap-3">
                 <button
                   onClick={() => {
-                    // TODO: Update report status to 'under-review' in AdminContext
+                    updateReportStatus(selectedReport.id, 'under-review');
                     toast.success('Report marked as under review');
                   }}
                   className="flex-1 py-2 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:scale-[1.02] transition-transform"
@@ -473,6 +473,7 @@ const AdminReportsSection: React.FC = () => {
                 {/* Tier 1: Warning */}
                 <button
                   onClick={() => {
+                    updateReportStatus(selectedReport.id, 'resolved');
                     addNotification(
                       'warning',
                       'First Violation: Warning',
@@ -501,6 +502,9 @@ const AdminReportsSection: React.FC = () => {
                       day: 'numeric',
                     });
 
+                    // Update report status
+                    updateReportStatus(selectedReport.id, 'resolved');
+
                     // Suspend the user - they will be redirected to growth-mode on next login
                     suspendUser(selectedReport.reportedUserId, suspensionEndDate.getTime());
 
@@ -525,6 +529,9 @@ const AdminReportsSection: React.FC = () => {
                 {/* Tier 3: Permanent Removal */}
                 <button
                   onClick={() => {
+                    // Update report status
+                    updateReportStatus(selectedReport.id, 'resolved');
+
                     // Permanently remove user from platform
                     removeUser(selectedReport.reportedUserId);
 

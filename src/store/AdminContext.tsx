@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import type { AdminUser, AdminSession, UserWithAdminData, UserStatus, UserFilters, AnalyticsSnapshot } from '@/types/admin';
-import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, ReportStatistics, ReportFilters, SupportMessage, SupportMessageStatistics, SupportMessageFilters } from '@/types/index';
+import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, ReportStatus, ReportStatistics, ReportFilters, SupportMessage, SupportMessageStatistics, SupportMessageFilters } from '@/types/index';
 import { mockAdminUsers, mockAdminCredentials } from '@/data/admins';
 
 interface AdminContextType {
@@ -53,6 +53,7 @@ interface AdminContextType {
   getReportById: (reportId: string) => Report | null;
   setSelectedReport: (report: Report | null) => void;
   setReportFilters: (filters: ReportFilters) => void;
+  updateReportStatus: (reportId: string, status: ReportStatus) => void;
 
   // UI methods
   setCurrentAdminView: (view: string) => void;
@@ -306,6 +307,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [reports]
   );
 
+  // Update report status
+  const updateReportStatus = useCallback((reportId: string, status: ReportStatus) => {
+    setReports(prev =>
+      prev.map(r =>
+        r.id === reportId
+          ? { ...r, status, updatedAt: Date.now(), resolvedAt: status === 'resolved' ? Date.now() : r.resolvedAt }
+          : r
+      )
+    );
+  }, []);
+
   // Compute report statistics
   const reportStats = useMemo((): ReportStatistics => {
     const totalReports = reports.length;
@@ -440,6 +452,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     getReportById,
     setSelectedReport,
     setReportFilters,
+    updateReportStatus,
     getSupportMessages,
     getUnreadSupportMessages,
     setSelectedSupportMessage,
