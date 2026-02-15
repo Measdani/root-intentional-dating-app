@@ -11,26 +11,26 @@ const ConversationSection: React.FC = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showConsentPrompt, setShowConsentPrompt] = useState(true);
 
-  // Check localStorage for persisted choice state for this conversation
+  // Check localStorage for persisted choice state for this conversation (per user)
   const [hasUserMadeChoice, setHasUserMadeChoiceLocal] = useState(() => {
     if (!selectedConversation) return false;
-    const storedChoice = localStorage.getItem(`consent_choice_${selectedConversation.conversationId}`);
+    const storedChoice = localStorage.getItem(`consent_choice_${currentUser.id}_${selectedConversation.conversationId}`);
     return storedChoice === 'true';
   });
 
-  // Track if congrats message has been shown (only show once per conversation)
+  // Track if congrats message has been shown (only show once per user per conversation)
   const [showCongrats, setShowCongrats] = useState(() => {
     if (!selectedConversation) return true;
-    const hasShown = localStorage.getItem(`congrats_shown_${selectedConversation.conversationId}`);
+    const hasShown = localStorage.getItem(`congrats_shown_${currentUser.id}_${selectedConversation.conversationId}`);
     return hasShown !== 'true';
   });
 
-  // Wrapper to also save to localStorage
+  // Wrapper to also save to localStorage (per user)
   const setHasUserMadeChoice = (value: boolean | ((prev: boolean) => boolean)) => {
     setHasUserMadeChoiceLocal(prevValue => {
       const newValue = typeof value === 'function' ? value(prevValue) : value;
       if (selectedConversation) {
-        localStorage.setItem(`consent_choice_${selectedConversation.conversationId}`, newValue.toString());
+        localStorage.setItem(`consent_choice_${currentUser.id}_${selectedConversation.conversationId}`, newValue.toString());
       }
       return newValue;
     });
@@ -246,7 +246,7 @@ const ConversationSection: React.FC = () => {
               onClick={() => {
                 setShowCongrats(false);
                 if (selectedConversation) {
-                  localStorage.setItem(`congrats_shown_${selectedConversation.conversationId}`, 'true');
+                  localStorage.setItem(`congrats_shown_${currentUser.id}_${selectedConversation.conversationId}`, 'true');
                 }
               }}
               className="text-[#D9FF3D] text-sm hover:underline transition-colors"
