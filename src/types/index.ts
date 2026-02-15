@@ -21,6 +21,7 @@ export interface User {
   assessmentPassed?: boolean; // Track if user passed the assessment
   membershipTier?: 'monthly' | 'quarterly' | 'annual'; // User's membership plan
   email?: string; // Email for support contact
+  userStatus?: 'active' | 'needs-growth' | 'suspended' | 'removed'; // User account status
 }
 
 export interface AssessmentQuestion {

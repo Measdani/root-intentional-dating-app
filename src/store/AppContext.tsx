@@ -229,6 +229,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser.id]);
 
+  // Check for expired suspensions and transition to needs-growth status
+  useEffect(() => {
+    if (currentUser.suspensionEndDate && currentUser.userStatus === 'suspended') {
+      const now = Date.now();
+      if (now >= currentUser.suspensionEndDate) {
+        // Suspension has expired - transition to needs-growth status
+        const updatedUser = {
+          ...currentUser,
+          userStatus: 'needs-growth' as const,
+          suspensionEndDate: undefined,
+        };
+        setCurrentUserState(updatedUser);
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+        // Send notification about suspension ending and growth mode requirement
+        const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
+        const userNotifications = allNotifications[currentUser.id] || [];
+        const newNotification: AdminNotification = {
+          id: `notif_${Date.now()}`,
+          userId: currentUser.id,
+          type: 'warning',
+          title: 'Suspension Period Ended',
+          message: 'Your account suspension period has ended. You must now complete the Growth Mode assessment to regain full access to browsing and matching.',
+          createdAt: Date.now(),
+          read: false,
+        };
+        userNotifications.push(newNotification);
+        allNotifications[currentUser.id] = userNotifications;
+        localStorage.setItem('rooted_notifications', JSON.stringify(allNotifications));
+        setNotifications(userNotifications);
+      }
+    }
+  }, [currentUser.suspensionEndDate, currentUser.userStatus, currentUser.id]);
+
   const addAssessmentAnswer = useCallback((questionId: string, score: number, redFlag?: boolean) => {
     setAssessmentAnswers(prev => [...prev, { questionId, score, redFlag }]);
   }, []);
@@ -728,6 +762,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const updatedUser = {
         ...currentUser,
         suspensionEndDate,
+        userStatus: 'suspended' as const,
       };
       setCurrentUserState(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
@@ -744,6 +779,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const updatedUser = {
         ...currentUser,
         suspensionEndDate: undefined,
+        userStatus: 'active' as const,
       };
       setCurrentUserState(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
