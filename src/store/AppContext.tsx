@@ -275,7 +275,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser.userStatus === 'needs-growth' && currentView !== 'growth-mode') {
       setCurrentView('growth-mode');
     }
-  }, [currentUser.userStatus]);
+  }, [currentUser.userStatus, currentView, setCurrentView]);
 
   const addAssessmentAnswer = useCallback((questionId: string, score: number, redFlag?: boolean) => {
     setAssessmentAnswers(prev => [...prev, { questionId, score, redFlag }]);
