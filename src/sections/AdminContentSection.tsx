@@ -413,7 +413,7 @@ const AdminContentSection: React.FC = () => {
               {/* Modules */}
               <div>
                 <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Modules</label>
-                <div className="space-y-3 mb-3 max-h-48 overflow-y-auto">
+                <div className="space-y-3 mb-3">
                   {(formData.modules || []).map((module, idx) => (
                     <div key={idx} className="p-3 bg-[#0B0F0C] border border-[#1A211A] rounded-lg">
                       <div className="flex justify-between items-start mb-2">

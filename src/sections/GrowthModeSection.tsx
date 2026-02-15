@@ -307,12 +307,32 @@ const GrowthModeSection: React.FC = () => {
 
                 {/* Expanded View */}
                 {activeResource === resource.id && (
-                  <div className="mt-4 pt-4 border-t border-[#1A211A]">
-                    <p className="text-[#A9B5AA] text-sm mb-3">
+                  <div className="mt-4 pt-4 border-t border-[#1A211A] space-y-4">
+                    <p className="text-[#A9B5AA] text-sm">
                       This resource will help you develop practical skills in {resource.category.toLowerCase()}.
                       Work through it at your own pace.
                     </p>
-                    <button className="text-[#D9FF3D] text-sm font-medium flex items-center gap-2">
+
+                    {/* Modules */}
+                    {resource.modules && resource.modules.length > 0 && (
+                      <div className="space-y-3">
+                        <h5 className="text-[#F6FFF2] font-medium text-sm">Learning Modules:</h5>
+                        {resource.modules.map((module: any, idx: number) => (
+                          <div key={module.id || idx} className="bg-[#0B0F0C] rounded-lg p-3 space-y-2">
+                            <p className="text-[#D9FF3D] text-sm font-medium">Module {idx + 1}: {module.title}</p>
+                            <p className="text-[#A9B5AA] text-xs">{module.description}</p>
+                            {module.exercise && (
+                              <div className="bg-[#111611] rounded p-2 text-xs text-[#A9B5AA]">
+                                <p className="font-medium text-[#F6FFF2] mb-1">Exercise:</p>
+                                <p>{module.exercise}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <button className="w-full text-[#D9FF3D] text-sm font-medium flex items-center justify-center gap-2 py-2 bg-[#D9FF3D]/10 rounded-lg hover:bg-[#D9FF3D]/20 transition-colors">
                       <CheckCircle className="w-4 h-4" />
                       Mark as started
                     </button>
