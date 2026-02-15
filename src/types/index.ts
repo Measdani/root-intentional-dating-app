@@ -75,6 +75,7 @@ export type AppView =
   | 'assessment'
   | 'assessment-result'
   | 'growth-mode'
+  | 'paid-growth-mode'
   | 'browse'
   | 'profile'
   | 'inbox'

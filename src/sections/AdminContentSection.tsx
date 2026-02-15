@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { Trash2, Edit2, Plus, X, ChevronDown, ChevronUp, Clock, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { growthResources, membershipTiers } from '@/data/assessment';
+import { growthResources, paidGrowthResources, membershipTiers } from '@/data/assessment';
 import type { GrowthResource } from '@/types';
 
 const AdminContentSection: React.FC = () => {
@@ -14,17 +14,27 @@ const AdminContentSection: React.FC = () => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
   });
+  const [paidResources, setPaidResources] = useState<GrowthResource[]>(() => {
+    const saved = localStorage.getItem('paid-growth-resources');
+    return saved ? JSON.parse(saved) : paidGrowthResources;
+  });
   const [tiers] = useState(membershipTiers);
   const [showForm, setShowForm] = useState(false);
   const [selectedResource, setSelectedResource] = useState<GrowthResource | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<GrowthResource>>({});
   const [newOutcome, setNewOutcome] = useState('');
+  const [activeTab, setActiveTab] = useState<'free' | 'paid' | 'membership'>('free');
 
   // Save resources to localStorage whenever they change
   React.useEffect(() => {
     localStorage.setItem('growth-resources', JSON.stringify(resources));
   }, [resources]);
+
+  // Save paid resources to localStorage whenever they change
+  React.useEffect(() => {
+    localStorage.setItem('paid-growth-resources', JSON.stringify(paidResources));
+  }, [paidResources]);
 
   const handleAddNew = () => {
     setFormData({
@@ -53,9 +63,12 @@ const AdminContentSection: React.FC = () => {
       return;
     }
 
+    const currentResources = activeTab === 'paid' ? paidResources : resources;
+    const setCurrentResources = activeTab === 'paid' ? setPaidResources : setResources;
+
     if (selectedResource) {
-      setResources(
-        resources.map(r =>
+      setCurrentResources(
+        currentResources.map(r =>
           r.id === selectedResource.id
             ? { ...r, ...formData, updatedAt: Date.now() } as GrowthResource
             : r
@@ -65,11 +78,11 @@ const AdminContentSection: React.FC = () => {
     } else {
       const newResource: GrowthResource = {
         ...formData,
-        id: `g${Date.now()}`,
+        id: `${activeTab === 'paid' ? 'pg' : 'g'}${Date.now()}`,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       } as GrowthResource;
-      setResources([...resources, newResource]);
+      setCurrentResources([...currentResources, newResource]);
       toast.success('Resource created successfully');
     }
 
@@ -79,22 +92,28 @@ const AdminContentSection: React.FC = () => {
 
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this resource?')) {
-      setResources(resources.filter(r => r.id !== id));
+      if (activeTab === 'paid') {
+        setPaidResources(paidResources.filter(r => r.id !== id));
+      } else {
+        setResources(resources.filter(r => r.id !== id));
+      }
       toast.success('Resource deleted successfully');
     }
   };
 
   return (
     <div className="min-h-screen bg-[#0B0F0C] p-4 md:p-8">
-      <Tabs defaultValue="resources" className="space-y-6">
+      <Tabs defaultValue="free" className="space-y-6">
         <TabsList className="bg-[#111611] border-[#1A211A] p-1">
-          <TabsTrigger value="resources">Growth Resources</TabsTrigger>
-          <TabsTrigger value="membership">Membership Tiers</TabsTrigger>
+          <TabsTrigger value="free" onClick={() => setActiveTab('free')}>Free Resources</TabsTrigger>
+          <TabsTrigger value="paid" onClick={() => setActiveTab('paid')}>Paid Resources</TabsTrigger>
+          <TabsTrigger value="membership" onClick={() => setActiveTab('membership')}>Membership Tiers</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="resources" className="space-y-4">
+        <TabsContent value="free" className="space-y-4">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Growth Resources ({resources.length})</h3>
+            <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Free Growth Resources ({resources.length})</h3>
+            <p className="text-sm text-[#A9B5AA]">For users who haven't passed the assessment</p>
             <Button onClick={handleAddNew} className="bg-[#D9FF3D] text-[#0B0F0C] hover:bg-[#C4E622]"><Plus className="w-4 h-4 mr-2" />Add Resource</Button>
           </div>
 
@@ -143,6 +162,73 @@ const AdminContentSection: React.FC = () => {
                           {resource.learningOutcomes.map((outcome, idx) => (
                             <li key={idx} className="flex gap-2">
                               <span className="text-[#D9FF3D]">✓</span>
+                              <span>{outcome}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="paid" className="space-y-4">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Paid Growth Resources ({paidResources.length})</h3>
+              <p className="text-sm text-[#A9B5AA]">For users who passed the assessment (quarterly & annual members)</p>
+            </div>
+            <Button onClick={handleAddNew} className="bg-emerald-500 text-[#0B0F0C] hover:bg-emerald-600"><Plus className="w-4 h-4 mr-2" />Add Resource</Button>
+          </div>
+
+          <div className="space-y-4">
+            {paidResources.map((resource) => (
+              <Card key={resource.id} className="bg-[#111611] border-[#1A211A] p-6 cursor-pointer hover:border-emerald-500/50 transition-colors" onClick={() => setExpandedId(expandedId === resource.id ? null : resource.id)}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <BookOpen className="w-5 h-5 text-emerald-400" />
+                      <h4 className="text-lg font-semibold text-[#F6FFF2]">{resource.title}</h4>
+                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 border">{resource.category}</Badge>
+                      {resource.difficulty && (
+                        <Badge className={`${
+                          resource.difficulty === 'beginner' ? 'bg-blue-500/20 text-blue-300' :
+                          resource.difficulty === 'intermediate' ? 'bg-amber-500/20 text-amber-300' :
+                          'bg-red-500/20 text-red-300'
+                        }`}>
+                          {resource.difficulty}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-[#A9B5AA] mb-2">{resource.description}</p>
+                    <div className="flex items-center gap-4 text-xs text-[#A9B5AA]">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {resource.estimatedTime}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEdit(resource); }} className="text-emerald-400"><Edit2 className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDelete(resource.id); }} className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
+                    <button className="p-2 text-[#A9B5AA]" onClick={(e) => e.stopPropagation()}>
+                      {expandedId === resource.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {expandedId === resource.id && (
+                  <div className="mt-4 pt-4 border-t border-[#1A211A] space-y-4">
+                    {resource.learningOutcomes && resource.learningOutcomes.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-[#F6FFF2] mb-2">Learning Outcomes</h4>
+                        <ul className="space-y-1 text-sm text-[#A9B5AA]">
+                          {resource.learningOutcomes.map((outcome, idx) => (
+                            <li key={idx} className="flex gap-2">
+                              <span className="text-emerald-400">✓</span>
                               <span>{outcome}</span>
                             </li>
                           ))}

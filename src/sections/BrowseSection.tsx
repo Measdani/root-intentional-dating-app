@@ -65,7 +65,10 @@ const BrowseSection: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
-            onClick={() => setCurrentView('growth-mode')}
+            onClick={() => {
+              const view = currentUser.assessmentPassed ? 'paid-growth-mode' : 'growth-mode';
+              setCurrentView(view as any);
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
           >
             <span>Growth Mode</span>

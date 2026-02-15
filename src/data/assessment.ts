@@ -199,6 +199,44 @@ export const growthResources: GrowthResource[] = [
   },
 ];
 
+export const paidGrowthResources: GrowthResource[] = [
+  {
+    id: 'pg1',
+    title: 'Advanced Partnership Dynamics',
+    description: 'Deepen your understanding of how to show up as your best self in partnership.',
+    category: 'Partnership',
+    estimatedTime: '6 weeks',
+  },
+  {
+    id: 'pg2',
+    title: 'Navigating Intimacy & Vulnerability',
+    description: 'Create deeper emotional and physical intimacy through authentic connection.',
+    category: 'Intimacy',
+    estimatedTime: '5 weeks',
+  },
+  {
+    id: 'pg3',
+    title: 'Building a Shared Vision',
+    description: 'Align on values, goals, and create a partnership that grows stronger over time.',
+    category: 'Vision',
+    estimatedTime: '4 weeks',
+  },
+  {
+    id: 'pg4',
+    title: 'Love Languages & Connection',
+    description: 'Understand and speak your partner\'s unique language of love.',
+    category: 'Connection',
+    estimatedTime: '3 weeks',
+  },
+  {
+    id: 'pg5',
+    title: 'Managing Life Transitions Together',
+    description: 'Build resilience as a team through change, challenges, and growth.',
+    category: 'Resilience',
+    estimatedTime: '5 weeks',
+  },
+];
+
 export const membershipTiers: MembershipTier[] = [
   {
     id: 'monthly',
