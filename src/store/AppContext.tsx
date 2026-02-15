@@ -89,7 +89,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
-          setCurrentUserState(JSON.parse(savedUser) as User);
+          const parsedUser = JSON.parse(savedUser) as User;
+
+          // Check if this user has a stored suspension
+          const suspensions = JSON.parse(localStorage.getItem('rooted_suspensions') || '{}');
+          if (suspensions[parsedUser.id]) {
+            const suspension = suspensions[parsedUser.id];
+            parsedUser.suspensionEndDate = suspension.suspensionEndDate;
+            parsedUser.userStatus = suspension.userStatus;
+          }
+
+          setCurrentUserState(parsedUser);
         } else {
           setCurrentUserState(defaultUser);
         }
@@ -106,6 +116,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.removeEventListener('user-login', handleStorageChange);
     };
   }, []);
+
+  // Apply stored suspensions when currentUser changes (e.g., on login)
+  useEffect(() => {
+    try {
+      const suspensions = JSON.parse(localStorage.getItem('rooted_suspensions') || '{}');
+      if (suspensions[currentUser.id]) {
+        const suspension = suspensions[currentUser.id];
+        setCurrentUserState(prev => ({
+          ...prev,
+          suspensionEndDate: suspension.suspensionEndDate,
+          userStatus: suspension.userStatus,
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to apply suspension:', error);
+    }
+  }, [currentUser.id]);
 
   const [users] = useState<User[]>(sampleUsers);
   const [hasJoinedList, setHasJoinedList] = useState(false);
@@ -771,6 +798,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Suspend a user for a specified duration (stores suspension end date)
   const suspendUser = useCallback((userId: string, suspensionEndDate: number) => {
+    // Store suspension data in localStorage indexed by userId
+    const suspensions = JSON.parse(localStorage.getItem('rooted_suspensions') || '{}');
+    suspensions[userId] = { suspensionEndDate, userStatus: 'suspended' };
+    localStorage.setItem('rooted_suspensions', JSON.stringify(suspensions));
+
     // Update currentUser if they're the suspended user
     if (currentUser.id === userId) {
       const updatedUser = {
@@ -781,13 +813,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUserState(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     }
-
-    // TODO: Update user in users array (would require mutable users state)
-    // For now, the suspension is persisted through localStorage when the suspended user is logged in
   }, [currentUser]);
 
   // Reinstate a suspended user (clears suspension end date)
   const reinstateUser = useCallback((userId: string) => {
+    // Remove suspension from localStorage
+    const suspensions = JSON.parse(localStorage.getItem('rooted_suspensions') || '{}');
+    delete suspensions[userId];
+    localStorage.setItem('rooted_suspensions', JSON.stringify(suspensions));
+
     // Update currentUser if they're the reinstated user
     if (currentUser.id === userId) {
       const updatedUser = {
@@ -798,8 +832,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUserState(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     }
-
-    // TODO: Update user in users array (would require mutable users state)
     // For now, the reinstatement is persisted through localStorage when the reinstated user is logged in
   }, [currentUser]);
 
