@@ -118,7 +118,7 @@ const HeroSection: React.FC = () => {
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        <span className="font-display text-xl text-[#F6FFF2]">ROOTED</span>
+        <span className="font-display text-xl text-[#F6FFF2]">ROOTED HEARTS</span>
       </div>
     </section>
   );
