@@ -41,19 +41,35 @@ const GrowthModeSection: React.FC = () => {
       </header>
 
       {/* Account Status Notification */}
-      {currentUser.userStatus === 'needs-growth' && !dismissNotification && (
-        <div className="bg-orange-600/20 border-t border-orange-500/30">
+      {(currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') && !dismissNotification && (
+        <div className={currentUser.userStatus === 'suspended' ? 'bg-red-600/20 border-t border-red-500/30' : 'bg-orange-600/20 border-t border-orange-500/30'}>
           <div className="max-w-4xl mx-auto px-6 py-4 flex items-start gap-4">
-            <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className={currentUser.userStatus === 'suspended' ? 'w-5 h-5 text-red-400 flex-shrink-0 mt-0.5' : 'w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5'} />
             <div className="flex-1">
-              <h3 className="text-orange-300 font-semibold mb-1">Account Status: Growth Mode</h3>
-              <p className="text-orange-200/80 text-sm">
-                Your account has transitioned to Growth Mode. You must complete one of the learning paths below before you can resume browsing and matching. This is an opportunity to strengthen your relationship foundation.
-              </p>
+              {currentUser.userStatus === 'suspended' ? (
+                <>
+                  <h3 className="text-red-300 font-semibold mb-1">Account Suspended</h3>
+                  <p className="text-red-200/80 text-sm mb-3">
+                    Your account has been temporarily suspended due to violations of our community guidelines. You have been placed in Growth Mode to focus on strengthening your relationship foundation.
+                  </p>
+                  {currentUser.suspensionEndDate && (
+                    <p className="text-red-200/80 text-sm">
+                      <strong>Reactivation Date:</strong> {new Date(currentUser.suspensionEndDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <h3 className="text-orange-300 font-semibold mb-1">Account Status: Growth Mode</h3>
+                  <p className="text-orange-200/80 text-sm">
+                    Your account has transitioned to Growth Mode. You must complete one of the learning paths below before you can resume browsing and matching. This is an opportunity to strengthen your relationship foundation.
+                  </p>
+                </>
+              )}
             </div>
             <button
               onClick={() => setDismissNotification(true)}
-              className="flex-shrink-0 text-orange-300 hover:text-orange-200 transition-colors"
+              className={currentUser.userStatus === 'suspended' ? 'flex-shrink-0 text-red-300 hover:text-red-200 transition-colors' : 'flex-shrink-0 text-orange-300 hover:text-orange-200 transition-colors'}
             >
               <X className="w-5 h-5" />
             </button>

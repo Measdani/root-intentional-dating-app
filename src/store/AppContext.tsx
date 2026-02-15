@@ -270,9 +270,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser.suspensionEndDate, currentUser.userStatus, currentUser.id]);
 
-  // Auto-redirect needs-growth users to growth-mode view
+  // Auto-redirect suspended and needs-growth users to growth-mode view
   useEffect(() => {
-    if (currentUser.userStatus === 'needs-growth' && currentView !== 'growth-mode') {
+    if ((currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') && currentView !== 'growth-mode') {
       setCurrentView('growth-mode');
     }
   }, [currentUser.userStatus, currentView, setCurrentView]);

@@ -44,7 +44,6 @@ export const sampleUsers: User[] = [
     photoUrl: 'https://i.pravatar.cc/300?u=james&img=2',
     membershipTier: 'monthly',
     email: 'james@example.com',
-    userStatus: 'needs-growth',
   },
   {
     id: 'u3',
@@ -155,7 +154,9 @@ export const sampleUsers: User[] = [
     photoUrl: 'https://i.pravatar.cc/300?u=alex&img=7',
     membershipTier: 'annual',
     email: 'alex@example.com',
-    userStatus: 'needs-growth',
+    // For testing: suspended for 6 months from now
+    userStatus: 'suspended',
+    suspensionEndDate: Date.now() + (6 * 30 * 24 * 60 * 60 * 1000), // 6 months from now
   },
 ];
 
