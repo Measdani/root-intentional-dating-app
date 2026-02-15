@@ -24,7 +24,10 @@ import AdminReportsSection from '@/sections/AdminReportsSection';
 import AdminAssessmentsSection from '@/sections/AdminAssessmentsSection';
 import AdminContentSection from '@/sections/AdminContentSection';
 import UserLoginSection from '@/sections/UserLoginSection';
+import PrivacyPolicySection from '@/sections/PrivacyPolicySection';
+import TermsOfServiceSection from '@/sections/TermsOfServiceSection';
 import EmailModal from '@/components/EmailModal';
+import Footer from '@/components/Footer';
 import AdminAccessButton from '@/components/AdminAccessButton';
 import UserAccessButton from '@/components/UserAccessButton';
 
@@ -77,6 +80,10 @@ const AppContent: React.FC = () => {
         return <ConversationSection />;
       case 'growth-mode':
         return <GrowthModeSection />;
+      case 'privacy-policy':
+        return <PrivacyPolicySection />;
+      case 'terms-of-service':
+        return <TermsOfServiceSection />;
       case 'landing':
       default:
         return (
@@ -95,8 +102,13 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="relative bg-[#0B0F0C] min-h-screen">
-      {renderView()}
+    <div className="relative bg-[#0B0F0C] min-h-screen flex flex-col">
+      <div className="flex-1">
+        {renderView()}
+      </div>
+      {!currentView.startsWith('admin-') && currentView !== 'user-login' && (
+        <Footer />
+      )}
       {!currentView.startsWith('admin-') && currentView !== 'user-login' && (
         <>
           <EmailModal />
