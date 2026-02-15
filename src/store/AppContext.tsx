@@ -57,6 +57,7 @@ interface AppContextType extends AppState {
   getUnreadNotifications: () => AdminNotification[];
   markNotificationAsRead: (notificationId: string) => void;
   addNotification: (type: 'warning' | 'suspension' | 'removal', title: string, message: string, userId: string) => void;
+  reloadNotifications: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -821,6 +822,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // Add a new notification (called by admin when taking action)
+  const reloadNotifications = useCallback(() => {
+    try {
+      const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
+      const userNotifications = allNotifications[currentUser.id] || [];
+      setNotifications(userNotifications);
+    } catch (error) {
+      console.error('Failed to reload notifications:', error);
+    }
+  }, [currentUser.id]);
+
   const addNotification = useCallback((type: 'warning' | 'suspension' | 'removal', title: string, message: string, userId: string) => {
     const newNotification: AdminNotification = {
       id: crypto.randomUUID(),
@@ -900,6 +911,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getUnreadNotifications,
     markNotificationAsRead,
     addNotification,
+    reloadNotifications,
   };
 
   return (

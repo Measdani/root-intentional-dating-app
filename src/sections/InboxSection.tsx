@@ -5,18 +5,24 @@ import { ArrowLeft, MessageCircle, Check, Clock, Flag, HelpCircle } from 'lucide
 import ReportUserModal from '@/components/ReportUserModal';
 
 const InboxSection: React.FC = () => {
-  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, reportUser, blockUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead } = useApp();
+  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, reportUser, blockUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingUser, setReportingUser] = useState<User | null>(null);
 
-  // Mark all unread notifications as read when inbox is opened
+  // Reload and mark all unread notifications as read when inbox is opened
   useEffect(() => {
-    const unreadNotifications = getUnreadNotifications();
-    unreadNotifications.forEach(notification => {
-      markNotificationAsRead(notification.id);
-    });
-  }, []);
+    // Reload notifications from localStorage first (in case they were added while logged in)
+    reloadNotifications();
+
+    // Then mark them as read
+    setTimeout(() => {
+      const unreadNotifications = getUnreadNotifications();
+      unreadNotifications.forEach(notification => {
+        markNotificationAsRead(notification.id);
+      });
+    }, 0);
+  }, [reloadNotifications, getUnreadNotifications, markNotificationAsRead]);
 
   // Determine sent vs received based on currentUser dynamically
   const allInteractions = [
