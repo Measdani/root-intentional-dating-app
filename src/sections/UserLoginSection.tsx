@@ -44,8 +44,8 @@ const UserLoginSection: React.FC = () => {
       window.dispatchEvent(new CustomEvent('user-login', { detail: user }));
       toast.success(`Welcome back, ${user.name}!`);
 
-      // Show background check modal if user hasn't verified yet
-      if (!user.backgroundCheckVerified) {
+      // Show background check modal only if user passed assessment AND hasn't verified yet
+      if (user.assessmentPassed && !user.backgroundCheckVerified) {
         setLoginUser(user);
         setShowBackgroundCheckModal(true);
       } else {
@@ -92,8 +92,8 @@ const UserLoginSection: React.FC = () => {
       window.dispatchEvent(new CustomEvent('user-login', { detail: user }));
       toast.success(`Welcome, ${user.name}!`);
 
-      // Show background check modal if user hasn't verified yet
-      if (!user.backgroundCheckVerified) {
+      // Show background check modal only if user passed assessment AND hasn't verified yet
+      if (user.assessmentPassed && !user.backgroundCheckVerified) {
         setLoginUser(user);
         setShowBackgroundCheckModal(true);
       } else {
