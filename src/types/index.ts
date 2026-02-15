@@ -48,12 +48,24 @@ export interface AssessmentResult {
   growthAreas: string[];
 }
 
+export interface GrowthResourceModule {
+  id: string;
+  title: string;
+  description: string;
+  orderIndex: number;
+}
+
 export interface GrowthResource {
   id: string;
   title: string;
   description: string;
   category: string;
   estimatedTime: string;
+  learningOutcomes?: string[];
+  modules?: GrowthResourceModule[];
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export type AppView =
