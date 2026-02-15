@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
           {/* Brand */}
           <div className="text-center md:text-left">
             <h3 className="font-display text-lg text-[#F6FFF2] mb-1">Rooted Hearts</h3>
-            <p className="text-sm text-[#A9B5AA]">Dating for people who are ready.</p>
+            <p className="text-sm text-[#A9B5AA]">Dating for people who are intentional.</p>
           </div>
 
           {/* Links */}
