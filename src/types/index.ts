@@ -121,6 +121,17 @@ export interface InteractionState {
   receivedInterests: Record<string, UserInteraction>;
 }
 
+export interface AdminNotification {
+  id: string;
+  userId: string;
+  type: 'warning' | 'suspension' | 'removal';
+  title: string;
+  message: string;
+  reportId?: string;
+  createdAt: number;
+  read: boolean;
+}
+
 // Export all report-related types
 export type {
   ReportReason,

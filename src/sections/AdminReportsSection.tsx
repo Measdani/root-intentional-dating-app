@@ -17,7 +17,7 @@ import type { Report, ReportStatus, ReportReason, ReportSeverity } from '@/types
 
 const AdminReportsSection: React.FC = () => {
   const { reports = [], reportStats } = useAdmin();
-  const { users, suspendUser, removeUser } = useApp();
+  const { users, suspendUser, removeUser, addNotification } = useApp();
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'all'>('all');
@@ -473,13 +473,12 @@ const AdminReportsSection: React.FC = () => {
                 {/* Tier 1: Warning */}
                 <button
                   onClick={() => {
-                    // TODO: Increment violation count on reported user
-                    // TODO: Send warning message to user inbox:
-                    // "First Violation: Warning
-                    // Your account has been flagged for violating our community guidelines. This is your first warning.
-                    // Please review our community standards and adjust your behavior accordingly.
-                    // Further violations may result in suspension or removal from the platform."
-                    // TODO: Update report status to 'resolved' in AdminContext
+                    addNotification(
+                      'warning',
+                      'First Violation: Warning',
+                      'Your account has been flagged for violating our community guidelines. This is your first warning. Please review our community standards and adjust your behavior accordingly. Further violations may result in suspension or removal from the platform.',
+                      selectedReport.reportedUserId
+                    );
                     toast.success(`Warning sent to ${reportedUser.name}`);
                     setShowResolveModal(false);
                     setShowDetailModal(false);
@@ -505,14 +504,14 @@ const AdminReportsSection: React.FC = () => {
                     // Suspend the user - they will be redirected to growth-mode on next login
                     suspendUser(selectedReport.reportedUserId, suspensionEndDate.getTime());
 
-                    // TODO: Send suspension message to user inbox:
-                    // `Suspension: 6-Month Account Suspension
-                    // Your account has been temporarily suspended for 6 months due to violations of our community guidelines.
-                    // During this period, you will not be able to access the platform.
-                    // Your account will automatically reactivate on ${formattedDate}.
-                    // If you believe this is an error, contact our support team.`
+                    // Send suspension notification
+                    addNotification(
+                      'suspension',
+                      'Account Suspended: 6-Month Suspension',
+                      `Your account has been temporarily suspended for 6 months due to violations of our community guidelines. During this period, you will not be able to access the platform. Your account will automatically reactivate on ${formattedDate}. If you believe this is an error, contact our support team.`,
+                      selectedReport.reportedUserId
+                    );
 
-                    // TODO: Update report status to 'resolved' in AdminContext
                     toast.success(`${reportedUser.name}'s account suspended until ${formattedDate}`);
                     setShowResolveModal(false);
                     setShowDetailModal(false);
@@ -529,12 +528,14 @@ const AdminReportsSection: React.FC = () => {
                     // Permanently remove user from platform
                     removeUser(selectedReport.reportedUserId);
 
-                    // TODO: Send removal message to user inbox:
-                    // "Permanent Removal: Account Permanently Removed
-                    // Your account has been permanently removed from our platform due to serious violations of our community guidelines.
-                    // This action is irreversible. You will no longer be able to access the platform or create a new account with the same email address.
-                    // For support inquiries, contact our support team."
-                    // TODO: Update report status to 'resolved' in AdminContext
+                    // Send removal notification
+                    addNotification(
+                      'removal',
+                      'Permanent Removal: Account Permanently Removed',
+                      'Your account has been permanently removed from our platform due to serious violations of our community guidelines. This action is irreversible. You will no longer be able to access the platform or create a new account with the same email address. For support inquiries, contact our support team.',
+                      selectedReport.reportedUserId
+                    );
+
                     toast.success(`${reportedUser.name}'s account has been permanently removed`);
                     setShowResolveModal(false);
                     setShowDetailModal(false);

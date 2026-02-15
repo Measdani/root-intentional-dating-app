@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import type { AppView, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory } from '@/types';
+import type { AppView, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory, AdminNotification } from '@/types';
 import { sampleUsers, currentUser as defaultUser } from '@/data/users';
 import { toast } from 'sonner';
 
@@ -52,6 +52,11 @@ interface AppContextType extends AppState {
   showSupportModal: boolean;
   setShowSupportModal: (value: boolean) => void;
   submitSupportRequest: (category: SupportCategory, subject: string, message: string) => Promise<string>;
+  notifications: AdminNotification[];
+  getNotifications: () => AdminNotification[];
+  getUnreadNotifications: () => AdminNotification[];
+  markNotificationAsRead: (notificationId: string) => void;
+  addNotification: (type: 'warning' | 'suspension' | 'removal', title: string, message: string, userId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -111,6 +116,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [blockedByUsers, setBlockedByUsers] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Load interactions from localStorage on mount
@@ -179,6 +185,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Failed to load blocked by users:', error);
     }
   }, [currentUser.id]);
+
+  // Load notifications for current user
+  useEffect(() => {
+    try {
+      const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
+      const userNotifications = allNotifications[currentUser.id] || [];
+      setNotifications(userNotifications);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
+  }, [currentUser.id]);
+
+  // Save notifications to localStorage
+  useEffect(() => {
+    try {
+      const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
+      allNotifications[currentUser.id] = notifications;
+      localStorage.setItem('rooted_notifications', JSON.stringify(allNotifications));
+    } catch (error) {
+      console.error('Failed to save notifications:', error);
+    }
+  }, [notifications, currentUser.id]);
 
   // Reload interactions when currentUser changes (for user login/logout)
   // StorageEvent doesn't fire in same tab, so we need to manually reload
@@ -775,6 +803,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return messageId;
   }, [currentUser]);
 
+  // Get all notifications for current user
+  const getNotifications = useCallback((): AdminNotification[] => {
+    return notifications.filter(n => n.userId === currentUser.id);
+  }, [notifications, currentUser.id]);
+
+  // Get unread notifications
+  const getUnreadNotifications = useCallback((): AdminNotification[] => {
+    return notifications.filter(n => n.userId === currentUser.id && !n.read);
+  }, [notifications, currentUser.id]);
+
+  // Mark notification as read
+  const markNotificationAsRead = useCallback((notificationId: string) => {
+    setNotifications(prev =>
+      prev.map(n => (n.id === notificationId ? { ...n, read: true } : n))
+    );
+  }, []);
+
+  // Add a new notification (called by admin when taking action)
+  const addNotification = useCallback((type: 'warning' | 'suspension' | 'removal', title: string, message: string, userId: string) => {
+    const newNotification: AdminNotification = {
+      id: crypto.randomUUID(),
+      userId,
+      type,
+      title,
+      message,
+      createdAt: Date.now(),
+      read: false,
+    };
+    setNotifications(prev => [...prev, newNotification]);
+  }, []);
+
   const value: AppContextType = {
     currentView,
     assessmentAnswers,
@@ -820,6 +879,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showSupportModal,
     setShowSupportModal,
     submitSupportRequest,
+    notifications,
+    getNotifications,
+    getUnreadNotifications,
+    markNotificationAsRead,
+    addNotification,
   };
 
   return (
