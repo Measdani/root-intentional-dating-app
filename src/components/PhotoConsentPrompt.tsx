@@ -7,6 +7,7 @@ interface PhotoConsentPromptProps {
   currentUserId: string;
   otherUserName: string;
   onConsent: () => void;
+  onChoiceMade?: () => void;
 }
 
 const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
@@ -14,6 +15,7 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
   currentUserId,
   otherUserName,
   onConsent,
+  onChoiceMade,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [deferred, setDeferred] = useState(false);
@@ -70,6 +72,7 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
             onClick={() => {
               setIsLoading(true);
               onConsent();
+              onChoiceMade?.();
             }}
             disabled={isLoading}
             className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100"
@@ -77,7 +80,10 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
             Yes — Reveal together
           </button>
           <button
-            onClick={() => setDeferred(true)}
+            onClick={() => {
+              setDeferred(true);
+              onChoiceMade?.();
+            }}
             className="flex-1 py-3.5 bg-[#1A211A] text-[#F6FFF2] rounded-xl font-medium hover:bg-[#2A312A] transition-colors"
           >
             Keep building connection

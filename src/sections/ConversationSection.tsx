@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { ArrowLeft, MessageCircle, Lock, Flag } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Lock, Flag, Image } from 'lucide-react';
 import PhotoConsentPrompt from '@/components/PhotoConsentPrompt';
 import ResponseModal from '@/components/ResponseModal';
 import ReportUserModal from '@/components/ReportUserModal';
@@ -9,6 +9,7 @@ const ConversationSection: React.FC = () => {
   const { selectedConversation, setCurrentView, respondToInterest, grantPhotoConsent, users, currentUser, reportUser, blockUser } = useApp();
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showConsentPrompt, setShowConsentPrompt] = useState(true);
 
   if (!selectedConversation) {
     return (
@@ -71,13 +72,24 @@ const ConversationSection: React.FC = () => {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowReportModal(true)}
-            className="text-[#A9B5AA] hover:text-red-400 transition-colors"
-            title="Report User"
-          >
-            <Flag className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-3">
+            {!showConsentPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && (
+              <button
+                onClick={() => setShowConsentPrompt(true)}
+                className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+                title="Photo Consent"
+              >
+                <Image className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="text-[#A9B5AA] hover:text-red-400 transition-colors"
+              title="Report User"
+            >
+              <Flag className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -150,24 +162,26 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {selectedConversation.status === 'both_messaged' && (
+        {showConsentPrompt && selectedConversation.status === 'both_messaged' && (
           <div className="mb-8">
             <PhotoConsentPrompt
               conversation={selectedConversation}
               currentUserId={currentUser.id}
               otherUserName={otherUser.name}
               onConsent={handleConsentClick}
+              onChoiceMade={() => setShowConsentPrompt(false)}
             />
           </div>
         )}
 
-        {selectedConversation.status === 'awaiting_consent' && (
+        {showConsentPrompt && selectedConversation.status === 'awaiting_consent' && (
           <div className="mb-8">
             <PhotoConsentPrompt
               conversation={selectedConversation}
               currentUserId={currentUser.id}
               otherUserName={otherUser.name}
               onConsent={handleConsentClick}
+              onChoiceMade={() => setShowConsentPrompt(false)}
             />
           </div>
         )}
@@ -199,8 +213,8 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {/* Continue Message Button - Show only after photos are unlocked */}
-        {selectedConversation.status === 'photos_unlocked' && (
+        {/* Continue Message Button - Show after user makes photo consent choice or after photos unlocked */}
+        {((selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && !showConsentPrompt) || selectedConversation.status === 'photos_unlocked' ? (
           <div className="flex gap-4 mt-8">
             <button
               onClick={() => setShowResponseModal(true)}
@@ -210,7 +224,7 @@ const ConversationSection: React.FC = () => {
               Continue Message
             </button>
           </div>
-        )}
+        ) : null}
       </main>
 
       {/* Response Modal */}
