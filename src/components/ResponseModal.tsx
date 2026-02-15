@@ -29,6 +29,7 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
     `Your values really align with mine. What's one experience that shaped those for you?`,
     `I'm intrigued by your vision for partnership. Can you tell me more about what that looks like for you?`,
     `What's something about ${senderUser?.city} that you love? I'm always interested in what home means to people.`,
+    `What's a life lesson you've learned that changed how you approach relationships?`,
   ];
 
   if (!isOpen || !senderUser || !originalMessage) return null;
@@ -140,7 +141,7 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                   <p className="text-xs text-[#D9FF3D] flex items-start gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#D9FF3D] mt-0.5 flex-shrink-0" />
                     <span>
-                      <strong>Minimum 120 characters required.</strong> This ensures meaningful conversations and intentional connections.
+                      <strong>Minimum 120 characters required.</strong> This helps ensure that conversations stay meaningful and allow you to connect on a deeper level.
                     </span>
                   </p>
                 </div>
@@ -166,7 +167,7 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-[#A9B5AA]/50 mt-2">Feel free to personalize any starter above</p>
+                  <p className="text-xs text-[#A9B5AA]/50 mt-2">Personalize any of these starters to make them your own and create a more unique conversation.</p>
                 </div>
 
                 <textarea
@@ -214,7 +215,7 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                 ) : (
                   <>
                     <MessageCircle className="w-4 h-4" />
-                    Send Response
+                    Send your response
                   </>
                 )}
               </button>
