@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap } from 'lucide-react';
+import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 
 const GrowthModeSection: React.FC = () => {
   const { assessmentResult, setCurrentView, resetAssessment, currentUser } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
-  const [activeResource, setActiveResource] = useState<string | null>(null);
+  const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [resources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
@@ -242,10 +243,10 @@ const GrowthModeSection: React.FC = () => {
               return (
               <div
                 key={resource.id}
-                onClick={() => setActiveResource(activeResource === resource.id ? null : resource.id)}
-                className={`rounded-[20px] border p-5 cursor-pointer transition-all duration-300 ${
+                onClick={() => setSelectedResourceForModal(resource)}
+                className={`rounded-[20px] border p-5 cursor-pointer transition-all duration-300 hover:ring-2 hover:ring-[#D9FF3D]/50 ${
                   getStatusColor(status)
-                } ${activeResource === resource.id ? 'ring-2 ring-[#D9FF3D]/50' : ''}`}
+                }`}
               >
                 {/* Completion Badge */}
                 {isCompleted && (
@@ -305,39 +306,6 @@ const GrowthModeSection: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Expanded View */}
-                {activeResource === resource.id && (
-                  <div className="mt-4 pt-4 border-t border-[#1A211A] space-y-4">
-                    <p className="text-[#A9B5AA] text-sm">
-                      This resource will help you develop practical skills in {resource.category.toLowerCase()}.
-                      Work through it at your own pace.
-                    </p>
-
-                    {/* Modules */}
-                    {resource.modules && resource.modules.length > 0 && (
-                      <div className="space-y-3">
-                        <h5 className="text-[#F6FFF2] font-medium text-sm">Learning Modules:</h5>
-                        {resource.modules.map((module: any, idx: number) => (
-                          <div key={module.id || idx} className="bg-[#0B0F0C] rounded-lg p-3 space-y-2">
-                            <p className="text-[#D9FF3D] text-sm font-medium">Module {idx + 1}: {module.title}</p>
-                            <p className="text-[#A9B5AA] text-xs">{module.description}</p>
-                            {module.exercise && (
-                              <div className="bg-[#111611] rounded p-2 text-xs text-[#A9B5AA]">
-                                <p className="font-medium text-[#F6FFF2] mb-1">Exercise:</p>
-                                <p>{module.exercise}</p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <button className="w-full text-[#D9FF3D] text-sm font-medium flex items-center justify-center gap-2 py-2 bg-[#D9FF3D]/10 rounded-lg hover:bg-[#D9FF3D]/20 transition-colors">
-                      <CheckCircle className="w-4 h-4" />
-                      Mark as started
-                    </button>
-                  </div>
-                )}
               </div>
             );
             })}
@@ -365,11 +333,19 @@ const GrowthModeSection: React.FC = () => {
         {/* Encouragement */}
         <div className="mt-12 text-center">
           <p className="text-[#A9B5AA]/60 text-sm max-w-md mx-auto">
-            "The work you do now will be the foundation of the relationship you want later. 
+            "The work you do now will be the foundation of the relationship you want later.
             This is not a delay—it is an investment."
           </p>
         </div>
       </main>
+
+      {/* Modules Carousel Modal */}
+      <ModulesCarouselModal
+        isOpen={!!selectedResourceForModal}
+        resourceTitle={selectedResourceForModal?.title || ''}
+        modules={selectedResourceForModal?.modules || []}
+        onClose={() => setSelectedResourceForModal(null)}
+      />
     </div>
   );
 };
