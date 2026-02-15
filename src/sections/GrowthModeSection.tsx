@@ -73,11 +73,24 @@ const GrowthModeSection: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-10">
-        {/* Hero Message */}
+        {/* Original Hero Message */}
         <div className="text-center mb-12">
           <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-6">
             <Sparkles className="w-10 h-10 text-amber-500" />
           </div>
+          <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-4">
+            Alignment Requires Readiness
+          </h2>
+          <p className="text-[#A9B5AA] text-lg max-w-2xl mx-auto mb-6">
+            Based on your current assessment, we recommend strengthening a few foundational areas before entering partnership mode.
+          </p>
+          <p className="text-[#A9B5AA] text-base max-w-2xl mx-auto mb-12">
+            This is not exclusion — it is preparation. Strong partnerships are built on emotional stability, accountability, and conflict repair skills. Entering intentionally protects both you and your future partner.
+          </p>
+        </div>
+
+        {/* New Growth Mode Section */}
+        <div className="text-center mb-12">
           <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-4">
             Why Growth Mode?
           </h2>
