@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, MessageCircle, Send } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 
 const GrowthModeSection: React.FC = () => {
@@ -109,7 +109,7 @@ const GrowthModeSection: React.FC = () => {
             className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
             title="Contact Support"
           >
-            <MessageCircle className="w-5 h-5" />
+            <HelpCircle className="w-5 h-5" />
           </button>
         </div>
       </header>
@@ -216,20 +216,13 @@ const GrowthModeSection: React.FC = () => {
                     key={user.id}
                     className="bg-[#111611] rounded-[20px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors group"
                   >
-                    <div className="flex items-start gap-4 mb-4">
-                      <img
-                        src={user.photoUrl}
-                        alt={user.name}
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                      <div className="flex-1">
-                        <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
-                        <p className="text-[#A9B5AA] text-sm">{user.city}</p>
-                        <div className="flex items-center gap-1 mt-2">
-                          <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded">
-                            Growth Mode
-                          </span>
-                        </div>
+                    <div className="mb-4">
+                      <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
+                      <p className="text-[#A9B5AA] text-sm">{user.city}</p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded">
+                          Growth Mode
+                        </span>
                       </div>
                     </div>
 
@@ -291,12 +284,7 @@ const GrowthModeSection: React.FC = () => {
                         key={user.id}
                         className="bg-[#111611] rounded-[16px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors"
                       >
-                        <div className="flex items-start gap-4">
-                          <img
-                            src={user.photoUrl}
-                            alt={user.name}
-                            className="w-14 h-14 rounded-full object-cover flex-shrink-0"
-                          />
+                        <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
                             <p className="text-[#A9B5AA] text-sm">{user.city}</p>
@@ -311,7 +299,7 @@ const GrowthModeSection: React.FC = () => {
                               setSelectedUser(user);
                               setCurrentView('conversation');
                             }}
-                            className="flex-shrink-0 py-2 px-4 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors"
+                            className="flex-shrink-0 py-2 px-4 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors whitespace-nowrap"
                           >
                             Message
                           </button>
