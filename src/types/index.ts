@@ -17,6 +17,8 @@ export interface User {
   alignmentScore?: number;
   photoUrl?: string;
   bio?: string;
+  suspensionEndDate?: number; // Timestamp when suspension expires (6 months from issue date)
+  assessmentPassed?: boolean; // Track if user passed the assessment
 }
 
 export interface AssessmentQuestion {

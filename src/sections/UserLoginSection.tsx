@@ -15,6 +15,12 @@ const UserLoginSection: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check if user is currently suspended
+  const isSuspended = (user: any): boolean => {
+    if (!user?.suspensionEndDate) return false;
+    return new Date().getTime() < user.suspensionEndDate;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -35,7 +41,11 @@ const UserLoginSection: React.FC = () => {
       window.dispatchEvent(new CustomEvent('user-login', { detail: user }));
       toast.success(`Welcome back, ${user.name}!`);
 
-      if (user.assessmentPassed) {
+      // Check if user is suspended - redirect to growth-mode if suspended
+      if (isSuspended(user)) {
+        toast.info('Your account is currently under suspension. Please review the growth resources.');
+        setCurrentView('growth-mode');
+      } else if (user.assessmentPassed) {
         setCurrentView('browse');
       } else {
         setCurrentView('growth-mode');
@@ -52,7 +62,12 @@ const UserLoginSection: React.FC = () => {
       // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
       window.dispatchEvent(new CustomEvent('user-login', { detail: user }));
       toast.success(`Welcome, ${user.name}!`);
-      if (user.assessmentPassed) {
+
+      // Check if user is suspended - redirect to growth-mode if suspended
+      if (isSuspended(user)) {
+        toast.info('Your account is currently under suspension. Please review the growth resources.');
+        setCurrentView('growth-mode');
+      } else if (user.assessmentPassed) {
         setCurrentView('browse');
       } else {
         setCurrentView('growth-mode');

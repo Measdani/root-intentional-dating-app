@@ -493,15 +493,32 @@ const AdminReportsSection: React.FC = () => {
                 {/* Tier 2: 6-Month Suspension */}
                 <button
                   onClick={() => {
-                    // TODO: Set suspension flag on user with end date 6 months from now
+                    // Calculate suspension end date (6 months from now)
+                    const suspensionEndDate = new Date();
+                    suspensionEndDate.setMonth(suspensionEndDate.getMonth() + 6);
+                    const formattedDate = suspensionEndDate.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    });
+
+                    // TODO: Update user object with suspensionEndDate
+                    // This will redirect them to growth-mode on next login
+                    const updatedUser = {
+                      ...reportedUser,
+                      suspensionEndDate: suspensionEndDate.getTime(),
+                    };
+                    // TODO: Save updatedUser to app state/users array
+
                     // TODO: Send suspension message to user inbox:
-                    // "Suspension: 6-Month Account Suspension
+                    // `Suspension: 6-Month Account Suspension
                     // Your account has been temporarily suspended for 6 months due to violations of our community guidelines.
                     // During this period, you will not be able to access the platform.
-                    // Your account will automatically reactivate on [DATE 6 months from now].
-                    // If you believe this is an error, contact our support team."
+                    // Your account will automatically reactivate on ${formattedDate}.
+                    // If you believe this is an error, contact our support team.`
+
                     // TODO: Update report status to 'resolved' in AdminContext
-                    toast.success(`${reportedUser.name}'s account suspended for 6 months`);
+                    toast.success(`${reportedUser.name}'s account suspended until ${formattedDate}`);
                     setShowResolveModal(false);
                     setShowDetailModal(false);
                   }}
