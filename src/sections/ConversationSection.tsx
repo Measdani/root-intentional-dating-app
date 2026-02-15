@@ -18,6 +18,13 @@ const ConversationSection: React.FC = () => {
     return storedChoice === 'true';
   });
 
+  // Track if congrats message has been shown (only show once per conversation)
+  const [showCongrats, setShowCongrats] = useState(() => {
+    if (!selectedConversation) return true;
+    const hasShown = localStorage.getItem(`congrats_shown_${selectedConversation.conversationId}`);
+    return hasShown !== 'true';
+  });
+
   // Wrapper to also save to localStorage
   const setHasUserMadeChoice = (value: boolean | ((prev: boolean) => boolean)) => {
     setHasUserMadeChoiceLocal(prevValue => {
@@ -100,7 +107,7 @@ const ConversationSection: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {!shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && (
+            {!shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent' || selectedConversation.status === 'photos_unlocked') && (
               <button
                 onClick={() => {
                   setShowConsentPrompt(true);
@@ -224,17 +231,28 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {selectedConversation.status === 'photos_unlocked' && (
-          <div className="bg-[#111611] rounded-2xl border border-[#D9FF3D]/30 p-8 text-center">
+        {selectedConversation.status === 'photos_unlocked' && showCongrats && (
+          <div className="bg-[#111611] rounded-2xl border border-[#D9FF3D]/30 p-8 text-center mb-8">
             <div className="w-16 h-16 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🎉</span>
             </div>
             <h3 className="font-display text-xl text-[#F6FFF2] mb-2">
               Photos unlocked!
             </h3>
-            <p className="text-[#A9B5AA] text-sm">
+            <p className="text-[#A9B5AA] text-sm mb-4">
               You can now see each other's photos. Continue the conversation!
             </p>
+            <button
+              onClick={() => {
+                setShowCongrats(false);
+                if (selectedConversation) {
+                  localStorage.setItem(`congrats_shown_${selectedConversation.conversationId}`, 'true');
+                }
+              }}
+              className="text-[#D9FF3D] text-sm hover:underline transition-colors"
+            >
+              Got it
+            </button>
           </div>
         )}
 
