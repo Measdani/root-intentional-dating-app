@@ -51,9 +51,8 @@ export const testUsers = [
     assessmentScore: 91,
     photoUrl: 'https://i.pravatar.cc/300?u=alex&img=7',
     membershipTier: 'annual' as const,
-    backgroundCheckVerified: true,
-    backgroundCheckStatus: 'verified' as const,
-    backgroundCheckDate: Date.now() - (15 * 24 * 60 * 60 * 1000), // 15 days ago
+    backgroundCheckVerified: false,
+    backgroundCheckStatus: 'pending' as const,
   },
   {
     id: 'u5',
