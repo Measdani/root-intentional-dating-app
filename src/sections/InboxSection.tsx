@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import type { User } from '@/types';
 import { ArrowLeft, MessageCircle, Check, Clock, Flag, HelpCircle } from 'lucide-react';
@@ -9,6 +9,14 @@ const InboxSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingUser, setReportingUser] = useState<User | null>(null);
+
+  // Mark all unread notifications as read when inbox is opened
+  useEffect(() => {
+    const unreadNotifications = getUnreadNotifications();
+    unreadNotifications.forEach(notification => {
+      markNotificationAsRead(notification.id);
+    });
+  }, []);
 
   // Determine sent vs received based on currentUser dynamically
   const allInteractions = [
