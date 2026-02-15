@@ -199,7 +199,7 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent' || (selectedConversation.status === 'photos_unlocked' && !showCongrats)) && (
+        {shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent' || selectedConversation.status === 'photos_unlocked') && (
           <div className="mb-8">
             <PhotoConsentPrompt
               conversation={selectedConversation}
@@ -215,7 +215,7 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {selectedConversation.status === 'photos_unlocked' && showCongrats && (
+        {selectedConversation.status === 'photos_unlocked' && showCongrats && !shouldShowPrompt && (
           <div className="bg-[#111611] rounded-2xl border border-[#D9FF3D]/30 p-8 text-center mb-8">
             <div className="w-16 h-16 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🎉</span>
