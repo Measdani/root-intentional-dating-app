@@ -177,22 +177,21 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
           <>
             {/* Header */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5 text-[#D9FF3D]" />
-                  </div>
-                  <h2 className="font-display text-2xl text-[#F6FFF2]">Contact Support</h2>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center">
+                  <MessageSquare className="w-5 h-5 text-[#D9FF3D]" />
                 </div>
-                <button
-                  onClick={() => setShowGuidelines(true)}
-                  className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[#1A211A] text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors text-sm"
-                  title="View Community Guidelines"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  <span className="hidden sm:inline">Guidelines</span>
-                </button>
+                <h2 className="font-display text-2xl text-[#F6FFF2]">Contact Support</h2>
               </div>
+              <button
+                onClick={() => setShowGuidelines(true)}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[#1A211A] text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors text-sm"
+                title="View Community Guidelines"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Guidelines</span>
+              </button>
+            </div>
 
               {/* Priority Badge */}
               {hasPriority && (
