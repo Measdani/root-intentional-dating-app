@@ -1,14 +1,27 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, ArrowRight } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, ArrowRight, MessageCircle, Send } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 
 const GrowthModeSection: React.FC = () => {
-  const { assessmentResult, setCurrentView, resetAssessment, currentUser, users, setSelectedUser } = useApp();
+  const {
+    assessmentResult,
+    setCurrentView,
+    resetAssessment,
+    currentUser,
+    users,
+    setSelectedUser,
+    expressInterest,
+    getReceivedInterests,
+    getConversation,
+    showSupportModal,
+    setShowSupportModal
+  } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'browse' | 'resources'>('browse');
+  const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources'>('browse');
+  const [showingProfile, setShowingProfile] = useState<any>(null);
   const [resources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
@@ -91,8 +104,15 @@ const GrowthModeSection: React.FC = () => {
     <div className="min-h-screen bg-[#0B0F0C]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-center">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <h1 className="font-display text-xl text-[#F6FFF2]">Growth Mode</h1>
+          <button
+            onClick={() => setShowSupportModal(true)}
+            className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+            title="Contact Support"
+          >
+            <MessageCircle className="w-5 h-5" />
+          </button>
         </div>
       </header>
 
@@ -151,6 +171,19 @@ const GrowthModeSection: React.FC = () => {
             </div>
           </button>
           <button
+            onClick={() => setActiveTab('inbox')}
+            className={`pb-3 px-4 font-medium transition-all ${
+              activeTab === 'inbox'
+                ? 'text-[#D9FF3D] border-b-2 border-[#D9FF3D]'
+                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Inbox
+            </div>
+          </button>
+          <button
             onClick={() => setActiveTab('resources')}
             className={`pb-3 px-4 font-medium transition-all ${
               activeTab === 'resources'
@@ -169,9 +202,12 @@ const GrowthModeSection: React.FC = () => {
         {activeTab === 'browse' && (
           <div>
             <div className="text-center mb-10">
-              <h2 className="font-display text-3xl text-[#F6FFF2] mb-2">Dating Pool</h2>
+              <h2 className="font-display text-3xl text-[#F6FFF2] mb-2">Growth Mode Community</h2>
               <p className="text-[#A9B5AA] max-w-2xl mx-auto">
-                Connect with others on the same growth journey. This is a safe space to meet people who are also building their relationship foundation. After 6 months or once you pass the assessment, you'll unlock the full dating pool.
+                Build your foundation with others on a similar journey. This space is dedicated to those who are working on their relationship skills and emotional growth. You'll connect with others focused on self-awareness, emotional regulation, and healthy partnership dynamics.
+              </p>
+              <p className="text-[#A9B5AA] max-w-2xl mx-auto mt-4">
+                Once you've completed the Growth Mode resources or after 6 months, you'll unlock full access to the dating pool, where you can connect with individuals who are ready for deeper relationships.
               </p>
             </div>
 
@@ -180,8 +216,7 @@ const GrowthModeSection: React.FC = () => {
                 {growthModeUsers.map((user) => (
                   <div
                     key={user.id}
-                    onClick={() => setSelectedUser(user)}
-                    className="bg-[#111611] rounded-[20px] border border-[#1A211A] p-6 cursor-pointer hover:border-[#D9FF3D] transition-colors group"
+                    className="bg-[#111611] rounded-[20px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors group"
                   >
                     <div className="flex items-start gap-4 mb-4">
                       <img
@@ -211,15 +246,11 @@ const GrowthModeSection: React.FC = () => {
                     </div>
 
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedUser(user);
-                        setCurrentView('profile');
-                      }}
+                      onClick={() => expressInterest(user.id, '')}
                       className="w-full py-2 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors flex items-center justify-center gap-2 group-hover:gap-3"
                     >
-                      View Profile
-                      <ArrowRight className="w-4 h-4 transition-transform" />
+                      Express Interest
+                      <Send className="w-4 h-4 transition-transform" />
                     </button>
                   </div>
                 ))}
@@ -230,6 +261,74 @@ const GrowthModeSection: React.FC = () => {
                 <p className="text-[#A9B5AA]">No members in growth mode yet. Check back soon!</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Inbox View */}
+        {activeTab === 'inbox' && (
+          <div>
+            <div className="text-center mb-10">
+              <h2 className="font-display text-3xl text-[#F6FFF2] mb-2">Your Matches</h2>
+              <p className="text-[#A9B5AA] max-w-2xl mx-auto">
+                View profiles and message with people who have mutual interest with you.
+              </p>
+            </div>
+
+            {(() => {
+              const receivedInterests = getReceivedInterests(currentUser.id);
+              // Filter to only growth-mode matches
+              const growthModeMatches = receivedInterests
+                .map(interest => users.find(u => u.id === interest.fromUserId))
+                .filter((u) => u && !u.assessmentPassed && u.id !== currentUser.id);
+
+              return growthModeMatches.length > 0 ? (
+                <div className="space-y-4">
+                  {growthModeMatches.map((user) => {
+                    if (!user) return null;
+                    const conversation = getConversation(currentUser.id, user.id);
+                    const lastMessage = conversation?.messages?.[conversation.messages.length - 1];
+
+                    return (
+                      <div
+                        key={user.id}
+                        className="bg-[#111611] rounded-[16px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors"
+                      >
+                        <div className="flex items-start gap-4">
+                          <img
+                            src={user.photoUrl}
+                            alt={user.name}
+                            className="w-14 h-14 rounded-full object-cover flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
+                            <p className="text-[#A9B5AA] text-sm">{user.city}</p>
+                            {lastMessage && (
+                              <p className="text-[#A9B5AA] text-sm mt-2 line-clamp-2">
+                                {lastMessage.senderUserId === currentUser.id ? 'You: ' : ''}{lastMessage.text}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setCurrentView('conversation');
+                            }}
+                            className="flex-shrink-0 py-2 px-4 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors"
+                          >
+                            Message
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <MessageCircle className="w-12 h-12 text-[#1A211A] mx-auto mb-4" />
+                  <p className="text-[#A9B5AA]">No matches yet. Express interest in members to start connecting!</p>
+                </div>
+              );
+            })()}
           </div>
         )}
 
