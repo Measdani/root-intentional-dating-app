@@ -10,7 +10,24 @@ const ConversationSection: React.FC = () => {
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showConsentPrompt, setShowConsentPrompt] = useState(true);
-  const [hasUserMadeChoice, setHasUserMadeChoice] = useState(false);
+
+  // Check localStorage for persisted choice state for this conversation
+  const [hasUserMadeChoice, setHasUserMadeChoiceLocal] = useState(() => {
+    if (!selectedConversation) return false;
+    const storedChoice = localStorage.getItem(`consent_choice_${selectedConversation.conversationId}`);
+    return storedChoice === 'true';
+  });
+
+  // Wrapper to also save to localStorage
+  const setHasUserMadeChoice = (value: boolean | ((prev: boolean) => boolean)) => {
+    setHasUserMadeChoiceLocal(prevValue => {
+      const newValue = typeof value === 'function' ? value(prevValue) : value;
+      if (selectedConversation) {
+        localStorage.setItem(`consent_choice_${selectedConversation.conversationId}`, newValue.toString());
+      }
+      return newValue;
+    });
+  };
 
   if (!selectedConversation) {
     return (
