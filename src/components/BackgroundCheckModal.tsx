@@ -85,16 +85,16 @@ const BackgroundCheckModal: React.FC<BackgroundCheckModalProps> = ({
                   What's included:
                 </h3>
                 <ul className="text-xs text-[#A9B5AA] space-y-1.5">
-                  <li>✓ Criminal background screening</li>
-                  <li>✓ Identity verification</li>
-                  <li>✓ Valid government ID confirmation</li>
-                  <li>✓ Verification badge on your profile</li>
+                  <li>✓ Sex Offender Registry</li>
+                  <li>✓ National and Global Criminal Database Search</li>
+                  <li>✓ Unlimited County Criminal Search</li>
+                  <li>✓ SSN Trace & Global Watchlist</li>
                 </ul>
               </div>
 
               <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
                 <p className="text-xs text-[#A9B5AA]">
-                  <strong className="text-blue-300">Privacy protected:</strong> Your detailed results are private. Only the verification badge appears on your profile.
+                  <strong className="text-blue-300">Privacy Protected:</strong> Your detailed results are private. Only the Verification Badge will appear on your profile, giving others confidence in your background.
                 </p>
               </div>
             </div>
@@ -117,8 +117,17 @@ const BackgroundCheckModal: React.FC<BackgroundCheckModalProps> = ({
               </button>
             </div>
 
+            <div className="bg-[#0B0F0C] rounded-lg p-4 space-y-2 mt-4">
+              <p className="text-xs font-medium text-[#F6FFF2] mb-2">Important Information:</p>
+              <ul className="text-xs text-[#A9B5AA] space-y-1.5">
+                <li>• By clicking "Get Verified Now", you'll be redirected to a secure third-party payment page to complete the background check.</li>
+                <li>• This premium check includes not just criminal background screening but also identity verification, which helps ensure your profile is genuine.</li>
+                <li>• Once completed, you'll receive a Verification Badge that will be visible to others on your profile.</li>
+              </ul>
+            </div>
+
             <p className="text-xs text-[#A9B5AA]/60 text-center mt-4">
-              One-time fee: $14.99. You can complete this anytime.
+              One-time fee: $54.99 per report pricing with Checkr. You can complete this anytime.
             </p>
           </>
         )}
