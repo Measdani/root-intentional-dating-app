@@ -65,7 +65,13 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
         <div className="space-y-6 mb-8">
           <div>
             <h3 className="text-2xl font-display text-[#D9FF3D] mb-3">{currentModule.title}</h3>
-            <p className="text-[#A9B5AA] text-base leading-relaxed">{currentModule.description}</p>
+            <div className="text-[#A9B5AA] text-base leading-relaxed space-y-2">
+              {currentModule.description.split('\n').map((line, idx) => (
+                <p key={idx} className="whitespace-pre-wrap">
+                  {line}
+                </p>
+              ))}
+            </div>
           </div>
 
           {currentModule.exercise && (
@@ -74,7 +80,13 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
                 <span className="text-lg">✓</span>
                 Exercise
               </h4>
-              <p className="text-[#A9B5AA] leading-relaxed whitespace-pre-wrap">{currentModule.exercise}</p>
+              <div className="text-[#A9B5AA] leading-relaxed space-y-2">
+                {currentModule.exercise.split('\n').map((line, idx) => (
+                  <p key={idx} className="whitespace-pre-wrap">
+                    {line}
+                  </p>
+                ))}
+              </div>
             </div>
           )}
         </div>
