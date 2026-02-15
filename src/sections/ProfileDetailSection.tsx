@@ -5,7 +5,7 @@ import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const ProfileDetailSection: React.FC = () => {
-  const { selectedUser, currentUser, setCurrentView, setSelectedUser, setSelectedConversation, expressInterest, arePhotosUnlocked, getConversation, reportUser, blockUser, isUserBlocked } = useApp();
+  const { selectedUser, currentUser, setCurrentView, setSelectedUser, setSelectedConversation, expressInterest, arePhotosUnlocked, getConversation, reportUser, blockUser, isUserBlocked, isBlockedByUser } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
@@ -185,13 +185,24 @@ const ProfileDetailSection: React.FC = () => {
                 {/* Express Interest / Conversation Button */}
                 {!conversation ? (
                   <div className="mb-8">
-                    <button
-                      onClick={() => setShowModal(true)}
-                      className="w-full py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      Express Interest
-                    </button>
+                    {isBlockedByUser(selectedUser.id) ? (
+                      <button
+                        disabled
+                        className="w-full py-3.5 bg-[#1A211A] text-[#A9B5AA] rounded-2xl font-medium cursor-not-allowed flex items-center justify-center gap-2"
+                        title="This user has blocked you"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        User blocked you
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowModal(true)}
+                        className="w-full py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        Express Interest
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="mb-8 flex gap-3">

@@ -45,6 +45,7 @@ interface AppContextType extends AppState {
   blockUser: (userId: string, reason?: string) => void;
   unblockUser: (userId: string) => void;
   isUserBlocked: (userId: string) => boolean;
+  isBlockedByUser: (userId: string) => boolean;
   suspendUser: (userId: string, suspensionEndDate: number) => void;
   reinstateUser: (userId: string) => void;
   removeUser: (userId: string) => void;
@@ -109,6 +110,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     receivedInterests: {},
   });
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [blockedByUsers, setBlockedByUsers] = useState<string[]>([]);
   const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Load interactions from localStorage on mount
@@ -166,6 +168,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Failed to save blocked users:', error);
     }
   }, [blockedUsers]);
+
+  // Load users who have blocked current user
+  useEffect(() => {
+    try {
+      const allBlocks = JSON.parse(localStorage.getItem('rooted_all_blocks') || '{}');
+      const usersWhoBlockedMe = allBlocks[currentUser.id] || [];
+      setBlockedByUsers(usersWhoBlockedMe);
+    } catch (error) {
+      console.error('Failed to load blocked by users:', error);
+    }
+  }, [currentUser.id]);
 
   // Reload interactions when currentUser changes (for user login/logout)
   // StorageEvent doesn't fire in same tab, so we need to manually reload
@@ -648,7 +661,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (prev.includes(userId)) return prev;
       return [...prev, userId];
     });
-  }, []);
+
+    // Also record this block globally so the blocked user knows they're blocked by current user
+    try {
+      const allBlocks = JSON.parse(localStorage.getItem('rooted_all_blocks') || '{}');
+      if (!allBlocks[userId]) {
+        allBlocks[userId] = [];
+      }
+      if (!allBlocks[userId].includes(currentUser.id)) {
+        allBlocks[userId].push(currentUser.id);
+        localStorage.setItem('rooted_all_blocks', JSON.stringify(allBlocks));
+      }
+    } catch (e) {
+      console.error('Error saving block record:', e);
+    }
+  }, [currentUser.id]);
 
   // Unblock a user
   const unblockUser = useCallback((userId: string) => {
@@ -659,6 +686,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isUserBlocked = useCallback((userId: string): boolean => {
     return blockedUsers.includes(userId);
   }, [blockedUsers]);
+
+  // Check if current user is blocked by another user
+  const isBlockedByUser = useCallback((userId: string): boolean => {
+    return blockedByUsers.includes(userId);
+  }, [blockedByUsers]);
 
   // Suspend a user for a specified duration (stores suspension end date)
   const suspendUser = useCallback((userId: string, suspensionEndDate: number) => {
@@ -781,6 +813,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     blockUser,
     unblockUser,
     isUserBlocked,
+    isBlockedByUser,
     suspendUser,
     reinstateUser,
     removeUser,
