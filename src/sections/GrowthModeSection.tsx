@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { ArrowLeft, BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X } from 'lucide-react';
 
 const GrowthModeSection: React.FC = () => {
   const { assessmentResult, setCurrentView, resetAssessment, currentUser } = useApp();
@@ -29,20 +29,8 @@ const GrowthModeSection: React.FC = () => {
     <div className="min-h-screen bg-[#0B0F0C]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button
-            onClick={currentUser.userStatus === 'suspended' ? handleLogout : () => setCurrentView('landing')}
-            className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">{currentUser.userStatus === 'suspended' ? 'Logout' : 'Back'}</span>
-          </button>
-
-          <div className="text-center">
-            <h1 className="font-display text-xl text-[#F6FFF2]">Growth Mode</h1>
-          </div>
-
-          <div className="w-16" />
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-center">
+          <h1 className="font-display text-xl text-[#F6FFF2]">Growth Mode</h1>
         </div>
       </header>
 
@@ -235,10 +223,10 @@ const GrowthModeSection: React.FC = () => {
             </button>
           )}
           <button
-            onClick={() => setCurrentView('landing')}
+            onClick={handleLogout}
             className="btn-outline"
           >
-            Return Home
+            Logout
           </button>
         </div>
 
