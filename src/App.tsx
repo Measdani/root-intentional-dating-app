@@ -23,6 +23,7 @@ import AdminDashboardSection from '@/sections/AdminDashboardSection';
 import AdminReportsSection from '@/sections/AdminReportsSection';
 import AdminAssessmentsSection from '@/sections/AdminAssessmentsSection';
 import AdminContentSection from '@/sections/AdminContentSection';
+import AdminSupportSection from '@/sections/AdminSupportSection';
 import UserLoginSection from '@/sections/UserLoginSection';
 import PrivacyPolicySection from '@/sections/PrivacyPolicySection';
 import TermsOfServiceSection from '@/sections/TermsOfServiceSection';
@@ -61,8 +62,7 @@ const AppContent: React.FC = () => {
           case 'admin-settings':
             return <div className="p-8"><p className="text-[#A9B5AA]">Settings coming soon...</p></div>;
           case 'admin-support':
-            // Placeholder - AdminSupportSection will be imported and used here
-            return <div className="p-8"><p className="text-[#A9B5AA]">Support section coming soon...</p></div>;
+            return <AdminSupportSection />;
           default:
             return <AdminDashboardSection />;
         }

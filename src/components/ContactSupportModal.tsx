@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
 import type { SupportCategory } from '@/types';
 import { X, Check, MessageSquare, Loader2, Zap } from 'lucide-react';
