@@ -43,25 +43,7 @@ const AppContent: React.FC = () => {
       return <UserLoginSection />;
     }
 
-    // Prevent suspended users from accessing any view except growth-mode
-    if (currentUser.userStatus === 'suspended' && currentView !== 'growth-mode') {
-      return (
-        <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center p-6">
-          <div className="text-center max-w-md">
-            <h2 className="font-display text-2xl text-[#F6FFF2] mb-4">Account Suspended</h2>
-            <div className="space-y-4 text-[#A9B5AA] mb-6">
-              <p>Your account has been temporarily suspended due to violations of our community guidelines.</p>
-              <p>Your account will automatically transition to Growth Mode on the specified date in your notification.</p>
-              <p>Check your inbox for more details and the reactivation date.</p>
-            </div>
-            <a href="/" className="inline-block px-6 py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform">
-              Go to Home
-            </a>
-          </div>
-        </div>
-      );
-    }
-
+    // Allow admin views to load regardless of user status
     if (currentView.startsWith('admin-')) {
       if (!session.isAuthenticated) {
         return <AdminLoginSection />;
@@ -89,6 +71,25 @@ const AppContent: React.FC = () => {
       };
 
       return <AdminLayout>{renderAdminView()}</AdminLayout>;
+    }
+
+    // Prevent suspended users from accessing any view except growth-mode
+    if (currentUser.userStatus === 'suspended' && currentView !== 'growth-mode') {
+      return (
+        <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center p-6">
+          <div className="text-center max-w-md">
+            <h2 className="font-display text-2xl text-[#F6FFF2] mb-4">Account Suspended</h2>
+            <div className="space-y-4 text-[#A9B5AA] mb-6">
+              <p>Your account has been temporarily suspended due to violations of our community guidelines.</p>
+              <p>Your account will automatically transition to Growth Mode on the specified date in your notification.</p>
+              <p>Check your inbox for more details and the reactivation date.</p>
+            </div>
+            <a href="/" className="inline-block px-6 py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform">
+              Go to Home
+            </a>
+          </div>
+        </div>
+      );
     }
 
     switch (currentView) {
