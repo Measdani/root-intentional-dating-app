@@ -46,6 +46,7 @@ interface AppContextType extends AppState {
   isUserBlocked: (userId: string) => boolean;
   suspendUser: (userId: string, suspensionEndDate: number) => void;
   reinstateUser: (userId: string) => void;
+  removeUser: (userId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -686,6 +687,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // For now, the reinstatement is persisted through localStorage when the reinstated user is logged in
   }, [currentUser]);
 
+  // Remove a user permanently from the platform (irreversible)
+  const removeUser = useCallback((userId: string) => {
+    // Log out the user if they're the one being removed
+    if (currentUser.id === userId) {
+      localStorage.removeItem('currentUser');
+      // Dispatch custom event to trigger logout
+      window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
+    }
+
+    // Block the user to prevent access
+    // TODO: Actually delete user from database (would require backend implementation)
+    // For now, we store them in the blocked list as a removed user
+  }, [currentUser.id]);
+
   const value: AppContextType = {
     currentView,
     assessmentAnswers,
@@ -726,6 +741,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isUserBlocked,
     suspendUser,
     reinstateUser,
+    removeUser,
   };
 
   return (

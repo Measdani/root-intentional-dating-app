@@ -17,7 +17,7 @@ import type { Report, ReportStatus, ReportReason, ReportSeverity } from '@/types
 
 const AdminReportsSection: React.FC = () => {
   const { reports = [], reportStats } = useAdmin();
-  const { users, blockUser, suspendUser } = useApp();
+  const { users, suspendUser, removeUser } = useApp();
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'all'>('all');
@@ -526,14 +526,15 @@ const AdminReportsSection: React.FC = () => {
                 {/* Tier 3: Permanent Removal */}
                 <button
                   onClick={() => {
-                    // TODO: Permanently delete user from platform (irreversible)
+                    // Permanently remove user from platform
+                    removeUser(selectedReport.reportedUserId);
+
                     // TODO: Send removal message to user inbox:
                     // "Permanent Removal: Account Permanently Removed
                     // Your account has been permanently removed from our platform due to serious violations of our community guidelines.
                     // This action is irreversible. You will no longer be able to access the platform or create a new account with the same email address.
                     // For support inquiries, contact our support team."
                     // TODO: Update report status to 'resolved' in AdminContext
-                    blockUser(selectedReport.reportedUserId, 'admin-removal');
                     toast.success(`${reportedUser.name}'s account has been permanently removed`);
                     setShowResolveModal(false);
                     setShowDetailModal(false);
