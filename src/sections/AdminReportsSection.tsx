@@ -477,7 +477,7 @@ const AdminReportsSection: React.FC = () => {
                     addNotification(
                       'warning',
                       'First Violation: Warning',
-                      'Your account has been flagged for violating our community guidelines. This is your first warning. Please review our community standards and adjust your behavior accordingly. Further violations may result in suspension or removal from the platform.',
+                      'Your account has been flagged for violating our community guidelines. This is your first warning. Please review our community standards and adjust your behavior accordingly. Continued violations may result in a temporary suspension or permanent removal from the platform. We are here to help if you need clarification on the guidelines.',
                       selectedReport.reportedUserId
                     );
                     toast.success(`Warning sent to ${reportedUser.name}`);

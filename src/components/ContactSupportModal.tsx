@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import type { SupportCategory } from '@/types';
-import { X, Check, MessageSquare, Loader2, Zap } from 'lucide-react';
+import { X, Check, MessageSquare, Loader2, Zap, BookOpen } from 'lucide-react';
 
 interface ContactSupportModalProps {
   isOpen: boolean;
@@ -43,6 +43,7 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showGuidelines, setShowGuidelines] = useState(false);
 
   if (!isOpen) return null;
 
@@ -88,6 +89,7 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
       setSubject('');
       setMessage('');
       setIsSuccess(false);
+      setShowGuidelines(false);
     }
   };
 
@@ -107,7 +109,56 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
           <X className="w-4 h-4" />
         </button>
 
-        {isSuccess ? (
+        {showGuidelines ? (
+          // Community Guidelines View
+          <div>
+            <button
+              onClick={() => setShowGuidelines(false)}
+              className="flex items-center gap-2 text-[#D9FF3D] hover:text-[#F6FFF2] transition-colors mb-6"
+            >
+              <span>← Back to Support</span>
+            </button>
+
+            <h2 className="font-display text-2xl text-[#F6FFF2] mb-4">Community Guidelines</h2>
+
+            <div className="space-y-4 text-sm text-[#A9B5AA]">
+              <section>
+                <h3 className="font-medium text-[#F6FFF2] mb-2">Be Respectful & Authentic</h3>
+                <p>Treat all members with kindness and respect. Be honest in your profile and communications. Pretending to be someone you're not or mocking others violates our guidelines.</p>
+              </section>
+
+              <section>
+                <h3 className="font-medium text-[#F6FFF2] mb-2">No Harassment or Abuse</h3>
+                <p>Do not engage in harassment, bullying, threats, or abusive behavior. This includes unwanted sexual content or advances. All members deserve to feel safe.</p>
+              </section>
+
+              <section>
+                <h3 className="font-medium text-[#F6FFF2] mb-2">Protect Privacy</h3>
+                <p>Don't share other members' personal information, photos, or screenshots without consent. Respect boundaries and private conversations.</p>
+              </section>
+
+              <section>
+                <h3 className="font-medium text-[#F6FFF2] mb-2">No Illegal Content or Activities</h3>
+                <p>Don't promote or engage in illegal activities, including drug trafficking, fraud, or exploitation. This includes attempts to circumvent our safety measures.</p>
+              </section>
+
+              <section>
+                <h3 className="font-medium text-[#F6FFF2] mb-2">Appropriate Content Only</h3>
+                <p>Keep conversations and content appropriate for a professional dating platform. Explicit sexual content, hate speech, or discriminatory language is not permitted.</p>
+              </section>
+
+              <section>
+                <h3 className="font-medium text-[#F6FFF2] mb-2">Report Violations</h3>
+                <p>If you witness behavior that violates these guidelines, use the report feature. We review all reports and take action to maintain a safe community.</p>
+              </section>
+
+              <section>
+                <h3 className="font-medium text-[#F6FFF2] mb-2">Consequences</h3>
+                <p>Violations of community guidelines may result in warnings, temporary suspension (up to 6 months), or permanent removal from the platform. We believe in giving people a chance to improve their behavior while maintaining community safety.</p>
+              </section>
+            </div>
+          </div>
+        ) : isSuccess ? (
           <div className="text-center py-6">
             <div className="w-16 h-16 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-[#D9FF3D]" />
@@ -126,11 +177,21 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
           <>
             {/* Header */}
             <div className="mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-[#D9FF3D]" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5 text-[#D9FF3D]" />
+                  </div>
+                  <h2 className="font-display text-2xl text-[#F6FFF2]">Contact Support</h2>
                 </div>
-                <h2 className="font-display text-2xl text-[#F6FFF2]">Contact Support</h2>
+                <button
+                  onClick={() => setShowGuidelines(true)}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[#1A211A] text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors text-sm"
+                  title="View Community Guidelines"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span className="hidden sm:inline">Guidelines</span>
+                </button>
               </div>
 
               {/* Priority Badge */}

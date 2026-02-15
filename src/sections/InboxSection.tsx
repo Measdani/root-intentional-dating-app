@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import type { User } from '@/types';
-import { ArrowLeft, MessageCircle, Check, Clock, Flag } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Check, Clock, Flag, HelpCircle } from 'lucide-react';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const InboxSection: React.FC = () => {
@@ -113,7 +113,7 @@ const InboxSection: React.FC = () => {
             className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
             title="Contact Support"
           >
-            <MessageCircle className="w-4 h-4" />
+            <HelpCircle className="w-4 h-4" />
           </button>
         </div>
       </header>
