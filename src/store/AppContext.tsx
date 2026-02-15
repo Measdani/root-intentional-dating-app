@@ -270,6 +270,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser.suspensionEndDate, currentUser.userStatus, currentUser.id]);
 
+  // Auto-redirect needs-growth users to growth-mode view
+  useEffect(() => {
+    if (currentUser.userStatus === 'needs-growth' && currentView !== 'growth-mode') {
+      setCurrentView('growth-mode');
+    }
+  }, [currentUser.userStatus]);
+
   const addAssessmentAnswer = useCallback((questionId: string, score: number, redFlag?: boolean) => {
     setAssessmentAnswers(prev => [...prev, { questionId, score, redFlag }]);
   }, []);

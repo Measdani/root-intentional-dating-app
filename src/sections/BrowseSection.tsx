@@ -146,26 +146,7 @@ const BrowseSection: React.FC = () => {
         )}
       </header>
 
-      {/* Needs-Growth Status Block */}
-      {currentUser.userStatus === 'needs-growth' && (
-        <main className="max-w-6xl mx-auto px-6 py-12">
-          <div className="bg-[#111611] rounded-[20px] border border-[#D9FF3D]/30 p-8 text-center">
-            <h2 className="font-display text-2xl text-[#F6FFF2] mb-3">Account Requires Growth</h2>
-            <p className="text-[#A9B5AA] mb-6">
-              Your account has been placed in Growth Mode. You must complete the growth assessment before you can browse and match again.
-            </p>
-            <button
-              onClick={() => setCurrentView('growth-mode')}
-              className="px-6 py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform"
-            >
-              Start Growth Mode
-            </button>
-          </div>
-        </main>
-      )}
-
       {/* Profiles Grid */}
-      {currentUser.userStatus !== 'needs-growth' && (
       <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUsers.map((user, idx) => {
@@ -303,7 +284,6 @@ const BrowseSection: React.FC = () => {
           </div>
         )}
       </main>
-      )}
     </div>
   );
 };
