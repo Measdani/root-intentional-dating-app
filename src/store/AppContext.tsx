@@ -119,6 +119,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [blockedByUsers, setBlockedByUsers] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const suspensionProcessedRef = useRef<string | null>(null);
 
   // Load interactions from localStorage on mount
   // Uses shared storage so all users can see each other's messages (for testing)
@@ -231,9 +232,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Check for expired suspensions and transition to needs-growth status
   useEffect(() => {
+    // Only process if suspension details changed and we haven't already processed this suspension
     if (currentUser.suspensionEndDate && currentUser.userStatus === 'suspended') {
       const now = Date.now();
-      if (now >= currentUser.suspensionEndDate) {
+      const suspensionKey = `${currentUser.id}-${currentUser.suspensionEndDate}`;
+
+      // Only process if this is a new suspension or we haven't checked it yet
+      if (suspensionProcessedRef.current !== suspensionKey && now >= currentUser.suspensionEndDate) {
+        suspensionProcessedRef.current = suspensionKey;
+
         // Suspension has expired - transition to needs-growth status
         const updatedUser = {
           ...currentUser,
