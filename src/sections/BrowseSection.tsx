@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle } from 'lucide-react';
+import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { calculateAlignmentScore } from '@/data/users';
 import type { User } from '@/types';
@@ -65,11 +65,10 @@ const BrowseSection: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
-            onClick={() => setCurrentView('landing')}
-            className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+            onClick={() => setCurrentView('growth-mode')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back</span>
+            <span>Growth Mode</span>
           </button>
 
           <div className="text-center">

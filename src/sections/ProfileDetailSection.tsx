@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { ArrowLeft, MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag } from 'lucide-react';
+import { MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag } from 'lucide-react';
 import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
@@ -85,14 +85,10 @@ const ProfileDetailSection: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
-            onClick={() => {
-              setSelectedUser(null);
-              setCurrentView('browse');
-            }}
-            className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+            onClick={() => setCurrentView('growth-mode')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back to browse</span>
+            <span>Growth Mode Resources</span>
           </button>
 
           <div className="flex items-center gap-2">
