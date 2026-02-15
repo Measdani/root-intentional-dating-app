@@ -6,7 +6,7 @@ import { calculateAlignmentScore } from '@/data/users';
 import type { User } from '@/types';
 
 const BrowseSection: React.FC = () => {
-  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, setSelectedConversation, isUserBlocked, setShowSupportModal, getUnreadNotifications } = useApp();
+  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, setSelectedConversation, isUserBlocked, isBlockedByUser, setShowSupportModal, getUnreadNotifications } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
@@ -27,8 +27,10 @@ const BrowseSection: React.FC = () => {
   const filteredUsers = usersWithUpdatedScores.filter(user => {
     // Exclude current user from browse list
     if (user.id === currentUser.id) return false;
-    // Exclude blocked users
+    // Exclude users that current user blocked
     if (isUserBlocked(user.id)) return false;
+    // Exclude users that have blocked the current user
+    if (isBlockedByUser(user.id)) return false;
     // Show only opposite gender
     const oppositeGender = currentUser.gender === 'male' ? 'female' : 'male';
     if (user.gender !== oppositeGender) return false;

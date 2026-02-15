@@ -831,8 +831,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: Date.now(),
       read: false,
     };
-    setNotifications(prev => [...prev, newNotification]);
-  }, []);
+
+    // If this notification is for the current user, add to local state
+    if (userId === currentUser.id) {
+      setNotifications(prev => [...prev, newNotification]);
+    }
+
+    // Always save to localStorage for the target user
+    try {
+      const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
+      if (!allNotifications[userId]) {
+        allNotifications[userId] = [];
+      }
+      allNotifications[userId].push(newNotification);
+      localStorage.setItem('rooted_notifications', JSON.stringify(allNotifications));
+    } catch (error) {
+      console.error('Failed to save notification:', error);
+    }
+  }, [currentUser.id]);
 
   const value: AppContextType = {
     currentView,
