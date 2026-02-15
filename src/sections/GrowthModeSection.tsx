@@ -8,6 +8,12 @@ const GrowthModeSection: React.FC = () => {
   const [dismissNotification, setDismissNotification] = useState(false);
   const [activeResource, setActiveResource] = useState<string | null>(null);
 
+  const handleLogout = () => {
+    localStorage.removeItem('currentUser');
+    window.dispatchEvent(new Event('storage'));
+    setCurrentView('landing');
+  };
+
   const handleRetake = () => {
     resetAssessment();
     setCurrentView('landing');
@@ -25,11 +31,11 @@ const GrowthModeSection: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
-            onClick={() => setCurrentView('landing')}
+            onClick={currentUser.userStatus === 'suspended' ? handleLogout : () => setCurrentView('landing')}
             className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back</span>
+            <span className="text-sm">{currentUser.userStatus === 'suspended' ? 'Logout' : 'Back'}</span>
           </button>
 
           <div className="text-center">
