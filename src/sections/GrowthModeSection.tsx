@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, ArrowRight } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 
 const GrowthModeSection: React.FC = () => {
-  const { assessmentResult, setCurrentView, resetAssessment, currentUser } = useApp();
+  const { assessmentResult, setCurrentView, resetAssessment, currentUser, users, setSelectedUser } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'browse' | 'resources'>('browse');
   const [resources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
@@ -20,6 +21,11 @@ const GrowthModeSection: React.FC = () => {
     g5: 25,
     g6: 40,
   });
+
+  // Filter users who haven't passed assessment (growth-mode pool)
+  const growthModeUsers = useMemo(() => {
+    return users.filter(u => !u.assessmentPassed && u.id !== currentUser.id);
+  }, [users, currentUser.id]);
 
   // Map categories to icons
   const getCategoryIcon = (category: string) => {
@@ -129,6 +135,107 @@ const GrowthModeSection: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-10">
+        {/* Tab Navigation */}
+        <div className="mb-10 flex gap-4 border-b border-[#1A211A]">
+          <button
+            onClick={() => setActiveTab('browse')}
+            className={`pb-3 px-4 font-medium transition-all ${
+              activeTab === 'browse'
+                ? 'text-[#D9FF3D] border-b-2 border-[#D9FF3D]'
+                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Browse Members
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('resources')}
+            className={`pb-3 px-4 font-medium transition-all ${
+              activeTab === 'resources'
+                ? 'text-[#D9FF3D] border-b-2 border-[#D9FF3D]'
+                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Growth Resources
+            </div>
+          </button>
+        </div>
+
+        {/* Browse View */}
+        {activeTab === 'browse' && (
+          <div>
+            <div className="text-center mb-10">
+              <h2 className="font-display text-3xl text-[#F6FFF2] mb-2">Dating Pool</h2>
+              <p className="text-[#A9B5AA] max-w-2xl mx-auto">
+                Connect with others on the same growth journey. This is a safe space to meet people who are also building their relationship foundation. After 6 months or once you pass the assessment, you'll unlock the full dating pool.
+              </p>
+            </div>
+
+            {growthModeUsers.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-6">
+                {growthModeUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => setSelectedUser(user)}
+                    className="bg-[#111611] rounded-[20px] border border-[#1A211A] p-6 cursor-pointer hover:border-[#D9FF3D] transition-colors group"
+                  >
+                    <div className="flex items-start gap-4 mb-4">
+                      <img
+                        src={user.photoUrl}
+                        alt={user.name}
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                      <div className="flex-1">
+                        <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
+                        <p className="text-[#A9B5AA] text-sm">{user.city}</p>
+                        <div className="flex items-center gap-1 mt-2">
+                          <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded">
+                            Growth Mode
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[#A9B5AA] text-sm mb-4 line-clamp-2">{user.bio}</p>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {user.values?.slice(0, 3).map((value, idx) => (
+                        <span key={idx} className="text-xs bg-[#1A211A] text-[#A9B5AA] px-2 py-1 rounded">
+                          {value}
+                        </span>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedUser(user);
+                        setCurrentView('profile');
+                      }}
+                      className="w-full py-2 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors flex items-center justify-center gap-2 group-hover:gap-3"
+                    >
+                      View Profile
+                      <ArrowRight className="w-4 h-4 transition-transform" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 text-[#1A211A] mx-auto mb-4" />
+                <p className="text-[#A9B5AA]">No members in growth mode yet. Check back soon!</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Resources View */}
+        {activeTab === 'resources' && (
+          <div>
         {/* Original Hero Message */}
         <div className="text-center mb-12 pb-12 border-b border-[#1A211A]">
           <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-6">
@@ -311,6 +418,8 @@ const GrowthModeSection: React.FC = () => {
             })}
           </div>
         </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
