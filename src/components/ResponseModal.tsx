@@ -22,6 +22,15 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // Conversation starters based on user alignment and interests
+  const conversationStarters = [
+    `What drew you to ${senderUser?.name}? I'm curious about what resonated with you.`,
+    `I love your focus on ${senderUser?.growthFocus}. How did you develop that mindset?`,
+    `Your values really align with mine. What's one experience that shaped those for you?`,
+    `I'm intrigued by your vision for partnership. Can you tell me more about what that looks like for you?`,
+    `What's something about ${senderUser?.city} that you love? I'm always interested in what home means to people.`,
+  ];
+
   if (!isOpen || !senderUser || !originalMessage) return null;
 
   const messageLength = message.length;
@@ -141,6 +150,25 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                     You share {senderUser.alignmentScore}% alignment — lean into that.
                   </p>
                 )}
+
+                {/* Conversation Starters */}
+                <div className="mb-4 space-y-2">
+                  <p className="text-xs text-[#A9B5AA] font-medium mb-2">💡 Conversation starters:</p>
+                  <div className="space-y-2">
+                    {conversationStarters.map((starter, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setMessage(starter)}
+                        className="w-full text-left p-2 rounded-lg bg-[#0B0F0C]/70 border border-[#1A211A]/50 hover:border-[#D9FF3D]/50 text-[#A9B5AA] hover:text-[#F6FFF2] text-xs leading-relaxed transition-all hover:bg-[#1A211A]"
+                      >
+                        {starter}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-[#A9B5AA]/50 mt-2">Feel free to personalize any starter above</p>
+                </div>
+
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value.slice(0, maxLength))}
