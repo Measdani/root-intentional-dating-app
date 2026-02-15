@@ -27,6 +27,7 @@ interface AppContextType extends AppState {
   expressInterest: (toUserId: string, message: string) => void;
   respondToInterest: (fromUserId: string, message: string) => void;
   grantPhotoConsent: (conversationId: string) => void;
+  withdrawPhotoConsent: (conversationId: string) => void;
   hasExpressedInterest: (userId: string) => boolean;
   arePhotosUnlocked: (userId: string) => boolean;
   canRevealPhotos: (userId: string) => boolean;
@@ -400,6 +401,81 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // NOTE: Auto-consent simulation removed. Other user must manually click "Yes" to unlock photos.
   }, [currentUser.id]);
 
+  const withdrawPhotoConsent = useCallback((conversationId: string) => {
+    setInteractions(prev => {
+      const updateInteraction = (interaction: UserInteraction): UserInteraction => {
+        if (interaction.conversationId !== conversationId) return interaction;
+
+        const updatedConsent = {
+          fromUser: {
+            ...interaction.photoConsent.fromUser,
+            hasConsented: interaction.photoConsent.fromUser.userId === currentUser.id
+              ? false
+              : interaction.photoConsent.fromUser.hasConsented,
+          },
+          toUser: {
+            ...interaction.photoConsent.toUser,
+            hasConsented: interaction.photoConsent.toUser.userId === currentUser.id
+              ? false
+              : interaction.photoConsent.toUser.hasConsented,
+          },
+        };
+
+        const bothConsented = updatedConsent.fromUser.hasConsented && updatedConsent.toUser.hasConsented;
+
+        return {
+          ...interaction,
+          photoConsent: updatedConsent,
+          photosUnlocked: bothConsented,
+          status: bothConsented ? 'photos_unlocked' : 'awaiting_consent',
+          updatedAt: Date.now(),
+        };
+      };
+
+      const updatedSent = Object.fromEntries(
+        Object.entries(prev.sentInterests).map(([k, v]) => [k, updateInteraction(v)])
+      );
+      const updatedReceived = Object.fromEntries(
+        Object.entries(prev.receivedInterests).map(([k, v]) => [k, updateInteraction(v)])
+      );
+
+      return {
+        sentInterests: updatedSent,
+        receivedInterests: updatedReceived,
+      };
+    });
+
+    // Update selectedConversation if it matches the conversation being updated
+    setSelectedConversation(prev => {
+      if (!prev || prev.conversationId !== conversationId) return prev;
+
+      const updatedConsent = {
+        fromUser: {
+          ...prev.photoConsent.fromUser,
+          hasConsented: prev.photoConsent.fromUser.userId === currentUser.id
+            ? false
+            : prev.photoConsent.fromUser.hasConsented,
+        },
+        toUser: {
+          ...prev.photoConsent.toUser,
+          hasConsented: prev.photoConsent.toUser.userId === currentUser.id
+            ? false
+            : prev.photoConsent.toUser.hasConsented,
+        },
+      };
+
+      const bothConsented = updatedConsent.fromUser.hasConsented && updatedConsent.toUser.hasConsented;
+
+      return {
+        ...prev,
+        photoConsent: updatedConsent,
+        photosUnlocked: bothConsented,
+        status: bothConsented ? 'photos_unlocked' : 'awaiting_consent',
+        updatedAt: Date.now(),
+      };
+    });
+  }, [currentUser.id]);
+
   const getConversation = useCallback((userId: string): UserInteraction | null => {
     console.log(`🔍 getConversation called for userId: ${userId}`);
     console.log('📦 sentInterests keys:', Object.keys(interactions.sentInterests));
@@ -599,6 +675,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     expressInterest,
     respondToInterest,
     grantPhotoConsent,
+    withdrawPhotoConsent,
     hasExpressedInterest,
     arePhotosUnlocked,
     canRevealPhotos,

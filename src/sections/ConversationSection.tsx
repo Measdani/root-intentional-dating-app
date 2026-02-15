@@ -6,7 +6,7 @@ import ResponseModal from '@/components/ResponseModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const ConversationSection: React.FC = () => {
-  const { selectedConversation, setCurrentView, respondToInterest, grantPhotoConsent, users, currentUser, reportUser, blockUser } = useApp();
+  const { selectedConversation, setCurrentView, respondToInterest, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser } = useApp();
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showConsentPrompt, setShowConsentPrompt] = useState(true);
@@ -45,6 +45,10 @@ const ConversationSection: React.FC = () => {
 
   const handleConsentClick = () => {
     grantPhotoConsent(selectedConversation.conversationId);
+  };
+
+  const handleWithdrawConsent = () => {
+    withdrawPhotoConsent(selectedConversation.conversationId);
   };
 
   // Get the first (initial) message
@@ -170,6 +174,7 @@ const ConversationSection: React.FC = () => {
               otherUserName={otherUser.name}
               onConsent={handleConsentClick}
               onChoiceMade={() => setShowConsentPrompt(false)}
+              onWithdraw={handleWithdrawConsent}
             />
           </div>
         )}
@@ -182,6 +187,7 @@ const ConversationSection: React.FC = () => {
               otherUserName={otherUser.name}
               onConsent={handleConsentClick}
               onChoiceMade={() => setShowConsentPrompt(false)}
+              onWithdraw={handleWithdrawConsent}
             />
           </div>
         )}

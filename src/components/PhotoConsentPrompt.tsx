@@ -8,6 +8,7 @@ interface PhotoConsentPromptProps {
   otherUserName: string;
   onConsent: () => void;
   onChoiceMade?: () => void;
+  onWithdraw?: () => void;
 }
 
 const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
@@ -16,6 +17,7 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
   otherUserName,
   onConsent,
   onChoiceMade,
+  onWithdraw,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [deferred, setDeferred] = useState(false);
@@ -99,6 +101,18 @@ const PhotoConsentPrompt: React.FC<PhotoConsentPromptProps> = ({
             className="text-[#D9FF3D] text-sm hover:underline transition-colors"
           >
             Change your mind?
+          </button>
+        </div>
+      )}
+
+      {currentUserConsented && !deferred && (
+        <div className="mb-6 p-4 bg-[#0B0F0C] rounded-xl border border-[#1A211A] text-center">
+          <p className="text-[#A9B5AA] text-sm mb-2">You can withdraw your consent anytime.</p>
+          <button
+            onClick={onWithdraw}
+            className="text-[#D9FF3D] text-sm hover:underline transition-colors"
+          >
+            Withdraw consent
           </button>
         </div>
       )}
