@@ -22,6 +22,9 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // Check if the selected message is the background check starter
+  const isBackgroundCheckMessage = message.includes('background check');
+
   // Conversation starters based on user alignment and interests
   const conversationStarters = [
     `What drew you to ${senderUser?.name}? I'm curious about what resonated with you.`,
@@ -30,6 +33,7 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
     `I'm intrigued by your vision for partnership. Can you tell me more about what that looks like for you?`,
     `What's something about ${senderUser?.city} that you love? I'm always interested in what home means to people.`,
     `What's a life lesson you've learned that changed how you approach relationships?`,
+    `I'm really enjoying our conversation, and I feel it's important to stay safe when connecting with someone new. Would you be open to completing a background check for peace of mind before we meet?`,
   ];
 
   if (!isOpen || !senderUser || !originalMessage) return null;
@@ -200,6 +204,26 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                   {messageLength}/{maxLength}
                 </span>
               </div>
+
+              {/* Background Check Info */}
+              {isBackgroundCheckMessage && (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+                  <p className="text-xs text-emerald-300 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <strong>Background Check Available</strong>
+                  </p>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open('https://checkr.com', '_blank');
+                    }}
+                    className="text-xs text-emerald-300 hover:text-emerald-200 underline inline-block"
+                  >
+                    Complete your background check here →
+                  </a>
+                </div>
+              )}
 
               {/* Submit Button */}
               <button

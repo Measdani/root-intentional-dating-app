@@ -23,6 +23,9 @@ export interface User {
   email?: string; // Email for support contact
   userStatus?: 'active' | 'needs-growth' | 'suspended' | 'removed'; // User account status
   isAdmin?: boolean; // Admin user flag
+  backgroundCheckVerified?: boolean; // Whether user completed background check
+  backgroundCheckStatus?: 'pending' | 'verified' | 'failed' | 'expired'; // Status of background check
+  backgroundCheckDate?: number; // Timestamp when background check was completed
 }
 
 export interface AssessmentQuestion {

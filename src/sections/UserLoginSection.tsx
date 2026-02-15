@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { testUsers } from '@/data/testUsers';
+import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 
 const UserLoginSection: React.FC = () => {
   const { setCurrentView } = useApp();
@@ -14,6 +15,8 @@ const UserLoginSection: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
+  const [loginUser, setLoginUser] = useState<any>(null);
 
   // Check if user is currently suspended
   const isSuspended = (user: any): boolean => {
@@ -41,17 +44,43 @@ const UserLoginSection: React.FC = () => {
       window.dispatchEvent(new CustomEvent('user-login', { detail: user }));
       toast.success(`Welcome back, ${user.name}!`);
 
-      // Check if user is suspended - redirect to growth-mode if suspended
-      if (isSuspended(user)) {
+      // Show background check modal if user hasn't verified yet
+      if (!user.backgroundCheckVerified) {
+        setLoginUser(user);
+        setShowBackgroundCheckModal(true);
+      } else {
+        // Check if user is suspended - redirect to growth-mode if suspended
+        if (isSuspended(user)) {
+          toast.info('Your account is currently under suspension. Please review the growth resources.');
+          setCurrentView('growth-mode');
+        } else if (user.assessmentPassed) {
+          setCurrentView('browse');
+        } else {
+          setCurrentView('growth-mode');
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackgroundCheckVerified = () => {
+    setShowBackgroundCheckModal(false);
+    if (loginUser) {
+      // Update user in localStorage with verified status
+      const updatedUser = { ...loginUser, backgroundCheckVerified: true, backgroundCheckStatus: 'verified', backgroundCheckDate: Date.now() };
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      window.dispatchEvent(new CustomEvent('user-login', { detail: updatedUser }));
+
+      // Now redirect to appropriate view
+      if (isSuspended(updatedUser)) {
         toast.info('Your account is currently under suspension. Please review the growth resources.');
         setCurrentView('growth-mode');
-      } else if (user.assessmentPassed) {
+      } else if (updatedUser.assessmentPassed) {
         setCurrentView('browse');
       } else {
         setCurrentView('growth-mode');
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -63,14 +92,20 @@ const UserLoginSection: React.FC = () => {
       window.dispatchEvent(new CustomEvent('user-login', { detail: user }));
       toast.success(`Welcome, ${user.name}!`);
 
-      // Check if user is suspended - redirect to growth-mode if suspended
-      if (isSuspended(user)) {
-        toast.info('Your account is currently under suspension. Please review the growth resources.');
-        setCurrentView('growth-mode');
-      } else if (user.assessmentPassed) {
-        setCurrentView('browse');
+      // Show background check modal if user hasn't verified yet
+      if (!user.backgroundCheckVerified) {
+        setLoginUser(user);
+        setShowBackgroundCheckModal(true);
       } else {
-        setCurrentView('growth-mode');
+        // Check if user is suspended - redirect to growth-mode if suspended
+        if (isSuspended(user)) {
+          toast.info('Your account is currently under suspension. Please review the growth resources.');
+          setCurrentView('growth-mode');
+        } else if (user.assessmentPassed) {
+          setCurrentView('browse');
+        } else {
+          setCurrentView('growth-mode');
+        }
       }
     }
   };
@@ -80,6 +115,24 @@ const UserLoginSection: React.FC = () => {
       <div className="absolute inset-0">
         <div className="absolute inset-0 grain-overlay" />
       </div>
+
+      <BackgroundCheckModal
+        isOpen={showBackgroundCheckModal}
+        onClose={() => {
+          setShowBackgroundCheckModal(false);
+          // Redirect without verification
+          if (loginUser) {
+            if (isSuspended(loginUser)) {
+              setCurrentView('growth-mode');
+            } else if (loginUser.assessmentPassed) {
+              setCurrentView('browse');
+            } else {
+              setCurrentView('growth-mode');
+            }
+          }
+        }}
+        onVerified={handleBackgroundCheckVerified}
+      />
 
       <Card className="relative w-full max-w-md bg-[#111611] border-[#1A211A] shadow-2xl">
         <div className="p-8 space-y-6">

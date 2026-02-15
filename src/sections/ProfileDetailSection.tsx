@@ -147,6 +147,12 @@ const ProfileDetailSection: React.FC = () => {
                     <Shield className="w-3 h-3" />
                     Verified
                   </span>
+                  {selectedUser.backgroundCheckVerified && (
+                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-sm rounded-full flex items-center gap-1.5 border border-emerald-500/30">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      Background Verified
+                    </span>
+                  )}
                   <span className="px-3 py-1 bg-[#D9FF3D]/10 text-[#D9FF3D] text-sm rounded-full">
                     {selectedUser.partnershipIntent.replace(/-/g, ' ')}
                   </span>

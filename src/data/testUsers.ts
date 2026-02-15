@@ -22,6 +22,10 @@ export const testUsers = [
     assessmentPassed: true,
     assessmentScore: 94,
     photoUrl: 'https://i.pravatar.cc/300?u=maya&img=1',
+    membershipTier: 'quarterly' as const,
+    backgroundCheckVerified: true,
+    backgroundCheckStatus: 'verified' as const,
+    backgroundCheckDate: Date.now() - (30 * 24 * 60 * 60 * 1000), // 30 days ago
   },
   {
     id: 'u7',
@@ -46,6 +50,10 @@ export const testUsers = [
     assessmentPassed: true,
     assessmentScore: 91,
     photoUrl: 'https://i.pravatar.cc/300?u=alex&img=7',
+    membershipTier: 'annual' as const,
+    backgroundCheckVerified: true,
+    backgroundCheckStatus: 'verified' as const,
+    backgroundCheckDate: Date.now() - (15 * 24 * 60 * 60 * 1000), // 15 days ago
   },
   {
     id: 'u5',
@@ -70,6 +78,9 @@ export const testUsers = [
     assessmentPassed: true,
     assessmentScore: 89,
     photoUrl: 'https://i.pravatar.cc/300?u=rachel&img=5',
+    membershipTier: 'quarterly' as const,
+    backgroundCheckVerified: false,
+    backgroundCheckStatus: 'pending' as const,
   },
   {
     id: 'u2',
@@ -94,5 +105,7 @@ export const testUsers = [
     assessmentPassed: false,
     assessmentScore: 78,
     photoUrl: 'https://i.pravatar.cc/300?u=james&img=2',
+    membershipTier: 'monthly' as const,
+    backgroundCheckVerified: false,
   },
 ];
