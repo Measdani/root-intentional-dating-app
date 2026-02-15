@@ -85,6 +85,17 @@ const ConversationSection: React.FC = () => {
   // (Clicking Photo Consent resets hasUserMadeChoice to false, which reopens the prompt)
   const shouldShowPrompt = showConsentPrompt && !hasUserMadeChoice;
 
+  // Log state changes for debugging
+  React.useEffect(() => {
+    console.log('ConversationSection state:', {
+      showConsentPrompt,
+      hasUserMadeChoice,
+      shouldShowPrompt,
+      showCongrats,
+      status: selectedConversation?.status,
+    });
+  }, [showConsentPrompt, hasUserMadeChoice, shouldShowPrompt, showCongrats, selectedConversation?.status]);
+
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
       {/* Header */}
@@ -111,12 +122,18 @@ const ConversationSection: React.FC = () => {
             {!shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent' || selectedConversation.status === 'photos_unlocked') && (
               <button
                 onClick={() => {
+                  console.log('Photo Consent button clicked. Before state update:', {
+                    showConsentPrompt,
+                    hasUserMadeChoice,
+                    showCongrats,
+                  });
                   setShowConsentPrompt(true);
                   setHasUserMadeChoice(false);
                   setShowCongrats(false);
                   if (selectedConversation) {
                     localStorage.setItem(`congrats_shown_${currentUser.id}_${selectedConversation.conversationId}`, 'true');
                   }
+                  console.log('Photo Consent button clicked. State update calls made.');
                 }}
                 className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
                 title="Photo Consent"
