@@ -79,13 +79,13 @@ const GrowthModeSection: React.FC = () => {
             <Sparkles className="w-10 h-10 text-amber-500" />
           </div>
           <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-4">
-            Alignment Requires Readiness
+            Why Growth Mode?
           </h2>
           <p className="text-[#A9B5AA] text-lg max-w-2xl mx-auto mb-6">
-            Based on your current assessment, we recommend strengthening a few foundational areas before entering partnership mode.
+            In Growth Mode, we focus on helping you develop key emotional, relational, and self-awareness skills. These tools prepare you for deep, meaningful connections with others.
           </p>
           <p className="text-[#A9B5AA] text-base max-w-2xl mx-auto">
-            This is not exclusion — it is preparation. Strong partnerships are built on emotional stability, accountability, and conflict repair skills. Entering intentionally protects both you and your future partner.
+            By completing one of the Growth Mode paths, you'll build a stronger sense of self and align with your ideal partner's values, creating the foundation for a lasting and healthy relationship.
           </p>
         </div>
 
