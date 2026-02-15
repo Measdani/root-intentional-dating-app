@@ -467,33 +467,69 @@ const AdminReportsSection: React.FC = () => {
                 <p className="text-[#F6FFF2] font-medium">{reportedUser.name}, {reportedUser.age}</p>
               </div>
 
-              <p className="text-[#A9B5AA] text-sm mb-6">Choose an action to resolve this report:</p>
+              <p className="text-[#A9B5AA] text-sm mb-6">Choose enforcement action:</p>
 
               <div className="space-y-3">
+                {/* Tier 1: Warning */}
                 <button
                   onClick={() => {
-                    // Remove user from platform
-                    blockUser(selectedReport.reportedUserId, 'admin-removal');
-                    toast.success(`${reportedUser.name} has been removed from the platform`);
+                    // TODO: Increment violation count on reported user
+                    // TODO: Send warning message to user inbox:
+                    // "First Violation: Warning
+                    // Your account has been flagged for violating our community guidelines. This is your first warning.
+                    // Please review our community standards and adjust your behavior accordingly.
+                    // Further violations may result in suspension or removal from the platform."
+                    // TODO: Update report status to 'resolved' in AdminContext
+                    toast.success(`Warning sent to ${reportedUser.name}`);
                     setShowResolveModal(false);
                     setShowDetailModal(false);
                   }}
-                  className="w-full py-3 bg-red-600/20 text-red-300 border border-red-500/30 rounded-lg font-medium hover:bg-red-600/30 transition-colors"
+                  className="w-full py-3 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg font-medium hover:bg-blue-600/30 transition-colors text-left"
                 >
-                  🗑️ Remove User
+                  <div className="font-medium">⚠️ Tier 1: First Violation Warning</div>
+                  <div className="text-xs opacity-75 mt-1">Send warning message to inbox. Account remains active.</div>
                 </button>
 
+                {/* Tier 2: 6-Month Suspension */}
                 <button
                   onClick={() => {
-                    // Block but keep account
-                    blockUser(selectedReport.reportedUserId, 'admin-warning');
-                    toast.success(`${reportedUser.name}'s account has been flagged. They can still access but with restrictions`);
+                    // TODO: Set suspension flag on user with end date 6 months from now
+                    // TODO: Send suspension message to user inbox:
+                    // "Suspension: 6-Month Account Suspension
+                    // Your account has been temporarily suspended for 6 months due to violations of our community guidelines.
+                    // During this period, you will not be able to access the platform.
+                    // Your account will automatically reactivate on [DATE 6 months from now].
+                    // If you believe this is an error, contact our support team."
+                    // TODO: Update report status to 'resolved' in AdminContext
+                    toast.success(`${reportedUser.name}'s account suspended for 6 months`);
                     setShowResolveModal(false);
                     setShowDetailModal(false);
                   }}
-                  className="w-full py-3 bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 rounded-lg font-medium hover:bg-yellow-600/30 transition-colors"
+                  className="w-full py-3 bg-orange-600/20 text-orange-300 border border-orange-500/30 rounded-lg font-medium hover:bg-orange-600/30 transition-colors text-left"
                 >
-                  ⚠️ Keep Account (With Warning)
+                  <div className="font-medium">⏸️ Tier 2: 6-Month Suspension</div>
+                  <div className="text-xs opacity-75 mt-1">Temporary suspension with message explaining terms.</div>
+                </button>
+
+                {/* Tier 3: Permanent Removal */}
+                <button
+                  onClick={() => {
+                    // TODO: Permanently delete user from platform (irreversible)
+                    // TODO: Send removal message to user inbox:
+                    // "Permanent Removal: Account Permanently Removed
+                    // Your account has been permanently removed from our platform due to serious violations of our community guidelines.
+                    // This action is irreversible. You will no longer be able to access the platform or create a new account with the same email address.
+                    // For support inquiries, contact our support team."
+                    // TODO: Update report status to 'resolved' in AdminContext
+                    blockUser(selectedReport.reportedUserId, 'admin-removal');
+                    toast.success(`${reportedUser.name}'s account has been permanently removed`);
+                    setShowResolveModal(false);
+                    setShowDetailModal(false);
+                  }}
+                  className="w-full py-3 bg-red-600/20 text-red-300 border border-red-500/30 rounded-lg font-medium hover:bg-red-600/30 transition-colors text-left"
+                >
+                  <div className="font-medium">🗑️ Tier 3: Permanent Removal</div>
+                  <div className="text-xs opacity-75 mt-1">Irreversible deletion from platform.</div>
                 </button>
 
                 <button
