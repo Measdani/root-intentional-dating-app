@@ -17,7 +17,7 @@ import type { Report, ReportStatus, ReportReason, ReportSeverity } from '@/types
 
 const AdminReportsSection: React.FC = () => {
   const { reports = [], reportStats } = useAdmin();
-  const { users } = useApp();
+  const { users, blockUser } = useApp();
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'all'>('all');
@@ -26,6 +26,7 @@ const AdminReportsSection: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
 
   const ITEMS_PER_PAGE = 10;
 
@@ -413,8 +414,8 @@ const AdminReportsSection: React.FC = () => {
               <div className="border-t border-[#1A211A] pt-4 flex gap-3">
                 <button
                   onClick={() => {
+                    // TODO: Update report status to 'under-review' in AdminContext
                     toast.success('Report marked as under review');
-                    setShowDetailModal(false);
                   }}
                   className="flex-1 py-2 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:scale-[1.02] transition-transform"
                 >
@@ -423,8 +424,7 @@ const AdminReportsSection: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    toast.success('Report marked as resolved');
-                    setShowDetailModal(false);
+                    setShowResolveModal(true);
                   }}
                   className="flex-1 py-2 bg-green-600 text-white rounded-lg font-medium hover:scale-[1.02] transition-transform"
                 >
@@ -433,12 +433,76 @@ const AdminReportsSection: React.FC = () => {
 
                 <button
                   onClick={() => {
+                    // TODO: Update report status to 'dismissed' in AdminContext
                     toast.success('Report dismissed');
                     setShowDetailModal(false);
                   }}
                   className="py-2 px-4 bg-[#1A211A] text-[#A9B5AA] rounded-lg font-medium hover:bg-[#2A312A] transition-colors"
                 >
                   Dismiss
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Resolve Modal - Choose action when resolving report */}
+      {showResolveModal && selectedReport && reportedUser && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#0B0F0C]/80">
+          <Card className="bg-[#111611] border-[#1A211A] max-w-md w-full relative">
+            <div className="p-8">
+              {/* Close Button */}
+              <button
+                onClick={() => setShowResolveModal(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <h2 className="font-display text-2xl text-[#F6FFF2] mb-6">Resolve Report</h2>
+
+              <div className="mb-6 p-4 bg-[#0B0F0C]/50 rounded-lg">
+                <p className="text-[#A9B5AA] text-sm mb-2">Reported user:</p>
+                <p className="text-[#F6FFF2] font-medium">{reportedUser.name}, {reportedUser.age}</p>
+              </div>
+
+              <p className="text-[#A9B5AA] text-sm mb-6">Choose an action to resolve this report:</p>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    // Remove user from platform
+                    blockUser(selectedReport.reportedUserId, 'admin-removal');
+                    toast.success(`${reportedUser.name} has been removed from the platform`);
+                    setShowResolveModal(false);
+                    setShowDetailModal(false);
+                  }}
+                  className="w-full py-3 bg-red-600/20 text-red-300 border border-red-500/30 rounded-lg font-medium hover:bg-red-600/30 transition-colors"
+                >
+                  🗑️ Remove User
+                </button>
+
+                <button
+                  onClick={() => {
+                    // Block but keep account
+                    blockUser(selectedReport.reportedUserId, 'admin-warning');
+                    toast.success(`${reportedUser.name}'s account has been flagged. They can still access but with restrictions`);
+                    setShowResolveModal(false);
+                    setShowDetailModal(false);
+                  }}
+                  className="w-full py-3 bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 rounded-lg font-medium hover:bg-yellow-600/30 transition-colors"
+                >
+                  ⚠️ Keep Account (With Warning)
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowResolveModal(false);
+                  }}
+                  className="w-full py-3 bg-[#1A211A] text-[#A9B5AA] rounded-lg font-medium hover:bg-[#2A312A] transition-colors"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
