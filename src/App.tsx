@@ -27,6 +27,7 @@ import AdminSupportSection from '@/sections/AdminSupportSection';
 import UserLoginSection from '@/sections/UserLoginSection';
 import PrivacyPolicySection from '@/sections/PrivacyPolicySection';
 import TermsOfServiceSection from '@/sections/TermsOfServiceSection';
+import CommunityGuidelinesSection from '@/sections/CommunityGuidelinesSection';
 import EmailModal from '@/components/EmailModal';
 import ContactSupportModal from '@/components/ContactSupportModal';
 import Footer from '@/components/Footer';
@@ -88,6 +89,8 @@ const AppContent: React.FC = () => {
         return <PrivacyPolicySection />;
       case 'terms-of-service':
         return <TermsOfServiceSection />;
+      case 'community-guidelines':
+        return <CommunityGuidelinesSection />;
       case 'landing':
       default:
         return (

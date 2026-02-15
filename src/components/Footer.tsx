@@ -29,6 +29,13 @@ const Footer: React.FC = () => {
             >
               Terms of Service
             </button>
+            <div className="w-px h-4 bg-[#1A211A]" />
+            <button
+              onClick={() => setCurrentView('community-guidelines')}
+              className="hover:text-[#D9FF3D] transition-colors"
+            >
+              Community Guidelines
+            </button>
           </div>
 
           {/* Copyright */}

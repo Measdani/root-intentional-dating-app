@@ -75,7 +75,8 @@ export type AppView =
   | 'admin-support'
   | 'user-login'
   | 'privacy-policy'
-  | 'terms-of-service';
+  | 'terms-of-service'
+  | 'community-guidelines';
 
 export interface MembershipTier {
   id: string;
