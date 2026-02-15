@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import type { AppView, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity } from '@/types';
+import type { AppView, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory } from '@/types';
 import { sampleUsers, currentUser as defaultUser } from '@/data/users';
+import { toast } from 'sonner';
 
 interface AppState {
   currentView: AppView;
@@ -47,6 +48,9 @@ interface AppContextType extends AppState {
   suspendUser: (userId: string, suspensionEndDate: number) => void;
   reinstateUser: (userId: string) => void;
   removeUser: (userId: string) => void;
+  showSupportModal: boolean;
+  setShowSupportModal: (value: boolean) => void;
+  submitSupportRequest: (category: SupportCategory, subject: string, message: string) => Promise<string>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -99,6 +103,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [users] = useState<User[]>(sampleUsers);
   const [hasJoinedList, setHasJoinedList] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
   const [interactions, setInteractions] = useState<InteractionState>({
     sentInterests: {},
     receivedInterests: {},
@@ -701,6 +706,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // For now, we store them in the blocked list as a removed user
   }, [currentUser.id]);
 
+  // Submit a support request message
+  const submitSupportRequest = useCallback(async (
+    category: SupportCategory,
+    subject: string,
+    message: string
+  ): Promise<string> => {
+    const messageId = crypto.randomUUID();
+    const isPriority = currentUser.membershipTier === 'quarterly' ||
+                       currentUser.membershipTier === 'annual';
+
+    const supportMessage: SupportMessage = {
+      id: messageId,
+      userId: currentUser.id,
+      userEmail: currentUser.email || 'no-email@example.com',
+      userName: currentUser.name,
+      membershipTier: currentUser.membershipTier || 'monthly',
+      category,
+      subject,
+      message,
+      status: 'unread',
+      priority: isPriority ? 'priority' : 'normal',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    // Dispatch event for AdminContext to listen
+    window.dispatchEvent(new CustomEvent('new-support-message', {
+      detail: supportMessage
+    }));
+
+    toast.success(isPriority
+      ? 'Message sent! Priority support will respond within 24 hours.'
+      : 'Message sent! We\'ll respond within 3-5 business days.');
+
+    return messageId;
+  }, [currentUser]);
+
   const value: AppContextType = {
     currentView,
     assessmentAnswers,
@@ -742,6 +784,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     suspendUser,
     reinstateUser,
     removeUser,
+    showSupportModal,
+    setShowSupportModal,
+    submitSupportRequest,
   };
 
   return (

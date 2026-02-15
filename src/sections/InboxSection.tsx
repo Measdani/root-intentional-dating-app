@@ -5,7 +5,7 @@ import { ArrowLeft, MessageCircle, Check, Clock, Flag } from 'lucide-react';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const InboxSection: React.FC = () => {
-  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, reportUser, blockUser } = useApp();
+  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, reportUser, blockUser, setShowSupportModal } = useApp();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingUser, setReportingUser] = useState<User | null>(null);
@@ -108,7 +108,13 @@ const InboxSection: React.FC = () => {
             <h1 className="font-display text-xl text-[#F6FFF2]">Inbox</h1>
           </div>
 
-          <div className="w-16" />
+          <button
+            onClick={() => setShowSupportModal(true)}
+            className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+            title="Contact Support"
+          >
+            <MessageCircle className="w-4 h-4" />
+          </button>
         </div>
       </header>
 

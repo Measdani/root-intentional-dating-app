@@ -27,12 +27,13 @@ import UserLoginSection from '@/sections/UserLoginSection';
 import PrivacyPolicySection from '@/sections/PrivacyPolicySection';
 import TermsOfServiceSection from '@/sections/TermsOfServiceSection';
 import EmailModal from '@/components/EmailModal';
+import ContactSupportModal from '@/components/ContactSupportModal';
 import Footer from '@/components/Footer';
 import AdminAccessButton from '@/components/AdminAccessButton';
 import UserAccessButton from '@/components/UserAccessButton';
 
 const AppContent: React.FC = () => {
-  const { currentView } = useApp();
+  const { currentView, showSupportModal, setShowSupportModal } = useApp();
   const { session } = useAdmin();
 
   const renderView = () => {
@@ -59,6 +60,9 @@ const AppContent: React.FC = () => {
             return <AdminContentSection />;
           case 'admin-settings':
             return <div className="p-8"><p className="text-[#A9B5AA]">Settings coming soon...</p></div>;
+          case 'admin-support':
+            // Placeholder - AdminSupportSection will be imported and used here
+            return <div className="p-8"><p className="text-[#A9B5AA]">Support section coming soon...</p></div>;
           default:
             return <AdminDashboardSection />;
         }
@@ -112,6 +116,7 @@ const AppContent: React.FC = () => {
       {!currentView.startsWith('admin-') && currentView !== 'user-login' && (
         <>
           <EmailModal />
+          <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
           <AdminAccessButton />
           <UserAccessButton />
         </>

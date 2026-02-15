@@ -19,6 +19,8 @@ export interface User {
   bio?: string;
   suspensionEndDate?: number; // Timestamp when suspension expires (6 months from issue date)
   assessmentPassed?: boolean; // Track if user passed the assessment
+  membershipTier?: 'monthly' | 'quarterly' | 'annual'; // User's membership plan
+  email?: string; // Email for support contact
 }
 
 export interface AssessmentQuestion {
@@ -70,6 +72,7 @@ export type AppView =
   | 'admin-content'
   | 'admin-settings'
   | 'admin-reports'
+  | 'admin-support'
   | 'user-login'
   | 'privacy-policy'
   | 'terms-of-service';
@@ -132,3 +135,13 @@ export type {
   ReportStatistics,
   ReportFilters,
 } from './report';
+
+// Export all support-related types
+export type {
+  SupportMessageStatus,
+  SupportMessagePriority,
+  SupportCategory,
+  SupportMessage,
+  SupportMessageStatistics,
+  SupportMessageFilters,
+} from './support';

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import type { AdminUser, AdminSession, UserWithAdminData, UserStatus, UserFilters, AnalyticsSnapshot } from '@/types/admin';
-import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, ReportStatistics, ReportFilters } from '@/types/index';
+import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, ReportStatistics, ReportFilters, SupportMessage, SupportMessageStatistics, SupportMessageFilters } from '@/types/index';
 import { mockAdminUsers, mockAdminCredentials } from '@/data/admins';
 
 interface AdminContextType {
@@ -22,6 +22,19 @@ interface AdminContextType {
   reportStats?: ReportStatistics;
   selectedReport: Report | null;
   reportFilters: ReportFilters;
+
+  // Support message-related
+  supportMessages: SupportMessage[];
+  supportMessageStats?: SupportMessageStatistics;
+  selectedSupportMessage: SupportMessage | null;
+  supportMessageFilters: SupportMessageFilters;
+
+  // Support message methods
+  getSupportMessages: () => SupportMessage[];
+  getUnreadSupportMessages: () => SupportMessage[];
+  setSelectedSupportMessage: (message: SupportMessage | null) => void;
+  setSupportMessageFilters: (filters: SupportMessageFilters) => void;
+  updateSupportMessageStatus: (messageId: string, status: 'unread' | 'in-progress' | 'resolved', adminResponse?: string) => void;
 
   // Auth methods
   login: (email: string, password: string) => Promise<boolean>;
@@ -82,6 +95,12 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [reportFilters, setReportFilters] = useState<ReportFilters>({});
+
+  // Support messages state
+  const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
+  const [selectedSupportMessage, setSelectedSupportMessage] = useState<SupportMessage | null>(null);
+  const [supportMessageFilters, setSupportMessageFilters] = useState<SupportMessageFilters>({});
+
   const [filters, setFilters] = useState<UserFilters>({ searchTerm: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,16 +141,51 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Fall back to empty state
     }
 
+    // Load support messages from localStorage
+    try {
+      const savedMessages = localStorage.getItem('rooted-admin-support-messages');
+      if (savedMessages) {
+        setSupportMessages(JSON.parse(savedMessages));
+      }
+    } catch {
+      // Fall back to empty state
+    }
+
     // Listen for new reports from user context
     const handleNewReport = (event: CustomEvent) => {
       setReports(prev => [...prev, event.detail]);
     };
 
+    // Listen for new support messages from user context
+    const handleNewSupportMessage = (event: CustomEvent) => {
+      setSupportMessages(prev => [...prev, event.detail]);
+    };
+
     window.addEventListener('new-report' as any, handleNewReport as EventListener);
+    window.addEventListener('new-support-message' as any, handleNewSupportMessage as EventListener);
     return () => {
       window.removeEventListener('new-report' as any, handleNewReport as EventListener);
+      window.removeEventListener('new-support-message' as any, handleNewSupportMessage as EventListener);
     };
   }, []);
+
+  // Save reports to localStorage when they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('rooted-admin-reports', JSON.stringify(reports));
+    } catch {
+      // Fall back silently
+    }
+  }, [reports]);
+
+  // Save support messages to localStorage when they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('rooted-admin-support-messages', JSON.stringify(supportMessages));
+    } catch {
+      // Fall back silently
+    }
+  }, [supportMessages]);
 
   // Save session to localStorage
   const saveSession = useCallback((newSession: AdminSession) => {
@@ -296,6 +350,60 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [reports]);
 
+  // Support message management methods
+  const getSupportMessages = useCallback((): SupportMessage[] => {
+    return supportMessages;
+  }, [supportMessages]);
+
+  const getUnreadSupportMessages = useCallback((): SupportMessage[] => {
+    return supportMessages.filter((m) => m.status === 'unread');
+  }, [supportMessages]);
+
+  const updateSupportMessageStatus = useCallback((
+    messageId: string,
+    status: 'unread' | 'in-progress' | 'resolved',
+    adminResponse?: string
+  ) => {
+    setSupportMessages(prev =>
+      prev.map(m => m.id === messageId
+        ? {
+            ...m,
+            status,
+            adminResponse,
+            updatedAt: Date.now(),
+            resolvedAt: status === 'resolved' ? Date.now() : m.resolvedAt,
+          }
+        : m
+      )
+    );
+  }, []);
+
+  // Compute support message statistics
+  const supportMessageStats = useMemo((): SupportMessageStatistics => {
+    const total = supportMessages.length;
+    const unread = supportMessages.filter((m) => m.status === 'unread').length;
+    const inProgress = supportMessages.filter((m) => m.status === 'in-progress').length;
+    const resolved = supportMessages.filter((m) => m.status === 'resolved').length;
+    const priority = supportMessages.filter((m) => m.priority === 'priority').length;
+
+    const resolvedMessages = supportMessages.filter((m) => m.resolvedAt);
+    const avgResponseTime = resolvedMessages.length > 0
+      ? Math.round(
+          resolvedMessages.reduce((sum, m) => sum + (m.resolvedAt! - m.createdAt), 0) / resolvedMessages.length / (60 * 60 * 1000)
+        )
+      : 0;
+
+    return {
+      totalMessages: total,
+      unreadMessages: unread,
+      inProgressMessages: inProgress,
+      resolvedMessages: resolved,
+      averageResponseTime: avgResponseTime,
+      priorityMessages: priority,
+      normalMessages: total - priority,
+    };
+  }, [supportMessages]);
+
   const value: AdminContextType = {
     session,
     users,
@@ -313,6 +421,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     reportStats,
     selectedReport,
     reportFilters,
+    supportMessages,
+    supportMessageStats,
+    selectedSupportMessage,
+    supportMessageFilters,
     login,
     logout,
     checkPermission,
@@ -328,6 +440,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     getReportById,
     setSelectedReport,
     setReportFilters,
+    getSupportMessages,
+    getUnreadSupportMessages,
+    setSelectedSupportMessage,
+    setSupportMessageFilters,
+    updateSupportMessageStatus,
   };
 
   return (

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal, Lock, Mail, LogOut } from 'lucide-react';
+import { MapPin, Heart, Eye, ArrowLeft, SlidersHorizontal, Lock, Mail, LogOut, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { calculateAlignmentScore } from '@/data/users';
 import type { User } from '@/types';
 
 const BrowseSection: React.FC = () => {
-  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, setSelectedConversation, isUserBlocked } = useApp();
+  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, setSelectedConversation, isUserBlocked, setShowSupportModal } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
@@ -90,6 +90,13 @@ const BrowseSection: React.FC = () => {
                   {getUnreadCount()}
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => setShowSupportModal(true)}
+              className="relative text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+              title="Contact Support"
+            >
+              <MessageCircle className="w-4 h-4" />
             </button>
             <button
               onClick={() => setFilterOpen(!filterOpen)}

@@ -20,6 +20,8 @@ export const sampleUsers: User[] = [
     bio: 'Therapist who believes in the power of vulnerability. Looking for someone who values inner work as much as outer adventure.',
     alignmentScore: 94,
     photoUrl: 'https://i.pravatar.cc/300?u=maya&img=1',
+    membershipTier: 'monthly',
+    email: 'maya@example.com',
   },
   {
     id: 'u2',
@@ -40,6 +42,8 @@ export const sampleUsers: User[] = [
     bio: 'Single dad and software engineer. I have learned that love is a practice, not a feeling. Seeking a partner for the long journey.',
     alignmentScore: 91,
     photoUrl: 'https://i.pravatar.cc/300?u=james&img=2',
+    membershipTier: 'monthly',
+    email: 'james@example.com',
   },
   {
     id: 'u3',
@@ -60,6 +64,8 @@ export const sampleUsers: User[] = [
     bio: 'Writer and meditation practitioner. I believe the best relationships are two whole people choosing each other daily.',
     alignmentScore: 88,
     photoUrl: 'https://i.pravatar.cc/300?u=sofia&img=3',
+    membershipTier: 'quarterly',
+    email: 'sofia@example.com',
   },
   {
     id: 'u4',
@@ -80,6 +86,8 @@ export const sampleUsers: User[] = [
     bio: 'Nonprofit director who has done the work to understand my patterns. Ready to build something intentional and lasting.',
     alignmentScore: 96,
     photoUrl: 'https://i.pravatar.cc/300?u=david&img=4',
+    membershipTier: 'quarterly',
+    email: 'david@example.com',
   },
   {
     id: 'u5',
@@ -100,6 +108,8 @@ export const sampleUsers: User[] = [
     bio: 'Doctor and mother of one. My child is my priority, and I am looking for a partner who understands that and has space for us both.',
     alignmentScore: 89,
     photoUrl: 'https://i.pravatar.cc/300?u=rachel&img=5',
+    membershipTier: 'quarterly',
+    email: 'rachel@example.com',
   },
   {
     id: 'u6',
@@ -120,6 +130,8 @@ export const sampleUsers: User[] = [
     bio: 'Architect who believes good design applies to relationships too. Looking for someone to build a life with, one honest conversation at a time.',
     alignmentScore: 85,
     photoUrl: 'https://i.pravatar.cc/300?u=marcus&img=6',
+    membershipTier: 'annual',
+    email: 'marcus@example.com',
   },
   {
     id: 'u7',
@@ -140,6 +152,8 @@ export const sampleUsers: User[] = [
     bio: 'Software engineer with a passion for building things that matter. Looking for someone ready for real connection and growth.',
     alignmentScore: 91,
     photoUrl: 'https://i.pravatar.cc/300?u=alex&img=7',
+    membershipTier: 'annual',
+    email: 'alex@example.com',
   },
 ];
 
