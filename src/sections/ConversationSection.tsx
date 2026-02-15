@@ -54,6 +54,15 @@ const ConversationSection: React.FC = () => {
   // Get the first (initial) message
   const initialMessage = selectedConversation.messages[0];
 
+  // Check if current user has already consented
+  const currentUserConsented = selectedConversation.photoConsent.fromUser.userId === currentUser.id
+    ? selectedConversation.photoConsent.fromUser.hasConsented
+    : selectedConversation.photoConsent.toUser.hasConsented;
+
+  // Only show prompt if they haven't consented yet
+  // (Once they make a choice, don't show it again unless they click Photo Consent button)
+  const shouldShowPrompt = showConsentPrompt && !currentUserConsented;
+
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
       {/* Header */}
@@ -77,7 +86,7 @@ const ConversationSection: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {!showConsentPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && (
+            {!shouldShowPrompt && (selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && (
               <button
                 onClick={() => setShowConsentPrompt(true)}
                 className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
@@ -166,7 +175,7 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {showConsentPrompt && selectedConversation.status === 'both_messaged' && (
+        {shouldShowPrompt && selectedConversation.status === 'both_messaged' && (
           <div className="mb-8">
             <PhotoConsentPrompt
               conversation={selectedConversation}
@@ -179,7 +188,7 @@ const ConversationSection: React.FC = () => {
           </div>
         )}
 
-        {showConsentPrompt && selectedConversation.status === 'awaiting_consent' && (
+        {shouldShowPrompt && selectedConversation.status === 'awaiting_consent' && (
           <div className="mb-8">
             <PhotoConsentPrompt
               conversation={selectedConversation}
