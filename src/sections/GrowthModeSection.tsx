@@ -1,12 +1,62 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap } from 'lucide-react';
 
 const GrowthModeSection: React.FC = () => {
   const { assessmentResult, setCurrentView, resetAssessment, currentUser } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
   const [activeResource, setActiveResource] = useState<string | null>(null);
+  const [pathProgress] = useState<Record<string, number>>({
+    g1: 75,
+    g2: 100,
+    g3: 0,
+    g4: 50,
+    g5: 25,
+    g6: 40,
+  });
+
+  // Map categories to icons
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Emotional Regulation':
+        return <Brain className="w-5 h-5" />;
+      case 'Accountability':
+        return <Target className="w-5 h-5" />;
+      case 'Autonomy':
+        return <Heart className="w-5 h-5" />;
+      case 'Boundaries':
+        return <Shield className="w-5 h-5" />;
+      case 'Conflict & Repair':
+        return <Zap className="w-5 h-5" />;
+      case 'Integrity Check':
+        return <CheckCircle className="w-5 h-5" />;
+      default:
+        return <BookOpen className="w-5 h-5" />;
+    }
+  };
+
+  // Get status based on progress
+  const getPathStatus = (resourceId: string) => {
+    const progress = pathProgress[resourceId] || 0;
+    if (progress === 100) return 'completed';
+    if (progress > 0) return 'in-progress';
+    return 'not-started';
+  };
+
+  // Get color based on status
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-[#D9FF3D]/10 border-[#D9FF3D]';
+      case 'in-progress':
+        return 'bg-amber-500/10 border-amber-500';
+      case 'not-started':
+        return 'bg-[#111611] border-[#1A211A]';
+      default:
+        return 'bg-[#111611] border-[#1A211A]';
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
@@ -179,35 +229,78 @@ const GrowthModeSection: React.FC = () => {
           <h3 className="font-mono-label text-[#F6FFF2] mb-2">Complete 2 Paths in 6 Months to Re-enter Matchmaking</h3>
           <p className="text-[#A9B5AA] text-sm mb-6">Work through these guided resources at your own pace to develop essential skills for lasting connections.</p>
           <div className="grid md:grid-cols-2 gap-4">
-            {growthResources.map((resource) => (
+            {growthResources.map((resource) => {
+              const status = getPathStatus(resource.id);
+              const progress = pathProgress[resource.id] || 0;
+              const isCompleted = progress === 100;
+
+              return (
               <div
                 key={resource.id}
                 onClick={() => setActiveResource(activeResource === resource.id ? null : resource.id)}
-                className={`bg-[#111611] rounded-[20px] border p-5 cursor-pointer transition-all duration-300 ${
-                  activeResource === resource.id
-                    ? 'border-[#D9FF3D]'
-                    : 'border-[#1A211A] hover:border-[#2A312A]'
-                }`}
+                className={`rounded-[20px] border p-5 cursor-pointer transition-all duration-300 ${
+                  getStatusColor(status)
+                } ${activeResource === resource.id ? 'ring-2 ring-[#D9FF3D]/50' : ''}`}
               >
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-[#1A211A] flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="w-4 h-4 text-[#D9FF3D]" />
+                {/* Completion Badge */}
+                {isCompleted && (
+                  <div className="absolute top-3 right-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-full p-1.5">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
+                )}
+
+                <div className="flex items-start gap-4 mb-4">
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
+                    status === 'in-progress' ? 'bg-amber-500/20 text-amber-500' :
+                    'bg-[#1A211A] text-[#A9B5AA]'
+                  }`}>
+                    {getCategoryIcon(resource.category)}
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-[#F6FFF2] font-medium mb-1">{resource.title}</h4>
-                    <p className="text-[#A9B5AA] text-sm mb-3">{resource.description}</p>
-                    <div className="flex items-center gap-4 text-xs text-[#A9B5AA]">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {resource.estimatedTime}
-                      </span>
-                      <span className="px-2 py-0.5 bg-[#1A211A] rounded-full">
-                        {resource.category}
-                      </span>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h4 className="text-[#F6FFF2] font-medium">{resource.title}</h4>
+                      {progress > 0 && !isCompleted && (
+                        <span className="text-xs font-medium text-amber-400 whitespace-nowrap">{progress}%</span>
+                      )}
                     </div>
+                    <p className="text-[#A9B5AA] text-sm mb-3">{resource.description}</p>
                   </div>
                 </div>
 
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="h-1.5 bg-[#0B0F0C] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        status === 'completed' ? 'bg-[#D9FF3D]' :
+                        status === 'in-progress' ? 'bg-amber-500' :
+                        'bg-[#A9B5AA]'
+                      }`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-[#A9B5AA] mt-1.5">
+                    {isCompleted ? '✓ Completed' : progress > 0 ? `${progress}% complete` : 'Not started'}
+                  </p>
+                </div>
+
+                {/* Info Row */}
+                <div className="flex items-center gap-4 text-xs text-[#A9B5AA] pt-3 border-t border-[#1A211A]">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {resource.estimatedTime}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full ${
+                    status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
+                    status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
+                    'bg-[#1A211A] text-[#A9B5AA]'
+                  }`}>
+                    {resource.category}
+                  </span>
+                </div>
+
+                {/* Expanded View */}
                 {activeResource === resource.id && (
                   <div className="mt-4 pt-4 border-t border-[#1A211A]">
                     <p className="text-[#A9B5AA] text-sm mb-3">
@@ -221,7 +314,8 @@ const GrowthModeSection: React.FC = () => {
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
 
