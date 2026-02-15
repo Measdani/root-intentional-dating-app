@@ -113,6 +113,7 @@ const ConversationSection: React.FC = () => {
                 onClick={() => {
                   setShowConsentPrompt(true);
                   setHasUserMadeChoice(false);
+                  setShowCongrats(false);
                 }}
                 className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
                 title="Photo Consent"
