@@ -64,7 +64,8 @@ const GrowthModeSection: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
-    window.dispatchEvent(new Event('storage'));
+    // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
+    window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
     setCurrentView('landing');
   };
 
