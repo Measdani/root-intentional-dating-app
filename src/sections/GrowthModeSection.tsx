@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, ArrowRight, MessageCircle, Send } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, MessageCircle, Send } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 
 const GrowthModeSection: React.FC = () => {
@@ -15,13 +15,11 @@ const GrowthModeSection: React.FC = () => {
     expressInterest,
     getReceivedInterests,
     getConversation,
-    showSupportModal,
     setShowSupportModal
   } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources'>('browse');
-  const [showingProfile, setShowingProfile] = useState<any>(null);
   const [resources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
@@ -275,7 +273,7 @@ const GrowthModeSection: React.FC = () => {
             </div>
 
             {(() => {
-              const receivedInterests = getReceivedInterests(currentUser.id);
+              const receivedInterests = getReceivedInterests();
               // Filter to only growth-mode matches
               const growthModeMatches = receivedInterests
                 .map(interest => users.find(u => u.id === interest.fromUserId))
@@ -285,7 +283,7 @@ const GrowthModeSection: React.FC = () => {
                 <div className="space-y-4">
                   {growthModeMatches.map((user) => {
                     if (!user) return null;
-                    const conversation = getConversation(currentUser.id, user.id);
+                    const conversation = getConversation(user.id);
                     const lastMessage = conversation?.messages?.[conversation.messages.length - 1];
 
                     return (
@@ -304,7 +302,7 @@ const GrowthModeSection: React.FC = () => {
                             <p className="text-[#A9B5AA] text-sm">{user.city}</p>
                             {lastMessage && (
                               <p className="text-[#A9B5AA] text-sm mt-2 line-clamp-2">
-                                {lastMessage.senderUserId === currentUser.id ? 'You: ' : ''}{lastMessage.text}
+                                {lastMessage.fromUserId === currentUser.id ? 'You: ' : ''}{lastMessage.message}
                               </p>
                             )}
                           </div>
