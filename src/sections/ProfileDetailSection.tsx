@@ -8,11 +8,12 @@ const ProfileDetailSection: React.FC = () => {
   const { selectedUser, currentUser, setCurrentView, setSelectedUser, setSelectedConversation, expressInterest, arePhotosUnlocked, getConversation, reportUser, blockUser, isUserBlocked } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [reportSubmitted, setReportSubmitted] = useState(false);
 
   if (!selectedUser) return null;
 
-  // Redirect if trying to view a blocked user's profile
-  if (isUserBlocked(selectedUser.id)) {
+  // Show message if report was just submitted or user is blocked
+  if (reportSubmitted || isUserBlocked(selectedUser.id)) {
     return (
       <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center p-6">
         <div className="text-center max-w-md">
@@ -343,6 +344,7 @@ const ProfileDetailSection: React.FC = () => {
             blockUser(selectedUser.id, reason);
           }
           setShowReportModal(false);
+          setReportSubmitted(true);
         }}
       />
     </div>
