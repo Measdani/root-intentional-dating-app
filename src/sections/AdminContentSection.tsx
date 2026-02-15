@@ -365,6 +365,17 @@ const AdminContentSection: React.FC = () => {
                         placeholder="Module description"
                         rows={2}
                       />
+                      <textarea
+                        value={module.exercise || ''}
+                        onChange={(e) => {
+                          const updated = [...(formData.modules || [])];
+                          updated[idx] = { ...module, exercise: e.target.value };
+                          setFormData({ ...formData, modules: updated });
+                        }}
+                        className="w-full px-3 py-2 bg-[#111611] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm resize-none mt-2"
+                        placeholder="What do they need to do? (e.g., journaling prompt, reflection exercise, action step)"
+                        rows={2}
+                      />
                     </div>
                   ))}
                 </div>
@@ -376,7 +387,7 @@ const AdminContentSection: React.FC = () => {
                       ...formData,
                       modules: [
                         ...(formData.modules || []),
-                        { id: newId, title: '', description: '', orderIndex: (formData.modules?.length || 0) + 1 },
+                        { id: newId, title: '', description: '', exercise: '', orderIndex: (formData.modules?.length || 0) + 1 },
                       ],
                     });
                   }}
