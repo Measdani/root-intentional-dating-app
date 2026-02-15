@@ -22,6 +22,7 @@ export interface User {
   membershipTier?: 'monthly' | 'quarterly' | 'annual'; // User's membership plan
   email?: string; // Email for support contact
   userStatus?: 'active' | 'needs-growth' | 'suspended' | 'removed'; // User account status
+  isAdmin?: boolean; // Admin user flag
 }
 
 export interface AssessmentQuestion {

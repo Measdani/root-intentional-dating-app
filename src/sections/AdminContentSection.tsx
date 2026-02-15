@@ -16,6 +16,7 @@ const AdminContentSection: React.FC = () => {
   const [selectedResource, setSelectedResource] = useState<GrowthResource | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<GrowthResource>>({});
+  const [newOutcome, setNewOutcome] = useState('');
 
   const handleAddNew = () => {
     setFormData({
@@ -25,8 +26,10 @@ const AdminContentSection: React.FC = () => {
       estimatedTime: '',
       difficulty: 'beginner',
       learningOutcomes: [],
+      modules: [],
     });
     setSelectedResource(null);
+    setNewOutcome('');
     setShowForm(true);
   };
 
@@ -255,6 +258,124 @@ const AdminContentSection: React.FC = () => {
                   <option value="intermediate">Intermediate</option>
                   <option value="advanced">Advanced</option>
                 </select>
+              </div>
+
+              {/* Learning Outcomes */}
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Learning Outcomes</label>
+                <div className="space-y-2 mb-3">
+                  {(formData.learningOutcomes || []).map((outcome, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={outcome}
+                        onChange={(e) => {
+                          const updated = [...(formData.learningOutcomes || [])];
+                          updated[idx] = e.target.value;
+                          setFormData({ ...formData, learningOutcomes: updated });
+                        }}
+                        className="flex-1 px-3 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm"
+                        placeholder="Learning outcome"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = formData.learningOutcomes?.filter((_, i) => i !== idx) || [];
+                          setFormData({ ...formData, learningOutcomes: updated });
+                        }}
+                        className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newOutcome}
+                    onChange={(e) => setNewOutcome(e.target.value)}
+                    className="flex-1 px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm"
+                    placeholder="Add new outcome..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newOutcome.trim()) {
+                        setFormData({
+                          ...formData,
+                          learningOutcomes: [...(formData.learningOutcomes || []), newOutcome],
+                        });
+                        setNewOutcome('');
+                      }
+                    }}
+                    className="px-4 py-2 bg-[#D9FF3D]/20 text-[#D9FF3D] rounded-lg text-sm hover:bg-[#D9FF3D]/30"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Modules */}
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Modules</label>
+                <div className="space-y-3 mb-3 max-h-48 overflow-y-auto">
+                  {(formData.modules || []).map((module, idx) => (
+                    <div key={idx} className="p-3 bg-[#0B0F0C] border border-[#1A211A] rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs text-[#A9B5AA]">Module {idx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = formData.modules?.filter((_, i) => i !== idx) || [];
+                            setFormData({ ...formData, modules: updated });
+                          }}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={module.title}
+                        onChange={(e) => {
+                          const updated = [...(formData.modules || [])];
+                          updated[idx] = { ...module, title: e.target.value };
+                          setFormData({ ...formData, modules: updated });
+                        }}
+                        className="w-full px-3 py-2 bg-[#111611] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm mb-2"
+                        placeholder="Module title"
+                      />
+                      <textarea
+                        value={module.description}
+                        onChange={(e) => {
+                          const updated = [...(formData.modules || [])];
+                          updated[idx] = { ...module, description: e.target.value };
+                          setFormData({ ...formData, modules: updated });
+                        }}
+                        className="w-full px-3 py-2 bg-[#111611] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm resize-none"
+                        placeholder="Module description"
+                        rows={2}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newId = `m${Date.now()}`;
+                    setFormData({
+                      ...formData,
+                      modules: [
+                        ...(formData.modules || []),
+                        { id: newId, title: '', description: '', orderIndex: (formData.modules?.length || 0) + 1 },
+                      ],
+                    });
+                  }}
+                  className="w-full px-4 py-2 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg text-sm hover:bg-[#D9FF3D]/20 border border-[#D9FF3D]/30"
+                >
+                  + Add Module
+                </button>
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-[#1A211A]">
