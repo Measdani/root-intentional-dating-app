@@ -16,7 +16,8 @@ const GrowthModeSection: React.FC = () => {
     expressInterest,
     getReceivedInterests,
     getConversation,
-    setShowSupportModal
+    setShowSupportModal,
+    interactions
   } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
@@ -644,6 +645,15 @@ const GrowthModeSection: React.FC = () => {
             <div className="space-y-3 pt-6 border-t border-[#1A211A]">
               <button
                 onClick={() => {
+                  // Check if already expressed interest
+                  if (interactions.sentInterests[selectedProfileUser.id]) {
+                    // Go directly to existing conversation
+                    setSelectedUser(selectedProfileUser);
+                    setCurrentView('conversation');
+                    setSelectedProfileUser(null);
+                    return;
+                  }
+
                   // Express interest first if not already done
                   expressInterest(selectedProfileUser.id, '');
                   setUserToMessage(selectedProfileUser);
