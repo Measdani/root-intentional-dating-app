@@ -4,6 +4,7 @@ import { growthResources } from '@/data/assessment';
 import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
+import ReportUserModal from '@/components/ReportUserModal';
 
 const GrowthModeSection: React.FC = () => {
   const {
@@ -17,7 +18,8 @@ const GrowthModeSection: React.FC = () => {
     respondToInterest,
     getReceivedInterests,
     getConversation,
-    setShowSupportModal
+    setShowSupportModal,
+    reportUser
   } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
@@ -25,6 +27,7 @@ const GrowthModeSection: React.FC = () => {
   const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [messageText, setMessageText] = useState('');
+  const [showReportModal, setShowReportModal] = useState(false);
   const [resources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
@@ -568,6 +571,22 @@ const GrowthModeSection: React.FC = () => {
         }}
       />
 
+      {/* Report User Modal */}
+      <ReportUserModal
+        isOpen={showReportModal}
+        reportedUser={selectedProfileUser}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={async (reason, details) => {
+          try {
+            await reportUser(selectedProfileUser.id, reason, details);
+            setShowReportModal(false);
+            setSelectedProfileUser(null);
+          } catch (error) {
+            console.error('Failed to submit report:', error);
+          }
+        }}
+      />
+
       {/* Profile Modal */}
       {selectedProfileUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -695,8 +714,7 @@ const GrowthModeSection: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  // TODO: Implement report functionality
-                  setSelectedProfileUser(null);
+                  setShowReportModal(true);
                 }}
                 className="w-full py-3 bg-[#1A211A] text-[#A9B5AA] rounded-lg font-medium hover:text-[#F6FFF2] transition-colors"
               >
