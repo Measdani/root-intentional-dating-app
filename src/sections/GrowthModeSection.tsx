@@ -247,6 +247,7 @@ const GrowthModeSection: React.FC = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         expressInterest(user.id, '');
+                        setSelectedProfileUser(user);
                       }}
                       className="w-full py-2 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors flex items-center justify-center gap-2 group-hover:gap-3"
                     >
