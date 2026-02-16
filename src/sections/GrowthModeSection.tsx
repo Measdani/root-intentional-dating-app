@@ -14,6 +14,7 @@ const GrowthModeSection: React.FC = () => {
     users,
     setSelectedUser,
     expressInterest,
+    respondToInterest,
     getReceivedInterests,
     getConversation,
     setShowSupportModal
@@ -23,7 +24,7 @@ const GrowthModeSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources'>('browse');
   const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
-  const [userToMessage, setUserToMessage] = useState<any>(null);
+  const [messageText, setMessageText] = useState('');
   const [resources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
@@ -557,21 +558,13 @@ const GrowthModeSection: React.FC = () => {
         isOpen={showBackgroundCheckModal}
         onClose={() => {
           setShowBackgroundCheckModal(false);
-          // Navigate to conversation even if they skip verification
-          if (userToMessage) {
-            setSelectedUser(userToMessage);
-            setCurrentView('conversation');
-            setSelectedProfileUser(null);
-          }
+          // Close the profile modal and show confirmation
+          setSelectedProfileUser(null);
         }}
         onVerified={() => {
           setShowBackgroundCheckModal(false);
-          // Navigate to conversation after verification
-          if (userToMessage) {
-            setSelectedUser(userToMessage);
-            setCurrentView('conversation');
-            setSelectedProfileUser(null);
-          }
+          // Close the profile modal after verification
+          setSelectedProfileUser(null);
         }}
       />
 
@@ -641,21 +634,35 @@ const GrowthModeSection: React.FC = () => {
               <p className="text-[#A9B5AA] text-sm">{selectedProfileUser.relationshipVision}</p>
             </div>
 
-            {/* Action Buttons */}
+            {/* Message Input */}
             <div className="space-y-3 pt-6 border-t border-[#1A211A]">
+              <div>
+                <label className="text-sm text-[#F6FFF2] font-medium mb-2 block">Send a Message</label>
+                <textarea
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Share a bit about yourself or why you're interested..."
+                  className="w-full bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-3 text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none resize-none h-24"
+                />
+              </div>
+
               <button
                 onClick={() => {
-                  // Express interest first if not already done
-                  expressInterest(selectedProfileUser.id, '');
-                  setUserToMessage(selectedProfileUser);
+                  // Express interest if not already done
+                  expressInterest(selectedProfileUser.id, messageText);
 
-                  // Check if background check verification is needed
+                  // Send the message
+                  if (messageText.trim()) {
+                    respondToInterest(selectedProfileUser.id, messageText);
+                  }
+
+                  // Close the modal and show background check if needed
+                  setMessageText('');
+
                   if (currentUser.assessmentPassed && !currentUser.backgroundCheckVerified) {
                     setShowBackgroundCheckModal(true);
                   } else {
-                    // Go directly to conversation if already verified or in growth mode
-                    setSelectedUser(selectedProfileUser);
-                    setCurrentView('conversation');
+                    // Show confirmation and close
                     setSelectedProfileUser(null);
                   }
                 }}
