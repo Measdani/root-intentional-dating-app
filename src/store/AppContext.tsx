@@ -319,6 +319,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const expressInterest = useCallback((toUserId: string, message: string) => {
     console.log('expressInterest called:', { toUserId, message, currentUserId: currentUser.id });
 
+    // Check if already expressed interest to this user
+    if (interactions.sentInterests[toUserId]) {
+      toast.info('You already expressed interest in this person');
+      return;
+    }
+
     // Create deterministic conversationId using sorted user pair so both users share same thread
     const conversationId = `conv_${[currentUser.id, toUserId].sort().join('_')}`;
     const messageId = `msg_${Date.now()}`;
@@ -363,9 +369,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return updated;
     });
 
+    toast.success('Interest expressed! They\'ll see it in their inbox.');
+
     // NOTE: Auto-response feature disabled to allow natural conversation flow
     // Users should reply manually without system auto-generating responses
-  }, [currentUser.id]);
+  }, [currentUser.id, interactions.sentInterests]);
 
   const respondToInterest = useCallback((fromUserId: string, message: string) => {
     setInteractions(prev => {
