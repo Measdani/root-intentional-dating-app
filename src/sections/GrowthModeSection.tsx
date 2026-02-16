@@ -3,6 +3,7 @@ import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
+import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 
 const GrowthModeSection: React.FC = () => {
   const {
@@ -21,6 +22,8 @@ const GrowthModeSection: React.FC = () => {
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources'>('browse');
   const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
+  const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
+  const [userToMessage, setUserToMessage] = useState<any>(null);
   const [resources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
@@ -548,6 +551,29 @@ const GrowthModeSection: React.FC = () => {
         onClose={() => setSelectedResourceForModal(null)}
       />
 
+      {/* Background Check Modal */}
+      <BackgroundCheckModal
+        isOpen={showBackgroundCheckModal}
+        onClose={() => {
+          setShowBackgroundCheckModal(false);
+          // Navigate to conversation even if they skip verification
+          if (userToMessage) {
+            setSelectedUser(userToMessage);
+            setCurrentView('conversation');
+            setSelectedProfileUser(null);
+          }
+        }}
+        onVerified={() => {
+          setShowBackgroundCheckModal(false);
+          // Navigate to conversation after verification
+          if (userToMessage) {
+            setSelectedUser(userToMessage);
+            setCurrentView('conversation');
+            setSelectedProfileUser(null);
+          }
+        }}
+      />
+
       {/* Profile Modal */}
       {selectedProfileUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -618,9 +644,19 @@ const GrowthModeSection: React.FC = () => {
             <div className="space-y-3 pt-6 border-t border-[#1A211A]">
               <button
                 onClick={() => {
-                  setSelectedUser(selectedProfileUser);
-                  setCurrentView('conversation');
-                  setSelectedProfileUser(null);
+                  // Express interest first if not already done
+                  expressInterest(selectedProfileUser.id, '');
+                  setUserToMessage(selectedProfileUser);
+
+                  // Check if background check verification is needed
+                  if (currentUser.assessmentPassed && !currentUser.backgroundCheckVerified) {
+                    setShowBackgroundCheckModal(true);
+                  } else {
+                    // Go directly to conversation if already verified or in growth mode
+                    setSelectedUser(selectedProfileUser);
+                    setCurrentView('conversation');
+                    setSelectedProfileUser(null);
+                  }
                 }}
                 className="w-full py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:bg-[#E8FF66] transition-colors flex items-center justify-center gap-2"
               >
