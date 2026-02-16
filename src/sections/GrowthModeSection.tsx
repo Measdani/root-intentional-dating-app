@@ -637,13 +637,30 @@ const GrowthModeSection: React.FC = () => {
             {/* Message Input */}
             <div className="space-y-3 pt-6 border-t border-[#1A211A]">
               <div>
-                <label className="text-sm text-[#F6FFF2] font-medium mb-2 block">Send a Message</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm text-[#F6FFF2] font-medium">Send a Message</label>
+                  <span className={`text-xs font-medium ${messageText.length >= 120 ? 'text-[#D9FF3D]' : 'text-[#A9B5AA]'}`}>
+                    {messageText.length}/120
+                  </span>
+                </div>
                 <textarea
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   placeholder="Share a bit about yourself or why you're interested..."
                   className="w-full bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-3 text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none resize-none h-24"
                 />
+
+                {/* Helper Tips */}
+                {messageText.length < 120 && (
+                  <div className="mt-2 text-xs text-[#A9B5AA] space-y-1">
+                    <p className="font-medium text-[#D9FF3D]">Tips for a great message:</p>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      <li>Share what drew you to their profile</li>
+                      <li>Ask a thoughtful question</li>
+                      <li>Be authentic and genuine</li>
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <button
@@ -666,7 +683,12 @@ const GrowthModeSection: React.FC = () => {
                     setSelectedProfileUser(null);
                   }
                 }}
-                className="w-full py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:bg-[#E8FF66] transition-colors flex items-center justify-center gap-2"
+                disabled={messageText.length < 120}
+                className={`w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+                  messageText.length >= 120
+                    ? 'bg-[#D9FF3D] text-[#0B0F0C] hover:bg-[#E8FF66]'
+                    : 'bg-[#1A211A] text-[#A9B5AA] cursor-not-allowed'
+                }`}
               >
                 <MessageCircle className="w-4 h-4" />
                 Send Message
