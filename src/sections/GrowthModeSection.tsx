@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
+import { toast } from 'sonner';
 import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
@@ -579,10 +580,12 @@ const GrowthModeSection: React.FC = () => {
         onSubmit={async (reason, details) => {
           try {
             await reportUser(selectedProfileUser.id, reason, details);
+            toast.success('Report submitted successfully. Admin team will review.');
             setShowReportModal(false);
             setSelectedProfileUser(null);
           } catch (error) {
             console.error('Failed to submit report:', error);
+            toast.error('Failed to submit report. Please try again.');
           }
         }}
       />

@@ -385,7 +385,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         Object.values(prev.receivedInterests).find(i => i.fromUserId === fromUserId || i.toUserId === fromUserId) ||
         Object.values(prev.sentInterests).find(i => i.fromUserId === fromUserId || i.toUserId === fromUserId);
 
-      if (!baseInteraction) return prev;
+      if (!baseInteraction) {
+        console.warn('No conversation found with user:', fromUserId);
+        return prev;
+      }
 
       const responseMessage: ConversationMessage = {
         id: `msg_${Date.now()}`,
@@ -443,6 +446,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sentInterests: updatedSentInterests,
       };
     });
+
+    toast.success('Message sent!');
   }, [currentUser.id]);
 
   const grantPhotoConsent = useCallback((conversationId: string) => {
