@@ -8,13 +8,13 @@ import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const GrowthModeSection: React.FC = () => {
-  console.log('🔥 GrowthModeSection RENDERING');
   const {
     assessmentResult,
     setCurrentView,
     resetAssessment,
     currentUser,
     users,
+    setSelectedUser,
     setSelectedConversation,
     expressInterest,
     respondToInterest,
@@ -45,13 +45,9 @@ const GrowthModeSection: React.FC = () => {
 
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   const growthModeUsers = useMemo(() => {
-    console.log('GrowthModeSection - currentUser:', currentUser.id, currentUser.name, 'gender:', currentUser.gender);
-    console.log('All users:', users.map(u => ({ id: u.id, name: u.name, assessmentPassed: u.assessmentPassed, gender: u.gender })));
-    const filtered = users.filter(
+    return users.filter(
       u => !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender
     );
-    console.log('Filtered growthModeUsers:', filtered.map(u => ({ id: u.id, name: u.name })));
-    return filtered;
   }, [users, currentUser.id, currentUser.gender]);
 
   // Map categories to icons
@@ -255,7 +251,6 @@ const GrowthModeSection: React.FC = () => {
 
                     <button
                       onClick={(e) => {
-                        console.log('Express Interest button clicked for user:', user.id, user.name);
                         e.stopPropagation();
                         expressInterest(user.id, '');
                         setSelectedProfileUser(user);
@@ -289,19 +284,9 @@ const GrowthModeSection: React.FC = () => {
 
             {(() => {
               const receivedInterests = getReceivedInterests();
-              console.log('Growth Mode Inbox - receivedInterests:', receivedInterests);
               // Filter to only growth-mode matches (opposite gender)
               const growthModeMatches = receivedInterests
-                .map(interest => {
-                  const user = users.find(u => u.id === interest.fromUserId);
-                  console.log(`Growth Mode Inbox - sender ${interest.fromUserId}:`, {
-                    user: user?.name,
-                    assessmentPassed: user?.assessmentPassed,
-                    gender: user?.gender,
-                    willShow: user && !user.assessmentPassed && user.id !== currentUser.id && user.gender !== currentUser.gender
-                  });
-                  return user;
-                })
+                .map(interest => users.find(u => u.id === interest.fromUserId))
                 .filter((u) => u && !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender);
 
               return growthModeMatches.length > 0 ? (
