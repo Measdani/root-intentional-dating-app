@@ -283,9 +283,19 @@ const GrowthModeSection: React.FC = () => {
 
             {(() => {
               const receivedInterests = getReceivedInterests();
+              console.log('Growth Mode Inbox - receivedInterests:', receivedInterests);
               // Filter to only growth-mode matches (opposite gender)
               const growthModeMatches = receivedInterests
-                .map(interest => users.find(u => u.id === interest.fromUserId))
+                .map(interest => {
+                  const user = users.find(u => u.id === interest.fromUserId);
+                  console.log(`Growth Mode Inbox - sender ${interest.fromUserId}:`, {
+                    user: user?.name,
+                    assessmentPassed: user?.assessmentPassed,
+                    gender: user?.gender,
+                    willShow: user && !user.assessmentPassed && user.id !== currentUser.id && user.gender !== currentUser.gender
+                  });
+                  return user;
+                })
                 .filter((u) => u && !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender);
 
               return growthModeMatches.length > 0 ? (
