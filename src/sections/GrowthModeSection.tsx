@@ -250,6 +250,7 @@ const GrowthModeSection: React.FC = () => {
 
                     <button
                       onClick={(e) => {
+                        console.log('Express Interest button clicked for user:', user.id, user.name);
                         e.stopPropagation();
                         expressInterest(user.id, '');
                         setSelectedProfileUser(user);
