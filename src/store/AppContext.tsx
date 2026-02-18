@@ -369,8 +369,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return updated;
     });
 
-    toast.success('Interest expressed! They\'ll see it in their inbox.');
-
     // NOTE: Auto-response feature disabled to allow natural conversation flow
     // Users should reply manually without system auto-generating responses
   }, [currentUser.id, interactions.sentInterests]);
