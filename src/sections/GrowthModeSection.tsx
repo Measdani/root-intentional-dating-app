@@ -14,7 +14,6 @@ const GrowthModeSection: React.FC = () => {
     resetAssessment,
     currentUser,
     users,
-    setSelectedUser,
     setSelectedConversation,
     expressInterest,
     respondToInterest,
