@@ -378,12 +378,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const respondToInterest = useCallback((fromUserId: string, message: string) => {
     setInteractions(prev => {
       // Find the conversation with this user (could be keyed by either user ID)
-      let baseInteraction =
-        prev.receivedInterests[fromUserId] ||
-        prev.sentInterests[fromUserId] ||
+      let baseInteraction = null;
+      let foundInReceivedAt: string | null = null;
+      let foundInSentAt: string | null = null;
+
+      // Check simple keys first
+      if (prev.receivedInterests[fromUserId]) {
+        baseInteraction = prev.receivedInterests[fromUserId];
+        foundInReceivedAt = fromUserId;
+      } else if (prev.sentInterests[fromUserId]) {
+        baseInteraction = prev.sentInterests[fromUserId];
+        foundInSentAt = fromUserId;
+      } else {
         // Search all interactions if not found by simple key
-        Object.values(prev.receivedInterests).find(i => i.fromUserId === fromUserId || i.toUserId === fromUserId) ||
-        Object.values(prev.sentInterests).find(i => i.fromUserId === fromUserId || i.toUserId === fromUserId);
+        const foundInReceived = Object.entries(prev.receivedInterests).find(
+          ([_, i]) => i.fromUserId === fromUserId || i.toUserId === fromUserId
+        );
+        if (foundInReceived) {
+          baseInteraction = foundInReceived[1];
+          foundInReceivedAt = foundInReceived[0];
+        } else {
+          const foundInSent = Object.entries(prev.sentInterests).find(
+            ([_, i]) => i.fromUserId === fromUserId || i.toUserId === fromUserId
+          );
+          if (foundInSent) {
+            baseInteraction = foundInSent[1];
+            foundInSentAt = foundInSent[0];
+          }
+        }
+      }
 
       if (!baseInteraction) {
         console.warn('No conversation found with user:', fromUserId);
@@ -416,16 +439,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updatedAt: Date.now(),
       };
 
-      // Update both receivedInterests and sentInterests for this user
-      const updatedReceivedInterests = {
-        ...prev.receivedInterests,
-        [fromUserId]: updatedInteraction,
-      };
+      // Start with existing interactions
+      const updatedReceivedInterests = { ...prev.receivedInterests };
+      const updatedSentInterests = { ...prev.sentInterests };
 
-      const updatedSentInterests = {
-        ...prev.sentInterests,
-        [fromUserId]: updatedInteraction,
-      };
+      // Update the original location where we found it
+      if (foundInReceivedAt) {
+        updatedReceivedInterests[foundInReceivedAt] = updatedInteraction;
+      }
+      if (foundInSentAt) {
+        updatedSentInterests[foundInSentAt] = updatedInteraction;
+      }
+
+      // Also ensure it's in sentInterests and receivedInterests by the other user's ID
+      // so both parties can see it regardless of how it was originally keyed
+      updatedReceivedInterests[fromUserId] = updatedInteraction;
+      updatedSentInterests[fromUserId] = updatedInteraction;
 
       // Also update the conversation if it exists elsewhere by conversationId
       // (in case the current user initiated the conversation)
