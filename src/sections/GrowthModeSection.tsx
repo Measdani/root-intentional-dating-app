@@ -286,7 +286,7 @@ const GrowthModeSection: React.FC = () => {
               // Filter to only growth-mode matches (opposite gender)
               const growthModeMatches = receivedInterests
                 .map(interest => users.find(u => u.id === interest.fromUserId))
-                .filter((u) => u && !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender);
+                .filter((u) => u && u.id !== currentUser.id && u.gender !== currentUser.gender);
 
               return growthModeMatches.length > 0 ? (
                 <div className="space-y-4">
