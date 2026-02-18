@@ -8,6 +8,7 @@ import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const GrowthModeSection: React.FC = () => {
+  console.log('🔥 GrowthModeSection RENDERING');
   const {
     assessmentResult,
     setCurrentView,
