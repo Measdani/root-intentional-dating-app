@@ -44,9 +44,13 @@ const GrowthModeSection: React.FC = () => {
 
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   const growthModeUsers = useMemo(() => {
-    return users.filter(
+    console.log('GrowthModeSection - currentUser:', currentUser.id, currentUser.name, 'gender:', currentUser.gender);
+    console.log('All users:', users.map(u => ({ id: u.id, name: u.name, assessmentPassed: u.assessmentPassed, gender: u.gender })));
+    const filtered = users.filter(
       u => !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender
     );
+    console.log('Filtered growthModeUsers:', filtered.map(u => ({ id: u.id, name: u.name })));
+    return filtered;
   }, [users, currentUser.id, currentUser.gender]);
 
   // Map categories to icons
