@@ -15,6 +15,7 @@ const GrowthModeSection: React.FC = () => {
     currentUser,
     users,
     setSelectedUser,
+    setSelectedConversation,
     expressInterest,
     respondToInterest,
     getReceivedInterests,
@@ -312,7 +313,7 @@ const GrowthModeSection: React.FC = () => {
                           </div>
                           <button
                             onClick={() => {
-                              setSelectedUser(user);
+                              setSelectedConversation(conversation);
                               setCurrentView('conversation');
                             }}
                             className="flex-shrink-0 py-2 px-4 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors whitespace-nowrap"
