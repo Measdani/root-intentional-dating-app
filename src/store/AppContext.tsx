@@ -670,14 +670,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const getReceivedInterests = useCallback((): UserInteraction[] => {
     // Get all conversations and filter for ones where currentUser is the recipient
+    console.log('🔍 getReceivedInterests called for user:', currentUser.id);
+    console.log('sentInterests:', Object.keys(interactions.sentInterests), interactions.sentInterests);
+    console.log('receivedInterests:', Object.keys(interactions.receivedInterests), interactions.receivedInterests);
+
     const allInteractions = [
       ...Object.values(interactions.sentInterests),
       ...Object.values(interactions.receivedInterests),
     ];
+    console.log('allInteractions count:', allInteractions.length, allInteractions);
+
     const uniqueConversations = Array.from(new Map(
       allInteractions.map(i => [i.conversationId, i])
     ).values());
-    return uniqueConversations.filter(i => i.toUserId === currentUser.id);
+    console.log('uniqueConversations count:', uniqueConversations.length);
+
+    const result = uniqueConversations.filter(i => {
+      console.log(`  Checking conversation: fromUserId=${i.fromUserId}, toUserId=${i.toUserId}, matches=${i.toUserId === currentUser.id}`);
+      return i.toUserId === currentUser.id;
+    });
+    console.log('Final receivedInterests count:', result.length, result);
+    return result;
   }, [currentUser.id, interactions]);
 
   const getUnreadCount = useCallback((): number => {
