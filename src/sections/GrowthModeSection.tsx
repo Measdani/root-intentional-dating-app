@@ -251,12 +251,11 @@ const GrowthModeSection: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        expressInterest(user.id, '');
                         setSelectedProfileUser(user);
                       }}
                       className="w-full py-2 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors flex items-center justify-center gap-2 group-hover:gap-3"
                     >
-                      Express Interest
+                      {getConversation(user.id) ? 'Message' : 'Express Interest'}
                       <Send className="w-4 h-4 transition-transform" />
                     </button>
                   </div>
@@ -298,11 +297,18 @@ const GrowthModeSection: React.FC = () => {
                     return (
                       <div
                         key={user.id}
-                        className="bg-[#111611] rounded-[16px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors"
+                        className="bg-[#111611] rounded-[16px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors relative"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
+                              {conversation?.messages && conversation.messages.length > 0 && (
+                                <span className="inline-block px-2 py-0.5 bg-[#D9FF3D]/20 text-[#D9FF3D] text-xs font-medium rounded-full">
+                                  {conversation.messages.length}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[#A9B5AA] text-sm">{user.city}</p>
                             {lastMessage && (
                               <p className="text-[#A9B5AA] text-sm mt-2 line-clamp-2">
@@ -687,11 +693,13 @@ const GrowthModeSection: React.FC = () => {
 
               <button
                 onClick={() => {
-                  // Express interest if not already done
-                  expressInterest(selectedProfileUser.id, messageText);
+                  const existingConversation = getConversation(selectedProfileUser.id);
 
-                  // Send the message
-                  if (messageText.trim()) {
+                  // Only express interest if there's no existing conversation
+                  if (!existingConversation) {
+                    expressInterest(selectedProfileUser.id, messageText);
+                  } else if (messageText.trim()) {
+                    // If conversation exists, just respond
                     respondToInterest(selectedProfileUser.id, messageText);
                   }
 
