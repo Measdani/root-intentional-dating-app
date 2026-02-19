@@ -43,10 +43,17 @@ const GrowthModeSection: React.FC = () => {
     g6: 40,
   });
 
-  // Load fresh interactions on component mount
+  // Load fresh interactions on component mount and when entering browse/inbox tabs
   useEffect(() => {
     reloadInteractions();
   }, []);
+
+  // Reload interactions when returning to browse tab to ensure fresh state
+  useEffect(() => {
+    if (activeTab === 'browse') {
+      reloadInteractions();
+    }
+  }, [activeTab]);
 
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   const growthModeUsers = useMemo(() => {
