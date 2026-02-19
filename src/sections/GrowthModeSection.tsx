@@ -18,6 +18,7 @@ const GrowthModeSection: React.FC = () => {
     expressInterest,
     respondToInterest,
     getReceivedInterests,
+    getSentInterests,
     getConversation,
     setShowSupportModal,
     reportUser,
@@ -295,9 +296,25 @@ const GrowthModeSection: React.FC = () => {
 
             {(() => {
               const receivedInterests = getReceivedInterests();
-              // Filter to only growth-mode matches (opposite gender)
-              const growthModeMatches = receivedInterests
-                .map(interest => users.find(u => u.id === interest.fromUserId))
+              const sentInterests = getSentInterests();
+
+              // Combine both received and sent interests
+              const allInterests = [...receivedInterests, ...sentInterests];
+
+              // Remove duplicates by conversationId (keep one per conversation)
+              const uniqueConversations = Array.from(new Map(
+                allInterests.map(i => [i.conversationId, i])
+              ).values());
+
+              // Map to user profiles and filter to growth-mode matches
+              const growthModeMatches = uniqueConversations
+                .map(interest => {
+                  // Get the other user in the conversation
+                  const otherUserId = interest.fromUserId === currentUser.id
+                    ? interest.toUserId
+                    : interest.fromUserId;
+                  return users.find(u => u.id === otherUserId);
+                })
                 .filter((u) => u && u.id !== currentUser.id && u.gender !== currentUser.gender);
 
               return growthModeMatches.length > 0 ? (

@@ -35,6 +35,7 @@ interface AppContextType extends AppState {
   needsResponse: (userId: string) => boolean;
   getConversation: (userId: string) => UserInteraction | null;
   getReceivedInterests: () => UserInteraction[];
+  getSentInterests: () => UserInteraction[];
   getUnreadCount: () => number;
   selectedConversation: UserInteraction | null;
   setSelectedConversation: (conversation: UserInteraction | null) => void;
@@ -727,6 +728,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return uniqueConversations.filter(i => i.toUserId === currentUser.id);
   }, [currentUser.id, interactions]);
 
+  const getSentInterests = useCallback((): UserInteraction[] => {
+    // Get all conversations and filter for ones where currentUser is the initiator
+    const allInteractions = [
+      ...Object.values(interactions.sentInterests),
+      ...Object.values(interactions.receivedInterests),
+    ];
+    const uniqueConversations = Array.from(new Map(
+      allInteractions.map(i => [i.conversationId, i])
+    ).values());
+    return uniqueConversations.filter(i => i.fromUserId === currentUser.id);
+  }, [currentUser.id, interactions]);
+
   const getUnreadCount = useCallback((): number => {
     const receivedInterests = getReceivedInterests();
     return receivedInterests.filter(
@@ -1031,6 +1044,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     needsResponse,
     getConversation,
     getReceivedInterests,
+    getSentInterests,
     getUnreadCount,
     saveAssessmentDate,
     getNextRetakeDate,
