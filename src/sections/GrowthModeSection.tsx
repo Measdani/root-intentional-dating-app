@@ -49,12 +49,12 @@ const GrowthModeSection: React.FC = () => {
     reloadInteractions();
   }, []);
 
-  // Reload interactions when returning to browse tab to ensure fresh state
+  // Reload interactions when returning to browse or inbox tabs to ensure fresh state
   useEffect(() => {
-    if (activeTab === 'browse') {
+    if (activeTab === 'browse' || activeTab === 'inbox') {
       reloadInteractions();
     }
-  }, [activeTab]);
+  }, [activeTab, reloadInteractions]);
 
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   const growthModeUsers = useMemo(() => {
