@@ -43,9 +43,11 @@ const GrowthModeSection: React.FC = () => {
     g6: 40,
   });
 
-  // Reload interactions from localStorage when tab changes to ensure fresh state
+  // Reload interactions from localStorage when switching to browse or inbox tabs
   useEffect(() => {
-    reloadInteractions();
+    if (activeTab === 'browse' || activeTab === 'inbox') {
+      reloadInteractions();
+    }
   }, [activeTab, reloadInteractions]);
 
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
