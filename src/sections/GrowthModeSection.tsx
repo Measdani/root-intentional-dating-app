@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { toast } from 'sonner';
@@ -20,7 +20,8 @@ const GrowthModeSection: React.FC = () => {
     getReceivedInterests,
     getConversation,
     setShowSupportModal,
-    reportUser
+    reportUser,
+    reloadInteractions,
   } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
@@ -41,6 +42,11 @@ const GrowthModeSection: React.FC = () => {
     g5: 25,
     g6: 40,
   });
+
+  // Reload interactions from localStorage when tab changes to ensure fresh state
+  useEffect(() => {
+    reloadInteractions();
+  }, [activeTab, reloadInteractions]);
 
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   const growthModeUsers = useMemo(() => {

@@ -58,6 +58,7 @@ interface AppContextType extends AppState {
   markNotificationAsRead: (notificationId: string) => void;
   addNotification: (type: 'warning' | 'suspension' | 'removal', title: string, message: string, userId: string) => void;
   reloadNotifications: () => void;
+  reloadInteractions: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -236,6 +237,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Failed to save notifications:', error);
     }
   }, [notifications, currentUser.id]);
+
+  // Manually reload interactions from localStorage
+  const reloadInteractions = useCallback(() => {
+    try {
+      console.log('🔄 Reloading interactions from localStorage...');
+      const saved = localStorage.getItem('rooted_shared_interactions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('✅ Interactions reloaded:', parsed);
+        setInteractions(parsed);
+      }
+    } catch (error) {
+      console.error('Failed to reload interactions:', error);
+    }
+  }, []);
 
   // Reload interactions when currentUser changes (for user login/logout)
   // StorageEvent doesn't fire in same tab, so we need to manually reload
@@ -1036,6 +1052,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     markNotificationAsRead,
     addNotification,
     reloadNotifications,
+    reloadInteractions,
   };
 
   return (
