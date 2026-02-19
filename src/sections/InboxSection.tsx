@@ -111,7 +111,7 @@ const InboxSection: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
-            onClick={() => setCurrentView('browse')}
+            onClick={() => setCurrentView(currentUser.assessmentPassed ? 'browse' : 'growth-mode')}
             className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
