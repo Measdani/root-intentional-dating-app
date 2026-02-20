@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { ArrowLeft, BookOpen, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, BookOpen, CheckCircle, Clock, ExternalLink } from 'lucide-react';
+import type { BlogArticle } from '@/types';
 
 interface ModuleContent {
   title: string;
@@ -13,6 +14,15 @@ const GrowthDetailSection: React.FC = () => {
   const { setCurrentView } = useApp();
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+  const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+
+  // Load blogs from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('community-blogs');
+    if (saved) {
+      setBlogs(JSON.parse(saved));
+    }
+  }, []);
 
   // Detailed module content
   const moduleContent: Record<string, ModuleContent> = {
@@ -466,6 +476,54 @@ const GrowthDetailSection: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            {/* Related Blog Articles */}
+            {(() => {
+              const relatedBlogs = blogs.filter(b => b.moduleId === selectedModuleId);
+              if (relatedBlogs.length > 0) {
+                return (
+                  <div className="bg-[#111611] border border-[#D9FF3D]/20 rounded-lg p-8">
+                    <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                      <BookOpen className="w-6 h-6 text-[#D9FF3D]" />
+                      Deep Dive: Community Articles
+                    </h3>
+                    <div className="space-y-4">
+                      {relatedBlogs.map((blog) => (
+                        <div key={blog.id} className="bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <h4 className="font-bold text-white mb-2">{blog.title}</h4>
+                              <p className="text-sm text-gray-400 mb-3">{blog.excerpt}</p>
+                              <div className="flex items-center gap-3 text-xs text-gray-500">
+                                {blog.author && <span>{blog.author}</span>}
+                                {blog.readTime && (
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {blog.readTime}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setCurrentView('community-blog')}
+                              className="flex-shrink-0 p-2 hover:bg-[#1A211A] rounded-lg transition"
+                            >
+                              <ExternalLink className="w-5 h-5 text-[#D9FF3D]" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setCurrentView('community-blog')}
+                      className="w-full mt-4 py-3 px-4 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg hover:bg-[#D9FF3D]/20 transition font-medium"
+                    >
+                      View All Articles →
+                    </button>
+                  </div>
+                );
+              }
+            })()}
 
             {/* Navigation to Next Module */}
             {resource?.modules && selectedModuleId && (

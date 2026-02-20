@@ -73,6 +73,20 @@ export interface GrowthResource {
   updatedAt?: number;
 }
 
+export interface BlogArticle {
+  id: string;
+  title: string;
+  content: string;
+  moduleId?: string; // Links to specific module
+  category: string;
+  excerpt: string;
+  author?: string;
+  readTime?: string;
+  published: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export type AppView =
   | 'landing'
   | 'assessment'
@@ -80,6 +94,7 @@ export type AppView =
   | 'growth-mode'
   | 'paid-growth-mode'
   | 'growth-detail'
+  | 'community-blog'
   | 'browse'
   | 'profile'
   | 'inbox'

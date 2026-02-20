@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, Edit2, Plus, X, ChevronDown, ChevronUp, Clock, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { growthResources, paidGrowthResources, membershipTiers } from '@/data/assessment';
-import type { GrowthResource } from '@/types';
+import type { GrowthResource, BlogArticle } from '@/types';
 
 const AdminContentSection: React.FC = () => {
   const [resources, setResources] = useState<GrowthResource[]>(() => {
@@ -24,7 +24,14 @@ const AdminContentSection: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<GrowthResource>>({});
   const [newOutcome, setNewOutcome] = useState('');
-  const [activeTab, setActiveTab] = useState<'free' | 'paid' | 'membership'>('free');
+  const [activeTab, setActiveTab] = useState<'free' | 'paid' | 'membership' | 'blogs'>('free');
+  const [blogs, setBlogs] = useState<BlogArticle[]>(() => {
+    const saved = localStorage.getItem('community-blogs');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showBlogForm, setShowBlogForm] = useState(false);
+  const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
+  const [blogFormData, setBlogFormData] = useState<Partial<BlogArticle>>({});
 
   // Save resources to localStorage whenever they change
   React.useEffect(() => {
@@ -35,6 +42,11 @@ const AdminContentSection: React.FC = () => {
   React.useEffect(() => {
     localStorage.setItem('paid-growth-resources', JSON.stringify(paidResources));
   }, [paidResources]);
+
+  // Save blogs to localStorage whenever they change
+  React.useEffect(() => {
+    localStorage.setItem('community-blogs', JSON.stringify(blogs));
+  }, [blogs]);
 
   const handleAddNew = () => {
     setFormData({
@@ -108,6 +120,7 @@ const AdminContentSection: React.FC = () => {
           <TabsTrigger value="free" onClick={() => setActiveTab('free')}>Free Resources</TabsTrigger>
           <TabsTrigger value="paid" onClick={() => setActiveTab('paid')}>Paid Resources</TabsTrigger>
           <TabsTrigger value="membership" onClick={() => setActiveTab('membership')}>Membership Tiers</TabsTrigger>
+          <TabsTrigger value="blogs" onClick={() => setActiveTab('blogs')}>Community Blog</TabsTrigger>
         </TabsList>
 
         <TabsContent value="free" className="space-y-4">
@@ -276,6 +289,68 @@ const AdminContentSection: React.FC = () => {
                 </div>
               </Card>
             ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="blogs" className="space-y-4">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Community Blog Articles ({blogs.length})</h3>
+            <Button onClick={() => {
+              setBlogFormData({
+                title: '',
+                content: '',
+                category: '',
+                excerpt: '',
+                published: false,
+              });
+              setSelectedBlog(null);
+              setShowBlogForm(true);
+            }} className="bg-[#D9FF3D] text-[#0B0F0C] hover:bg-[#C4E622]"><Plus className="w-4 h-4 mr-2" />New Article</Button>
+          </div>
+
+          <div className="space-y-4">
+            {blogs.map((blog) => (
+              <Card key={blog.id} className="bg-[#111611] border-[#1A211A] p-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <BookOpen className="w-5 h-5 text-[#D9FF3D]" />
+                      <h4 className="text-lg font-semibold text-[#F6FFF2]">{blog.title}</h4>
+                      <Badge className="bg-[#D9FF3D]/10 text-[#D9FF3D] border-[#D9FF3D]/30 border">{blog.category}</Badge>
+                      {blog.published ? (
+                        <Badge className="bg-green-500/20 text-green-300">Published</Badge>
+                      ) : (
+                        <Badge className="bg-gray-500/20 text-gray-300">Draft</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-[#A9B5AA] mb-2">{blog.excerpt}</p>
+                    <div className="flex items-center gap-4 text-xs text-[#A9B5AA]">
+                      {blog.moduleId && <span>Module: {blog.moduleId}</span>}
+                      {blog.readTime && <span>{blog.readTime} read</span>}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      setBlogFormData(blog);
+                      setSelectedBlog(blog);
+                      setShowBlogForm(true);
+                    }} className="text-[#D9FF3D]"><Edit2 className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      if (confirm('Delete this article?')) {
+                        setBlogs(blogs.filter(b => b.id !== blog.id));
+                        toast.success('Article deleted');
+                      }
+                    }} className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+            {blogs.length === 0 && (
+              <div className="text-center py-12 text-[#A9B5AA]">
+                <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No articles yet. Create one to help your community learn.</p>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
@@ -492,6 +567,160 @@ const AdminContentSection: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setShowForm(false)}
+                  className="flex-1 py-3 bg-[#1A211A] text-[#A9B5AA] rounded-xl font-medium hover:text-[#F6FFF2] transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Blog Form Modal */}
+      {showBlogForm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#0B0F0C]/80 backdrop-blur-sm" onClick={() => setShowBlogForm(false)} />
+          <Card className="relative bg-[#111611] border-[#1A211A] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowBlogForm(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h2 className="font-display text-2xl text-[#F6FFF2] mb-6">
+              {selectedBlog ? 'Edit Article' : 'Create New Article'}
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Title *</label>
+                <input
+                  type="text"
+                  value={blogFormData.title || ''}
+                  onChange={(e) => setBlogFormData({ ...blogFormData, title: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                  placeholder="Article title"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Category *</label>
+                <input
+                  type="text"
+                  value={blogFormData.category || ''}
+                  onChange={(e) => setBlogFormData({ ...blogFormData, category: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                  placeholder="e.g., Emotional Regulation"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Link to Module (Optional)</label>
+                <input
+                  type="text"
+                  value={blogFormData.moduleId || ''}
+                  onChange={(e) => setBlogFormData({ ...blogFormData, moduleId: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                  placeholder="e.g., g1-m1 (shows article on that module)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Excerpt *</label>
+                <textarea
+                  value={blogFormData.excerpt || ''}
+                  onChange={(e) => setBlogFormData({ ...blogFormData, excerpt: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                  rows={2}
+                  placeholder="Brief summary for blog listing"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Content *</label>
+                <textarea
+                  value={blogFormData.content || ''}
+                  onChange={(e) => setBlogFormData({ ...blogFormData, content: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                  rows={6}
+                  placeholder="Full article content (separate paragraphs with double line break)"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Author</label>
+                  <input
+                    type="text"
+                    value={blogFormData.author || ''}
+                    onChange={(e) => setBlogFormData({ ...blogFormData, author: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                    placeholder="Author name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Read Time</label>
+                  <input
+                    type="text"
+                    value={blogFormData.readTime || ''}
+                    onChange={(e) => setBlogFormData({ ...blogFormData, readTime: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                    placeholder="e.g., 5 min"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl">
+                <input
+                  type="checkbox"
+                  checked={blogFormData.published || false}
+                  onChange={(e) => setBlogFormData({ ...blogFormData, published: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <label className="text-sm text-[#F6FFF2]">Publish article (make visible to users)</label>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-[#1A211A]">
+                <button
+                  onClick={() => {
+                    if (!blogFormData.title || !blogFormData.category || !blogFormData.excerpt || !blogFormData.content) {
+                      toast.error('Please fill in all required fields');
+                      return;
+                    }
+                    const newBlog: BlogArticle = {
+                      id: selectedBlog?.id || `blog${Date.now()}`,
+                      title: blogFormData.title!,
+                      content: blogFormData.content!,
+                      category: blogFormData.category!,
+                      excerpt: blogFormData.excerpt!,
+                      moduleId: blogFormData.moduleId,
+                      author: blogFormData.author,
+                      readTime: blogFormData.readTime,
+                      published: blogFormData.published || false,
+                      createdAt: selectedBlog?.createdAt || Date.now(),
+                      updatedAt: Date.now(),
+                    };
+
+                    if (selectedBlog) {
+                      setBlogs(blogs.map(b => b.id === selectedBlog.id ? newBlog : b));
+                      toast.success('Article updated');
+                    } else {
+                      setBlogs([...blogs, newBlog]);
+                      toast.success('Article created');
+                    }
+
+                    setShowBlogForm(false);
+                    setBlogFormData({});
+                  }}
+                  className="flex-1 py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform"
+                >
+                  {selectedBlog ? 'Update' : 'Create'}
+                </button>
+                <button
+                  onClick={() => setShowBlogForm(false)}
                   className="flex-1 py-3 bg-[#1A211A] text-[#A9B5AA] rounded-xl font-medium hover:text-[#F6FFF2] transition-colors"
                 >
                   Cancel
