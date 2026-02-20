@@ -17,12 +17,18 @@ const GrowthDetailSection: React.FC = () => {
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
+  const [resources, setResources] = useState(growthResources);
 
-  // Load blogs from localStorage
+  // Load resources and blogs from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('community-blogs');
-    if (saved) {
-      setBlogs(JSON.parse(saved));
+    const savedResources = localStorage.getItem('growth-resources');
+    if (savedResources) {
+      setResources(JSON.parse(savedResources));
+    }
+
+    const savedBlogs = localStorage.getItem('community-blogs');
+    if (savedBlogs) {
+      setBlogs(JSON.parse(savedBlogs));
     }
   }, []);
 
@@ -338,7 +344,7 @@ const GrowthDetailSection: React.FC = () => {
     },
   };
 
-  const resource = selectedResourceId ? growthResources.find(r => r.id === selectedResourceId) : null;
+  const resource = selectedResourceId ? resources.find(r => r.id === selectedResourceId) : null;
   const content = selectedModuleId ? moduleContent[selectedModuleId] : null;
 
   return (
@@ -372,7 +378,7 @@ const GrowthDetailSection: React.FC = () => {
           // Resource List
           <div className="grid gap-6">
             <h2 className="text-3xl font-bold mb-4">Choose a Growth Path</h2>
-            {growthResources.map((resource) => (
+            {resources.map((resource) => (
               <div
                 key={resource.id}
                 onClick={() => setSelectedResourceId(resource.id)}
