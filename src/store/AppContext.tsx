@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import type { AppView, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory, AdminNotification } from '@/types';
 import { sampleUsers, currentUser as defaultUser } from '@/data/users';
 import { toast } from 'sonner';
+import { reportService } from '@/services/reportService';
+import { supportService } from '@/services/supportService';
 
 interface AppState {
   currentView: AppView;
@@ -859,6 +861,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Failed to save report:', error);
     }
 
+    // Dual-write to Supabase for persistent storage
+    reportService.createReport(report).catch(err => {
+      console.warn('Supabase report write failed (localStorage fallback active):', err)
+    })
+
     return reportId;
   }, [currentUser.id, calculateSeverity]);
 
@@ -981,6 +988,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.dispatchEvent(new CustomEvent('new-support-message', {
       detail: supportMessage
     }));
+
+    // Dual-write to Supabase for persistent storage
+    supportService.createSupportMessage(supportMessage).catch(err => {
+      console.warn('Supabase support message write failed (localStorage fallback active):', err)
+    })
 
     toast.success(isPriority
       ? 'Message sent! Priority support will respond within 24 hours.'

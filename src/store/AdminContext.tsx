@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import type { AdminUser, AdminSession, UserWithAdminData, UserStatus, UserFilters, AnalyticsSnapshot } from '@/types/admin';
 import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, ReportStatus, ReportStatistics, ReportFilters, SupportMessage, SupportMessageStatistics, SupportMessageFilters } from '@/types/index';
 import { mockAdminUsers, mockAdminCredentials } from '@/data/admins';
+import { reportService } from '@/services/reportService';
+import { supportService } from '@/services/supportService';
 
 interface AdminContextType {
   session: AdminSession;
@@ -132,25 +134,53 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    // Load reports from localStorage
-    try {
-      const savedReports = localStorage.getItem('rooted-admin-reports');
-      if (savedReports) {
-        setReports(JSON.parse(savedReports));
+    // Load reports: try Supabase first, fall back to localStorage
+    (async () => {
+      try {
+        const supabaseReports = await reportService.getAllReports();
+        if (supabaseReports.length > 0) {
+          setReports(supabaseReports);
+          // Backfill localStorage for offline compatibility
+          localStorage.setItem('rooted-admin-reports', JSON.stringify(supabaseReports));
+        } else {
+          // Supabase is empty - use localStorage
+          const savedReports = localStorage.getItem('rooted-admin-reports');
+          if (savedReports) {
+            setReports(JSON.parse(savedReports));
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load reports from Supabase, using localStorage:', err);
+        const savedReports = localStorage.getItem('rooted-admin-reports');
+        if (savedReports) {
+          setReports(JSON.parse(savedReports));
+        }
       }
-    } catch {
-      // Fall back to empty state
-    }
+    })();
 
-    // Load support messages from localStorage
-    try {
-      const savedMessages = localStorage.getItem('rooted-admin-support-messages');
-      if (savedMessages) {
-        setSupportMessages(JSON.parse(savedMessages));
+    // Load support messages: try Supabase first, fall back to localStorage
+    (async () => {
+      try {
+        const supabaseMessages = await supportService.getAllSupportMessages();
+        if (supabaseMessages.length > 0) {
+          setSupportMessages(supabaseMessages);
+          // Backfill localStorage for offline compatibility
+          localStorage.setItem('rooted-admin-support-messages', JSON.stringify(supabaseMessages));
+        } else {
+          // Supabase is empty - use localStorage
+          const savedMessages = localStorage.getItem('rooted-admin-support-messages');
+          if (savedMessages) {
+            setSupportMessages(JSON.parse(savedMessages));
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load support messages from Supabase, using localStorage:', err);
+        const savedMessages = localStorage.getItem('rooted-admin-support-messages');
+        if (savedMessages) {
+          setSupportMessages(JSON.parse(savedMessages));
+        }
       }
-    } catch {
-      // Fall back to empty state
-    }
+    })();
 
     // Listen for new reports from user context
     const handleNewReport = (event: CustomEvent) => {
@@ -388,6 +418,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         : m
       )
     );
+
+    // Dual-write to Supabase
+    supportService.updateStatus(messageId, status, adminResponse).catch(err => {
+      console.warn('Failed to update support message status in Supabase:', err);
+    });
   }, []);
 
   // Compute support message statistics
