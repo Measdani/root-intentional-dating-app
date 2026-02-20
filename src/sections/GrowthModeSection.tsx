@@ -14,6 +14,7 @@ const GrowthModeSection: React.FC = () => {
     resetAssessment,
     currentUser,
     users,
+    interactions,
     setSelectedConversation,
     expressInterest,
     respondToInterest,
@@ -58,9 +59,10 @@ const GrowthModeSection: React.FC = () => {
 
   // Calculate unread message count for growth mode inbox
   const unreadMessageCount = useMemo(() => {
-    const receivedInterests = getReceivedInterests();
-    const sentInterests = getSentInterests();
-    const allInterests = [...receivedInterests, ...sentInterests];
+    const allInterests = [
+      ...Object.values(interactions.sentInterests),
+      ...Object.values(interactions.receivedInterests),
+    ];
 
     // Remove duplicates by conversationId
     const uniqueConversations = Array.from(new Map(
@@ -81,7 +83,7 @@ const GrowthModeSection: React.FC = () => {
     });
 
     return count;
-  }, [getReceivedInterests, getSentInterests, currentUser.id]);
+  }, [interactions, currentUser.id]);
 
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   const growthModeUsers = useMemo(() => {
