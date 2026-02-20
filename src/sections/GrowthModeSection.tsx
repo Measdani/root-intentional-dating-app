@@ -32,7 +32,7 @@ const GrowthModeSection: React.FC = () => {
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
-  const [resources] = useState(() => {
+  const [resources, setResources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
   });
@@ -56,6 +56,16 @@ const GrowthModeSection: React.FC = () => {
       reloadInteractions();
     }
   }, [activeTab, reloadInteractions]);
+
+  // Reload resources when returning to resources tab
+  useEffect(() => {
+    if (activeTab === 'resources') {
+      const saved = localStorage.getItem('growth-resources');
+      if (saved) {
+        setResources(JSON.parse(saved));
+      }
+    }
+  }, [activeTab]);
 
   // Calculate unread message count for growth mode inbox
   const unreadMessageCount = useMemo(() => {
