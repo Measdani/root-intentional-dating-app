@@ -477,6 +477,20 @@ const GrowthDetailSection: React.FC = () => {
               </div>
             </div>
 
+            {/* Advanced Resources */}
+            <div className="bg-gradient-to-r from-[#D9FF3D]/20 to-transparent border border-[#D9FF3D]/30 rounded-lg p-8">
+              <h3 className="text-2xl font-bold mb-3 text-[#D9FF3D]">Take Your Growth Further</h3>
+              <p className="text-gray-300 mb-6">
+                Ready to deepen your practice? Our premium resources provide advanced techniques, personalized coaching, and accountability partnerships.
+              </p>
+              <button
+                onClick={() => setCurrentView('paid-growth-mode')}
+                className="py-3 px-6 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-bold hover:scale-[1.02] transition-transform"
+              >
+                Explore Advanced Resources →
+              </button>
+            </div>
+
             {/* Related Blog Articles */}
             {(() => {
               const relatedBlogs = blogs.filter(b => b.moduleId === selectedModuleId);
