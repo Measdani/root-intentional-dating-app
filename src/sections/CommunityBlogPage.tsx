@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { ArrowLeft, BookOpen, Clock, Search } from 'lucide-react';
 import type { BlogArticle } from '@/types';
+import { blogService } from '@/services/blogService';
 
 const CommunityBlogPage: React.FC = () => {
   const { setCurrentView } = useApp();
@@ -10,12 +11,31 @@ const CommunityBlogPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Load blogs from localStorage
+  // Load blogs from Supabase (public blogs only)
   useEffect(() => {
-    const saved = localStorage.getItem('community-blogs');
-    if (saved) {
-      setBlogs(JSON.parse(saved));
-    }
+    const loadBlogs = async () => {
+      try {
+        const supabaseBlogList = await blogService.getAllBlogs();
+        if (supabaseBlogList.length > 0) {
+          console.log('Loaded community blogs from Supabase:', supabaseBlogList.length);
+          setBlogs(supabaseBlogList);
+        } else {
+          console.log('No public blogs in Supabase, checking localStorage');
+          const saved = localStorage.getItem('community-blogs');
+          if (saved) {
+            setBlogs(JSON.parse(saved));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading community blogs:', error);
+        // Fall back to localStorage
+        const saved = localStorage.getItem('community-blogs');
+        if (saved) {
+          setBlogs(JSON.parse(saved));
+        }
+      }
+    };
+    loadBlogs();
   }, []);
 
   const filteredBlogs = blogs.filter((blog) => {
