@@ -8,6 +8,7 @@ import { Trash2, Edit2, Plus, X, ChevronDown, ChevronUp, Clock, BookOpen } from 
 import { Badge } from '@/components/ui/badge';
 import { growthResources, paidGrowthResources, membershipTiers } from '@/data/assessment';
 import type { GrowthResource, BlogArticle } from '@/types';
+import { blogService } from '@/services/blogService';
 
 const AdminContentSection: React.FC = () => {
   const [resources, setResources] = useState<GrowthResource[]>(() => {
@@ -47,6 +48,26 @@ const AdminContentSection: React.FC = () => {
   React.useEffect(() => {
     localStorage.setItem('community-blogs', JSON.stringify(blogs));
   }, [blogs]);
+
+  // Load blogs from Supabase on mount
+  React.useEffect(() => {
+    const loadBlogs = async () => {
+      try {
+        const supabaseBlogList = await blogService.getAllBlogs();
+        if (supabaseBlogList.length > 0) {
+          console.log('Loaded blogs from Supabase:', supabaseBlogList.length);
+          setBlogs(supabaseBlogList);
+        } else {
+          console.log('No blogs in Supabase, using localStorage');
+          // Keep existing blogs from localStorage
+        }
+      } catch (error) {
+        console.error('Error loading blogs from Supabase:', error);
+        // Fall back to localStorage
+      }
+    };
+    loadBlogs();
+  }, []);
 
   const handleAddNew = () => {
     setFormData({
@@ -337,6 +358,7 @@ const AdminContentSection: React.FC = () => {
                     }} className="text-[#D9FF3D]"><Edit2 className="w-4 h-4" /></Button>
                     <Button size="sm" variant="ghost" onClick={() => {
                       if (confirm('Delete this article?')) {
+                        blogService.deleteBlog(blog.id);
                         setBlogs(blogs.filter(b => b.id !== blog.id));
                         toast.success('Article deleted');
                       }
@@ -740,7 +762,7 @@ const AdminContentSection: React.FC = () => {
 
               <div className="flex gap-3 pt-4 border-t border-[#1A211A]">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!blogFormData.title || !blogFormData.category || !blogFormData.excerpt || !blogFormData.content) {
                       toast.error('Please fill in all required fields');
                       return;
@@ -760,11 +782,23 @@ const AdminContentSection: React.FC = () => {
                     };
 
                     if (selectedBlog) {
+                      // Update to Supabase and localStorage
+                      const success = await blogService.updateBlog(selectedBlog.id, newBlog);
                       setBlogs(blogs.map(b => b.id === selectedBlog.id ? newBlog : b));
-                      toast.success('Article updated');
+                      if (success) {
+                        toast.success('Article updated in database');
+                      } else {
+                        toast.warning('Article updated locally (database save failed)');
+                      }
                     } else {
+                      // Create in Supabase and localStorage
+                      const result = await blogService.createBlog(newBlog);
                       setBlogs([...blogs, newBlog]);
-                      toast.success('Article created');
+                      if (result.error) {
+                        toast.warning(`Article created locally (database error: ${result.error})`);
+                      } else {
+                        toast.success('Article created and saved to database');
+                      }
                     }
 
                     setShowBlogForm(false);
