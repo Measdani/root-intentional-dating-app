@@ -625,6 +625,24 @@ const AdminContentSection: React.FC = () => {
                   className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
                   placeholder="e.g., g1-m1 (shows article on that module)"
                 />
+                <p className="text-xs text-[#A9B5AA] mt-2">Format: [g=growth/pg=paid][1-5]-m[1-4]. Example: g1-m1 = Growth Resource 1, Module 1</p>
+              </div>
+
+              {/* Module Reference Helper */}
+              <div className="bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4">
+                <p className="text-xs font-medium text-[#D9FF3D] mb-2">📌 Module ID Reference</p>
+                <div className="grid grid-cols-2 gap-2 text-xs text-[#A9B5AA]">
+                  <div>
+                    <p className="font-medium text-white mb-1">Free Growth (g):</p>
+                    <p>g1-m1 through g5-m4</p>
+                    <p className="text-[#999] text-[10px]">5 resources, 4 modules each</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-emerald-400 mb-1">Paid Growth (pg):</p>
+                    <p>pg1-m1 through pg5-m4</p>
+                    <p className="text-[#999] text-[10px]">5 resources, 4 modules each</p>
+                  </div>
+                </div>
               </div>
 
               <div>
