@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { paidGrowthResources } from '@/data/assessment';
-import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock, ArrowRight } from 'lucide-react';
+import type { BlogArticle } from '@/types';
 
 const PaidGrowthModeSection: React.FC = () => {
   const { setCurrentView, currentUser } = useApp();
@@ -10,6 +11,15 @@ const PaidGrowthModeSection: React.FC = () => {
     const saved = localStorage.getItem('paid-growth-resources');
     return saved ? JSON.parse(saved) : paidGrowthResources;
   });
+  const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+
+  // Load blogs from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('community-blogs');
+    if (saved) {
+      setBlogs(JSON.parse(saved));
+    }
+  }, []);
   const [pathProgress] = useState<Record<string, number>>({
     pg1: 60,
     pg2: 30,
@@ -231,6 +241,39 @@ const PaidGrowthModeSection: React.FC = () => {
               className="px-6 py-2 bg-amber-500/20 text-amber-400 rounded-lg font-medium hover:bg-amber-500/30 transition-colors"
             >
               View Membership Options
+            </button>
+          </div>
+        )}
+
+        {/* Featured Blog Articles */}
+        {blogs.length > 0 && (
+          <div className="mb-12 py-8 border-t border-b border-emerald-500/20">
+            <h3 className="text-2xl font-bold text-[#F6FFF2] mb-6 flex items-center gap-3">
+              <BookOpen className="w-6 h-6 text-emerald-400" />
+              Learn From Our Community
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              {blogs.slice(0, 2).map((blog) => (
+                <div
+                  key={blog.id}
+                  className="bg-[#111611] border border-emerald-500/20 rounded-lg p-4 hover:border-emerald-500/40 transition cursor-pointer"
+                  onClick={() => setCurrentView('community-blog')}
+                >
+                  <h4 className="font-bold text-white mb-2">{blog.title}</h4>
+                  <p className="text-sm text-gray-400 mb-3">{blog.excerpt}</p>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>{blog.category}</span>
+                    {blog.readTime && <span>{blog.readTime} read</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentView('community-blog')}
+              className="w-full py-3 px-4 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition font-medium flex items-center justify-center gap-2"
+            >
+              Explore All Articles
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         )}
