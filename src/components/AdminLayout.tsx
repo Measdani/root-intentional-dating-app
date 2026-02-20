@@ -48,10 +48,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-[#0B0F0C]">
+    <div className="flex h-screen bg-[#0B0F0C] overflow-hidden">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#111611] border-r border-[#1A211A] transition-transform lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#111611] border-r border-[#1A211A] transition-transform lg:relative lg:translate-x-0 flex flex-col ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -86,8 +86,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </nav>
 
         {/* Sidebar footer */}
-        <div className="p-4 border-t border-[#1A211A] space-y-2">
-          <p className="text-xs text-[#A9B5AA] px-2">
+        <div className="p-4 border-t border-[#1A211A] space-y-2 flex-shrink-0">
+          <p className="text-xs text-[#A9B5AA] px-2 truncate">
             Logged in as{' '}
             <span className="text-[#F6FFF2] font-semibold">
               {session.adminUser?.name}
@@ -96,20 +96,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <p className="text-xs text-[#A9B5AA] px-2 capitalize">
             Role: {session.adminUser?.role.replace('-', ' ')}
           </p>
-          <Button
-            onClick={handleLogout}
-            className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:ml-64">
+      <div className="flex-1 flex flex-col lg:ml-64 overflow-hidden">
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-[#111611] border-b border-[#1A211A] px-4 lg:px-8 py-4">
+        <header className="sticky top-0 z-40 bg-[#111611] border-b border-[#1A211A] px-4 lg:px-8 py-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -120,14 +113,24 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <h2 className="text-xl font-display font-bold text-[#F6FFF2] ml-4 lg:ml-0 flex-1">
               Admin Panel
             </h2>
-            <div className="text-sm text-[#A9B5AA]">
-              {new Date().toLocaleDateString()}
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-[#A9B5AA]">
+                {new Date().toLocaleDateString()}
+              </div>
+              <Button
+                onClick={handleLogout}
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-[#0B0F0C]">
+        <main className="flex-1 overflow-y-auto bg-[#0B0F0C]">
           {children}
         </main>
       </div>
