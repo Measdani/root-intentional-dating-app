@@ -56,6 +56,33 @@ const GrowthModeSection: React.FC = () => {
     }
   }, [activeTab, reloadInteractions]);
 
+  // Calculate unread message count for growth mode inbox
+  const unreadMessageCount = useMemo(() => {
+    const receivedInterests = getReceivedInterests();
+    const sentInterests = getSentInterests();
+    const allInterests = [...receivedInterests, ...sentInterests];
+
+    // Remove duplicates by conversationId
+    const uniqueConversations = Array.from(new Map(
+      allInterests.map(i => [i.conversationId, i])
+    ).values());
+
+    // Count messages from other users (unread = messages from the other person)
+    let count = 0;
+    uniqueConversations.forEach(conversation => {
+      if (conversation.messages) {
+        conversation.messages.forEach(message => {
+          // Count messages where the sender is not the current user
+          if (message.fromUserId !== currentUser.id) {
+            count++;
+          }
+        });
+      }
+    });
+
+    return count;
+  }, [getReceivedInterests, getSentInterests, currentUser.id]);
+
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   const growthModeUsers = useMemo(() => {
     return users.filter(
@@ -195,7 +222,7 @@ const GrowthModeSection: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('inbox')}
-            className={`pb-3 px-4 font-medium transition-all ${
+            className={`pb-3 px-4 font-medium transition-all relative ${
               activeTab === 'inbox'
                 ? 'text-[#D9FF3D] border-b-2 border-[#D9FF3D]'
                 : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
@@ -204,6 +231,11 @@ const GrowthModeSection: React.FC = () => {
             <div className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
               Inbox
+              {unreadMessageCount > 0 && (
+                <span className="ml-1 px-2 py-0.5 bg-red-500 text-white rounded-full text-xs font-medium">
+                  {unreadMessageCount}
+                </span>
+              )}
             </div>
           </button>
           <button
