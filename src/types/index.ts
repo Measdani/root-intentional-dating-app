@@ -58,6 +58,7 @@ export interface GrowthResourceModule {
   description: string;
   exercise?: string;
   orderIndex: number;
+  blogIds?: string[]; // Module-only blog articles linked to this module
 }
 
 export interface GrowthResource {
@@ -77,12 +78,12 @@ export interface BlogArticle {
   id: string;
   title: string;
   content: string;
-  moduleId?: string; // Links to specific module
   category: string;
   excerpt: string;
   author?: string;
   readTime?: string;
   published: boolean;
+  moduleOnly: boolean; // If true: only visible in modules, not on community blog
   createdAt: number;
   updatedAt: number;
 }

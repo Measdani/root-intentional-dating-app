@@ -325,7 +325,7 @@ const AdminContentSection: React.FC = () => {
                     </div>
                     <p className="text-sm text-[#A9B5AA] mb-2">{blog.excerpt}</p>
                     <div className="flex items-center gap-4 text-xs text-[#A9B5AA]">
-                      {blog.moduleId && <span>Module: {blog.moduleId}</span>}
+                      {blog.moduleOnly && <span className="text-[#D9FF3D]">Module Only</span>}
                       {blog.readTime && <span>{blog.readTime} read</span>}
                     </div>
                   </div>
@@ -537,6 +537,59 @@ const AdminContentSection: React.FC = () => {
                         placeholder="What do they need to do? (e.g., journaling prompt, reflection exercise, action step)"
                         rows={2}
                       />
+
+                      {/* Module Blogs Selection */}
+                      <div className="mt-3 pt-3 border-t border-[#1A211A]">
+                        <label className="block text-xs font-medium text-[#A9B5AA] mb-2">Attach Module Blogs (optional)</label>
+                        <select
+                          multiple
+                          value={module.blogIds || []}
+                          onChange={(e) => {
+                            const selected = Array.from(e.target.selectedOptions, option => option.value);
+                            const updated = [...(formData.modules || [])];
+                            updated[idx] = { ...module, blogIds: selected };
+                            setFormData({ ...formData, modules: updated });
+                          }}
+                          className="w-full px-3 py-2 bg-[#111611] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm"
+                        >
+                          {blogs
+                            .filter(b => b.moduleOnly)
+                            .map(blog => (
+                              <option key={blog.id} value={blog.id}>
+                                {blog.title}
+                              </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-[#A9B5AA] mt-1">Hold Ctrl/Cmd to select multiple blogs</p>
+
+                        {/* Show selected blogs */}
+                        {(module.blogIds || []).length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {(module.blogIds || []).map(blogId => {
+                              const blog = blogs.find(b => b.id === blogId);
+                              return (
+                                <div key={blogId} className="flex items-center justify-between px-2 py-1 bg-[#D9FF3D]/10 rounded text-xs text-[#D9FF3D]">
+                                  <span className="truncate">{blog?.title || 'Unknown Blog'}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...(formData.modules || [])];
+                                      updated[idx] = {
+                                        ...module,
+                                        blogIds: (module.blogIds || []).filter(id => id !== blogId)
+                                      };
+                                      setFormData({ ...formData, modules: updated });
+                                    }}
+                                    className="ml-2 text-red-400 hover:text-red-300"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -616,33 +669,17 @@ const AdminContentSection: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Link to Module (Optional)</label>
+              <div className="flex items-center gap-3 p-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl">
                 <input
-                  type="text"
-                  value={blogFormData.moduleId || ''}
-                  onChange={(e) => setBlogFormData({ ...blogFormData, moduleId: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
-                  placeholder="e.g., g1-m1 (shows article on that module)"
+                  type="checkbox"
+                  checked={blogFormData.moduleOnly || false}
+                  onChange={(e) => setBlogFormData({ ...blogFormData, moduleOnly: e.target.checked })}
+                  className="w-4 h-4"
                 />
-                <p className="text-xs text-[#A9B5AA] mt-2">Format: [g=growth/pg=paid][1-5]-m[1-4]. Example: g1-m1 = Growth Resource 1, Module 1</p>
-              </div>
-
-              {/* Module Reference Helper */}
-              <div className="bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4">
-                <p className="text-xs font-medium text-[#D9FF3D] mb-2">📌 Module ID Reference</p>
-                <div className="grid grid-cols-2 gap-2 text-xs text-[#A9B5AA]">
-                  <div>
-                    <p className="font-medium text-white mb-1">Free Growth (g):</p>
-                    <p>g1-m1 through g5-m4</p>
-                    <p className="text-[#999] text-[10px]">5 resources, 4 modules each</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-emerald-400 mb-1">Paid Growth (pg):</p>
-                    <p>pg1-m1 through pg5-m4</p>
-                    <p className="text-[#999] text-[10px]">5 resources, 4 modules each</p>
-                  </div>
-                </div>
+                <label className="text-sm text-[#F6FFF2]">
+                  <span className="font-medium">Module-Only Article</span>
+                  <p className="text-xs text-[#A9B5AA]">If checked: only visible in modules, not on community blog</p>
+                </label>
               </div>
 
               <div>
@@ -714,10 +751,10 @@ const AdminContentSection: React.FC = () => {
                       content: blogFormData.content!,
                       category: blogFormData.category!,
                       excerpt: blogFormData.excerpt!,
-                      moduleId: blogFormData.moduleId,
                       author: blogFormData.author,
                       readTime: blogFormData.readTime,
                       published: blogFormData.published || false,
+                      moduleOnly: blogFormData.moduleOnly || false,
                       createdAt: selectedBlog?.createdAt || Date.now(),
                       updatedAt: Date.now(),
                     };

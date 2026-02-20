@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { ArrowLeft, BookOpen, CheckCircle, Clock, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, CheckCircle, Clock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
+import ModuleBlogModal from '@/components/ModuleBlogModal';
 
 interface ModuleContent {
   title: string;
@@ -15,6 +16,7 @@ const GrowthDetailSection: React.FC = () => {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+  const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
 
   // Load blogs from localStorage
   useEffect(() => {
@@ -491,49 +493,46 @@ const GrowthDetailSection: React.FC = () => {
               </button>
             </div>
 
-            {/* Related Blog Articles */}
+            {/* Module Resources */}
             {(() => {
-              const relatedBlogs = blogs.filter(b => b.moduleId === selectedModuleId);
-              if (relatedBlogs.length > 0) {
+              const currentModule = resource?.modules?.find(m => m.id === selectedModuleId);
+              const moduleBlogIds = currentModule?.blogIds || [];
+              const moduleBogs = moduleBlogIds
+                .map(blogId => blogs.find(b => b.id === blogId))
+                .filter(Boolean) as BlogArticle[];
+
+              if (moduleBogs.length > 0) {
                 return (
                   <div className="bg-[#111611] border border-[#D9FF3D]/20 rounded-lg p-8">
                     <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
                       <BookOpen className="w-6 h-6 text-[#D9FF3D]" />
-                      Deep Dive: Community Articles
+                      Module Resources
                     </h3>
-                    <div className="space-y-4">
-                      {relatedBlogs.map((blog) => (
-                        <div key={blog.id} className="bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4">
+                    <div className="space-y-3">
+                      {moduleBogs.map((blog) => (
+                        <button
+                          key={blog.id}
+                          onClick={() => setSelectedBlog(blog)}
+                          className="w-full text-left bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4 hover:border-[#D9FF3D] transition group"
+                        >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
-                              <h4 className="font-bold text-white mb-2">{blog.title}</h4>
-                              <p className="text-sm text-gray-400 mb-3">{blog.excerpt}</p>
-                              <div className="flex items-center gap-3 text-xs text-gray-500">
-                                {blog.author && <span>{blog.author}</span>}
-                                {blog.readTime && (
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {blog.readTime}
-                                  </span>
-                                )}
-                              </div>
+                              <h4 className="font-bold text-white mb-1 group-hover:text-[#D9FF3D] transition">
+                                📄 {blog.title}
+                              </h4>
+                              <p className="text-sm text-gray-400">{blog.excerpt}</p>
+                              {blog.readTime && (
+                                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {blog.readTime} read
+                                </p>
+                              )}
                             </div>
-                            <button
-                              onClick={() => setCurrentView('community-blog')}
-                              className="flex-shrink-0 p-2 hover:bg-[#1A211A] rounded-lg transition"
-                            >
-                              <ExternalLink className="w-5 h-5 text-[#D9FF3D]" />
-                            </button>
+                            <span className="text-[#D9FF3D] opacity-0 group-hover:opacity-100 transition">→</span>
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
-                    <button
-                      onClick={() => setCurrentView('community-blog')}
-                      className="w-full mt-4 py-3 px-4 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg hover:bg-[#D9FF3D]/20 transition font-medium"
-                    >
-                      View All Articles →
-                    </button>
                   </div>
                 );
               }
@@ -579,6 +578,14 @@ const GrowthDetailSection: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Module Blog Modal */}
+      <ModuleBlogModal
+        blog={selectedBlog}
+        isOpen={!!selectedBlog}
+        onClose={() => setSelectedBlog(null)}
+        onBack={() => setSelectedBlog(null)}
+      />
     </div>
   );
 };

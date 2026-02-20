@@ -9,7 +9,7 @@ export const blogService = {
         id: blog.id,
         title: blog.title,
         content: blog.content,
-        module_id: blog.moduleId,
+        module_only: blog.moduleOnly,
         category: blog.category,
         excerpt: blog.excerpt,
         author: blog.author,
@@ -40,11 +40,12 @@ export const blogService = {
     return data.map(mapRowToBlog)
   },
 
-  async getBlogsByModule(moduleId: string): Promise<BlogArticle[]> {
+  async getBlogsByIds(blogIds: string[]): Promise<BlogArticle[]> {
+    if (!blogIds.length) return []
     const { data, error } = await supabase
       .from('blogs')
       .select('*')
-      .eq('module_id', moduleId)
+      .in('id', blogIds)
       .eq('published', true)
       .order('created_at', { ascending: false })
 
@@ -61,7 +62,7 @@ export const blogService = {
       .update({
         title: updates.title,
         content: updates.content,
-        module_id: updates.moduleId,
+        module_only: updates.moduleOnly,
         category: updates.category,
         excerpt: updates.excerpt,
         author: updates.author,
@@ -97,7 +98,7 @@ function mapRowToBlog(row: any): BlogArticle {
     id: row.id,
     title: row.title,
     content: row.content,
-    moduleId: row.module_id,
+    moduleOnly: row.module_only,
     category: row.category,
     excerpt: row.excerpt,
     author: row.author,

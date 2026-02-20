@@ -19,6 +19,8 @@ const CommunityBlogPage: React.FC = () => {
   }, []);
 
   const filteredBlogs = blogs.filter((blog) => {
+    // Only show public blogs (not module-only)
+    if (blog.moduleOnly) return false;
     const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       blog.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !selectedCategory || blog.category === selectedCategory;
