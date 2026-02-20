@@ -3,6 +3,7 @@ import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { ArrowLeft, BookOpen, CheckCircle, Clock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
+import { supabase } from '@/lib/supabase';
 import ModuleBlogModal from '@/components/ModuleBlogModal';
 
 interface ModuleContent {
@@ -19,17 +20,65 @@ const GrowthDetailSection: React.FC = () => {
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [resources, setResources] = useState(growthResources);
 
-  // Load resources and blogs from localStorage
+  // Load resources and blogs from Supabase and localStorage
   useEffect(() => {
     const savedResources = localStorage.getItem('growth-resources');
     if (savedResources) {
       setResources(JSON.parse(savedResources));
     }
+  }, []);
 
-    const savedBlogs = localStorage.getItem('community-blogs');
-    if (savedBlogs) {
-      setBlogs(JSON.parse(savedBlogs));
-    }
+  // Load blogs from Supabase (includes module-only blogs)
+  useEffect(() => {
+    const loadBlogs = async () => {
+      try {
+        // Load ALL blogs (both module-only and public) from Supabase
+        const { data, error } = await supabase
+          .from('blogs')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Failed to load blogs from Supabase:', error);
+          // Fall back to localStorage
+          const savedBlogs = localStorage.getItem('community-blogs');
+          if (savedBlogs) {
+            setBlogs(JSON.parse(savedBlogs));
+          }
+        } else if (data && data.length > 0) {
+          console.log('Loaded all blogs from Supabase:', data.length);
+          // Map the data to BlogArticle format
+          const blogs = data.map(row => ({
+            id: row.id,
+            title: row.title,
+            content: row.content,
+            moduleOnly: row.module_only,
+            category: row.category,
+            excerpt: row.excerpt,
+            author: row.author,
+            readTime: row.read_time,
+            published: row.published,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+          }));
+          setBlogs(blogs);
+        } else {
+          // Fall back to localStorage if no Supabase data
+          const savedBlogs = localStorage.getItem('community-blogs');
+          if (savedBlogs) {
+            setBlogs(JSON.parse(savedBlogs));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading blogs:', error);
+        // Fall back to localStorage
+        const savedBlogs = localStorage.getItem('community-blogs');
+        if (savedBlogs) {
+          setBlogs(JSON.parse(savedBlogs));
+        }
+      }
+    };
+    loadBlogs();
   }, []);
 
   // Detailed module content
