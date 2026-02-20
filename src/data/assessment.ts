@@ -168,6 +168,32 @@ export const growthResources: GrowthResource[] = [
     description: 'Learn to identify, name, and navigate your emotions with greater ease.',
     category: 'Emotional Regulation',
     estimatedTime: '4 weeks',
+    modules: [
+      {
+        id: 'g1-m1',
+        title: 'Understanding Your Emotions',
+        description: 'Learn what emotions are, why they matter, and how they\'re data about your values.',
+        orderIndex: 1,
+      },
+      {
+        id: 'g1-m2',
+        title: 'The RAIN Technique',
+        description: 'Recognize, Allow, Investigate, Nurture - a 4-step process for emotional awareness.',
+        orderIndex: 2,
+      },
+      {
+        id: 'g1-m3',
+        title: 'Grounding Techniques',
+        description: 'Practical exercises to anchor yourself in the present when overwhelmed.',
+        orderIndex: 3,
+      },
+      {
+        id: 'g1-m4',
+        title: 'Emotions in Relationships',
+        description: 'How to regulate emotions while staying connected to your partner.',
+        orderIndex: 4,
+      },
+    ],
   },
   {
     id: 'g2',
@@ -175,6 +201,32 @@ export const growthResources: GrowthResource[] = [
     description: 'Practice owning your impact without defensiveness or over-apologizing.',
     category: 'Accountability',
     estimatedTime: '3 weeks',
+    modules: [
+      {
+        id: 'g2-m1',
+        title: 'What Accountability Really Is',
+        description: 'Understanding accountability vs shame, defensiveness, and excuse-making.',
+        orderIndex: 1,
+      },
+      {
+        id: 'g2-m2',
+        title: 'The Accountability Cycle',
+        description: 'The 4-step process: Awareness, Understanding, Apology, Repair & Commitment.',
+        orderIndex: 2,
+      },
+      {
+        id: 'g2-m3',
+        title: 'The Genuine Apology',
+        description: 'How to apologize in ways that actually repair trust and connection.',
+        orderIndex: 3,
+      },
+      {
+        id: 'g2-m4',
+        title: 'Following Through',
+        description: 'Building trust through consistent behavior change over time.',
+        orderIndex: 4,
+      },
+    ],
   },
   {
     id: 'g3',
@@ -182,6 +234,32 @@ export const growthResources: GrowthResource[] = [
     description: 'Develop a stronger relationship with yourself before seeking partnership.',
     category: 'Autonomy',
     estimatedTime: '6 weeks',
+    modules: [
+      {
+        id: 'g3-m1',
+        title: 'The Wholeness Framework',
+        description: 'Independence vs interdependence - building a complete self.',
+        orderIndex: 1,
+      },
+      {
+        id: 'g3-m2',
+        title: 'The Three Pillars',
+        description: 'Purpose, Connection, and Practice - the foundation of a strong self.',
+        orderIndex: 2,
+      },
+      {
+        id: 'g3-m3',
+        title: 'Building Your Self',
+        description: 'Practical ways to deepen your relationship with yourself.',
+        orderIndex: 3,
+      },
+      {
+        id: 'g3-m4',
+        title: 'Bringing Wholeness to Partnership',
+        description: 'How a strong self creates the conditions for deep connection.',
+        orderIndex: 4,
+      },
+    ],
   },
   {
     id: 'g4',
@@ -189,13 +267,65 @@ export const growthResources: GrowthResource[] = [
     description: 'Learn to set and maintain boundaries with clarity and kindness.',
     category: 'Boundaries',
     estimatedTime: '4 weeks',
+    modules: [
+      {
+        id: 'g4-m1',
+        title: 'What Boundaries Are',
+        description: 'Understanding boundaries as protection, not walls.',
+        orderIndex: 1,
+      },
+      {
+        id: 'g4-m2',
+        title: 'Types of Boundaries',
+        description: 'Emotional, physical, time, mental, and sexual boundaries.',
+        orderIndex: 2,
+      },
+      {
+        id: 'g4-m3',
+        title: 'Setting Boundaries',
+        description: 'How to communicate boundaries with clarity and kindness.',
+        orderIndex: 3,
+      },
+      {
+        id: 'g4-m4',
+        title: 'Boundaries in Partnership',
+        description: 'How to honor your boundaries and your partner\'s.',
+        orderIndex: 4,
+      },
+    ],
   },
   {
     id: 'g5',
     title: 'Conflict as Connection',
     description: 'Transform disagreements into opportunities for deeper understanding.',
-    category: 'Conflict Repair',
+    category: 'Conflict & Repair',
     estimatedTime: '5 weeks',
+    modules: [
+      {
+        id: 'g5-m1',
+        title: 'Why Conflict Matters',
+        description: 'Understanding that conflict resolution, not avoidance, builds intimacy.',
+        orderIndex: 1,
+      },
+      {
+        id: 'g5-m2',
+        title: 'The Repair Conversation',
+        description: 'The 5-step framework for resolving disagreements productively.',
+        orderIndex: 2,
+      },
+      {
+        id: 'g5-m3',
+        title: 'Healing Language',
+        description: 'Words that heal vs words that harm during conflict.',
+        orderIndex: 3,
+      },
+      {
+        id: 'g5-m4',
+        title: 'Advanced Conflict Skills',
+        description: 'Techniques for managing emotions and finding mutual understanding.',
+        orderIndex: 4,
+      },
+    ],
   },
 ];
 

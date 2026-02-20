@@ -16,6 +16,7 @@ import ProfileDetailSection from '@/sections/ProfileDetailSection';
 import InboxSection from '@/sections/InboxSection';
 import ConversationSection from '@/sections/ConversationSection';
 import GrowthModeSection from '@/sections/GrowthModeSection';
+import GrowthDetailSection from '@/sections/GrowthDetailSection';
 import PaidGrowthModeSection from '@/sections/PaidGrowthModeSection';
 import AdminLoginSection from '@/sections/AdminLoginSection';
 import AdminLayout from '@/components/AdminLayout';
@@ -88,6 +89,8 @@ const AppContent: React.FC = () => {
         return <ConversationSection />;
       case 'growth-mode':
         return <GrowthModeSection />;
+      case 'growth-detail':
+        return <GrowthDetailSection />;
       case 'paid-growth-mode':
         return <PaidGrowthModeSection />;
       case 'privacy-policy':

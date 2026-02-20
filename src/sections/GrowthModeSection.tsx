@@ -580,18 +580,29 @@ const GrowthModeSection: React.FC = () => {
                 </div>
 
                 {/* Info Row */}
-                <div className="flex items-center gap-4 text-xs text-[#A9B5AA] pt-3 border-t border-[#1A211A]">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {resource.estimatedTime}
-                  </span>
-                  <span className={`px-2 py-0.5 rounded-full ${
-                    status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
-                    status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
-                    'bg-[#1A211A] text-[#A9B5AA]'
-                  }`}>
-                    {resource.category}
-                  </span>
+                <div className="flex items-center justify-between gap-4 text-xs text-[#A9B5AA] pt-3 border-t border-[#1A211A]">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {resource.estimatedTime}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full ${
+                      status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
+                      status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
+                      'bg-[#1A211A] text-[#A9B5AA]'
+                    }`}>
+                      {resource.category}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentView('growth-detail');
+                    }}
+                    className="text-[#D9FF3D] hover:text-white font-medium transition whitespace-nowrap"
+                  >
+                    Learn More →
+                  </button>
                 </div>
 
               </div>
