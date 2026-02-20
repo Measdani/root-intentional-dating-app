@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { paidGrowthResources } from '@/data/assessment';
-import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock, ArrowRight } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 
 const PaidGrowthModeSection: React.FC = () => {
   const { setCurrentView, currentUser } = useApp();
   const [activeResource, setActiveResource] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'resources' | 'blog'>('resources');
   const [resources] = useState(() => {
     const saved = localStorage.getItem('paid-growth-resources');
     return saved ? JSON.parse(saved) : paidGrowthResources;
@@ -133,7 +134,38 @@ const PaidGrowthModeSection: React.FC = () => {
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="mb-10 flex gap-4 border-b border-emerald-500/20">
+          <button
+            onClick={() => setActiveTab('resources')}
+            className={`pb-3 px-4 font-medium transition-all ${
+              activeTab === 'resources'
+                ? 'text-emerald-400 border-b-2 border-emerald-400'
+                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Advanced Resources
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('blog')}
+            className={`pb-3 px-4 font-medium transition-all ${
+              activeTab === 'blog'
+                ? 'text-emerald-400 border-b-2 border-emerald-400'
+                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Blog
+            </div>
+          </button>
+        </div>
+
         {/* Growth Resources */}
+        {activeTab === 'resources' && (
         <div className="mb-12">
           <h3 className="font-mono-label text-[#F6FFF2] mb-2">Deepen Your Partnership Skills</h3>
           <p className="text-[#A9B5AA] text-sm mb-6">These advanced resources help you become the best partner you can be. Work through them at your own pace as you navigate relationship building.</p>
@@ -227,6 +259,46 @@ const PaidGrowthModeSection: React.FC = () => {
             })}
           </div>
         </div>
+        )}
+
+        {/* Blog View */}
+        {activeTab === 'blog' && (
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold text-[#F6FFF2] mb-6">Community Blog</h3>
+            {blogs.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="w-12 h-12 text-emerald-500/30 mx-auto mb-4" />
+                <p className="text-[#A9B5AA]">No articles available yet</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {blogs.map((blog) => (
+                  <div
+                    key={blog.id}
+                    onClick={() => setCurrentView('community-blog')}
+                    className="bg-[#111611] border border-emerald-500/20 rounded-lg p-6 cursor-pointer hover:border-emerald-400 transition group"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full">
+                        {blog.category}
+                      </span>
+                      {blog.readTime && (
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {blog.readTime}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold mb-2 group-hover:text-emerald-400 transition">
+                      {blog.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm">{blog.excerpt}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Membership Check */}
         {!isPaidMember && (
@@ -245,38 +317,6 @@ const PaidGrowthModeSection: React.FC = () => {
           </div>
         )}
 
-        {/* Featured Blog Articles */}
-        {blogs.length > 0 && (
-          <div className="mb-12 py-8 border-t border-b border-emerald-500/20">
-            <h3 className="text-2xl font-bold text-[#F6FFF2] mb-6 flex items-center gap-3">
-              <BookOpen className="w-6 h-6 text-emerald-400" />
-              Learn From Our Community
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4 mb-6">
-              {blogs.slice(0, 2).map((blog) => (
-                <div
-                  key={blog.id}
-                  className="bg-[#111611] border border-emerald-500/20 rounded-lg p-4 hover:border-emerald-500/40 transition cursor-pointer"
-                  onClick={() => setCurrentView('community-blog')}
-                >
-                  <h4 className="font-bold text-white mb-2">{blog.title}</h4>
-                  <p className="text-sm text-gray-400 mb-3">{blog.excerpt}</p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{blog.category}</span>
-                    {blog.readTime && <span>{blog.readTime} read</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setCurrentView('community-blog')}
-              className="w-full py-3 px-4 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition font-medium flex items-center justify-center gap-2"
-            >
-              Explore All Articles
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

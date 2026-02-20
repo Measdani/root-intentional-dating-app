@@ -27,7 +27,7 @@ const GrowthModeSection: React.FC = () => {
   } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources'>('browse');
+  const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources' | 'blog'>('browse');
   const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [messageText, setMessageText] = useState('');
@@ -35,6 +35,10 @@ const GrowthModeSection: React.FC = () => {
   const [resources, setResources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
+  });
+  const [blogs] = useState<any[]>(() => {
+    const saved = localStorage.getItem('community-blogs');
+    return saved ? JSON.parse(saved) : [];
   });
   const [pathProgress] = useState<Record<string, number>>({
     g1: 75,
@@ -261,6 +265,19 @@ const GrowthModeSection: React.FC = () => {
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Growth Resources
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('blog')}
+            className={`pb-3 px-4 font-medium transition-all ${
+              activeTab === 'blog'
+                ? 'text-[#D9FF3D] border-b-2 border-[#D9FF3D]'
+                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Blog
             </div>
           </button>
         </div>
@@ -610,6 +627,54 @@ const GrowthModeSection: React.FC = () => {
             })}
           </div>
         </div>
+          </div>
+        )}
+
+        {/* Blog View */}
+        {activeTab === 'blog' && (
+          <div>
+            <div className="text-center mb-10">
+              <h2 className="font-display text-3xl text-[#F6FFF2] mb-4">Community Blog</h2>
+              <p className="text-[#A9B5AA] max-w-2xl mx-auto">
+                Read articles from our community about growth, relationships, and intentional living.
+              </p>
+            </div>
+
+            {blogs.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="w-12 h-12 text-[#1A211A] mx-auto mb-4" />
+                <p className="text-[#A9B5AA]">No articles available yet</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {blogs.map((blog: any) => (
+                  <div
+                    key={blog.id}
+                    onClick={() => setCurrentView('community-blog')}
+                    className="bg-[#111611] border border-[#1A211A] rounded-lg p-6 cursor-pointer hover:border-[#D9FF3D] transition group"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs bg-[#D9FF3D]/10 text-[#D9FF3D] px-3 py-1 rounded-full">
+                        {blog.category}
+                      </span>
+                      {blog.readTime && (
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {blog.readTime}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold mb-2 group-hover:text-[#D9FF3D] transition">
+                      {blog.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm mb-4">{blog.excerpt}</p>
+                    <div className="text-xs text-gray-500">
+                      {blog.author && <span>{blog.author}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
