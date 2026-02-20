@@ -113,6 +113,7 @@ export interface ConversationMessage {
   message: string;
   timestamp: number;
   messageType: 'initial' | 'response';
+  read?: boolean; // Whether the message has been read by the recipient
 }
 
 export interface PhotoConsent {

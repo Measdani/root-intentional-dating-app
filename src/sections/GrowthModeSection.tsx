@@ -69,13 +69,13 @@ const GrowthModeSection: React.FC = () => {
       allInterests.map(i => [i.conversationId, i])
     ).values());
 
-    // Count messages from other users (unread = messages from the other person)
+    // Count unread messages from other users
     let count = 0;
     uniqueConversations.forEach(conversation => {
       if (conversation.messages) {
         conversation.messages.forEach(message => {
-          // Count messages where the sender is not the current user
-          if (message.fromUserId !== currentUser.id) {
+          // Count unread messages from the other user
+          if (message.fromUserId !== currentUser.id && !message.read) {
             count++;
           }
         });

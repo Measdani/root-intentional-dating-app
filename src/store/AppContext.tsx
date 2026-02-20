@@ -27,6 +27,7 @@ interface AppContextType extends AppState {
   resetAssessment: () => void;
   expressInterest: (toUserId: string, message: string) => void;
   respondToInterest: (fromUserId: string, message: string) => void;
+  markMessagesAsRead: (conversationId: string) => void;
   grantPhotoConsent: (conversationId: string) => void;
   withdrawPhotoConsent: (conversationId: string) => void;
   hasExpressedInterest: (userId: string) => boolean;
@@ -494,6 +495,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     toast.success('Message sent!');
+  }, [currentUser.id]);
+
+  const markMessagesAsRead = useCallback((conversationId: string) => {
+    setInteractions(prev => {
+      const updateInteraction = (interaction: UserInteraction): UserInteraction => {
+        if (interaction.conversationId !== conversationId) return interaction;
+
+        // Mark all messages from other users as read
+        const updatedMessages = interaction.messages.map(message => ({
+          ...message,
+          read: message.fromUserId !== currentUser.id ? true : message.read,
+        }));
+
+        return {
+          ...interaction,
+          messages: updatedMessages,
+        };
+      };
+
+      return {
+        ...prev,
+        sentInterests: Object.entries(prev.sentInterests).reduce((acc, [key, interaction]) => {
+          acc[key] = updateInteraction(interaction);
+          return acc;
+        }, {} as Record<string, UserInteraction>),
+        receivedInterests: Object.entries(prev.receivedInterests).reduce((acc, [key, interaction]) => {
+          acc[key] = updateInteraction(interaction);
+          return acc;
+        }, {} as Record<string, UserInteraction>),
+      };
+    });
   }, [currentUser.id]);
 
   const grantPhotoConsent = useCallback((conversationId: string) => {
@@ -1036,6 +1068,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     resetAssessment,
     expressInterest,
     respondToInterest,
+    markMessagesAsRead,
     grantPhotoConsent,
     withdrawPhotoConsent,
     hasExpressedInterest,

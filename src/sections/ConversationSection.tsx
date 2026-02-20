@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { ArrowLeft, MessageCircle, Lock, Flag, Image, Shield } from 'lucide-react';
 import PhotoConsentPrompt from '@/components/PhotoConsentPrompt';
@@ -6,11 +6,18 @@ import ResponseModal from '@/components/ResponseModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const ConversationSection: React.FC = () => {
-  const { selectedConversation, setCurrentView, respondToInterest, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked } = useApp();
+  const { selectedConversation, setCurrentView, respondToInterest, markMessagesAsRead, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked } = useApp();
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
   const [showConsentPrompt, setShowConsentPrompt] = useState(true);
+
+  // Mark messages as read when conversation is opened
+  useEffect(() => {
+    if (selectedConversation) {
+      markMessagesAsRead(selectedConversation.conversationId);
+    }
+  }, [selectedConversation?.conversationId, markMessagesAsRead]);
 
   // Check localStorage for persisted choice state for this conversation (per user)
   const [hasUserMadeChoice, setHasUserMadeChoiceLocal] = useState(() => {
