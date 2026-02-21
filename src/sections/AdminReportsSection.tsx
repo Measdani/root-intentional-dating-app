@@ -508,11 +508,15 @@ const AdminReportsSection: React.FC = () => {
                     // Suspend the user - they will be redirected to growth-mode on next login
                     suspendUser(selectedReport.reportedUserId, suspensionEndDate.getTime());
 
-                    // Send suspension notification
+                    // Send suspension notification with message based on user's assessment status
+                    const suspensionMessage = reportedUser.assessmentPassed
+                      ? `Following a review of recent activity reported by a member of the community, your access to the Alignment Space has been suspended. You have been moved to the Inner Work Space, where you may continue engaging with the community. Reassessment for Alignment Space eligibility will be available on ${formattedDate}. If you believe this action was made in error, please contact support.`
+                      : `Following a review of recent activity reported by a member of the community, your reassessment eligibility has been extended by 6 months. You may continue participating in the Inner Work Space during this time. Reassessment will be available on ${formattedDate}. If you believe this action was made in error, please contact support.`;
+
                     addNotification(
                       'suspension',
-                      'Account Suspended: 6-Month Suspension',
-                      `Your account has been temporarily suspended for 6 months due to violations of our community guidelines. During this period, you will not be able to access the platform. Your account will automatically reactivate on ${formattedDate}. If you believe this is an error, contact our support team.`,
+                      'Account Status Update: Reassessment Extended',
+                      suspensionMessage,
                       selectedReport.reportedUserId
                     );
 
