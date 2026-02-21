@@ -66,6 +66,35 @@ export const blogService = {
     }
   },
 
+  async getAllBlogsIncludingUnpublished(): Promise<BlogArticle[]> {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Failed to fetch all blogs from Supabase:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+        })
+        return []
+      }
+
+      if (!data) {
+        console.warn('No data returned from Supabase blogs query')
+        return []
+      }
+
+      console.log(`Successfully loaded ${data.length} blogs (including unpublished) from Supabase`)
+      return data.map(mapRowToBlog)
+    } catch (e: any) {
+      console.error('Unexpected error fetching blogs:', e)
+      return []
+    }
+  },
+
   async getBlogsByIds(blogIds: string[]): Promise<BlogArticle[]> {
     if (!blogIds.length) return []
     const { data, error } = await supabase

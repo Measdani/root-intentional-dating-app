@@ -50,13 +50,13 @@ const AdminContentSection: React.FC = () => {
     localStorage.setItem('community-blogs', JSON.stringify(blogs));
   }, [blogs]);
 
-  // Load blogs from Supabase on mount
+  // Load blogs from Supabase on mount (including unpublished for admin)
   React.useEffect(() => {
     const loadBlogs = async () => {
       try {
-        const supabaseBlogList = await blogService.getAllBlogs();
+        const supabaseBlogList = await blogService.getAllBlogsIncludingUnpublished();
         if (supabaseBlogList.length > 0) {
-          console.log('Loaded blogs from Supabase:', supabaseBlogList.length);
+          console.log('Loaded all blogs from Supabase:', supabaseBlogList.length);
           setBlogs(supabaseBlogList);
         } else {
           console.log('No blogs in Supabase, using localStorage');
