@@ -35,7 +35,7 @@ interface EntryForm {
 }
 
 const ClarityRoomSection: React.FC = () => {
-  const { setCurrentView } = useApp();
+  const { setCurrentView, previousView } = useApp();
   const [entries, setEntries] = useState<Record<string, JournalEntry[]>>({});
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<EntryForm>({
@@ -127,7 +127,7 @@ const ClarityRoomSection: React.FC = () => {
           <div className="flex items-center justify-between">
             <h1 className="font-display text-3xl text-[#F6FFF2]">Clarity Room</h1>
             <button
-              onClick={() => setCurrentView('landing')}
+              onClick={() => setCurrentView(previousView)}
               className="text-[#A9B5AA] hover:text-[#F6FFF2] transition"
             >
               ← Back

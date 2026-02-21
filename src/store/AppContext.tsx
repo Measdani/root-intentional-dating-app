@@ -7,6 +7,7 @@ import { supportService } from '@/services/supportService';
 
 interface AppState {
   currentView: AppView;
+  previousView: AppView;
   assessmentAnswers: { questionId: string; score: number; redFlag?: boolean }[];
   assessmentResult: AssessmentResult | null;
   selectedUser: User | null;
@@ -68,7 +69,8 @@ interface AppContextType extends AppState {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentView, setCurrentView] = useState<AppView>('landing');
+  const [currentView, setCurrentViewState] = useState<AppView>('landing');
+  const [previousView, setPreviousView] = useState<AppView>('landing');
   const [assessmentAnswers, setAssessmentAnswers] = useState<{ questionId: string; score: number; redFlag?: boolean }[]>([]);
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -320,9 +322,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Auto-redirect suspended and needs-growth users to growth-mode view
   useEffect(() => {
     if ((currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') && currentView !== 'growth-mode') {
-      setCurrentView('growth-mode');
+      setPreviousView(currentView);
+      setCurrentViewState('growth-mode');
     }
-  }, [currentUser.userStatus, currentView, setCurrentView]);
+  }, [currentUser.userStatus, currentView]);
+
+  // Wrapper function to track previous view when changing views
+  const setCurrentView = useCallback((view: AppView) => {
+    setPreviousView(currentView);
+    setCurrentViewState(view);
+  }, [currentView]);
 
   const addAssessmentAnswer = useCallback((questionId: string, score: number, redFlag?: boolean) => {
     setAssessmentAnswers(prev => [...prev, { questionId, score, redFlag }]);
@@ -1060,6 +1069,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const value: AppContextType = {
     currentView,
+    previousView,
     assessmentAnswers,
     assessmentResult,
     selectedUser,
