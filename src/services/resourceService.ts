@@ -53,14 +53,17 @@ export const resourceService = {
 
   async getResources(type: 'free' | 'paid' = 'free'): Promise<GrowthResource[]> {
     try {
+      console.log(`[resourceService.getResources] Fetching ${type} resources from Supabase`);
       const { data, error } = await supabase
         .from('growth_resources')
         .select('data')
         .eq('id', `resources_${type}`)
         .single();
 
+      console.log(`[resourceService.getResources] Response:`, { data, error });
+
       if (error) {
-        console.warn(`Failed to fetch ${type} resources from Supabase:`, error.message);
+        console.warn(`Failed to fetch ${type} resources from Supabase:`, error);
         return [];
       }
 
