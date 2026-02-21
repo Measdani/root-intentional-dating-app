@@ -33,6 +33,11 @@ const GrowthModeSection: React.FC = () => {
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
+
+  // Log state changes
+  useEffect(() => {
+    console.log('🔄 showReportModal state changed to:', showReportModal);
+  }, [showReportModal]);
   const [resources, setResources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
@@ -891,6 +896,7 @@ const GrowthModeSection: React.FC = () => {
               </button>
               <button
                 onClick={() => {
+                  console.log('📋 Report User button clicked. Opening modal for user:', selectedProfileUser?.id);
                   setShowReportModal(true);
                 }}
                 className="w-full py-3 bg-[#1A211A] text-[#A9B5AA] rounded-lg font-medium hover:text-[#F6FFF2] transition-colors"
