@@ -4,18 +4,39 @@ import type { GrowthResource } from '@/types';
 export const resourceService = {
   async saveResources(resources: GrowthResource[], type: 'free' | 'paid' = 'free'): Promise<{ error: string | null }> {
     try {
-      // Store resources as JSON in a single record per type
-      const { error } = await supabase
+      const resourceId = `resources_${type}`;
+
+      // First check if record exists
+      const { data: existingData } = await supabase
         .from('growth_resources')
-        .upsert(
-          {
-            id: `resources_${type}`,
+        .select('id')
+        .eq('id', resourceId)
+        .single();
+
+      let error;
+      if (existingData) {
+        // Record exists, update it
+        const { error: updateError } = await supabase
+          .from('growth_resources')
+          .update({
             type,
             data: resources,
             updated_at: Date.now(),
-          },
-          { onConflict: 'id' }
-        );
+          })
+          .eq('id', resourceId);
+        error = updateError;
+      } else {
+        // Record doesn't exist, insert it
+        const { error: insertError } = await supabase
+          .from('growth_resources')
+          .insert({
+            id: resourceId,
+            type,
+            data: resources,
+            updated_at: Date.now(),
+          });
+        error = insertError;
+      }
 
       if (error) {
         console.error('Failed to save resources to Supabase:', error);
