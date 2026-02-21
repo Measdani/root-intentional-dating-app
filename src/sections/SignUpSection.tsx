@@ -155,10 +155,8 @@ const SignUpSection: React.FC = () => {
         if (!growthFocus.trim()) errs.growthFocus = 'Growth focus is required';
         break;
       case 5:
-        if (!acceptedTerms) errs.terms = 'You must accept Terms of Service';
-        if (!acceptedPrivacy) errs.privacy = 'You must accept Privacy Policy';
-        if (!acceptedGuidelines)
-          errs.guidelines = 'You must accept Community Guidelines';
+        const allAccepted = Object.values(acceptedPolicies).every(v => v);
+        if (!allAccepted) errs.policies = 'You must accept all policies to continue';
         break;
     }
     return errs;
@@ -633,27 +631,48 @@ const SignUpSection: React.FC = () => {
               Review & Accept Policies
             </label>
             <div className="space-y-2">
-              {[
-                { id: 'terms' as const, title: 'Terms of Service', checked: acceptedTerms },
-                { id: 'privacy' as const, title: 'Privacy Policy & Safety', checked: acceptedPrivacy },
-                { id: 'guidelines' as const, title: 'Community Guidelines', checked: acceptedGuidelines },
-              ].map((policy) => (
-                <div key={policy.id} className="flex items-center gap-3 p-3 border border-[#1A211A] rounded-lg hover:border-[#D9FF3D]/50 transition-all">
-                  <input
-                    type="checkbox"
-                    checked={policy.checked}
-                    disabled
-                    className="w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C] opacity-50"
-                  />
-                  <span className="flex-1 text-sm text-[#F6FFF2]">{policy.title}</span>
-                  <button
-                    onClick={() => setViewingPolicy(policy.id)}
-                    className="text-xs text-[#D9FF3D] hover:underline"
-                  >
-                    View Details
-                  </button>
-                </div>
-              ))}
+              {Object.entries(POLICIES).flatMap(([key, policy]: any) => {
+                if (policy.sections && Array.isArray(policy.sections)) {
+                  return policy.sections.map((section: any, idx: number) => {
+                    const sectionKey = `${key}_${idx}`;
+                    return (
+                      <div key={sectionKey} className="flex items-center gap-3 p-3 border border-[#1A211A] rounded-lg hover:border-[#D9FF3D]/50 transition-all">
+                        <input
+                          type="checkbox"
+                          checked={acceptedPolicies[sectionKey] || false}
+                          disabled
+                          className="w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C] opacity-50"
+                        />
+                        <span className="flex-1 text-sm text-[#F6FFF2]">{section.heading}</span>
+                        <button
+                          onClick={() => setViewingPolicy(sectionKey)}
+                          className="text-xs text-[#D9FF3D] hover:underline"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    );
+                  });
+                } else {
+                  return (
+                    <div key={key} className="flex items-center gap-3 p-3 border border-[#1A211A] rounded-lg hover:border-[#D9FF3D]/50 transition-all">
+                      <input
+                        type="checkbox"
+                        checked={acceptedPolicies[key] || false}
+                        disabled
+                        className="w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C] opacity-50"
+                      />
+                      <span className="flex-1 text-sm text-[#F6FFF2]">{policy.title}</span>
+                      <button
+                        onClick={() => setViewingPolicy(key)}
+                        className="text-xs text-[#D9FF3D] hover:underline"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  );
+                }
+              })}
             </div>
             <p className="text-xs text-[#A9B5AA] mt-4">
               Click "View Details" on each policy to read and accept the terms before continuing.
@@ -662,61 +681,62 @@ const SignUpSection: React.FC = () => {
         )}
 
         {/* Policy Detail View */}
-        {step === 5 && viewingPolicy && POLICIES[viewingPolicy] && (
-          <div className="space-y-4 max-h-[600px] overflow-y-auto" id="policy-detail">
-            <button
-              onClick={() => setViewingPolicy(null)}
-              className="text-sm text-[#A9B5AA] hover:text-[#D9FF3D] mb-4"
-            >
-              ← Back to policies
-            </button>
-            <h3 className="text-lg font-display text-[#F6FFF2]">
-              {POLICIES[viewingPolicy].title}
-            </h3>
-            <div className="space-y-4">
-              {POLICIES[viewingPolicy].sections.map((section: any, idx) => (
-                <div key={idx}>
-                  <h4 className="font-medium text-[#D9FF3D] mb-2 text-sm">{section.heading}</h4>
-                  <div className="text-sm text-[#A9B5AA] leading-relaxed whitespace-pre-wrap">
-                    {section.content}
-                  </div>
-                  {section.link && (
-                    <a
-                      href={section.link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block mt-3 text-sm text-[#D9FF3D] hover:underline font-medium"
-                    >
-                      {section.link.label}
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 pt-4 border-t border-[#1A211A] space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={viewingPolicy === 'terms' ? acceptedTerms : viewingPolicy === 'privacy' ? acceptedPrivacy : acceptedGuidelines}
-                  onChange={(e) => {
-                    if (viewingPolicy === 'terms') setAcceptedTerms(e.target.checked);
-                    if (viewingPolicy === 'privacy') setAcceptedPrivacy(e.target.checked);
-                    if (viewingPolicy === 'guidelines') setAcceptedGuidelines(e.target.checked);
-                  }}
-                  className="mt-1 w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C]"
-                />
-                <span className="text-sm text-[#A9B5AA]">I accept these terms</span>
-              </label>
+        {step === 5 && viewingPolicy && (() => {
+          const parts = viewingPolicy.split('_');
+          const key = parts[0];
+          const sectionIdx = parts[1] ? parseInt(parts[1]) : null;
+          const policy = POLICIES[key] as any;
+          let title = '';
+          let content = '';
+
+          if (sectionIdx !== null && policy?.sections && policy.sections[sectionIdx]) {
+            title = policy.sections[sectionIdx].heading;
+            content = policy.sections[sectionIdx].content;
+          } else if (policy) {
+            title = policy.title;
+            content = policy.content;
+          }
+
+          return title ? (
+            <div className="space-y-4 max-h-[600px] overflow-y-auto" id="policy-detail">
               <button
                 onClick={() => setViewingPolicy(null)}
-                disabled={!(viewingPolicy === 'terms' ? acceptedTerms : viewingPolicy === 'privacy' ? acceptedPrivacy : acceptedGuidelines)}
-                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-sm text-[#A9B5AA] hover:text-[#D9FF3D] mb-4"
               >
-                I Understand - Continue
+                ← Back to policies
               </button>
+              <h3 className="text-lg font-display text-[#F6FFF2]">
+                {title}
+              </h3>
+              <div className="text-sm text-[#A9B5AA] leading-relaxed whitespace-pre-wrap">
+                {content}
+              </div>
+              <div className="mt-6 pt-4 border-t border-[#1A211A] space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedPolicies[viewingPolicy] || false}
+                    onChange={(e) => {
+                      setAcceptedPolicies(prev => ({
+                        ...prev,
+                        [viewingPolicy]: e.target.checked
+                      }));
+                    }}
+                    className="mt-1 w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C]"
+                  />
+                  <span className="text-sm text-[#A9B5AA]">I accept these terms</span>
+                </label>
+                <button
+                  onClick={() => setViewingPolicy(null)}
+                  disabled={!acceptedPolicies[viewingPolicy]}
+                  className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  I Understand - Continue
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          ) : null;
+        })()}
 
         {/* Step 6 - Payment */}
         {step === 6 && (
