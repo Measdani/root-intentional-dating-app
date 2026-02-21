@@ -6,7 +6,7 @@ import ResponseModal from '@/components/ResponseModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const ConversationSection: React.FC = () => {
-  const { selectedConversation, setCurrentView, respondToInterest, markMessagesAsRead, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked } = useApp();
+  const { selectedConversation, setCurrentView, respondToInterest, markMessagesAsRead, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked, addNotification } = useApp();
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
@@ -337,6 +337,15 @@ const ConversationSection: React.FC = () => {
         onClose={() => setShowReportModal(false)}
         onSubmit={async (reason, details, shouldBlock) => {
           await reportUser(otherUser.id, reason, details, selectedConversation.conversationId);
+
+          // Send warning notification to the reported user
+          addNotification(
+            'warning',
+            'Account Flagged for Review',
+            'Your account has been flagged for review due to a community report. Our admin team will investigate and contact you if necessary.',
+            otherUser.id
+          );
+
           if (shouldBlock || reason === 'underage' || reason === 'safety-concern') {
             blockUser(otherUser.id, reason);
           }

@@ -5,7 +5,7 @@ import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const ProfileDetailSection: React.FC = () => {
-  const { selectedUser, currentUser, setCurrentView, setSelectedUser, setSelectedConversation, expressInterest, arePhotosUnlocked, getConversation, reportUser, blockUser, isUserBlocked, isBlockedByUser } = useApp();
+  const { selectedUser, currentUser, setCurrentView, setSelectedUser, setSelectedConversation, expressInterest, arePhotosUnlocked, getConversation, reportUser, blockUser, isUserBlocked, isBlockedByUser, addNotification } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
@@ -364,6 +364,15 @@ const ProfileDetailSection: React.FC = () => {
         onSubmit={async (reason, details, shouldBlock) => {
           setShowReportModal(false);
           await reportUser(selectedUser.id, reason, details);
+
+          // Send warning notification to the reported user
+          addNotification(
+            'warning',
+            'Account Flagged for Review',
+            'Your account has been flagged for review due to a community report. Our admin team will investigate and contact you if necessary.',
+            selectedUser.id
+          );
+
           // Block user if checkbox is selected or if it's a safety concern
           if (shouldBlock) {
             blockUser(selectedUser.id, reason);

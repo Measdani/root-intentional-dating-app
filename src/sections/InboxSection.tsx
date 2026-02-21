@@ -5,7 +5,7 @@ import { ArrowLeft, MessageCircle, Check, Clock, Flag, HelpCircle, BookOpen } fr
 import ReportUserModal from '@/components/ReportUserModal';
 
 const InboxSection: React.FC = () => {
-  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, reportUser, blockUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
+  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, reportUser, blockUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications, addNotification } = useApp();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingUser, setReportingUser] = useState<User | null>(null);
@@ -321,6 +321,15 @@ const InboxSection: React.FC = () => {
           }}
           onSubmit={async (reason, details, shouldBlock) => {
             await reportUser(reportingUser.id, reason, details);
+
+            // Send warning notification to the reported user
+            addNotification(
+              'warning',
+              'Account Flagged for Review',
+              'Your account has been flagged for review due to a community report. Our admin team will investigate and contact you if necessary.',
+              reportingUser.id
+            );
+
             if (shouldBlock || reason === 'underage' || reason === 'safety-concern') {
               blockUser(reportingUser.id, reason);
             }

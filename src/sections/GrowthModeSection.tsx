@@ -25,6 +25,8 @@ const GrowthModeSection: React.FC = () => {
     reportUser,
     blockUser,
     isUserBlocked,
+    isBlockedByUser,
+    addNotification,
     reloadInteractions,
   } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
@@ -107,11 +109,12 @@ const GrowthModeSection: React.FC = () => {
   }, [interactions, currentUser.id]);
 
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
+  // Exclude users the current user has blocked AND users who have blocked the current user (mutual blocking)
   const growthModeUsers = useMemo(() => {
     return users.filter(
-      u => !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender && !isUserBlocked(u.id)
+      u => !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender && !isUserBlocked(u.id) && !isBlockedByUser(u.id)
     );
-  }, [users, currentUser.id, currentUser.gender, isUserBlocked]);
+  }, [users, currentUser.id, currentUser.gender, isUserBlocked, isBlockedByUser]);
 
   // Map categories to icons
   const getCategoryIcon = (category: string) => {
@@ -753,6 +756,15 @@ const GrowthModeSection: React.FC = () => {
           try {
             console.log('📝 Submitting report for user:', selectedProfileUser.id, 'reason:', reason);
             await reportUser(selectedProfileUser.id, reason, details);
+
+            // Send warning notification to the reported user
+            addNotification(
+              'warning',
+              'Account Flagged for Review',
+              'Your account has been flagged for review due to a community report. Our admin team will investigate and contact you if necessary.',
+              selectedProfileUser.id
+            );
+
             if (shouldBlock) {
               console.log('🚫 Blocking user:', selectedProfileUser.id);
               blockUser(selectedProfileUser.id);
