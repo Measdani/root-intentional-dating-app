@@ -23,10 +23,13 @@ const GrowthDetailSection: React.FC = () => {
 
   // Load resources AND blogs on mount
   useEffect(() => {
+    console.log('[GrowthDetailSection] Starting data load...');
     const loadData = async () => {
       try {
+        console.log('[GrowthDetailSection] Loading resources...');
         // Load resources from Supabase
         const supabaseResources = await resourceService.getResources('free');
+        console.log('[GrowthDetailSection] Resources result:', { count: supabaseResources.length, hasModules: supabaseResources[0]?.modules?.length });
         if (supabaseResources.length > 0) {
           console.log('Loaded free resources from Supabase:', supabaseResources.length);
           setResources(supabaseResources);
@@ -35,12 +38,14 @@ const GrowthDetailSection: React.FC = () => {
           setResources(savedResources ? JSON.parse(savedResources) : growthResources);
         }
 
+        console.log('[GrowthDetailSection] Loading blogs...');
         // Load blogs from Supabase
         const { data: blogData, error: blogError } = await supabase
           .from('blogs')
           .select('*')
           .order('created_at', { ascending: false });
 
+        console.log('[GrowthDetailSection] Blogs result:', { count: blogData?.length, error: blogError?.message });
         if (!blogError && blogData && blogData.length > 0) {
           console.log('Loaded all blogs from Supabase:', blogData.length);
           const mappedBlogs = blogData.map(row => ({
