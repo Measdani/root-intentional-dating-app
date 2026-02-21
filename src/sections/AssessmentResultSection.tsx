@@ -66,7 +66,7 @@ const AssessmentResultSection: React.FC = () => {
               )}
             </div>
             <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-3">
-              {assessmentResult.passed ? 'You Passed' : 'Growth Mode'}
+              {assessmentResult.passed ? 'You Passed' : 'Inner Work Space'}
             </h2>
             <p className="text-[#A9B5AA] text-lg">
               {assessmentResult.passed
@@ -157,7 +157,7 @@ const AssessmentResultSection: React.FC = () => {
               onClick={handleContinue}
               className="btn-primary flex-1"
             >
-              {assessmentResult.passed ? 'Explore Profiles' : 'Enter Growth Mode'}
+              {assessmentResult.passed ? 'Explore Profiles' : 'Enter Inner Work Space'}
             </button>
             {!assessmentResult.passed && (
               canRetake ? (

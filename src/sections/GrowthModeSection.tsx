@@ -171,7 +171,7 @@ const GrowthModeSection: React.FC = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="font-display text-xl text-[#F6FFF2]">Growth Mode</h1>
+          <h1 className="font-display text-xl text-[#F6FFF2]">Inner Work Space</h1>
           <button
             onClick={() => setShowSupportModal(true)}
             className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
@@ -202,9 +202,9 @@ const GrowthModeSection: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <h3 className="text-orange-300 font-semibold mb-1">Account Status: Growth Mode</h3>
+                  <h3 className="text-orange-300 font-semibold mb-1">Account Status: Inner Work Space</h3>
                   <p className="text-orange-200/80 text-sm">
-                    Your account has transitioned to Growth Mode. You must complete one of the learning paths below before you can resume browsing and matching. This is an opportunity to strengthen your relationship foundation.
+                    Your account has transitioned to Inner Work Space. You must complete one of the learning paths below before you can resume browsing and matching. This is an opportunity to strengthen your relationship foundation.
                   </p>
                 </>
               )}
@@ -295,12 +295,12 @@ const GrowthModeSection: React.FC = () => {
         {activeTab === 'browse' && (
           <div>
             <div className="text-center mb-10">
-              <h2 className="font-display text-3xl text-[#F6FFF2] mb-2">Growth Mode Community</h2>
+              <h2 className="font-display text-3xl text-[#F6FFF2] mb-2">Inner Work Space Community</h2>
               <p className="text-[#A9B5AA] max-w-2xl mx-auto">
                 Build your foundation with others on a similar journey. This space is dedicated to those who are working on their relationship skills and emotional growth. You'll connect with others focused on self-awareness, emotional regulation, and healthy partnership dynamics.
               </p>
               <p className="text-[#A9B5AA] max-w-2xl mx-auto mt-4">
-                Once you've completed the Growth Mode resources or after 6 months, you'll unlock full access to the dating pool, where you can connect with individuals who are ready for deeper relationships.
+                Once you've completed the Inner Work Space resources or after 6 months, you'll unlock full access to the dating pool, where you can connect with individuals who are ready for deeper relationships.
               </p>
             </div>
 
@@ -462,13 +462,13 @@ const GrowthModeSection: React.FC = () => {
         {/* New Growth Mode Section */}
         <div className="text-center mb-12">
           <h2 className="font-display text-[clamp(28px,4vw,40px)] text-[#F6FFF2] mb-4">
-            Why Growth Mode?
+            Why Inner Work Space?
           </h2>
           <p className="text-[#A9B5AA] text-base max-w-2xl mx-auto mb-4 leading-relaxed">
-            In Growth Mode, we focus on helping you develop <span className="text-[#D9FF3D]">key emotional, relational, and self-awareness skills.</span> These tools prepare you for deep, meaningful connections with others.
+            In Inner Work Space, we focus on helping you develop <span className="text-[#D9FF3D]">key emotional, relational, and self-awareness skills.</span> These tools prepare you for deep, meaningful connections with others.
           </p>
           <p className="text-[#A9B5AA] text-sm max-w-2xl mx-auto leading-relaxed">
-            By completing one of the Growth Mode paths, you'll build a stronger sense of self and align with your ideal partner's values, creating the foundation for a lasting and healthy relationship.
+            By completing one of the Inner Work Space paths, you'll build a stronger sense of self and align with your ideal partner's values, creating the foundation for a lasting and healthy relationship.
           </p>
         </div>
 

@@ -93,7 +93,7 @@ const PaidGrowthModeSection: React.FC = () => {
           >
             <span>Browse Profiles</span>
           </button>
-          <h1 className="font-display text-xl text-[#F6FFF2]">Partnership Growth Path</h1>
+          <h1 className="font-display text-xl text-[#F6FFF2]">Alignment Space</h1>
           <div className="w-24" />
         </div>
       </header>
@@ -176,7 +176,7 @@ const PaidGrowthModeSection: React.FC = () => {
         {/* Growth Resources */}
         {activeTab === 'resources' && (
         <div className="mb-12">
-          <h3 className="font-mono-label text-[#F6FFF2] mb-2">Deepen Your Partnership Skills</h3>
+          <h3 className="font-mono-label text-[#F6FFF2] mb-2">Deepen Your Alignment</h3>
           <p className="text-[#A9B5AA] text-sm mb-6">These advanced resources help you become the best partner you can be. Work through them at your own pace as you navigate relationship building.</p>
           <div className="grid md:grid-cols-2 gap-4">
             {resources.map((resource: any) => {
