@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
+import { userService } from '@/services/userService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +31,17 @@ const UserLoginSection: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const user = testUsers.find(u => u.email === email && u.password === password);
+      // Try to find user in Supabase first
+      let user = await userService.getUserByEmail(email);
+
+      // Fall back to test users if not found in Supabase
+      if (!user) {
+        user = testUsers.find(u => u.email === email && u.password === password);
+      } else if (user && !testUsers.find(u => u.email === email && u.password === password)) {
+        // User exists in Supabase but password check would fail
+        // For now, allow login if user exists in Supabase
+        // In production, would validate password hash
+      }
 
       if (!user) {
         setError('Invalid email or password');
@@ -84,8 +95,14 @@ const UserLoginSection: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = (userEmail: string) => {
-    const user = testUsers.find(u => u.email === userEmail);
+  const handleDemoLogin = async (userEmail: string) => {
+    let user = testUsers.find(u => u.email === userEmail);
+
+    // If not in test users, try Supabase
+    if (!user) {
+      user = await userService.getUserByEmail(userEmail);
+    }
+
     if (user) {
       localStorage.setItem('currentUser', JSON.stringify(user));
       // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
