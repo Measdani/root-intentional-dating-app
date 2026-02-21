@@ -29,7 +29,11 @@ const GrowthDetailSection: React.FC = () => {
         const supabaseResources = await resourceService.getResources('free');
         if (supabaseResources.length > 0) {
           console.log('Loaded free resources from Supabase:', supabaseResources.length);
-          console.log('Resource structure:', supabaseResources[0]?.modules?.map(m => ({ id: m.id, title: m.title, blogIds: m.blogIds })));
+          console.log('[DEBUG] First resource full object:', supabaseResources[0]);
+          if (supabaseResources[0]?.modules) {
+            console.log('[DEBUG] First resource modules count:', supabaseResources[0].modules.length);
+            console.log('[DEBUG] First module:', supabaseResources[0].modules[0]);
+          }
           setResources(supabaseResources);
         } else {
           // Fall back to localStorage
