@@ -4,6 +4,7 @@ import { growthResources } from '@/data/assessment';
 import { ArrowLeft, BookOpen, CheckCircle, Clock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { resourceService } from '@/services/resourceService';
 import ModuleBlogModal from '@/components/ModuleBlogModal';
 
 interface ModuleContent {
@@ -20,12 +21,36 @@ const GrowthDetailSection: React.FC = () => {
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [resources, setResources] = useState(growthResources);
 
-  // Load resources and blogs from Supabase and localStorage
+  // Load resources from Supabase
   useEffect(() => {
-    const savedResources = localStorage.getItem('growth-resources');
-    if (savedResources) {
-      setResources(JSON.parse(savedResources));
-    }
+    const loadResources = async () => {
+      try {
+        // Try to load from Supabase first
+        const supabaseResources = await resourceService.getResources('free');
+        if (supabaseResources.length > 0) {
+          console.log('Loaded free resources from Supabase:', supabaseResources.length);
+          setResources(supabaseResources);
+        } else {
+          // Fall back to localStorage
+          const savedResources = localStorage.getItem('growth-resources');
+          if (savedResources) {
+            console.log('Loaded free resources from localStorage');
+            setResources(JSON.parse(savedResources));
+          } else {
+            // Use default resources
+            setResources(growthResources);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading resources:', error);
+        // Fall back to localStorage
+        const savedResources = localStorage.getItem('growth-resources');
+        if (savedResources) {
+          setResources(JSON.parse(savedResources));
+        }
+      }
+    };
+    loadResources();
   }, []);
 
   // Load blogs from Supabase (includes module-only blogs)

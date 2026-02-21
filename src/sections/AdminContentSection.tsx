@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { growthResources, paidGrowthResources, membershipTiers } from '@/data/assessment';
 import type { GrowthResource, BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
+import { resourceService } from '@/services/resourceService';
 
 const AdminContentSection: React.FC = () => {
   const [resources, setResources] = useState<GrowthResource[]>(() => {
@@ -69,6 +70,31 @@ const AdminContentSection: React.FC = () => {
     loadBlogs();
   }, []);
 
+  // Load resources from Supabase on mount
+  React.useEffect(() => {
+    const loadResources = async () => {
+      try {
+        // Load free resources
+        const freeResources = await resourceService.getResources('free');
+        if (freeResources.length > 0) {
+          console.log('Loaded free resources from Supabase:', freeResources.length);
+          setResources(freeResources);
+        }
+
+        // Load paid resources
+        const paidResourcesList = await resourceService.getResources('paid');
+        if (paidResourcesList.length > 0) {
+          console.log('Loaded paid resources from Supabase:', paidResourcesList.length);
+          setPaidResources(paidResourcesList);
+        }
+      } catch (error) {
+        console.error('Error loading resources from Supabase:', error);
+        // Fall back to localStorage (already loaded in initial state)
+      }
+    };
+    loadResources();
+  }, []);
+
   const handleAddNew = () => {
     setFormData({
       title: '',
@@ -90,7 +116,7 @@ const AdminContentSection: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.title || !formData.description || !formData.category || !formData.estimatedTime) {
       toast.error('Please fill in all required fields');
       return;
@@ -98,15 +124,15 @@ const AdminContentSection: React.FC = () => {
 
     const currentResources = activeTab === 'paid' ? paidResources : resources;
     const setCurrentResources = activeTab === 'paid' ? setPaidResources : setResources;
+    let updatedResources: GrowthResource[];
 
     if (selectedResource) {
-      setCurrentResources(
-        currentResources.map(r =>
-          r.id === selectedResource.id
-            ? { ...r, ...formData, updatedAt: Date.now() } as GrowthResource
-            : r
-        )
+      updatedResources = currentResources.map(r =>
+        r.id === selectedResource.id
+          ? { ...r, ...formData, updatedAt: Date.now() } as GrowthResource
+          : r
       );
+      setCurrentResources(updatedResources);
       toast.success('Resource updated successfully');
     } else {
       const newResource: GrowthResource = {
@@ -115,22 +141,41 @@ const AdminContentSection: React.FC = () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       } as GrowthResource;
-      setCurrentResources([...currentResources, newResource]);
+      updatedResources = [...currentResources, newResource];
+      setCurrentResources(updatedResources);
       toast.success('Resource created successfully');
+    }
+
+    // Save to Supabase
+    const resourceType = activeTab === 'paid' ? 'paid' : 'free';
+    const result = await resourceService.saveResources(updatedResources, resourceType);
+    if (result.error) {
+      toast.error(`Database save failed: ${result.error}`);
     }
 
     setShowForm(false);
     setFormData({});
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this resource?')) {
+      let updatedResources: GrowthResource[];
       if (activeTab === 'paid') {
-        setPaidResources(paidResources.filter(r => r.id !== id));
+        updatedResources = paidResources.filter(r => r.id !== id);
+        setPaidResources(updatedResources);
       } else {
-        setResources(resources.filter(r => r.id !== id));
+        updatedResources = resources.filter(r => r.id !== id);
+        setResources(updatedResources);
       }
-      toast.success('Resource deleted successfully');
+
+      // Save to Supabase
+      const resourceType = activeTab === 'paid' ? 'paid' : 'free';
+      const result = await resourceService.saveResources(updatedResources, resourceType);
+      if (result.error) {
+        toast.error(`Database update failed: ${result.error}`);
+      } else {
+        toast.success('Resource deleted successfully');
+      }
     }
   };
 
