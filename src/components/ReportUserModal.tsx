@@ -66,8 +66,12 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  if (!isOpen || !reportedUser) return null;
+  if (!isOpen || !reportedUser) {
+    console.log('ReportUserModal not rendering. isOpen:', isOpen, 'reportedUser:', reportedUser?.name);
+    return null;
+  }
 
+  console.log('📝 ReportUserModal rendering for user:', reportedUser.name);
   const detailsLength = details.length;
   const minLength = 50;
   const maxLength = 1000;
