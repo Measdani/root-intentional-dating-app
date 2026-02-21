@@ -192,9 +192,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const adminUsers = supabaseUsers.map(user => ({
             ...user,
             status: (user.userStatus || 'active') as any,
-            joinDate: user.consentTimestamp || Date.now(),
-            lastLogin: Date.now(),
-          }));
+            joinedDate: user.consentTimestamp || Date.now(),
+            lastActive: Date.now(),
+            assessmentStatus: user.assessmentPassed ? 'passed' : 'not-taken' as any,
+          })) as any;
           setUsers(adminUsers);
           // Backfill localStorage for offline compatibility
           localStorage.setItem('rooted-admin-users', JSON.stringify(adminUsers));
@@ -230,10 +231,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const adminUser = {
         ...newUser,
         status: (newUser.userStatus || 'active') as any,
-        joinDate: newUser.consentTimestamp || Date.now(),
-        lastLogin: Date.now(),
+        joinedDate: newUser.consentTimestamp || Date.now(),
+        lastActive: Date.now(),
+        assessmentStatus: newUser.assessmentPassed ? 'passed' : 'not-taken' as any,
       };
-      setUsers(prev => [...prev, adminUser]);
+      setUsers(prev => [...prev, adminUser as any]);
     };
 
     window.addEventListener('new-report' as any, handleNewReport as EventListener);
