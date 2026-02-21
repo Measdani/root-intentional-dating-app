@@ -319,9 +319,9 @@ const InboxSection: React.FC = () => {
             setShowReportModal(false);
             setReportingUser(null);
           }}
-          onSubmit={async (reason, details) => {
+          onSubmit={async (reason, details, shouldBlock) => {
             await reportUser(reportingUser.id, reason, details);
-            if (reason === 'underage' || reason === 'safety-concern') {
+            if (shouldBlock || reason === 'underage' || reason === 'safety-concern') {
               blockUser(reportingUser.id, reason);
             }
             setShowReportModal(false);

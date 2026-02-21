@@ -361,11 +361,13 @@ const ProfileDetailSection: React.FC = () => {
         isOpen={showReportModal}
         reportedUser={selectedUser}
         onClose={() => setShowReportModal(false)}
-        onSubmit={async (reason, details) => {
+        onSubmit={async (reason, details, shouldBlock) => {
           setShowReportModal(false);
           await reportUser(selectedUser.id, reason, details);
-          // Block user from browse for any report reason
-          blockUser(selectedUser.id, reason);
+          // Block user if checkbox is selected or if it's a safety concern
+          if (shouldBlock) {
+            blockUser(selectedUser.id, reason);
+          }
           // Show the success message screen
           setReportSubmitted(true);
         }}

@@ -335,9 +335,9 @@ const ConversationSection: React.FC = () => {
         reportedUser={otherUser}
         conversationId={selectedConversation.conversationId}
         onClose={() => setShowReportModal(false)}
-        onSubmit={async (reason, details) => {
+        onSubmit={async (reason, details, shouldBlock) => {
           await reportUser(otherUser.id, reason, details, selectedConversation.conversationId);
-          if (reason === 'underage' || reason === 'safety-concern') {
+          if (shouldBlock || reason === 'underage' || reason === 'safety-concern') {
             blockUser(otherUser.id, reason);
           }
           setShowReportModal(false);

@@ -8,7 +8,7 @@ interface ReportUserModalProps {
   reportedUser: User | null;
   conversationId?: string;
   onClose: () => void;
-  onSubmit: (reason: ReportReason, details: string) => void;
+  onSubmit: (reason: ReportReason, details: string, shouldBlock: boolean) => void;
 }
 
 const REPORT_REASONS: { value: ReportReason; label: string; description: string }[] = [
@@ -86,7 +86,7 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
 
     setIsSubmitting(false);
     setIsSuccess(true);
-    onSubmit(selectedReason, details);
+    onSubmit(selectedReason, details, shouldBlock);
 
     // Show success toast
     toast.success('Thank you for your report. We\'ll review this promptly.');
