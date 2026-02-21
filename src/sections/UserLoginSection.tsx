@@ -32,11 +32,11 @@ const UserLoginSection: React.FC = () => {
 
     try {
       // Try to find user in Supabase first
-      let user = await userService.getUserByEmail(email);
+      let user: any = await userService.getUserByEmail(email);
 
       // Fall back to test users if not found in Supabase
       if (!user) {
-        user = testUsers.find(u => u.email === email && u.password === password);
+        user = testUsers.find(u => u.email === email && u.password === password) || null;
       } else if (user && !testUsers.find(u => u.email === email && u.password === password)) {
         // User exists in Supabase but password check would fail
         // For now, allow login if user exists in Supabase
@@ -96,7 +96,7 @@ const UserLoginSection: React.FC = () => {
   };
 
   const handleDemoLogin = async (userEmail: string) => {
-    let user = testUsers.find(u => u.email === userEmail);
+    let user: any = testUsers.find(u => u.email === userEmail);
 
     // If not in test users, try Supabase
     if (!user) {

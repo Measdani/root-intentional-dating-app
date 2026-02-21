@@ -7,7 +7,6 @@ import {
   Loader2,
   ChevronRight,
   ChevronLeft,
-  Check,
 } from 'lucide-react';
 import type { User } from '@/types';
 
