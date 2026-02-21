@@ -582,11 +582,21 @@ const GrowthDetailSection: React.FC = () => {
             {(() => {
               const currentModule = resource?.modules?.find(m => m.id === selectedModuleId);
               const moduleBlogIds = currentModule?.blogIds || [];
-              console.log('Module:', { id: currentModule?.id, title: currentModule?.title, blogIds: moduleBlogIds });
+              console.log('[GrowthDetailSection] Module render:', {
+                moduleId: currentModule?.id,
+                blogIds: moduleBlogIds,
+                blogsArrayLength: blogs.length,
+                blogsLoaded: blogs.length > 0
+              });
               const moduleBogs = moduleBlogIds
-                .map(blogId => blogs.find(b => b.id === blogId))
+                .map(blogId => {
+                  const found = blogs.find(b => b.id === blogId);
+                  console.log(`[GrowthDetailSection] Looking for blog ${blogId}:`, found ? 'FOUND' : 'NOT FOUND');
+                  return found;
+                })
                 .filter(Boolean) as BlogArticle[];
 
+              console.log('[GrowthDetailSection] Matched blogs:', moduleBogs.length);
               if (moduleBogs.length > 0) {
                 return (
                   <div className="bg-[#111611] border border-[#D9FF3D]/20 rounded-lg p-8">
