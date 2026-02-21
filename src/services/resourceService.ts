@@ -4,6 +4,7 @@ import type { GrowthResource } from '@/types';
 export const resourceService = {
   async saveResources(resources: GrowthResource[], type: 'free' | 'paid' = 'free'): Promise<{ error: string | null }> {
     try {
+      console.log(`[resourceService] Attempting to save ${type} resources:`, resources.length);
       const resourceId = `resources_${type}`;
 
       // First check if record exists

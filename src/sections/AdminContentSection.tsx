@@ -117,6 +117,7 @@ const AdminContentSection: React.FC = () => {
   };
 
   const handleSave = async () => {
+    console.log('[AdminContentSection] handleSave called');
     if (!formData.title || !formData.description || !formData.category || !formData.estimatedTime) {
       toast.error('Please fill in all required fields');
       return;
@@ -147,8 +148,10 @@ const AdminContentSection: React.FC = () => {
     }
 
     // Save to Supabase
+    console.log('[AdminContentSection] Calling resourceService.saveResources with', updatedResources.length, 'resources');
     const resourceType = activeTab === 'paid' ? 'paid' : 'free';
     const result = await resourceService.saveResources(updatedResources, resourceType);
+    console.log('[AdminContentSection] resourceService.saveResources returned:', result);
     if (result.error) {
       toast.error(`Database save failed: ${result.error}`);
     }
