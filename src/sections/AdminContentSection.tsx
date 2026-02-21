@@ -611,26 +611,34 @@ const AdminContentSection: React.FC = () => {
                       {/* Module Blogs Selection */}
                       <div className="mt-3 pt-3 border-t border-[#1A211A]">
                         <label className="block text-xs font-medium text-[#A9B5AA] mb-2">Attach Module Blogs (optional)</label>
-                        <select
-                          multiple
-                          value={module.blogIds || []}
-                          onChange={(e) => {
-                            const selected = Array.from(e.target.selectedOptions, option => option.value);
-                            const updated = [...(formData.modules || [])];
-                            updated[idx] = { ...module, blogIds: selected };
-                            setFormData({ ...formData, modules: updated });
-                          }}
-                          className="w-full px-3 py-2 bg-[#111611] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm"
-                        >
-                          {blogs
-                            .filter(b => b.moduleOnly)
-                            .map(blog => (
-                              <option key={blog.id} value={blog.id}>
-                                {blog.title}
-                              </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-[#A9B5AA] mt-1">Hold Ctrl/Cmd to select multiple blogs</p>
+                        <div className="space-y-2 bg-[#0B0F0C] p-3 rounded-lg border border-[#1A211A]">
+                          {blogs.filter(b => b.moduleOnly).length > 0 ? (
+                            blogs
+                              .filter(b => b.moduleOnly)
+                              .map(blog => (
+                                <label key={blog.id} className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={(module.blogIds || []).includes(blog.id)}
+                                    onChange={(e) => {
+                                      const updated = [...(formData.modules || [])];
+                                      const currentBlogIds = module.blogIds || [];
+                                      if (e.target.checked) {
+                                        updated[idx] = { ...module, blogIds: [...currentBlogIds, blog.id] };
+                                      } else {
+                                        updated[idx] = { ...module, blogIds: currentBlogIds.filter(id => id !== blog.id) };
+                                      }
+                                      setFormData({ ...formData, modules: updated });
+                                    }}
+                                    className="w-4 h-4 rounded cursor-pointer"
+                                  />
+                                  <span className="text-sm text-[#F6FFF2]">{blog.title}</span>
+                                </label>
+                              ))
+                          ) : (
+                            <p className="text-xs text-[#A9B5AA] italic">No module-only blogs available</p>
+                          )}
+                        </div>
 
                         {/* Show selected blogs */}
                         {(module.blogIds || []).length > 0 && (
