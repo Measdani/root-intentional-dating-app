@@ -101,6 +101,7 @@ export type AppView =
   | 'inbox'
   | 'conversation'
   | 'membership'
+  | 'clarity-room'
   | 'admin-login'
   | 'admin-dashboard'
   | 'admin-users'
