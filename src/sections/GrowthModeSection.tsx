@@ -26,7 +26,6 @@ const GrowthModeSection: React.FC = () => {
     blockUser,
     isUserBlocked,
     isBlockedByUser,
-    addNotification,
     reloadInteractions,
   } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
@@ -756,15 +755,6 @@ const GrowthModeSection: React.FC = () => {
           try {
             console.log('📝 Submitting report for user:', selectedProfileUser.id, 'reason:', reason);
             await reportUser(selectedProfileUser.id, reason, details);
-
-            // Send warning notification to the reported user
-            addNotification(
-              'warning',
-              'Account Flagged for Review',
-              'Your account has been flagged for review due to a community report. Our admin team will investigate and contact you if necessary.',
-              selectedProfileUser.id
-            );
-
             if (shouldBlock) {
               console.log('🚫 Blocking user:', selectedProfileUser.id);
               blockUser(selectedProfileUser.id);
