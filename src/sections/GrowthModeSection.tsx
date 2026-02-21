@@ -23,6 +23,7 @@ const GrowthModeSection: React.FC = () => {
     getConversation,
     setShowSupportModal,
     reportUser,
+    blockUser,
     reloadInteractions,
   } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
@@ -742,9 +743,15 @@ const GrowthModeSection: React.FC = () => {
         isOpen={showReportModal}
         reportedUser={selectedProfileUser}
         onClose={() => setShowReportModal(false)}
-        onSubmit={async (reason, details) => {
+        onSubmit={async (reason, details, shouldBlock) => {
           try {
+            console.log('📝 Submitting report for user:', selectedProfileUser.id, 'reason:', reason);
             await reportUser(selectedProfileUser.id, reason, details);
+            if (shouldBlock) {
+              console.log('🚫 Blocking user:', selectedProfileUser.id);
+              blockUser(selectedProfileUser.id);
+            }
+            console.log('✅ Report submitted successfully');
             toast.success('Report submitted successfully. Admin team will review.');
             setShowReportModal(false);
             setSelectedProfileUser(null);
