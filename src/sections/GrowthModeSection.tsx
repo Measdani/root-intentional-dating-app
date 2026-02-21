@@ -24,6 +24,7 @@ const GrowthModeSection: React.FC = () => {
     setShowSupportModal,
     reportUser,
     blockUser,
+    isUserBlocked,
     reloadInteractions,
   } = useApp();
   const [dismissNotification, setDismissNotification] = useState(false);
@@ -108,9 +109,9 @@ const GrowthModeSection: React.FC = () => {
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   const growthModeUsers = useMemo(() => {
     return users.filter(
-      u => !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender
+      u => !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender && !isUserBlocked(u.id)
     );
-  }, [users, currentUser.id, currentUser.gender]);
+  }, [users, currentUser.id, currentUser.gender, isUserBlocked]);
 
   // Map categories to icons
   const getCategoryIcon = (category: string) => {
