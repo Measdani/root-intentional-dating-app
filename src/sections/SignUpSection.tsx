@@ -74,6 +74,36 @@ const SignUpSection: React.FC = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [acceptedGuidelines, setAcceptedGuidelines] = useState(false);
+  const [viewingPolicy, setViewingPolicy] = useState<'terms' | 'privacy' | 'guidelines' | null>(null);
+
+  const POLICIES = {
+    terms: {
+      title: 'Terms of Service',
+      sections: [
+        { heading: 'Payment Before Assessment', content: 'You must select a membership plan and complete payment before taking the assessment. This ensures commitment to the process.' },
+        { heading: 'Assessment Determines Placement', content: 'Your assessment results determine whether you are placed in the Growth Space (developing) or Alignment Space (established). This placement is based on your demonstrated readiness for intentional partnership.' },
+        { heading: 'Growth vs Advanced Environments', content: 'Growth Space is for those building relationship skills. Alignment Space is for those ready for advanced connection. You can retake the assessment after 3 months to move between spaces.' },
+        { heading: 'No Refunds Based on Placement', content: 'Membership fees are non-refundable based on assessment outcome or placement in either the Growth or Alignment Space. Your membership gives you access to your assigned space with all available features.' },
+        { heading: 'Account Cancellation', content: 'You may cancel your membership at any time. Your access continues through the end of your current billing period. No partial refunds are issued for unused portions of your billing period.' },
+      ]
+    },
+    privacy: {
+      title: 'Privacy Policy',
+      sections: [
+        { heading: 'Safety Policies', content: 'Rooted Hearts prioritizes member safety. We conduct background checks (possibility of verification request) and maintain strict community standards. Reports of misconduct are reviewed and acted upon.' },
+        { heading: 'Background Check', content: 'You may be asked to complete a background check to verify your identity and ensure community safety. This is non-negotiable for continued access to Alignment Space.' },
+        { heading: 'Data Protection', content: 'Your personal information is encrypted and stored securely. We never sell your data to third parties. Your profile and communications are protected with industry-standard security.' },
+      ]
+    },
+    guidelines: {
+      title: 'Community Guidelines',
+      sections: [
+        { heading: 'Respectful Interaction', content: 'All members agree to treat others with respect and dignity. Harassment, discrimination, or abusive behavior will result in account suspension or removal.' },
+        { heading: 'Honest Representation', content: 'Profiles must be honest and authentic. Catfishing, fake information, or misleading photos violate community guidelines and result in removal.' },
+        { heading: 'Report Mechanism', content: 'If you experience inappropriate behavior, you can report members directly through the app. Our safety team reviews all reports and takes action as needed.' },
+      ]
+    }
+  };
 
   // Step 6 - Payment
   const [selectedTier, setSelectedTier] = useState<
@@ -585,53 +615,81 @@ const SignUpSection: React.FC = () => {
         )}
 
         {/* Step 5 - Policies */}
-        {step === 5 && (
+        {step === 5 && !viewingPolicy && (
           <div className="space-y-4">
-            <div className="space-y-3">
+            <label className="text-sm font-medium text-[#F6FFF2] block mb-3">
+              Review & Accept Policies
+            </label>
+            <div className="space-y-2">
               {[
-                {
-                  id: 'terms',
-                  label: 'I agree to the Terms of Service',
-                  checked: acceptedTerms,
-                  setChecked: setAcceptedTerms,
-                },
-                {
-                  id: 'privacy',
-                  label: 'I agree to the Privacy Policy',
-                  checked: acceptedPrivacy,
-                  setChecked: setAcceptedPrivacy,
-                },
-                {
-                  id: 'guidelines',
-                  label: 'I agree to the Community Guidelines',
-                  checked: acceptedGuidelines,
-                  setChecked: setAcceptedGuidelines,
-                },
+                { id: 'terms' as const, title: 'Terms of Service', checked: acceptedTerms },
+                { id: 'privacy' as const, title: 'Privacy Policy & Safety', checked: acceptedPrivacy },
+                { id: 'guidelines' as const, title: 'Community Guidelines', checked: acceptedGuidelines },
               ].map((policy) => (
-                <label
-                  key={policy.id}
-                  className="flex items-start gap-3 cursor-pointer"
-                >
+                <div key={policy.id} className="flex items-center gap-3 p-3 border border-[#1A211A] rounded-lg hover:border-[#D9FF3D]/50 transition-all">
                   <input
                     type="checkbox"
                     checked={policy.checked}
-                    onChange={(e) => policy.setChecked(e.target.checked)}
-                    className="mt-1 w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C]"
+                    disabled
+                    className="w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C] opacity-50"
                   />
-                  <span className="text-sm text-[#A9B5AA]">{policy.label}</span>
-                </label>
+                  <span className="flex-1 text-sm text-[#F6FFF2]">{policy.title}</span>
+                  <button
+                    onClick={() => setViewingPolicy(policy.id)}
+                    className="text-xs text-[#D9FF3D] hover:underline"
+                  >
+                    View Details
+                  </button>
+                </div>
               ))}
             </div>
+            <p className="text-xs text-[#A9B5AA] mt-4">
+              Click "View Details" on each policy to read and accept the terms before continuing.
+            </p>
+          </div>
+        )}
 
-            <div className="mt-4 p-4 bg-[#0B0F0C] rounded-lg border border-[#1A211A] text-sm text-[#A9B5AA] space-y-2">
-              <p>
-                Membership fees are non-refundable based on match placement or
-                assessment outcome.
-              </p>
-              <p>
-                You may cancel your membership at any time. Access continues
-                through the end of your current billing period.
-              </p>
+        {/* Policy Detail View */}
+        {step === 5 && viewingPolicy && POLICIES[viewingPolicy] && (
+          <div className="space-y-4 max-h-[600px] overflow-y-auto" id="policy-detail">
+            <button
+              onClick={() => setViewingPolicy(null)}
+              className="text-sm text-[#A9B5AA] hover:text-[#D9FF3D] mb-4"
+            >
+              ← Back to policies
+            </button>
+            <h3 className="text-lg font-display text-[#F6FFF2]">
+              {POLICIES[viewingPolicy].title}
+            </h3>
+            <div className="space-y-4">
+              {POLICIES[viewingPolicy].sections.map((section, idx) => (
+                <div key={idx}>
+                  <h4 className="font-medium text-[#D9FF3D] mb-2 text-sm">{section.heading}</h4>
+                  <p className="text-sm text-[#A9B5AA] leading-relaxed">{section.content}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 pt-4 border-t border-[#1A211A] space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={viewingPolicy === 'terms' ? acceptedTerms : viewingPolicy === 'privacy' ? acceptedPrivacy : acceptedGuidelines}
+                  onChange={(e) => {
+                    if (viewingPolicy === 'terms') setAcceptedTerms(e.target.checked);
+                    if (viewingPolicy === 'privacy') setAcceptedPrivacy(e.target.checked);
+                    if (viewingPolicy === 'guidelines') setAcceptedGuidelines(e.target.checked);
+                  }}
+                  className="mt-1 w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C]"
+                />
+                <span className="text-sm text-[#A9B5AA]">I accept these terms</span>
+              </label>
+              <button
+                onClick={() => setViewingPolicy(null)}
+                disabled={!(viewingPolicy === 'terms' ? acceptedTerms : viewingPolicy === 'privacy' ? acceptedPrivacy : acceptedGuidelines)}
+                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                I Understand - Continue
+              </button>
             </div>
           </div>
         )}
