@@ -102,25 +102,15 @@ const HeroSection: React.FC = () => {
         <ChevronDown className="w-5 h-5 text-[#A9B5AA] scroll-indicator" />
       </button>
 
-      {/* Top Right Buttons */}
-      <div
-        className={`absolute top-8 right-8 z-20 flex gap-3 transition-all duration-700 delay-600 ${
+      {/* Top Right Sign Up Button */}
+      <button
+        onClick={() => setCurrentView('sign-up')}
+        className={`absolute top-8 right-8 z-20 btn-primary text-xs py-2.5 px-5 transition-all duration-700 delay-600 ${
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        <button
-          onClick={() => setCurrentView('sign-up')}
-          className="btn-primary text-xs py-2.5 px-5"
-        >
-          Sign Up
-        </button>
-        <button
-          onClick={() => setShowEmailModal(true)}
-          className="btn-outline text-xs py-2.5 px-5"
-        >
-          Join the list
-        </button>
-      </div>
+        Sign Up
+      </button>
 
       {/* Logo Top Left */}
       <div
