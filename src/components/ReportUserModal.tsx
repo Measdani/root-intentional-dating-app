@@ -77,8 +77,12 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isReady || !selectedReason) return;
+    if (!isReady || !selectedReason) {
+      console.warn('Report form not ready. isReady:', isReady, 'selectedReason:', selectedReason);
+      return;
+    }
 
+    console.log('🚀 Submitting report form. Reason:', selectedReason, 'Details length:', detailsLength, 'Should block:', shouldBlock);
     setIsSubmitting(true);
 
     // Simulate API call

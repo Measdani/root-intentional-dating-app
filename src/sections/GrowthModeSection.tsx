@@ -745,10 +745,13 @@ const GrowthModeSection: React.FC = () => {
         onClose={() => setShowReportModal(false)}
         onSubmit={async (reason, details, shouldBlock) => {
           try {
+            console.log('📝 Submitting report for user:', selectedProfileUser.id, 'reason:', reason);
             await reportUser(selectedProfileUser.id, reason, details);
             if (shouldBlock) {
+              console.log('🚫 Blocking user:', selectedProfileUser.id);
               blockUser(selectedProfileUser.id);
             }
+            console.log('✅ Report submitted successfully');
             toast.success('Report submitted successfully. Admin team will review.');
             setShowReportModal(false);
             setSelectedProfileUser(null);

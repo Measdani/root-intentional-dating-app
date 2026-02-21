@@ -704,35 +704,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser.id]);
 
   const getConversation = useCallback((userId: string): UserInteraction | null => {
-    console.log(`🔍 getConversation called for userId: ${userId}`);
-    console.log('📦 sentInterests keys:', Object.keys(interactions.sentInterests));
-    console.log('📦 receivedInterests keys:', Object.keys(interactions.receivedInterests));
-
     // First check direct keys
     if (interactions.sentInterests[userId]) {
-      console.log(`✅ Found in sentInterests[${userId}]`);
       return interactions.sentInterests[userId];
     }
     if (interactions.receivedInterests[userId]) {
-      console.log(`✅ Found in receivedInterests[${userId}]`);
       return interactions.receivedInterests[userId];
     }
 
     // If not found by direct key, search through all interactions to find one with this userId
-    console.log('🔎 Searching through all interactions...');
     const sentConversation = Object.values(interactions.sentInterests).find(i => i.fromUserId === userId || i.toUserId === userId);
     if (sentConversation) {
-      console.log(`✅ Found in sentInterests by search:`, sentConversation);
       return sentConversation;
     }
 
     const receivedConversation = Object.values(interactions.receivedInterests).find(i => i.fromUserId === userId || i.toUserId === userId);
     if (receivedConversation) {
-      console.log(`✅ Found in receivedInterests by search:`, receivedConversation);
       return receivedConversation;
     }
 
-    console.log(`❌ No conversation found for userId: ${userId}`);
     return null;
   }, [interactions]);
 
