@@ -26,6 +26,11 @@ export interface User {
   backgroundCheckVerified?: boolean; // Whether user completed background check
   backgroundCheckStatus?: 'pending' | 'verified' | 'failed' | 'expired'; // Status of background check
   backgroundCheckDate?: number; // Timestamp when background check was completed
+  billingPeriodEnd?: number; // Timestamp when current billing period expires
+  consentTimestamp?: number; // Timestamp when policies were accepted
+  consentVersion?: string; // Policy version accepted (e.g., "v1.0")
+  membershipStatus?: 'active' | 'inactive' | 'cancelled'; // Subscription state
+  cancelAtPeriodEnd?: boolean; // Whether subscription cancels at period end
 }
 
 export interface AssessmentQuestion {
@@ -113,7 +118,8 @@ export type AppView =
   | 'user-login'
   | 'privacy-policy'
   | 'terms-of-service'
-  | 'community-guidelines';
+  | 'community-guidelines'
+  | 'sign-up';
 
 export interface MembershipTier {
   id: string;

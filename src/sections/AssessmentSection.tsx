@@ -36,6 +36,12 @@ const AssessmentSection: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Fallback for standalone assessment rendering (not embedded in landing page)
+  useEffect(() => {
+    const fallback = setTimeout(() => setIsVisible(true), 200);
+    return () => clearTimeout(fallback);
+  }, []);
+
   const currentQuestions = showFollowUp ? followUpQuestions : assessmentQuestions;
   const currentQuestion = currentQuestions[currentQuestionIndex];
   const progress = ((assessmentAnswers.length) / (assessmentQuestions.length + 2)) * 100;
