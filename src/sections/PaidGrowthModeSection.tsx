@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { paidGrowthResources } from '@/data/assessment';
-import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock, Brain } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 
 const PaidGrowthModeSection: React.FC = () => {
@@ -160,6 +160,15 @@ const PaidGrowthModeSection: React.FC = () => {
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Blog
+            </div>
+          </button>
+          <button
+            onClick={() => setCurrentView('clarity-room')}
+            className="pb-3 px-4 font-medium transition-all text-[#A9B5AA] hover:text-emerald-400"
+          >
+            <div className="flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              Clarity Room
             </div>
           </button>
         </div>

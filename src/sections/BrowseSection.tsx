@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle } from 'lucide-react';
+import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { calculateAlignmentScore } from '@/data/users';
 import type { User } from '@/types';
@@ -84,6 +84,13 @@ const BrowseSection: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setCurrentView('clarity-room')}
+              className="flex items-center gap-2 text-sm text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+              title="Clarity Room"
+            >
+              <BookOpen className="w-4 h-4" />
+            </button>
             <button
               onClick={() => setCurrentView('inbox')}
               className="relative flex items-center gap-2 text-sm text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"

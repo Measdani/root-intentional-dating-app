@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag } from 'lucide-react';
+import { MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag, BookOpen } from 'lucide-react';
 import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
 
@@ -94,7 +94,14 @@ const ProfileDetailSection: React.FC = () => {
             <span>Growth Mode Resources</span>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setCurrentView('clarity-room')}
+              className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+              title="Clarity Room"
+            >
+              <BookOpen className="w-4 h-4" />
+            </button>
             <div className="text-right">
               <div className="text-2xl font-display text-[#D9FF3D]">
                 {selectedUser.alignmentScore}%

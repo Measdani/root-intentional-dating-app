@@ -280,6 +280,15 @@ const GrowthModeSection: React.FC = () => {
               Blog
             </div>
           </button>
+          <button
+            onClick={() => setCurrentView('clarity-room')}
+            className="pb-3 px-4 font-medium transition-all text-[#A9B5AA] hover:text-[#D9FF3D]"
+          >
+            <div className="flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              Clarity Room
+            </div>
+          </button>
         </div>
 
         {/* Browse View */}
