@@ -4,6 +4,7 @@ import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, Report
 import { mockAdminUsers, mockAdminCredentials } from '@/data/admins';
 import { reportService } from '@/services/reportService';
 import { supportService } from '@/services/supportService';
+import { userService } from '@/services/userService';
 
 interface AdminContextType {
   session: AdminSession;
@@ -182,6 +183,37 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     })();
 
+    // Load users: try Supabase first, fall back to localStorage
+    (async () => {
+      try {
+        const supabaseUsers = await userService.getAllUsers();
+        if (supabaseUsers.length > 0) {
+          // Map User to UserWithAdminData format
+          const adminUsers = supabaseUsers.map(user => ({
+            ...user,
+            status: (user.userStatus || 'active') as any,
+            joinDate: user.consentTimestamp || Date.now(),
+            lastLogin: Date.now(),
+          }));
+          setUsers(adminUsers);
+          // Backfill localStorage for offline compatibility
+          localStorage.setItem('rooted-admin-users', JSON.stringify(adminUsers));
+        } else {
+          // Supabase is empty - use localStorage
+          const savedUsers = localStorage.getItem('rooted-admin-users');
+          if (savedUsers) {
+            setUsers(JSON.parse(savedUsers));
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load users from Supabase, using localStorage:', err);
+        const savedUsers = localStorage.getItem('rooted-admin-users');
+        if (savedUsers) {
+          setUsers(JSON.parse(savedUsers));
+        }
+      }
+    })();
+
     // Listen for new reports from user context
     const handleNewReport = (event: CustomEvent) => {
       setReports(prev => [...prev, event.detail]);
@@ -192,11 +224,25 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSupportMessages(prev => [...prev, event.detail]);
     };
 
+    // Listen for new users being created
+    const handleNewUser = (event: CustomEvent) => {
+      const newUser = event.detail;
+      const adminUser = {
+        ...newUser,
+        status: (newUser.userStatus || 'active') as any,
+        joinDate: newUser.consentTimestamp || Date.now(),
+        lastLogin: Date.now(),
+      };
+      setUsers(prev => [...prev, adminUser]);
+    };
+
     window.addEventListener('new-report' as any, handleNewReport as EventListener);
     window.addEventListener('new-support-message' as any, handleNewSupportMessage as EventListener);
+    window.addEventListener('new-user' as any, handleNewUser as EventListener);
     return () => {
       window.removeEventListener('new-report' as any, handleNewReport as EventListener);
       window.removeEventListener('new-support-message' as any, handleNewSupportMessage as EventListener);
+      window.removeEventListener('new-user' as any, handleNewUser as EventListener);
     };
   }, []);
 
@@ -217,6 +263,15 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Fall back silently
     }
   }, [supportMessages]);
+
+  // Save users to localStorage when they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('rooted-admin-users', JSON.stringify(users));
+    } catch {
+      // Fall back silently
+    }
+  }, [users]);
 
   // Save session to localStorage
   const saveSession = useCallback((newSession: AdminSession) => {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
+import { userService } from '@/services/userService';
 import { toast } from 'sonner';
 import {
   AlertCircle,
@@ -206,11 +207,21 @@ const SignUpSection: React.FC = () => {
         backgroundCheckStatus: 'pending',
       };
 
+      // Save to Supabase
+      const { error: supabaseError } = await userService.createUser(newUser);
+      if (supabaseError) {
+        console.warn('User saved to Supabase with warning:', supabaseError);
+        // Continue anyway - localStorage will work as fallback
+      }
+
       // Persist to localStorage
       localStorage.setItem('currentUser', JSON.stringify(newUser));
 
       // Trigger AppContext to pick up the new user
       window.dispatchEvent(new CustomEvent('user-login', { detail: newUser }));
+
+      // Notify admin context of new user
+      window.dispatchEvent(new CustomEvent('new-user', { detail: newUser }));
 
       // Brief delay to let state settle
       await new Promise((resolve) => setTimeout(resolve, 100));
