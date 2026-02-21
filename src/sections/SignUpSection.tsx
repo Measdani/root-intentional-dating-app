@@ -10,28 +10,16 @@ import {
 } from 'lucide-react';
 import type { User } from '@/types';
 
-const PRESET_VALUES = [
-  'Honesty',
-  'Growth',
-  'Family',
-  'Loyalty',
-  'Kindness',
-  'Depth',
-  'Adventure',
-  'Calm',
-  'Integrity',
-  'Presence',
-  'Humor',
-  'Resilience',
-  'Compassion',
-  'Clarity',
-  'Authenticity',
-  'Creativity',
-  'Trust',
-  'Stability',
-  'Faith',
-  'Accountability',
-];
+const VALUES_BY_CATEGORY = {
+  'Character & Integrity': ['Honesty', 'Loyalty', 'Accountability', 'Integrity'],
+  'Emotional & Relational Depth': ['Compassion', 'Kindness', 'Presence', 'Depth'],
+  'Stability & Security': ['Stability', 'Resilience', 'Calm', 'Trust'],
+  'Growth & Self-Awareness': ['Growth', 'Authenticity', 'Clarity'],
+  'Lifestyle & Energy': ['Family', 'Adventure', 'Creativity', 'Humor'],
+  'Spiritual Foundation': ['Faith'],
+};
+
+const PRESET_VALUES = Object.values(VALUES_BY_CATEGORY).flat();
 
 const STEP_LABELS = [
   'Account',
@@ -531,27 +519,36 @@ const SignUpSection: React.FC = () => {
               <label className="text-sm font-medium text-[#F6FFF2] block mb-3">
                 Your Core Values ({selectedValues.length} / 7)
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                {PRESET_VALUES.map((value) => (
-                  <button
-                    key={value}
-                    onClick={() => {
-                      if (selectedValues.includes(value)) {
-                        setSelectedValues(
-                          selectedValues.filter((v) => v !== value)
-                        );
-                      } else if (selectedValues.length < 7) {
-                        setSelectedValues([...selectedValues, value]);
-                      }
-                    }}
-                    className={`py-2 px-3 rounded-lg border text-xs text-center transition-all ${
-                      selectedValues.includes(value)
-                        ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
-                        : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/50'
-                    }`}
-                  >
-                    {value}
-                  </button>
+              <div className="space-y-4">
+                {Object.entries(VALUES_BY_CATEGORY).map(([category, values]) => (
+                  <div key={category}>
+                    <h4 className="text-xs font-mono text-[#A9B5AA] mb-2 uppercase tracking-wide">
+                      {category}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {values.map((value) => (
+                        <button
+                          key={value}
+                          onClick={() => {
+                            if (selectedValues.includes(value)) {
+                              setSelectedValues(
+                                selectedValues.filter((v) => v !== value)
+                              );
+                            } else if (selectedValues.length < 7) {
+                              setSelectedValues([...selectedValues, value]);
+                            }
+                          }}
+                          className={`py-2 px-3 rounded-lg border text-xs text-center transition-all ${
+                            selectedValues.includes(value)
+                              ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                              : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/50'
+                          }`}
+                        >
+                          {value}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
