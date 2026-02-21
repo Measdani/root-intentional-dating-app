@@ -29,6 +29,7 @@ const GrowthDetailSection: React.FC = () => {
         const supabaseResources = await resourceService.getResources('free');
         if (supabaseResources.length > 0) {
           console.log('Loaded free resources from Supabase:', supabaseResources.length);
+          console.log('Resource structure:', supabaseResources[0]?.modules?.map(m => ({ id: m.id, title: m.title, blogIds: m.blogIds })));
           setResources(supabaseResources);
         } else {
           // Fall back to localStorage
@@ -577,6 +578,7 @@ const GrowthDetailSection: React.FC = () => {
             {(() => {
               const currentModule = resource?.modules?.find(m => m.id === selectedModuleId);
               const moduleBlogIds = currentModule?.blogIds || [];
+              console.log('Module:', { id: currentModule?.id, title: currentModule?.title, blogIds: moduleBlogIds });
               const moduleBogs = moduleBlogIds
                 .map(blogId => blogs.find(b => b.id === blogId))
                 .filter(Boolean) as BlogArticle[];
