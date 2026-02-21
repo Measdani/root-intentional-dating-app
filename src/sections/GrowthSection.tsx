@@ -82,7 +82,7 @@ const GrowthSection: React.FC = () => {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
             >
-              Growth Mode gives you tools, not rejection. Come back stronger.
+              Inner Work Space gives you tools, not rejection. Come back stronger.
             </p>
 
             {/* Growth Resources Preview */}
@@ -109,7 +109,7 @@ const GrowthSection: React.FC = () => {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
             >
-              Learn about Growth Mode
+              Learn about Inner Work Space
             </button>
 
             <p

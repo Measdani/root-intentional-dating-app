@@ -91,7 +91,7 @@ const ProfileDetailSection: React.FC = () => {
             }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
           >
-            <span>Growth Mode Resources</span>
+            <span>Inner Work Space Resources</span>
           </button>
 
           <div className="flex items-center gap-6">

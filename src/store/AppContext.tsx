@@ -307,7 +307,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           userId: currentUser.id,
           type: 'warning',
           title: 'Suspension Period Ended',
-          message: 'Your account suspension period has ended. You must now complete the Growth Mode assessment to regain full access to browsing and matching.',
+          message: 'Your account suspension period has ended. You must now complete the Inner Work Space assessment to regain full access to browsing and matching.',
           createdAt: Date.now(),
           read: false,
         };
