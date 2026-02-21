@@ -33,6 +33,7 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
 }) => {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+  const [selectedBlog, setSelectedBlog] = useState<any>(null);
 
   // Load blogs on mount
   useEffect(() => {
@@ -142,9 +143,10 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
                   </h4>
                   <div className="space-y-3">
                     {moduleBogs.map((blog) => (
-                      <div
+                      <button
                         key={blog.id}
-                        className="bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4 hover:border-[#D9FF3D] transition"
+                        onClick={() => setSelectedBlog(blog)}
+                        className="w-full text-left bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4 hover:border-[#D9FF3D] transition cursor-pointer"
                       >
                         <h5 className="font-medium text-white mb-1">📄 {blog.title}</h5>
                         {blog.excerpt && (
@@ -153,7 +155,7 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
                         {blog.readTime && (
                           <p className="text-xs text-[#666]">⏱️ {blog.readTime} read</p>
                         )}
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -214,6 +216,36 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Blog Detail Modal */}
+      {selectedBlog && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#0B0F0C]/80 backdrop-blur-sm" onClick={() => setSelectedBlog(null)} />
+          <div className="relative bg-[#111611] rounded-[28px] border border-[#1A211A] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setSelectedBlog(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-4">
+              <h2 className="text-3xl font-display text-[#D9FF3D]">{selectedBlog.title}</h2>
+              {selectedBlog.excerpt && (
+                <p className="text-[#A9B5AA]">{selectedBlog.excerpt}</p>
+              )}
+              {selectedBlog.content && (
+                <div className="prose prose-invert text-[#F6FFF2] space-y-4">
+                  {selectedBlog.content.split('\n').map((line: string, idx: number) => (
+                    <p key={idx} className="whitespace-pre-wrap leading-relaxed">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
