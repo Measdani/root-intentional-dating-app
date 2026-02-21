@@ -71,7 +71,7 @@ const BrowseSection: React.FC = () => {
             }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
           >
-            <span>Inner Work Space</span>
+            <span>Alignment Space</span>
           </button>
 
           <div className="text-center">
