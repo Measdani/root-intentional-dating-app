@@ -33,6 +33,11 @@ const GrowthModeSection: React.FC = () => {
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
+
+  // Log state changes
+  useEffect(() => {
+    console.log('🔄 showReportModal state changed to:', showReportModal);
+  }, [showReportModal]);
   const [resources, setResources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
     return saved ? JSON.parse(saved) : growthResources;
