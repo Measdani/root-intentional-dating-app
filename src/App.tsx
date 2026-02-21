@@ -17,6 +17,7 @@ import InboxSection from '@/sections/InboxSection';
 import ConversationSection from '@/sections/ConversationSection';
 import GrowthModeSection from '@/sections/GrowthModeSection';
 import GrowthDetailSection from '@/sections/GrowthDetailSection';
+import ClarityRoomSection from '@/sections/ClarityRoomSection';
 import CommunityBlogPage from '@/sections/CommunityBlogPage';
 import PaidGrowthModeSection from '@/sections/PaidGrowthModeSection';
 import AdminLoginSection from '@/sections/AdminLoginSection';
@@ -102,6 +103,8 @@ const AppContent: React.FC = () => {
         return <TermsOfServiceSection />;
       case 'community-guidelines':
         return <CommunityGuidelinesSection />;
+      case 'clarity-room':
+        return <ClarityRoomSection />;
       case 'landing':
       default:
         return (

@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+
+interface BlogArticle {
+  id: string;
+  title: string;
+  excerpt?: string;
+  readTime?: string;
+}
 
 interface Module {
   id?: string;
@@ -7,6 +15,7 @@ interface Module {
   description: string;
   exercise?: string;
   orderIndex?: number;
+  blogIds?: string[];
 }
 
 interface ModulesCarouselModalProps {
@@ -23,6 +32,34 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
   onClose,
 }) => {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
+  const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+  const [selectedBlog, setSelectedBlog] = useState<any>(null);
+
+  // Load blogs on mount
+  useEffect(() => {
+    const loadBlogs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('blogs')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          console.log('[ModulesCarouselModal] Loaded blogs:', data.length);
+          const mappedBlogs = data.map((row: any) => ({
+            id: row.id,
+            title: row.title,
+            excerpt: row.excerpt,
+            readTime: row.read_time,
+          }));
+          setBlogs(mappedBlogs);
+        }
+      } catch (error) {
+        console.error('[ModulesCarouselModal] Error loading blogs:', error);
+      }
+    };
+    loadBlogs();
+  }, []);
 
   if (!isOpen || !modules || modules.length === 0) return null;
 
@@ -89,6 +126,43 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Module Resources / Blogs */}
+          {(() => {
+            const moduleBlogIds = currentModule.blogIds || [];
+            const moduleBogs = moduleBlogIds
+              .map(blogId => blogs.find(b => b.id === blogId))
+              .filter(Boolean) as BlogArticle[];
+
+            if (moduleBogs.length > 0) {
+              return (
+                <div className="bg-gradient-to-r from-[#D9FF3D]/10 to-transparent border border-[#D9FF3D]/30 rounded-lg p-6">
+                  <h4 className="text-[#D9FF3D] font-medium mb-4 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" />
+                    Module Resources
+                  </h4>
+                  <div className="space-y-3">
+                    {moduleBogs.map((blog) => (
+                      <button
+                        key={blog.id}
+                        onClick={() => setSelectedBlog(blog)}
+                        className="w-full text-left bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4 hover:border-[#D9FF3D] transition cursor-pointer"
+                      >
+                        <h5 className="font-medium text-white mb-1">📄 {blog.title}</h5>
+                        {blog.excerpt && (
+                          <p className="text-sm text-[#A9B5AA] mb-2">{blog.excerpt}</p>
+                        )}
+                        {blog.readTime && (
+                          <p className="text-xs text-[#666]">⏱️ {blog.readTime} read</p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {/* Progress Bar */}
@@ -142,6 +216,36 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Blog Detail Modal */}
+      {selectedBlog && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#0B0F0C]/80 backdrop-blur-sm" onClick={() => setSelectedBlog(null)} />
+          <div className="relative bg-[#111611] rounded-[28px] border border-[#1A211A] p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setSelectedBlog(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="space-y-4">
+              <h2 className="text-3xl font-display text-[#D9FF3D]">{selectedBlog.title}</h2>
+              {selectedBlog.excerpt && (
+                <p className="text-[#A9B5AA]">{selectedBlog.excerpt}</p>
+              )}
+              {selectedBlog.content && (
+                <div className="prose prose-invert text-[#F6FFF2] space-y-4">
+                  {selectedBlog.content.split('\n').map((line: string, idx: number) => (
+                    <p key={idx} className="whitespace-pre-wrap leading-relaxed">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

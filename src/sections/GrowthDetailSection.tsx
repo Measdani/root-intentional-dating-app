@@ -4,6 +4,7 @@ import { growthResources } from '@/data/assessment';
 import { ArrowLeft, BookOpen, CheckCircle, Clock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { resourceService } from '@/services/resourceService';
 import ModuleBlogModal from '@/components/ModuleBlogModal';
 
 interface ModuleContent {
@@ -20,35 +21,34 @@ const GrowthDetailSection: React.FC = () => {
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [resources, setResources] = useState(growthResources);
 
-  // Load resources and blogs from Supabase and localStorage
+  // Load resources AND blogs on mount
   useEffect(() => {
-    const savedResources = localStorage.getItem('growth-resources');
-    if (savedResources) {
-      setResources(JSON.parse(savedResources));
-    }
-  }, []);
-
-  // Load blogs from Supabase (includes module-only blogs)
-  useEffect(() => {
-    const loadBlogs = async () => {
+    console.log('[GrowthDetailSection] Starting data load...');
+    const loadData = async () => {
       try {
-        // Load ALL blogs (both module-only and public) from Supabase
-        const { data, error } = await supabase
+        console.log('[GrowthDetailSection] Loading resources...');
+        // Load resources from Supabase
+        const supabaseResources = await resourceService.getResources('free');
+        console.log('[GrowthDetailSection] Resources result:', { count: supabaseResources.length, hasModules: supabaseResources[0]?.modules?.length });
+        if (supabaseResources.length > 0) {
+          console.log('Loaded free resources from Supabase:', supabaseResources.length);
+          setResources(supabaseResources);
+        } else {
+          const savedResources = localStorage.getItem('growth-resources');
+          setResources(savedResources ? JSON.parse(savedResources) : growthResources);
+        }
+
+        console.log('[GrowthDetailSection] Loading blogs...');
+        // Load blogs from Supabase
+        const { data: blogData, error: blogError } = await supabase
           .from('blogs')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Failed to load blogs from Supabase:', error);
-          // Fall back to localStorage
-          const savedBlogs = localStorage.getItem('community-blogs');
-          if (savedBlogs) {
-            setBlogs(JSON.parse(savedBlogs));
-          }
-        } else if (data && data.length > 0) {
-          console.log('Loaded all blogs from Supabase:', data.length);
-          // Map the data to BlogArticle format
-          const blogs = data.map(row => ({
+        console.log('[GrowthDetailSection] Blogs result:', { count: blogData?.length, error: blogError?.message });
+        if (!blogError && blogData && blogData.length > 0) {
+          console.log('Loaded all blogs from Supabase:', blogData.length);
+          const mappedBlogs = blogData.map(row => ({
             id: row.id,
             title: row.title,
             content: row.content,
@@ -61,24 +61,26 @@ const GrowthDetailSection: React.FC = () => {
             createdAt: row.created_at,
             updatedAt: row.updated_at,
           }));
-          setBlogs(blogs);
+          setBlogs(mappedBlogs);
         } else {
-          // Fall back to localStorage if no Supabase data
           const savedBlogs = localStorage.getItem('community-blogs');
           if (savedBlogs) {
             setBlogs(JSON.parse(savedBlogs));
           }
         }
       } catch (error) {
-        console.error('Error loading blogs:', error);
-        // Fall back to localStorage
+        console.error('Error loading data:', error);
+        const savedResources = localStorage.getItem('growth-resources');
+        if (savedResources) {
+          setResources(JSON.parse(savedResources));
+        }
         const savedBlogs = localStorage.getItem('community-blogs');
         if (savedBlogs) {
           setBlogs(JSON.parse(savedBlogs));
         }
       }
     };
-    loadBlogs();
+    loadData();
   }, []);
 
   // Detailed module content
@@ -552,10 +554,21 @@ const GrowthDetailSection: React.FC = () => {
             {(() => {
               const currentModule = resource?.modules?.find(m => m.id === selectedModuleId);
               const moduleBlogIds = currentModule?.blogIds || [];
+              console.log('[GrowthDetailSection] Module render:', {
+                moduleId: currentModule?.id,
+                blogIds: moduleBlogIds,
+                blogsArrayLength: blogs.length,
+                blogsLoaded: blogs.length > 0
+              });
               const moduleBogs = moduleBlogIds
-                .map(blogId => blogs.find(b => b.id === blogId))
+                .map(blogId => {
+                  const found = blogs.find(b => b.id === blogId);
+                  console.log(`[GrowthDetailSection] Looking for blog ${blogId}:`, found ? 'FOUND' : 'NOT FOUND');
+                  return found;
+                })
                 .filter(Boolean) as BlogArticle[];
 
+              console.log('[GrowthDetailSection] Matched blogs:', moduleBogs.length);
               if (moduleBogs.length > 0) {
                 return (
                   <div className="bg-[#111611] border border-[#D9FF3D]/20 rounded-lg p-8">

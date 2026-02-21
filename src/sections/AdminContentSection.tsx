@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { growthResources, paidGrowthResources, membershipTiers } from '@/data/assessment';
 import type { GrowthResource, BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
+import { resourceService } from '@/services/resourceService';
 
 const AdminContentSection: React.FC = () => {
   const [resources, setResources] = useState<GrowthResource[]>(() => {
@@ -49,13 +50,13 @@ const AdminContentSection: React.FC = () => {
     localStorage.setItem('community-blogs', JSON.stringify(blogs));
   }, [blogs]);
 
-  // Load blogs from Supabase on mount
+  // Load blogs from Supabase on mount (including unpublished for admin)
   React.useEffect(() => {
     const loadBlogs = async () => {
       try {
-        const supabaseBlogList = await blogService.getAllBlogs();
+        const supabaseBlogList = await blogService.getAllBlogsIncludingUnpublished();
         if (supabaseBlogList.length > 0) {
-          console.log('Loaded blogs from Supabase:', supabaseBlogList.length);
+          console.log('Loaded all blogs from Supabase:', supabaseBlogList.length);
           setBlogs(supabaseBlogList);
         } else {
           console.log('No blogs in Supabase, using localStorage');
@@ -67,6 +68,31 @@ const AdminContentSection: React.FC = () => {
       }
     };
     loadBlogs();
+  }, []);
+
+  // Load resources from Supabase on mount
+  React.useEffect(() => {
+    const loadResources = async () => {
+      try {
+        // Load free resources
+        const freeResources = await resourceService.getResources('free');
+        if (freeResources.length > 0) {
+          console.log('Loaded free resources from Supabase:', freeResources.length);
+          setResources(freeResources);
+        }
+
+        // Load paid resources
+        const paidResourcesList = await resourceService.getResources('paid');
+        if (paidResourcesList.length > 0) {
+          console.log('Loaded paid resources from Supabase:', paidResourcesList.length);
+          setPaidResources(paidResourcesList);
+        }
+      } catch (error) {
+        console.error('Error loading resources from Supabase:', error);
+        // Fall back to localStorage (already loaded in initial state)
+      }
+    };
+    loadResources();
   }, []);
 
   const handleAddNew = () => {
@@ -90,7 +116,8 @@ const AdminContentSection: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    console.log('[AdminContentSection] handleSave called');
     if (!formData.title || !formData.description || !formData.category || !formData.estimatedTime) {
       toast.error('Please fill in all required fields');
       return;
@@ -98,15 +125,15 @@ const AdminContentSection: React.FC = () => {
 
     const currentResources = activeTab === 'paid' ? paidResources : resources;
     const setCurrentResources = activeTab === 'paid' ? setPaidResources : setResources;
+    let updatedResources: GrowthResource[];
 
     if (selectedResource) {
-      setCurrentResources(
-        currentResources.map(r =>
-          r.id === selectedResource.id
-            ? { ...r, ...formData, updatedAt: Date.now() } as GrowthResource
-            : r
-        )
+      updatedResources = currentResources.map(r =>
+        r.id === selectedResource.id
+          ? { ...r, ...formData, updatedAt: Date.now() } as GrowthResource
+          : r
       );
+      setCurrentResources(updatedResources);
       toast.success('Resource updated successfully');
     } else {
       const newResource: GrowthResource = {
@@ -115,22 +142,43 @@ const AdminContentSection: React.FC = () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       } as GrowthResource;
-      setCurrentResources([...currentResources, newResource]);
+      updatedResources = [...currentResources, newResource];
+      setCurrentResources(updatedResources);
       toast.success('Resource created successfully');
+    }
+
+    // Save to Supabase
+    console.log('[AdminContentSection] Calling resourceService.saveResources with', updatedResources.length, 'resources');
+    const resourceType = activeTab === 'paid' ? 'paid' : 'free';
+    const result = await resourceService.saveResources(updatedResources, resourceType);
+    console.log('[AdminContentSection] resourceService.saveResources returned:', result);
+    if (result.error) {
+      toast.error(`Database save failed: ${result.error}`);
     }
 
     setShowForm(false);
     setFormData({});
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this resource?')) {
+      let updatedResources: GrowthResource[];
       if (activeTab === 'paid') {
-        setPaidResources(paidResources.filter(r => r.id !== id));
+        updatedResources = paidResources.filter(r => r.id !== id);
+        setPaidResources(updatedResources);
       } else {
-        setResources(resources.filter(r => r.id !== id));
+        updatedResources = resources.filter(r => r.id !== id);
+        setResources(updatedResources);
       }
-      toast.success('Resource deleted successfully');
+
+      // Save to Supabase
+      const resourceType = activeTab === 'paid' ? 'paid' : 'free';
+      const result = await resourceService.saveResources(updatedResources, resourceType);
+      if (result.error) {
+        toast.error(`Database update failed: ${result.error}`);
+      } else {
+        toast.success('Resource deleted successfully');
+      }
     }
   };
 
@@ -563,26 +611,34 @@ const AdminContentSection: React.FC = () => {
                       {/* Module Blogs Selection */}
                       <div className="mt-3 pt-3 border-t border-[#1A211A]">
                         <label className="block text-xs font-medium text-[#A9B5AA] mb-2">Attach Module Blogs (optional)</label>
-                        <select
-                          multiple
-                          value={module.blogIds || []}
-                          onChange={(e) => {
-                            const selected = Array.from(e.target.selectedOptions, option => option.value);
-                            const updated = [...(formData.modules || [])];
-                            updated[idx] = { ...module, blogIds: selected };
-                            setFormData({ ...formData, modules: updated });
-                          }}
-                          className="w-full px-3 py-2 bg-[#111611] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm"
-                        >
-                          {blogs
-                            .filter(b => b.moduleOnly)
-                            .map(blog => (
-                              <option key={blog.id} value={blog.id}>
-                                {blog.title}
-                              </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-[#A9B5AA] mt-1">Hold Ctrl/Cmd to select multiple blogs</p>
+                        <div className="space-y-2 bg-[#0B0F0C] p-3 rounded-lg border border-[#1A211A]">
+                          {blogs.filter(b => b.moduleOnly).length > 0 ? (
+                            blogs
+                              .filter(b => b.moduleOnly)
+                              .map(blog => (
+                                <label key={blog.id} className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={(module.blogIds || []).includes(blog.id)}
+                                    onChange={(e) => {
+                                      const updated = [...(formData.modules || [])];
+                                      const currentBlogIds = module.blogIds || [];
+                                      if (e.target.checked) {
+                                        updated[idx] = { ...module, blogIds: [...currentBlogIds, blog.id] };
+                                      } else {
+                                        updated[idx] = { ...module, blogIds: currentBlogIds.filter(id => id !== blog.id) };
+                                      }
+                                      setFormData({ ...formData, modules: updated });
+                                    }}
+                                    className="w-4 h-4 rounded cursor-pointer"
+                                  />
+                                  <span className="text-sm text-[#F6FFF2]">{blog.title}</span>
+                                </label>
+                              ))
+                          ) : (
+                            <p className="text-xs text-[#A9B5AA] italic">No module-only blogs available</p>
+                          )}
+                        </div>
 
                         {/* Show selected blogs */}
                         {(module.blogIds || []).length > 0 && (
