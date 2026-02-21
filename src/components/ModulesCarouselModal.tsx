@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+
+interface BlogArticle {
+  id: string;
+  title: string;
+  excerpt?: string;
+  readTime?: string;
+}
 
 interface Module {
   id?: string;
@@ -7,6 +15,7 @@ interface Module {
   description: string;
   exercise?: string;
   orderIndex?: number;
+  blogIds?: string[];
 }
 
 interface ModulesCarouselModalProps {
@@ -23,6 +32,33 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
   onClose,
 }) => {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
+  const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+
+  // Load blogs on mount
+  useEffect(() => {
+    const loadBlogs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('blogs')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          console.log('[ModulesCarouselModal] Loaded blogs:', data.length);
+          const mappedBlogs = data.map((row: any) => ({
+            id: row.id,
+            title: row.title,
+            excerpt: row.excerpt,
+            readTime: row.read_time,
+          }));
+          setBlogs(mappedBlogs);
+        }
+      } catch (error) {
+        console.error('[ModulesCarouselModal] Error loading blogs:', error);
+      }
+    };
+    loadBlogs();
+  }, []);
 
   if (!isOpen || !modules || modules.length === 0) return null;
 
@@ -89,6 +125,42 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Module Resources / Blogs */}
+          {(() => {
+            const moduleBlogIds = currentModule.blogIds || [];
+            const moduleBogs = moduleBlogIds
+              .map(blogId => blogs.find(b => b.id === blogId))
+              .filter(Boolean) as BlogArticle[];
+
+            if (moduleBogs.length > 0) {
+              return (
+                <div className="bg-gradient-to-r from-[#D9FF3D]/10 to-transparent border border-[#D9FF3D]/30 rounded-lg p-6">
+                  <h4 className="text-[#D9FF3D] font-medium mb-4 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" />
+                    Module Resources
+                  </h4>
+                  <div className="space-y-3">
+                    {moduleBogs.map((blog) => (
+                      <div
+                        key={blog.id}
+                        className="bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4 hover:border-[#D9FF3D] transition"
+                      >
+                        <h5 className="font-medium text-white mb-1">📄 {blog.title}</h5>
+                        {blog.excerpt && (
+                          <p className="text-sm text-[#A9B5AA] mb-2">{blog.excerpt}</p>
+                        )}
+                        {blog.readTime && (
+                          <p className="text-xs text-[#666]">⏱️ {blog.readTime} read</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {/* Progress Bar */}
