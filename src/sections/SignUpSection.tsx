@@ -79,7 +79,11 @@ const SignUpSection: React.FC = () => {
       title: 'Terms of Service',
       sections: [
         { heading: 'Payment Before Assessment', content: 'You must select a membership plan and complete payment before taking the assessment. This ensures commitment to the process and helps us maintain a serious, intentional community. Membership is non-refundable once the billing period has commenced.' },
-        { heading: 'Assessment Determines Placement', content: 'Your assessment results determine whether you are placed in the Growth Space (developing) or Alignment Space (established). This placement is based on your demonstrated readiness for intentional partnership. The assessment evaluates your emotional maturity, relationship readiness, and alignment with our community values.' },
+        {
+          heading: 'Assessment Determines Placement',
+          content: 'Why Do We Have an Assessment?\n\nRooted Hearts is built on the belief that alignment requires readiness. Strong, lasting partnerships are not built on attraction alone — they require emotional regulation, accountability, boundary awareness, and the ability to repair conflict. The assessment helps us maintain a community of individuals who are committed to intentional connection rather than casual disruption.\n\nThis is not about judgment. It is about protecting emotional safety and long-term compatibility.\n\nWhy Is the Assessment Required?\n\nThe assessment cannot be bypassed. Every member completes it to ensure:\n• Fair and equal placement standards\n• A consistent emotional baseline across the community\n• Protection for members seeking serious partnership\n\nIf the assessment were optional, the integrity of the platform would be compromised. Requiring it ensures that everyone participates under the same expectations.\n\nWhy Does It Determine Your Dating Pool?\n\nBased on your responses, you may be placed in:\n\nGrowth Mode – A structured environment for strengthening foundational relationship skills while still connecting with others on a similar growth journey.\n\nAdvanced Mode – Full access to the broader dating pool for members who demonstrate readiness for deeper partnership engagement.\n\nPlacement is not a label. It is a developmental pathway.\n\nThis structure protects members from emotional misalignment and reduces avoidable harm within connections.\n\nWhy Is This Necessary?\n\nMany dating platforms prioritize volume over alignment. Rooted Hearts prioritizes intentionality.\n\nBy structuring placement through assessment, we:\n• Reduce emotional instability within connections\n• Encourage accountability and self-awareness\n• Create safer environments for meaningful partnership\n• Prevent avoidable patterns of resentment and misalignment\n\nOur goal is not to exclude — it is to prepare.\n\nWant to Understand Our Philosophy More Deeply?\n\nExplore the research and reasoning behind our structure on our blog where we explain our Relationship Readiness Philosophy, why emotional stability matters in dating, the difference between attraction and alignment, and how Growth Mode supports long-term success.',
+          link: { label: 'Visit Our Philosophy Blog →', url: '/blog' }
+        },
         { heading: 'Growth vs Advanced Environments', content: 'Growth Space is for those building relationship skills and working through developmental areas. Alignment Space is for those ready for advanced connection and demonstrated relationship readiness. You can retake the assessment after 3 months to move between spaces. Both spaces have full access to features and community.' },
         { heading: 'No Refunds Based on Placement', content: 'Membership fees are non-refundable based on assessment outcome or placement in either the Growth or Alignment Space. Your membership gives you access to your assigned space with all available features, community events, resources, and support. You get full value regardless of placement.' },
         { heading: 'Account Cancellation', content: 'You may cancel your membership at any time. Your access continues through the end of your current billing period. No partial refunds are issued for unused portions of your billing period. Upon cancellation, your account remains private and can be reactivated if you choose to return.' },
@@ -668,10 +672,22 @@ const SignUpSection: React.FC = () => {
               {POLICIES[viewingPolicy].title}
             </h3>
             <div className="space-y-4">
-              {POLICIES[viewingPolicy].sections.map((section, idx) => (
+              {POLICIES[viewingPolicy].sections.map((section: any, idx) => (
                 <div key={idx}>
                   <h4 className="font-medium text-[#D9FF3D] mb-2 text-sm">{section.heading}</h4>
-                  <p className="text-sm text-[#A9B5AA] leading-relaxed">{section.content}</p>
+                  <div className="text-sm text-[#A9B5AA] leading-relaxed whitespace-pre-wrap">
+                    {section.content}
+                  </div>
+                  {section.link && (
+                    <a
+                      href={section.link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-3 text-sm text-[#D9FF3D] hover:underline font-medium"
+                    >
+                      {section.link.label}
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
