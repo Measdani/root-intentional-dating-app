@@ -8,6 +8,23 @@ const AssessmentResultSection: React.FC = () => {
   if (!assessmentResult) return null;
 
   const handleContinue = () => {
+    // Write assessmentPassed + score back to currentUser in localStorage
+    try {
+      const savedUser = localStorage.getItem('currentUser');
+      if (savedUser) {
+        const updated = {
+          ...JSON.parse(savedUser),
+          assessmentPassed: assessmentResult.passed,
+          alignmentScore: assessmentResult.percentage,
+        };
+        localStorage.setItem('currentUser', JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('user-login', { detail: updated }));
+      }
+    } catch (err) {
+      console.error('Failed to update assessmentPassed:', err);
+    }
+
+    // Route based on assessment result
     if (assessmentResult.passed) {
       setCurrentView('browse');
     } else {

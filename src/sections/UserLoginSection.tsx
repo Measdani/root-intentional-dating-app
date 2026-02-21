@@ -193,6 +193,16 @@ const UserLoginSection: React.FC = () => {
             </Button>
           </form>
 
+          <p className="text-center text-sm text-[#A9B5AA]">
+            New to Rooted Hearts?{' '}
+            <button
+              onClick={() => setCurrentView('sign-up')}
+              className="text-[#D9FF3D] hover:underline font-medium"
+            >
+              Create an account
+            </button>
+          </p>
+
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[#1A211A]"></div>

@@ -29,6 +29,7 @@ import AdminAssessmentsSection from '@/sections/AdminAssessmentsSection';
 import AdminContentSection from '@/sections/AdminContentSection';
 import AdminSupportSection from '@/sections/AdminSupportSection';
 import UserLoginSection from '@/sections/UserLoginSection';
+import SignUpSection from '@/sections/SignUpSection';
 import PrivacyPolicySection from '@/sections/PrivacyPolicySection';
 import TermsOfServiceSection from '@/sections/TermsOfServiceSection';
 import CommunityGuidelinesSection from '@/sections/CommunityGuidelinesSection';
@@ -45,6 +46,10 @@ const AppContent: React.FC = () => {
   const renderView = () => {
     if (currentView === 'user-login') {
       return <UserLoginSection />;
+    }
+
+    if (currentView === 'sign-up') {
+      return <SignUpSection />;
     }
 
     // Allow admin views to load regardless of user status
@@ -79,6 +84,8 @@ const AppContent: React.FC = () => {
 
 
     switch (currentView) {
+      case 'assessment':
+        return <AssessmentSection />;
       case 'assessment-result':
         return <AssessmentResultSection />;
       case 'browse':
@@ -127,10 +134,10 @@ const AppContent: React.FC = () => {
       <div className="flex-1">
         {renderView()}
       </div>
-      {!currentView.startsWith('admin-') && currentView !== 'user-login' && (
+      {!currentView.startsWith('admin-') && currentView !== 'user-login' && currentView !== 'sign-up' && (
         <Footer />
       )}
-      {!currentView.startsWith('admin-') && currentView !== 'user-login' && (
+      {!currentView.startsWith('admin-') && currentView !== 'user-login' && currentView !== 'sign-up' && (
         <>
           <EmailModal />
           <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
