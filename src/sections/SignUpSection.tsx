@@ -78,27 +78,35 @@ const SignUpSection: React.FC = () => {
     terms: {
       title: 'Terms of Service',
       sections: [
-        { heading: 'Payment Before Assessment', content: 'You must select a membership plan and complete payment before taking the assessment. This ensures commitment to the process.' },
-        { heading: 'Assessment Determines Placement', content: 'Your assessment results determine whether you are placed in the Growth Space (developing) or Alignment Space (established). This placement is based on your demonstrated readiness for intentional partnership.' },
-        { heading: 'Growth vs Advanced Environments', content: 'Growth Space is for those building relationship skills. Alignment Space is for those ready for advanced connection. You can retake the assessment after 3 months to move between spaces.' },
-        { heading: 'No Refunds Based on Placement', content: 'Membership fees are non-refundable based on assessment outcome or placement in either the Growth or Alignment Space. Your membership gives you access to your assigned space with all available features.' },
-        { heading: 'Account Cancellation', content: 'You may cancel your membership at any time. Your access continues through the end of your current billing period. No partial refunds are issued for unused portions of your billing period.' },
+        { heading: 'Payment Before Assessment', content: 'You must select a membership plan and complete payment before taking the assessment. This ensures commitment to the process and helps us maintain a serious, intentional community. Membership is non-refundable once the billing period has commenced.' },
+        { heading: 'Assessment Determines Placement', content: 'Your assessment results determine whether you are placed in the Growth Space (developing) or Alignment Space (established). This placement is based on your demonstrated readiness for intentional partnership. The assessment evaluates your emotional maturity, relationship readiness, and alignment with our community values.' },
+        { heading: 'Growth vs Advanced Environments', content: 'Growth Space is for those building relationship skills and working through developmental areas. Alignment Space is for those ready for advanced connection and demonstrated relationship readiness. You can retake the assessment after 3 months to move between spaces. Both spaces have full access to features and community.' },
+        { heading: 'No Refunds Based on Placement', content: 'Membership fees are non-refundable based on assessment outcome or placement in either the Growth or Alignment Space. Your membership gives you access to your assigned space with all available features, community events, resources, and support. You get full value regardless of placement.' },
+        { heading: 'Account Cancellation', content: 'You may cancel your membership at any time. Your access continues through the end of your current billing period. No partial refunds are issued for unused portions of your billing period. Upon cancellation, your account remains private and can be reactivated if you choose to return.' },
+        { heading: 'Membership Renewal', content: 'Your membership automatically renews at the end of your billing period unless you cancel. Billing occurs on the anniversary of your original purchase date. You will receive a reminder 7 days before renewal.' },
+        { heading: 'Profile Requirements', content: 'You must be at least 25 years old to create an account. Your profile information must be truthful and accurate. Duplicate accounts are not permitted. Accounts found to violate these terms will be suspended or permanently removed.' },
       ]
     },
     privacy: {
-      title: 'Privacy Policy',
+      title: 'Privacy Policy & Safety',
       sections: [
-        { heading: 'Safety Policies', content: 'Rooted Hearts prioritizes member safety. We conduct background checks (possibility of verification request) and maintain strict community standards. Reports of misconduct are reviewed and acted upon.' },
-        { heading: 'Background Check', content: 'You may be asked to complete a background check to verify your identity and ensure community safety. This is non-negotiable for continued access to Alignment Space.' },
-        { heading: 'Data Protection', content: 'Your personal information is encrypted and stored securely. We never sell your data to third parties. Your profile and communications are protected with industry-standard security.' },
+        { heading: 'Safety Policies', content: 'Rooted Hearts prioritizes member safety above all else. We conduct background checks (possibility of verification request) and maintain strict community standards. Reports of misconduct are reviewed and acted upon within 24-48 hours. We have a zero-tolerance policy for harassment, threats, or abusive behavior.' },
+        { heading: 'Background Check Requirements', content: 'You may be asked to complete a background check to verify your identity and ensure community safety. This is non-negotiable for continued access to Alignment Space. Background checks include verification of identity and screening for public records. Results are kept confidential and used only for safety purposes.' },
+        { heading: 'Data Protection & Security', content: 'Your personal information is encrypted using industry-standard TLS security. We never sell your data to third parties. Your profile information, messages, and communications are protected with encryption. Data is stored on secure servers with regular security audits.' },
+        { heading: 'Information We Collect', content: 'We collect profile information (name, age, city, photos), preference data, assessment responses, and communication history. We also collect technical data like IP address, device type, and usage patterns for service improvement. You control what information is visible to other members.' },
+        { heading: 'Third-Party Services', content: 'We use third-party payment processors (Stripe) to handle billing securely. We do not share personal information with marketing partners. We use analytics services to understand user behavior and improve the platform. All third parties are bound by confidentiality agreements.' },
+        { heading: 'Data Retention', content: 'Account data is retained for 12 months after account deletion for fraud prevention. You can request data deletion at any time. Communications are archived and accessible only to the parties involved. We comply with GDPR and other data protection regulations.' },
       ]
     },
     guidelines: {
       title: 'Community Guidelines',
       sections: [
-        { heading: 'Respectful Interaction', content: 'All members agree to treat others with respect and dignity. Harassment, discrimination, or abusive behavior will result in account suspension or removal.' },
-        { heading: 'Honest Representation', content: 'Profiles must be honest and authentic. Catfishing, fake information, or misleading photos violate community guidelines and result in removal.' },
-        { heading: 'Report Mechanism', content: 'If you experience inappropriate behavior, you can report members directly through the app. Our safety team reviews all reports and takes action as needed.' },
+        { heading: 'Respectful Interaction', content: 'All members agree to treat others with respect and dignity. Harassment, discrimination, or abusive behavior will result in account suspension or removal. This includes offensive language, threats, unwanted sexual content, or targeting based on protected characteristics. We maintain a safe space for all members.' },
+        { heading: 'Honest Representation', content: 'Profiles must be honest and authentic. Catfishing, fake information, or misleading photos violate community guidelines and result in removal. Use a recent photo that clearly shows your face. Do not impersonate others or create fake identities. Deception undermines community trust.' },
+        { heading: 'Report Mechanism', content: 'If you experience inappropriate behavior, you can report members directly through the app. Our safety team reviews all reports and takes action as needed. Include specific details and screenshots when reporting. Reports are investigated confidentially and seriously. We take every report seriously and respond promptly.' },
+        { heading: 'Appropriate Content', content: 'Explicit sexual content, hate speech, violence, or illegal activity is strictly prohibited. Photos must be appropriate and show your face clearly. Do not share contact information before private messaging. Do not use the platform for commercial purposes or self-promotion.' },
+        { heading: 'Conversation Standards', content: 'Engage in genuine, respectful conversations focused on building real connection. Do not spam members with generic messages. Avoid overly sexual conversations in initial interactions. Respect boundaries and read cues if someone is not interested in continuing dialogue.' },
+        { heading: 'Moderation & Enforcement', content: 'Our moderation team monitors for violations 24/7. First violations may result in warnings. Repeated violations result in temporary suspension. Serious violations (harassment, abuse, illegal activity) result in permanent removal. Appeals can be submitted within 30 days of removal.' },
       ]
     }
   };
