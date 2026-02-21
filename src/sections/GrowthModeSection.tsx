@@ -204,13 +204,13 @@ const GrowthModeSection: React.FC = () => {
             <div className="flex-1">
               {currentUser.userStatus === 'suspended' ? (
                 <>
-                  <h3 className="text-red-300 font-semibold mb-1">Account Suspended</h3>
+                  <h3 className="text-red-300 font-semibold mb-1">Account Status Update: Reassessment Extended</h3>
                   <p className="text-red-200/80 text-sm mb-3">
-                    Your account has been temporarily suspended due to violations of our community guidelines. You have been placed in Growth Mode to focus on strengthening your relationship foundation.
+                    Following a review of recent activity reported by a member of the community, your reassessment eligibility has been extended. You may continue participating in the Inner Work Space during this time.
                   </p>
                   {currentUser.suspensionEndDate && (
                     <p className="text-red-200/80 text-sm">
-                      <strong>Reactivation Date:</strong> {new Date(currentUser.suspensionEndDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      <strong>Reassessment Available:</strong> {new Date(currentUser.suspensionEndDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   )}
                 </>
