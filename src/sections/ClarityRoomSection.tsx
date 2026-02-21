@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
-import { journalService, JournalEntry } from '@/services/journalService';
+import type { JournalEntry } from '@/services/journalService';
+import { journalService } from '@/services/journalService';
 import { X, Edit2, Trash2, Plus } from 'lucide-react';
 
 const SECTIONS = {
@@ -126,7 +127,7 @@ const ClarityRoomSection: React.FC = () => {
           <div className="flex items-center justify-between">
             <h1 className="font-display text-3xl text-[#F6FFF2]">Clarity Room</h1>
             <button
-              onClick={() => setCurrentView('dashboard')}
+              onClick={() => setCurrentView('landing')}
               className="text-[#A9B5AA] hover:text-[#F6FFF2] transition"
             >
               ← Back
