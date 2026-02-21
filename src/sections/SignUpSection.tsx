@@ -19,8 +19,6 @@ const VALUES_BY_CATEGORY = {
   'Spiritual Foundation': ['Faith'],
 };
 
-const PRESET_VALUES = Object.values(VALUES_BY_CATEGORY).flat();
-
 const STEP_LABELS = [
   'Account',
   'Profile',
