@@ -21,64 +21,29 @@ const GrowthDetailSection: React.FC = () => {
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [resources, setResources] = useState(growthResources);
 
-  // Load resources from Supabase
+  // Load resources AND blogs on mount
   useEffect(() => {
-    const loadResources = async () => {
+    const loadData = async () => {
       try {
-        // Try to load from Supabase first
+        // Load resources from Supabase
         const supabaseResources = await resourceService.getResources('free');
         if (supabaseResources.length > 0) {
           console.log('Loaded free resources from Supabase:', supabaseResources.length);
-          console.log('[DEBUG] First resource full object:', supabaseResources[0]);
-          if (supabaseResources[0]?.modules) {
-            console.log('[DEBUG] First resource modules count:', supabaseResources[0].modules.length);
-            console.log('[DEBUG] First module:', supabaseResources[0].modules[0]);
-          }
           setResources(supabaseResources);
         } else {
-          // Fall back to localStorage
           const savedResources = localStorage.getItem('growth-resources');
-          if (savedResources) {
-            console.log('Loaded free resources from localStorage');
-            setResources(JSON.parse(savedResources));
-          } else {
-            // Use default resources
-            setResources(growthResources);
-          }
+          setResources(savedResources ? JSON.parse(savedResources) : growthResources);
         }
-      } catch (error) {
-        console.error('Error loading resources:', error);
-        // Fall back to localStorage
-        const savedResources = localStorage.getItem('growth-resources');
-        if (savedResources) {
-          setResources(JSON.parse(savedResources));
-        }
-      }
-    };
-    loadResources();
-  }, []);
 
-  // Load blogs from Supabase (includes module-only blogs)
-  useEffect(() => {
-    const loadBlogs = async () => {
-      try {
-        // Load ALL blogs (both module-only and public) from Supabase
-        const { data, error } = await supabase
+        // Load blogs from Supabase
+        const { data: blogData, error: blogError } = await supabase
           .from('blogs')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Failed to load blogs from Supabase:', error);
-          // Fall back to localStorage
-          const savedBlogs = localStorage.getItem('community-blogs');
-          if (savedBlogs) {
-            setBlogs(JSON.parse(savedBlogs));
-          }
-        } else if (data && data.length > 0) {
-          console.log('Loaded all blogs from Supabase:', data.length);
-          // Map the data to BlogArticle format
-          const blogs = data.map(row => ({
+        if (!blogError && blogData && blogData.length > 0) {
+          console.log('Loaded all blogs from Supabase:', blogData.length);
+          const mappedBlogs = blogData.map(row => ({
             id: row.id,
             title: row.title,
             content: row.content,
@@ -91,24 +56,26 @@ const GrowthDetailSection: React.FC = () => {
             createdAt: row.created_at,
             updatedAt: row.updated_at,
           }));
-          setBlogs(blogs);
+          setBlogs(mappedBlogs);
         } else {
-          // Fall back to localStorage if no Supabase data
           const savedBlogs = localStorage.getItem('community-blogs');
           if (savedBlogs) {
             setBlogs(JSON.parse(savedBlogs));
           }
         }
       } catch (error) {
-        console.error('Error loading blogs:', error);
-        // Fall back to localStorage
+        console.error('Error loading data:', error);
+        const savedResources = localStorage.getItem('growth-resources');
+        if (savedResources) {
+          setResources(JSON.parse(savedResources));
+        }
         const savedBlogs = localStorage.getItem('community-blogs');
         if (savedBlogs) {
           setBlogs(JSON.parse(savedBlogs));
         }
       }
     };
-    loadBlogs();
+    loadData();
   }, []);
 
   // Detailed module content
