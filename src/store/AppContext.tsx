@@ -216,10 +216,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const allBlocks = JSON.parse(localStorage.getItem('rooted_all_blocks') || '{}');
       const usersWhoBlockedMe = allBlocks[currentUser.id] || [];
+      console.log(`👤 Loading blockedByUsers for ${currentUser.id}:`, usersWhoBlockedMe);
       setBlockedByUsers(usersWhoBlockedMe);
     } catch (error) {
       console.error('Failed to load blocked by users:', error);
     }
+
+    // Listen for blocks-updated events (when another user blocks current user)
+    const handleBlocksUpdated = (event: any) => {
+      const allBlocks = event.detail;
+      const usersWhoBlockedMe = allBlocks[currentUser.id] || [];
+      console.log(`🔄 Blocks updated for ${currentUser.id}:`, usersWhoBlockedMe);
+      setBlockedByUsers(usersWhoBlockedMe);
+    };
+
+    window.addEventListener('blocks-updated', handleBlocksUpdated);
+    return () => window.removeEventListener('blocks-updated', handleBlocksUpdated);
   }, [currentUser.id]);
 
   // Load notifications for current user
@@ -227,10 +239,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
       const userNotifications = allNotifications[currentUser.id] || [];
+      console.log(`📬 Loaded notifications for ${currentUser.id}:`, userNotifications);
       setNotifications(userNotifications);
     } catch (error) {
       console.error('Failed to load notifications:', error);
     }
+
+    // Listen for notification-added events (when another admin sends notification to current user)
+    const handleNotificationAdded = (event: any) => {
+      const { userId, notification } = event.detail;
+      if (userId === currentUser.id) {
+        console.log(`🔔 New notification received for ${currentUser.id}:`, notification);
+        setNotifications(prev => [...prev, notification]);
+      }
+    };
+
+    window.addEventListener('notification-added', handleNotificationAdded);
+    return () => window.removeEventListener('notification-added', handleNotificationAdded);
   }, [currentUser.id]);
 
   // Save notifications to localStorage
@@ -889,6 +914,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!allBlocks[userId].includes(currentUser.id)) {
         allBlocks[userId].push(currentUser.id);
         localStorage.setItem('rooted_all_blocks', JSON.stringify(allBlocks));
+        console.log(`✅ Block recorded: ${currentUser.id} blocked by ${userId}. AllBlocks:`, allBlocks);
+        // Dispatch event so other tabs/users can reload
+        window.dispatchEvent(new CustomEvent('blocks-updated', { detail: allBlocks }));
       }
     } catch (e) {
       console.error('Error saving block record:', e);
@@ -1044,8 +1072,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       read: false,
     };
 
+    console.log(`📨 Adding ${type} notification to ${userId}:`, newNotification);
+
     // If this notification is for the current user, add to local state
     if (userId === currentUser.id) {
+      console.log(`✅ Notification is for current user ${currentUser.id}, updating state`);
       setNotifications(prev => [...prev, newNotification]);
     }
 
@@ -1057,6 +1088,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       allNotifications[userId].push(newNotification);
       localStorage.setItem('rooted_notifications', JSON.stringify(allNotifications));
+      console.log(`✅ Notification saved to localStorage. Current notifications for ${userId}:`, allNotifications[userId]);
+      // Dispatch event so logged-in user can reload notifications
+      window.dispatchEvent(new CustomEvent('notification-added', { detail: { userId, notification: newNotification } }));
     } catch (error) {
       console.error('Failed to save notification:', error);
     }

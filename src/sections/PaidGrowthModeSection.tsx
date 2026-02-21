@@ -5,7 +5,7 @@ import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, 
 import type { BlogArticle } from '@/types';
 
 const PaidGrowthModeSection: React.FC = () => {
-  const { setCurrentView, currentUser } = useApp();
+  const { setCurrentView, currentUser, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
   const [activeResource, setActiveResource] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'resources' | 'blog'>('resources');
   const [resources] = useState(() => {
@@ -13,6 +13,11 @@ const PaidGrowthModeSection: React.FC = () => {
     return saved ? JSON.parse(saved) : paidGrowthResources;
   });
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+
+  // Reload notifications when section loads
+  useEffect(() => {
+    reloadNotifications();
+  }, [reloadNotifications]);
 
   // Load blogs from localStorage
   useEffect(() => {
@@ -100,6 +105,33 @@ const PaidGrowthModeSection: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-10">
+        {/* Admin Notifications */}
+        {getUnreadNotifications().map(notification => (
+          <div
+            key={notification.id}
+            className={`mb-6 p-4 rounded-lg border-l-4 ${
+              notification.type === 'warning'
+                ? 'bg-blue-600/10 border-blue-500 text-blue-100'
+                : notification.type === 'suspension'
+                ? 'bg-orange-600/10 border-orange-500 text-orange-100'
+                : 'bg-red-600/10 border-red-500 text-red-100'
+            }`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="font-medium mb-1">{notification.title}</h3>
+                <p className="text-sm opacity-90">{notification.message}</p>
+              </div>
+              <button
+                onClick={() => markNotificationAsRead(notification.id)}
+                className="text-xs opacity-60 hover:opacity-100 transition-opacity ml-4 whitespace-nowrap"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        ))}
+
         {/* Hero Section */}
         <div className="text-center mb-12 pb-12 border-b border-emerald-500/20">
           <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
