@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import type { User } from '@/types';
-import { ArrowLeft, MessageCircle, Check, Clock, Flag, HelpCircle } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Check, Clock, Flag, HelpCircle, BookOpen } from 'lucide-react';
 import ReportUserModal from '@/components/ReportUserModal';
 
 const InboxSection: React.FC = () => {
@@ -130,13 +130,22 @@ const InboxSection: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => setShowSupportModal(true)}
-            className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
-            title="Contact Support"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCurrentView('clarity-room')}
+              className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+              title="Clarity Room"
+            >
+              <BookOpen className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowSupportModal(true)}
+              className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+              title="Contact Support"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
