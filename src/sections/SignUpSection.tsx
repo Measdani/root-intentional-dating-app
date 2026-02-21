@@ -408,8 +408,8 @@ const SignUpSection: React.FC = () => {
               <div className="space-y-2">
                 {[
                   { value: 'marriage', label: 'Marriage' },
-                  { value: 'long-term', label: 'Long-Term Partnership' },
-                  { value: 'life-partnership', label: 'Life Partnership' },
+                  { value: 'long-term', label: 'Long-term committed partnership' },
+                  { value: 'life-partnership', label: 'Life partnership without legal marriage' },
                 ].map((opt) => (
                   <button
                     key={opt.value}
@@ -461,7 +461,7 @@ const SignUpSection: React.FC = () => {
               <div className="space-y-2">
                 {[
                   { value: 'wants', label: 'Definitely want' },
-                  { value: 'open', label: 'Open to it' },
+                  { value: 'open', label: 'Open if aligned with the right partner' },
                   { value: 'does-not-want', label: 'Do not want' },
                   { value: 'unsure', label: 'Still deciding' },
                 ].map((opt) => (
@@ -494,10 +494,10 @@ const SignUpSection: React.FC = () => {
               </label>
               <div className="space-y-2">
                 {[
-                  { value: 'actively-wants', label: 'Actively want it' },
-                  { value: 'comfortable', label: 'Comfortable with it' },
-                  { value: 'open-inexperienced', label: 'Open but inexperienced' },
-                  { value: 'prefers-child-free', label: 'Prefer child-free' },
+                  { value: 'actively-wants', label: 'Yes, absolutely' },
+                  { value: 'comfortable', label: 'Yes, depending on the situation' },
+                  { value: 'open-inexperienced', label: 'Prefer not' },
+                  { value: 'prefers-child-free', label: 'No' },
                 ].map((opt) => (
                   <button
                     key={opt.value}
