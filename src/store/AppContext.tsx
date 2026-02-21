@@ -832,7 +832,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     details: string,
     conversationId?: string
   ): Promise<string> => {
-    const reportId = `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate a proper UUID v4 for Supabase compatibility
+    const reportId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
 
     const report: Report = {
       id: reportId,
