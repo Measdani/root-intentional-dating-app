@@ -140,6 +140,12 @@ const AssessmentSection: React.FC = () => {
     localStorage.removeItem('currentUser');
     window.dispatchEvent(new CustomEvent('user-logout'));
 
+    // Reset assessment state
+    setShowAssessmentStatement(true);
+    setShowQuestions(false);
+    setCurrentQuestionIndex(0);
+    setUnderstoodAssessment(false);
+
     // Navigate to landing page
     setCurrentView('landing');
   };
