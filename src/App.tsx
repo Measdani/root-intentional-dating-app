@@ -52,6 +52,11 @@ const AppContent: React.FC = () => {
       return <SignUpSection />;
     }
 
+    // Public blog view (no authentication required)
+    if (currentView === 'community-blog') {
+      return <CommunityBlogPage />;
+    }
+
     // Allow admin views to load regardless of user status
     if (currentView.startsWith('admin-')) {
       if (!session.isAuthenticated) {
@@ -100,8 +105,6 @@ const AppContent: React.FC = () => {
         return <GrowthModeSection />;
       case 'growth-detail':
         return <GrowthDetailSection />;
-      case 'community-blog':
-        return <CommunityBlogPage />;
       case 'paid-growth-mode':
         return <PaidGrowthModeSection />;
       case 'privacy-policy':

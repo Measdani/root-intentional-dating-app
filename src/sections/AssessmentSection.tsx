@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { assessmentQuestions, followUpQuestions, calculateAssessmentResult } from '@/data/assessment';
-import { ChevronRight, AlertCircle } from 'lucide-react';
+import { ChevronRight, AlertCircle, BookOpen, Clock } from 'lucide-react';
+import type { BlogArticle } from '@/types';
+import { blogService } from '@/services/blogService';
 
 const AssessmentSection: React.FC = () => {
   const {
@@ -11,12 +13,31 @@ const AssessmentSection: React.FC = () => {
     saveAssessmentDate,
     setCurrentView
   } = useApp();
-  
+
   const [isVisible, setIsVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+  const [currentBlogIndex, setCurrentBlogIndex] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
+
+  // Load blogs from Supabase
+  useEffect(() => {
+    const loadBlogs = async () => {
+      try {
+        const supabaseBlogList = await blogService.getAllBlogs();
+        if (supabaseBlogList.length > 0) {
+          // Only show public blogs (not module-only)
+          const publicBlogs = supabaseBlogList.filter(b => !b.moduleOnly);
+          setBlogs(publicBlogs.slice(0, 3)); // Show latest 3
+        }
+      } catch (error) {
+        console.error('Error loading blogs:', error);
+      }
+    };
+    loadBlogs();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -123,30 +144,102 @@ const AssessmentSection: React.FC = () => {
           {/* Content */}
           <div className="relative z-10 text-center px-6 md:px-12 w-full max-w-lg">
             {assessmentAnswers.length === 0 ? (
-              <>
-                <h2
-                  className={`font-display text-[clamp(28px,4vw,52px)] text-[#F6FFF2] mb-4 transition-all duration-700 delay-300 ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                  }`}
-                >
-                  NOT EVERYONE<br />GETS IN.
-                </h2>
-                <p
-                  className={`text-[#A9B5AA] text-base md:text-lg mb-8 max-w-sm mx-auto transition-all duration-700 delay-500 ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-                  }`}
-                >
-                  A short assessment. Real standards. No performative answers.
-                </p>
-                <button
-                  onClick={startAssessment}
-                  className={`btn-primary transition-all duration-700 delay-700 ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}
-                >
-                  Preview the questions
-                </button>
-              </>
+              // Blog Showcase
+              blogs.length > 0 ? (
+                <div className="space-y-6">
+                  <h2
+                    className={`font-display text-[clamp(28px,4vw,52px)] text-[#F6FFF2] transition-all duration-700 delay-300 ${
+                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                    }`}
+                  >
+                    Community<br />Stories
+                  </h2>
+
+                  {/* Blog Card */}
+                  {blogs[currentBlogIndex] && (
+                    <div
+                      className={`space-y-4 transition-all duration-500 ${
+                        isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                      }`}
+                    >
+                      <div className="bg-[#111611]/60 border border-[#1A211A] rounded-lg p-4">
+                        <div className="flex items-start gap-2 mb-2">
+                          <span className="text-xs bg-[#D9FF3D]/10 text-[#D9FF3D] px-2 py-1 rounded">
+                            {blogs[currentBlogIndex].category}
+                          </span>
+                          {blogs[currentBlogIndex].readTime && (
+                            <span className="text-xs text-[#A9B5AA] flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {blogs[currentBlogIndex].readTime}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-[#F6FFF2] font-semibold line-clamp-2">
+                          {blogs[currentBlogIndex].title}
+                        </h3>
+                        <p className="text-[#A9B5AA] text-sm mt-2 line-clamp-2">
+                          {blogs[currentBlogIndex].excerpt}
+                        </p>
+                      </div>
+
+                      {/* Navigation */}
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => setCurrentBlogIndex((prev) => (prev - 1 + blogs.length) % blogs.length)}
+                          className="text-[#D9FF3D] hover:text-[#F6FFF2] transition"
+                        >
+                          ← Prev
+                        </button>
+                        <span className="text-[#A9B5AA] text-sm">
+                          {currentBlogIndex + 1} / {blogs.length}
+                        </span>
+                        <button
+                          onClick={() => setCurrentBlogIndex((prev) => (prev + 1) % blogs.length)}
+                          className="text-[#D9FF3D] hover:text-[#F6FFF2] transition"
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setCurrentView('community-blog')}
+                    className={`btn-primary w-full transition-all duration-700 delay-700 ${
+                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                    }`}
+                  >
+                    <BookOpen className="w-4 h-4 inline mr-2" />
+                    View All Articles
+                  </button>
+                </div>
+              ) : (
+                // Fallback Assessment Section
+                <>
+                  <h2
+                    className={`font-display text-[clamp(28px,4vw,52px)] text-[#F6FFF2] mb-4 transition-all duration-700 delay-300 ${
+                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                    }`}
+                  >
+                    NOT EVERYONE<br />GETS IN.
+                  </h2>
+                  <p
+                    className={`text-[#A9B5AA] text-base md:text-lg mb-8 max-w-sm mx-auto transition-all duration-700 delay-500 ${
+                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+                    }`}
+                  >
+                    A short assessment. Real standards. No performative answers.
+                  </p>
+                  <button
+                    onClick={startAssessment}
+                    className={`btn-primary transition-all duration-700 delay-700 ${
+                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                    }`}
+                  >
+                    Preview the questions
+                  </button>
+                </>
+              )
             ) : (
               <div id="questions-container" className="w-full">
                 {/* Progress Bar */}
