@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { assessmentQuestions, followUpQuestions, calculateAssessmentResult } from '@/data/assessment';
+import { sampleBlogs } from '@/data/blogs';
 import { ChevronRight, AlertCircle, BookOpen, Clock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
@@ -22,7 +23,7 @@ const AssessmentSection: React.FC = () => {
   const [currentBlogIndex, setCurrentBlogIndex] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
 
-  // Load blogs from Supabase
+  // Load blogs from Supabase or localStorage, fallback to sample blogs
   useEffect(() => {
     const loadBlogs = async () => {
       try {
@@ -31,10 +32,28 @@ const AssessmentSection: React.FC = () => {
           // Only show public blogs (not module-only)
           const publicBlogs = supabaseBlogList.filter(b => !b.moduleOnly);
           setBlogs(publicBlogs.slice(0, 3)); // Show latest 3
+          return;
         }
       } catch (error) {
-        console.error('Error loading blogs:', error);
+        console.error('Error loading blogs from Supabase:', error);
       }
+
+      // Try localStorage as fallback
+      try {
+        const saved = localStorage.getItem('community-blogs');
+        if (saved) {
+          const localBlogs = JSON.parse(saved);
+          const publicBlogs = localBlogs.filter((b: BlogArticle) => !b.moduleOnly);
+          setBlogs(publicBlogs.slice(0, 3));
+          return;
+        }
+      } catch (error) {
+        console.error('Error loading blogs from localStorage:', error);
+      }
+
+      // Use sample blogs as final fallback
+      const publicSamples = sampleBlogs.filter(b => !b.moduleOnly);
+      setBlogs(publicSamples.slice(0, 3));
     };
     loadBlogs();
   }, []);
