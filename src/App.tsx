@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import HeroSection from '@/sections/HeroSection';
 import ProblemSection from '@/sections/ProblemSection';
 import AssessmentSection from '@/sections/AssessmentSection';
+import CommunityBlogPreviewSection from '@/sections/CommunityBlogPreviewSection';
 import AssessmentResultSection from '@/sections/AssessmentResultSection';
 import AlignmentSection from '@/sections/AlignmentSection';
 import FamilySection from '@/sections/FamilySection';
@@ -40,7 +41,7 @@ import AdminAccessButton from '@/components/AdminAccessButton';
 import UserAccessButton from '@/components/UserAccessButton';
 
 const AppContent: React.FC = () => {
-  const { currentView, showSupportModal, setShowSupportModal } = useApp();
+  const { currentView, showSupportModal, setShowSupportModal, currentUser, setCurrentView } = useApp();
   const { session } = useAdmin();
 
   const renderView = () => {
@@ -87,6 +88,10 @@ const AppContent: React.FC = () => {
       return <AdminLayout>{renderAdminView()}</AdminLayout>;
     }
 
+    // Protect assessment view - only accessible to logged-in users
+    if (currentView === 'assessment' && !currentUser) {
+      return <UserLoginSection />;
+    }
 
     switch (currentView) {
       case 'assessment':
@@ -123,6 +128,7 @@ const AppContent: React.FC = () => {
             <HeroSection />
             <ProblemSection />
             <AssessmentSection />
+            <CommunityBlogPreviewSection />
             <AlignmentSection />
             <FamilySection />
             <GrowthSection />
