@@ -21,6 +21,7 @@ const AssessmentSection: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const [currentBlogIndex, setCurrentBlogIndex] = useState(0);
+  const [autoStarted, setAutoStarted] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
   // Load blogs from Supabase or localStorage, fallback to sample blogs
@@ -81,6 +82,27 @@ const AssessmentSection: React.FC = () => {
     const fallback = setTimeout(() => setIsVisible(true), 200);
     return () => clearTimeout(fallback);
   }, []);
+
+  // Auto-start assessment when user is sent directly to assessment view (not from landing page preview)
+  // Check if assessment is being viewed as a full page (height > 500px for section)
+  useEffect(() => {
+    if (assessmentAnswers.length === 0 && !autoStarted && sectionRef.current) {
+      const checkHeight = setTimeout(() => {
+        const height = sectionRef.current?.clientHeight || 0;
+        // If section is very tall (full page view), not embedded, auto-start assessment
+        if (height > 500 && !document.querySelector('main.relative')) {
+          // This is the standalone assessment view, auto-start it
+          setAutoStarted(true);
+          // Simulate starting the assessment by setting first question index
+          const questionsContainer = document.getElementById('questions-container');
+          if (questionsContainer) {
+            questionsContainer.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      }, 300);
+      return () => clearTimeout(checkHeight);
+    }
+  }, [assessmentAnswers, autoStarted]);
 
   const currentQuestions = showFollowUp ? followUpQuestions : assessmentQuestions;
   const currentQuestion = currentQuestions[currentQuestionIndex];
@@ -162,8 +184,12 @@ const AssessmentSection: React.FC = () => {
 
           {/* Content */}
           <div className="relative z-10 text-center px-6 md:px-12 w-full max-w-lg">
-            {assessmentAnswers.length === 0 ? (
-              // Blog Showcase
+            {/*
+              Show blog preview only if embedded in landing page (main element exists)
+              Otherwise (full page assessment view), show questions directly
+            */}
+            {assessmentAnswers.length === 0 && document.querySelector('main.relative') ? (
+              // Blog Showcase (embedded in landing page)
               blogs.length > 0 ? (
                 <div className="space-y-6">
                   <h2
