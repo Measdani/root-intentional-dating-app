@@ -208,43 +208,25 @@ const AssessmentSection: React.FC = () => {
       <div className="relative z-10 w-full max-w-3xl px-4 md:px-8 py-12">
         {assessmentAnswers.length === 0 && document.querySelector('main.relative') ? (
           // Assessment Preview (embedded in landing page)
-          <div
-            className={`text-center transition-all duration-1000 ease-out ${
-              isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-            }`}
-          >
-            <h2
-              className={`font-display text-[clamp(36px,6vw,64px)] text-[#F6FFF2] mb-6 transition-all duration-700 delay-300 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-            >
+          <div className="text-center">
+            <h2 className="font-display text-[clamp(36px,6vw,64px)] text-[#F6FFF2] mb-6">
               BUILT FOR<br />INTENTIONAL LOVE
             </h2>
-            <div
-              className={`text-[#A9B5AA] text-base md:text-lg mb-8 max-w-2xl mx-auto transition-all duration-700 delay-500 space-y-4 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-              }`}
-            >
+            <div className="text-[#A9B5AA] text-base md:text-lg mb-8 max-w-2xl mx-auto space-y-4">
               <p>A brief readiness assessment. Real structure. Thoughtful placement.</p>
               <p className="text-[#F6FFF2]">This isn't about perfection.<br />It's about alignment.</p>
               <p>Before joining, take a moment to understand how we define relationship readiness and why structure matters here.</p>
             </div>
             <button
               onClick={() => setCurrentView('community-blog')}
-              className={`btn-primary transition-all duration-700 delay-700 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
+              className="btn-primary"
             >
               Learn How We Define Readiness →
             </button>
           </div>
         ) : showAssessmentStatement ? (
           // Assessment Statement (full-screen page)
-          <div
-            className={`transition-all duration-1000 ease-out ${
-              isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-            }`}
-          >
+          <div>
             <h1 className="font-display text-[clamp(40px,7vw,56px)] text-[#F6FFF2] mb-12 text-center">
               Before You Begin Your Assessment
             </h1>

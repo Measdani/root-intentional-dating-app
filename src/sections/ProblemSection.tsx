@@ -40,11 +40,7 @@ const ProblemSection: React.FC = () => {
       </div>
 
       {/* Left Circle */}
-      <div
-        className={`absolute left-[5vw] top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out ${
-          isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-[50vw]'
-        }`}
-      >
+      <div className="absolute left-[5vw] top-1/2 -translate-y-1/2">
         <div className="w-[45vw] h-[45vw] max-w-[520px] max-h-[520px] circle-frame">
           <div className="absolute inset-3 rounded-full overflow-hidden">
             <img
@@ -58,11 +54,7 @@ const ProblemSection: React.FC = () => {
       </div>
 
       {/* Right Text Block */}
-      <div
-        className={`absolute right-[8vw] top-1/2 -translate-y-1/2 max-w-[420px] transition-all duration-1000 delay-200 ease-out ${
-          isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-[40vw]'
-        }`}
-      >
+      <div className="absolute right-[8vw] top-1/2 -translate-y-1/2 max-w-[420px]">
         <h2 className="font-display text-[clamp(36px,5vw,72px)] text-[#F6FFF2] mb-6 leading-none">
           SWIPE.<br />
           MATCH.<br />
