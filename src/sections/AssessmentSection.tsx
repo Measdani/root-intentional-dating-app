@@ -235,7 +235,7 @@ const AssessmentSection: React.FC = () => {
               A short assessment. Real standards. No performative answers.
             </p>
             <button
-              onClick={startAssessment}
+              onClick={() => setCurrentView('community-blog')}
               className={`btn-primary transition-all duration-700 delay-700 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
