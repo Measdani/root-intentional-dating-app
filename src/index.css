@@ -99,7 +99,7 @@
   }
   
   .circle-frame {
-    @apply rounded-full border-2 border-[#F6FFF2]/60 flex items-center justify-center;
+    @apply rounded-full border-[3px] border-[#F6FFF2]/80 flex items-center justify-center;
   }
   
   .card-rooted {
