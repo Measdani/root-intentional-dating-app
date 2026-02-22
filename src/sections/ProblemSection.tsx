@@ -29,7 +29,7 @@ const ProblemSection: React.FC = () => {
       className="section-pinned bg-[#0B0F0C] flex items-center"
     >
       {/* Background */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none">
         <img
           src="https://images.unsplash.com/photo-1511497584788-876760111969?w=1920&q=80"
           alt="Misty forest"
