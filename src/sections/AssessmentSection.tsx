@@ -20,6 +20,7 @@ const AssessmentSection: React.FC = () => {
   const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null);
   const [answerTimestamps, setAnswerTimestamps] = useState<Array<{ questionId: string; timestamp: number; score: number }>>([]);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [understoodAssessment, setUnderstoodAssessment] = useState(false);
 
   // Track if assessment was abandoned (user left mid-assessment)
   useEffect(() => {
@@ -271,11 +272,26 @@ const AssessmentSection: React.FC = () => {
               </div>
             </div>
 
+            {/* Confirmation Checkbox */}
+            <div className="flex items-center gap-3 mt-8 mb-8 bg-[#111611]/80 border border-[#1A211A] rounded-lg p-4">
+              <input
+                type="checkbox"
+                id="understand-assessment"
+                checked={understoodAssessment}
+                onChange={(e) => setUnderstoodAssessment(e.target.checked)}
+                className="w-5 h-5 cursor-pointer accent-[#D9FF3D]"
+              />
+              <label htmlFor="understand-assessment" className="text-[#A9B5AA] cursor-pointer flex-1">
+                I understand the assessment requirements and commitment
+              </label>
+            </div>
+
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mt-12">
               <button
                 onClick={beginAssessment}
-                className="btn-primary flex-1"
+                disabled={!understoodAssessment}
+                className={`btn-primary flex-1 ${!understoodAssessment ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 Begin Assessment
               </button>
