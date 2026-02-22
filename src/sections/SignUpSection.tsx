@@ -69,10 +69,8 @@ const SignUpSection: React.FC = () => {
   const [bio, setBio] = useState('');
 
   // Step 5 - Policies
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
-  const [acceptedGuidelines, setAcceptedGuidelines] = useState(false);
-  const [viewingPolicy, setViewingPolicy] = useState<'terms' | 'privacy' | 'guidelines' | null>(null);
+  const [acceptedPolicies, setAcceptedPolicies] = useState<Record<string, boolean>>({});
+  const [viewingPolicy, setViewingPolicy] = useState<string | null>(null);
 
   const POLICIES = {
     terms: {
