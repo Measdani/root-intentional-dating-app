@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { assessmentQuestions, followUpQuestions, calculateAssessmentResult } from '@/data/assessment';
 import { ChevronRight, AlertCircle } from 'lucide-react';
@@ -12,7 +12,6 @@ const AssessmentSection: React.FC = () => {
     setCurrentView
   } = useApp();
 
-  const [isVisible, setIsVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -21,7 +20,6 @@ const AssessmentSection: React.FC = () => {
   const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null);
   const [answerTimestamps, setAnswerTimestamps] = useState<Array<{ questionId: string; timestamp: number; score: number }>>([]);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
 
   // Track if assessment was abandoned (user left mid-assessment)
   useEffect(() => {
@@ -55,30 +53,6 @@ const AssessmentSection: React.FC = () => {
       window.removeEventListener('popstate', handlePopState);
     };
   }, [assessmentStartTime, showQuestions, showAssessmentStatement]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.3 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Fallback for standalone assessment rendering (not embedded in landing page)
-  useEffect(() => {
-    const fallback = setTimeout(() => setIsVisible(true), 200);
-    return () => clearTimeout(fallback);
-  }, []);
 
   const currentQuestions = showFollowUp ? followUpQuestions : assessmentQuestions;
   const currentQuestion = currentQuestions[currentQuestionIndex];
@@ -189,7 +163,6 @@ const AssessmentSection: React.FC = () => {
 
   return (
     <section
-      ref={sectionRef}
       id="section-assessment"
       className="min-h-screen bg-[#0B0F0C] flex items-center justify-center"
     >
