@@ -31,7 +31,7 @@ const ProblemSection: React.FC = () => {
       </div>
 
       {/* Right Text Block */}
-      <div className="absolute right-[8vw] top-1/2 -translate-y-1/2 max-w-[420px]">
+      <div className="absolute right-[8vw] top-1/2 -translate-y-1/2 max-w-[420px] bg-[#0B0F0C]/85 backdrop-blur-sm rounded-lg p-8">
         <h2 className="font-display text-[clamp(36px,5vw,72px)] text-[#F6FFF2] mb-6 leading-none">
           SWIPE.<br />
           MATCH.<br />
