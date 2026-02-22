@@ -11,9 +11,10 @@ const ProblemSection: React.FC = () => {
         <img
           src="https://images.unsplash.com/photo-1511497584788-876760111969?w=1920&q=80"
           alt="Misty forest"
-          className="w-full h-full object-cover opacity-70"
+          className="w-full h-full object-cover opacity-80"
         />
-        <div className="absolute inset-0 gradient-vignette opacity-10" />
+        <div className="absolute inset-0 gradient-vignette opacity-5" />
+        <div className="absolute inset-0 bg-white/15" />
       </div>
 
       {/* Left Circle */}
