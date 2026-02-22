@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { sampleBlogs } from '@/data/blogs';
-import { BookOpen, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, Clock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
 
@@ -9,7 +9,6 @@ const CommunityBlogPreviewSection: React.FC = () => {
   const { setCurrentView } = useApp();
   const [isVisible, setIsVisible] = useState(false);
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
-  const [currentBlogIndex, setCurrentBlogIndex] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
 
   // Load public blogs from Supabase or localStorage, fallback to sample blogs
@@ -105,7 +104,7 @@ const CommunityBlogPreviewSection: React.FC = () => {
                 isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
               }`}
             >
-              {blogs.map((blog, idx) => (
+              {blogs.map((blog) => (
                 <button
                   key={blog.id}
                   onClick={() => setCurrentView('community-blog')}

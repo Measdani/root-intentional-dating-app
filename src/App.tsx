@@ -41,7 +41,7 @@ import AdminAccessButton from '@/components/AdminAccessButton';
 import UserAccessButton from '@/components/UserAccessButton';
 
 const AppContent: React.FC = () => {
-  const { currentView, showSupportModal, setShowSupportModal, currentUser, setCurrentView } = useApp();
+  const { currentView, showSupportModal, setShowSupportModal, currentUser } = useApp();
   const { session } = useAdmin();
 
   const renderView = () => {
