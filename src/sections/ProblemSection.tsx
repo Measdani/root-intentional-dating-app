@@ -14,7 +14,6 @@ const ProblemSection: React.FC = () => {
           className="w-full h-full object-cover opacity-80"
         />
         <div className="absolute inset-0 gradient-vignette opacity-5" />
-        <div className="absolute inset-0 bg-white/15" />
       </div>
 
       {/* Left Circle */}
