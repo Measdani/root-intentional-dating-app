@@ -22,6 +22,7 @@ const VALUES_BY_CATEGORY = {
 const STEP_LABELS = [
   'Account',
   'Profile',
+  'Photo',
   'Preferences',
   'Values',
   'Policies',
@@ -32,7 +33,7 @@ const SignUpSection: React.FC = () => {
   const { setCurrentView } = useApp();
 
   // Step tracking
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -47,7 +48,11 @@ const SignUpSection: React.FC = () => {
   const [city, setCity] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | ''>('');
 
-  // Step 3 - Preferences
+  // Step 3 - Photo
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
+
+  // Step 4 - Preferences
   const [partnershipIntent, setPartnershipIntent] = useState<
     'marriage' | 'long-term' | 'life-partnership' | ''
   >('');
@@ -63,12 +68,12 @@ const SignUpSection: React.FC = () => {
     | ''
   >('');
 
-  // Step 4 - Values & Vision
+  // Step 5 - Values & Vision
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
   const [growthFocus, setGrowthFocus] = useState('');
   const [bio, setBio] = useState('');
 
-  // Step 5 - Policies
+  // Step 6 - Policies
   const [acceptedPolicies, setAcceptedPolicies] = useState<Record<string, boolean>>({});
   const [viewingPolicy, setViewingPolicy] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState(-1);
@@ -162,6 +167,9 @@ const SignUpSection: React.FC = () => {
         if (!gender) errs.gender = 'Please select gender';
         break;
       case 3:
+        if (!photoFile) errs.photo = 'Please upload a photo';
+        break;
+      case 4:
         if (!partnershipIntent) errs.partnershipIntent = 'Please select intent';
         if (hasChildren === null)
           errs.hasChildren = 'Please answer this question';
@@ -169,12 +177,12 @@ const SignUpSection: React.FC = () => {
         if (!openToPartnerWithParent)
           errs.openToPartnerWithParent = 'Please make a selection';
         break;
-      case 4:
+      case 5:
         if (selectedValues.length < 3)
           errs.values = 'Select at least 3 values';
         if (!growthFocus.trim()) errs.growthFocus = 'Growth focus is required';
         break;
-      case 5:
+      case 6:
         const allAccepted = Object.values(acceptedPolicies).every(v => v);
         if (!allAccepted) errs.policies = 'You must accept all policies to continue';
         break;
@@ -222,6 +230,7 @@ const SignUpSection: React.FC = () => {
         age: parseInt(age),
         city: city.trim(),
         gender: gender as 'male' | 'female',
+        photo: photoPreview, // Store base64 preview
         partnershipIntent: partnershipIntent as
           | 'marriage'
           | 'long-term'
@@ -296,12 +305,13 @@ const SignUpSection: React.FC = () => {
           <h1 className="text-2xl font-display font-bold text-[#F6FFF2]">
             {step === 1 && 'Create Your Account'}
             {step === 2 && 'Tell Us About Yourself'}
-            {step === 3 && 'Your Relationship Vision'}
-            {step === 4 && 'Your Values & Growth'}
-            {step === 5 && 'Community Policies'}
-            {step === 6 && 'Choose Your Membership'}
+            {step === 3 && 'Upload Your Photo'}
+            {step === 4 && 'Your Relationship Vision'}
+            {step === 5 && 'Your Values & Growth'}
+            {step === 6 && 'Community Policies'}
+            {step === 7 && 'Choose Your Membership'}
           </h1>
-          <p className="text-sm text-[#A9B5AA]">Step {step} of 6</p>
+          <p className="text-sm text-[#A9B5AA]">Step {step} of 7</p>
         </div>
 
         {/* Progress Bar */}
@@ -446,8 +456,69 @@ const SignUpSection: React.FC = () => {
           </div>
         )}
 
-        {/* Step 3 - Preferences */}
+        {/* Step 3 - Photo */}
         {step === 3 && (
+          <div className="space-y-6">
+            <div>
+              <label className="text-sm font-medium text-[#F6FFF2] block mb-4">
+                Profile Photo
+              </label>
+              <div className="flex flex-col items-center gap-4">
+                {photoPreview && (
+                  <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-[#D9FF3D]">
+                    <img
+                      src={photoPreview}
+                      alt="Photo preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      // Validate file size (max 5MB)
+                      if (file.size > 5 * 1024 * 1024) {
+                        setErrors({ ...errors, photo: 'File size must be under 5MB' });
+                        return;
+                      }
+                      setPhotoFile(file);
+                      // Create preview
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setPhotoPreview(reader.result as string);
+                        setErrors({ ...errors, photo: '' });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="photo-input"
+                />
+                <label
+                  htmlFor="photo-input"
+                  className="w-full px-4 py-3 rounded-lg border border-[#1A211A] bg-[#111611] text-[#F6FFF2] cursor-pointer hover:border-[#D9FF3D]/50 transition-colors text-center"
+                >
+                  {photoFile ? 'Change Photo' : 'Choose Photo'}
+                </label>
+                {errors.photo && (
+                  <p className="text-sm text-red-400 flex items-center gap-2">
+                    <AlertCircle size={16} />
+                    {errors.photo}
+                  </p>
+                )}
+              </div>
+              <p className="text-xs text-[#A9B5AA] mt-3 text-center">
+                PNG, JPG, or GIF up to 5MB
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4 - Preferences */}
+        {step === 4 && (
           <div className="space-y-6">
             <div>
               <label className="text-sm font-medium text-[#F6FFF2] block mb-3">
@@ -572,8 +643,8 @@ const SignUpSection: React.FC = () => {
           </div>
         )}
 
-        {/* Step 4 - Values & Vision */}
-        {step === 4 && (
+        {/* Step 5 - Values & Vision */}
+        {step === 5 && (
           <div className="space-y-6">
             <div>
               <label className="text-sm font-medium text-[#F6FFF2] block mb-3">
@@ -644,8 +715,8 @@ const SignUpSection: React.FC = () => {
           </div>
         )}
 
-        {/* Step 5 - Policies */}
-        {step === 5 && !viewingPolicy && (
+        {/* Step 6 - Policies */}
+        {step === 6 && !viewingPolicy && (
           <div className="space-y-4">
             <label className="text-sm font-medium text-[#F6FFF2] block mb-3">
               Review & Accept Policies
@@ -703,7 +774,7 @@ const SignUpSection: React.FC = () => {
         )}
 
         {/* Policy Detail View */}
-        {step === 5 && viewingPolicy && (() => {
+        {step === 6 && viewingPolicy && (() => {
           const policy = (POLICIES as Record<string, any>)[viewingPolicy];
 
           if (!policy?.title) return null;
@@ -778,8 +849,8 @@ const SignUpSection: React.FC = () => {
           );
         })()}
 
-        {/* Step 6 - Payment */}
-        {step === 6 && (
+        {/* Step 7 - Membership */}
+        {step === 7 && (
           <div className="space-y-4">
             <div className="space-y-3">
               {[
@@ -845,7 +916,7 @@ const SignUpSection: React.FC = () => {
         )}
 
         {/* Navigation Buttons */}
-        {step < 6 && (
+        {step < 7 && (
           <div className="flex gap-3 pt-2">
             {step > 1 && (
               <button
