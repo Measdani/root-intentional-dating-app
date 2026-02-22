@@ -683,7 +683,7 @@ const SignUpSection: React.FC = () => {
           const parts = viewingPolicy.split('_');
           const key = parts[0];
           const sectionIdx = parts[1] ? parseInt(parts[1]) : null;
-          const policy = POLICIES[key] as any;
+          const policy = (POLICIES as Record<string, any>)[key];
           let title = '';
           let content = '';
 
