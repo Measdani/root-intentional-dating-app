@@ -214,19 +214,21 @@ const AssessmentSection: React.FC = () => {
             }`}
           >
             <h2
-              className={`font-display text-[clamp(36px,6vw,64px)] text-[#F6FFF2] mb-4 transition-all duration-700 delay-300 ${
+              className={`font-display text-[clamp(36px,6vw,64px)] text-[#F6FFF2] mb-6 transition-all duration-700 delay-300 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
             >
-              NOT EVERYONE<br />GETS IN.
+              BUILT FOR<br />INTENTIONAL LOVE
             </h2>
-            <p
-              className={`text-[#A9B5AA] text-base md:text-lg mb-8 max-w-2xl mx-auto transition-all duration-700 delay-500 ${
+            <div
+              className={`text-[#A9B5AA] text-base md:text-lg mb-8 max-w-2xl mx-auto transition-all duration-700 delay-500 space-y-4 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
             >
-              A short assessment. Real standards. No performative answers.
-            </p>
+              <p>A brief readiness assessment. Real structure. Thoughtful placement.</p>
+              <p className="text-[#F6FFF2]">This isn't about perfection.<br />It's about alignment.</p>
+              <p>Before joining, take a moment to understand how we define relationship readiness and why structure matters here.</p>
+            </div>
             <button
               onClick={() => setCurrentView('community-blog')}
               className={`btn-primary transition-all duration-700 delay-700 ${
