@@ -134,7 +134,7 @@ const AssessmentSection: React.FC = () => {
         const result = calculateAssessmentResult(finalAnswers);
         setAssessmentResult(result);
         saveAssessmentDate();
-        setCurrentView('assessment-result');
+        setCurrentView('assessment-reflection');
         setIsTransitioning(false);
       }
     }, 400);
