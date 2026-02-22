@@ -194,7 +194,7 @@ const AssessmentSection: React.FC = () => {
       className="min-h-screen bg-[#0B0F0C] flex items-center justify-center"
     >
       {/* Background */}
-      <div className="fixed inset-0">
+      <div className="fixed inset-0 pointer-events-none">
         <img
           src="https://images.unsplash.com/photo-1507041957456-9c397ce39c97?w=1920&q=80"
           alt="Forest trail"

@@ -75,7 +75,7 @@ const AssessmentReflectionSection: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center p-4 md:p-6">
       {/* Background */}
-      <div className="fixed inset-0">
+      <div className="fixed inset-0 pointer-events-none">
         <img
           src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1920&q=80"
           alt="Forest"
