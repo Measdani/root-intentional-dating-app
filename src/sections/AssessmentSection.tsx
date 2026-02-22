@@ -240,7 +240,7 @@ const AssessmentSection: React.FC = () => {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
             >
-              Preview the questions
+              Learn How We Define Readiness →
             </button>
           </div>
         ) : showAssessmentStatement ? (
