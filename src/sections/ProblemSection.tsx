@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useApp } from '@/store/AppContext';
 import { ArrowRight } from 'lucide-react';
 
 const ProblemSection: React.FC = () => {
+  const { setCurrentView } = useApp();
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -22,13 +24,6 @@ const ProblemSection: React.FC = () => {
 
     return () => observer.disconnect();
   }, []);
-
-  const scrollToAssessment = () => {
-    const section = document.getElementById('section-assessment');
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   return (
     <section
@@ -81,7 +76,7 @@ const ProblemSection: React.FC = () => {
         </p>
         <div className="w-16 h-0.5 bg-[#D9FF3D] mb-6" />
         <button
-          onClick={scrollToAssessment}
+          onClick={() => setCurrentView('community-blog')}
           className="inline-flex items-center gap-2 text-[#D9FF3D] font-medium hover:gap-4 transition-all duration-300"
         >
           See how we are different
