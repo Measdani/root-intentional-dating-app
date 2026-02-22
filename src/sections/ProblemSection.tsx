@@ -36,7 +36,7 @@ const ProblemSection: React.FC = () => {
           MATCH.<br />
           <span className="text-[#A9B5AA]">FORGET.</span>
         </h2>
-        <p className="text-[#A9B5AA] text-lg leading-relaxed">
+        <p className="text-[#F6FFF2] text-lg leading-relaxed">
           Most apps train you to keep searching. We built something for people who want to stop.
         </p>
       </div>
