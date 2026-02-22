@@ -96,6 +96,7 @@ export interface BlogArticle {
 export type AppView =
   | 'landing'
   | 'assessment'
+  | 'assessment-reflection'
   | 'assessment-result'
   | 'growth-mode'
   | 'paid-growth-mode'

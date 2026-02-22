@@ -8,6 +8,7 @@ import ProblemSection from '@/sections/ProblemSection';
 import AssessmentSection from '@/sections/AssessmentSection';
 import CommunityBlogPreviewSection from '@/sections/CommunityBlogPreviewSection';
 import AssessmentResultSection from '@/sections/AssessmentResultSection';
+import AssessmentReflectionSection from '@/sections/AssessmentReflectionSection';
 import AlignmentSection from '@/sections/AlignmentSection';
 import FamilySection from '@/sections/FamilySection';
 import GrowthSection from '@/sections/GrowthSection';
@@ -91,6 +92,8 @@ const AppContent: React.FC = () => {
     switch (currentView) {
       case 'assessment':
         return <AssessmentSection />;
+      case 'assessment-reflection':
+        return <AssessmentReflectionSection />;
       case 'assessment-result':
         return <AssessmentResultSection />;
       case 'browse':
