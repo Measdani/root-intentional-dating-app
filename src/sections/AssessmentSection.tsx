@@ -197,207 +197,190 @@ const AssessmentSection: React.FC = () => {
     <section
       ref={sectionRef}
       id="section-assessment"
-      className="section-pinned bg-[#0B0F0C] flex items-center justify-center"
+      className="min-h-screen bg-[#0B0F0C] flex items-center justify-center"
     >
       {/* Background */}
-      <div className="absolute inset-0">
+      <div className="fixed inset-0">
         <img
           src="https://images.unsplash.com/photo-1507041957456-9c397ce39c97?w=1920&q=80"
           alt="Forest trail"
-          className="w-full h-full object-cover opacity-45"
+          className="w-full h-full object-cover opacity-35"
         />
         <div className="absolute inset-0 gradient-vignette" />
-        <div className="absolute inset-0 bg-[#0B0F0C]/50" />
+        <div className="absolute inset-0 bg-[#0B0F0C]/65" />
       </div>
 
-      {/* Center Circle */}
-      <div
-        className={`relative z-10 transition-all duration-1000 ease-out ${
-          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-        }`}
-      >
-        <div className="w-[90vw] h-[90vw] max-w-[680px] max-h-[680px] circle-frame">
-          <div className="absolute inset-4 rounded-full overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1507041957456-9c397ce39c97?w=700&q=80"
-              alt=""
-              className="w-full h-full object-cover opacity-30"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F0C]/90 via-[#0B0F0C]/50 to-[#0B0F0C]/70" />
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-3xl px-4 md:px-8 py-12">
+        {assessmentAnswers.length === 0 && document.querySelector('main.relative') ? (
+          // Assessment Preview (embedded in landing page)
+          <div
+            className={`text-center transition-all duration-1000 ease-out ${
+              isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+            }`}
+          >
+            <h2
+              className={`font-display text-[clamp(36px,6vw,64px)] text-[#F6FFF2] mb-4 transition-all duration-700 delay-300 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+            >
+              NOT EVERYONE<br />GETS IN.
+            </h2>
+            <p
+              className={`text-[#A9B5AA] text-base md:text-lg mb-8 max-w-2xl mx-auto transition-all duration-700 delay-500 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              }`}
+            >
+              A short assessment. Real standards. No performative answers.
+            </p>
+            <button
+              onClick={startAssessment}
+              className={`btn-primary transition-all duration-700 delay-700 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}
+            >
+              Preview the questions
+            </button>
           </div>
+        ) : showAssessmentStatement ? (
+          // Assessment Statement (full-screen page)
+          <div
+            className={`transition-all duration-1000 ease-out ${
+              isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+            }`}
+          >
+            <h1 className="font-display text-[clamp(40px,7vw,56px)] text-[#F6FFF2] mb-12 text-center">
+              Before You Begin Your Assessment
+            </h1>
 
-          {/* Content */}
-          <div className="relative z-10 text-center px-6 md:px-12 w-full max-w-lg">
-            {/*
-              Show assessment preview if embedded in landing page (main element exists) and not yet answering
-              Show statement modal if assessment is starting
-              Otherwise (full page assessment view), show questions
-            */}
-            {assessmentAnswers.length === 0 && document.querySelector('main.relative') ? (
-              // Assessment Preview (embedded in landing page)
-              <>
-                <h2
-                  className={`font-display text-[clamp(28px,4vw,52px)] text-[#F6FFF2] mb-4 transition-all duration-700 delay-300 ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                  }`}
-                >
-                  NOT EVERYONE<br />GETS IN.
-                </h2>
-                <p
-                  className={`text-[#A9B5AA] text-base md:text-lg mb-8 max-w-sm mx-auto transition-all duration-700 delay-500 ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-                  }`}
-                >
-                  A short assessment. Real standards. No performative answers.
+            <div className="space-y-6">
+              {/* Time Requirements */}
+              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6">
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  Please set aside approximately <span className="text-[#D9FF3D] font-semibold">15–30 minutes</span> to complete your assessment.
                 </p>
-                <button
-                  onClick={startAssessment}
-                  className={`btn-primary transition-all duration-700 delay-700 ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}
-                >
-                  Preview the questions
-                </button>
-              </>
-            ) : showAssessmentStatement ? (
-              // Assessment Statement (show before questions begin)
-              <div className="max-w-2xl text-left space-y-6">
-                <h2
-                  className={`font-display text-[clamp(28px,4vw,48px)] text-[#F6FFF2] mb-6 transition-all duration-700 delay-200 ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                  }`}
-                >
-                  Before You Begin Your Assessment
-                </h2>
-
-                {/* Time Requirements */}
-                <div
-                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-4 transition-all duration-700 delay-300 ${
-                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                  }`}
-                >
-                  <p className="text-[#A9B5AA] text-sm leading-relaxed">
-                    Please set aside approximately <span className="text-[#D9FF3D] font-semibold">15–30 minutes</span> to complete your assessment.
-                  </p>
-                </div>
-
-                {/* No Pausing Warning */}
-                <div
-                  className={`bg-[#111611]/60 border border-[#D9FF3D]/30 rounded-lg p-4 transition-all duration-700 delay-400 ${
-                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                  }`}
-                >
-                  <p className="text-[#A9B5AA] text-sm leading-relaxed">
-                    <span className="text-[#D9FF3D] font-semibold">Once started, the assessment cannot be paused or exited.</span> If you leave before completion, you will automatically be placed in <span className="text-[#D9FF3D]">Inner Work Space</span> and must wait <span className="text-[#D9FF3D] font-semibold">6 months</span> before you can retake the assessment.
-                  </p>
-                </div>
-
-                {/* Preparation */}
-                <div
-                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-4 transition-all duration-700 delay-500 ${
-                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                  }`}
-                >
-                  <p className="text-[#A9B5AA] text-sm leading-relaxed">
-                    To avoid unintended placement, please ensure you have enough <span className="text-[#F6FFF2]">uninterrupted time</span> before beginning.
-                  </p>
-                </div>
-
-                {/* Honesty Section */}
-                <div
-                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-4 transition-all duration-700 delay-600 ${
-                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                  }`}
-                >
-                  <h3 className="text-[#F6FFF2] font-semibold mb-3 text-sm">A Note on Honesty</h3>
-                  <ul className="text-[#A9B5AA] text-sm space-y-2 leading-relaxed">
-                    <li>• <span className="text-[#F6FFF2]">There is no perfect score.</span></li>
-                    <li>• <span className="text-[#F6FFF2]">There are no trick questions.</span></li>
-                    <li>• Do not use outside resources, coaching prompts, or search engines while answering.</li>
-                    <li>• The purpose of this assessment is not to perform well — it is to understand where you truly are.</li>
-                  </ul>
-                </div>
-
-                {/* Answer From Experience */}
-                <div
-                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-4 transition-all duration-700 delay-700 ${
-                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                  }`}
-                >
-                  <h3 className="text-[#F6FFF2] font-semibold mb-3 text-sm">Answer From Your Truth</h3>
-                  <ul className="text-[#A9B5AA] text-sm space-y-2 leading-relaxed">
-                    <li>• Answer from your <span className="text-[#F6FFF2]">lived experience.</span></li>
-                    <li>• Answer from your <span className="text-[#F6FFF2]">current patterns.</span></li>
-                    <li>• Answer <span className="text-[#F6FFF2]">honestly.</span></li>
-                  </ul>
-                  <p className="text-[#A9B5AA] text-sm mt-3 leading-relaxed">
-                    The more authentic your responses, the more accurately we can meet you where you are — and help you grow into where you want to be.
-                  </p>
-                  <p className="text-[#D9FF3D] text-sm mt-3 font-semibold">This process is about alignment, not judgment.</p>
-                </div>
-
-                {/* Buttons */}
-                <div className={`flex flex-col gap-3 transition-all duration-700 delay-900 ${
-                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                }`}>
-                  <button
-                    onClick={beginAssessment}
-                    className="btn-primary w-full"
-                  >
-                    Begin Assessment
-                  </button>
-                  <button
-                    onClick={handleLogoutFromAssessment}
-                    className="w-full px-6 py-3 rounded-xl border border-[#1A211A] bg-transparent text-[#A9B5AA] hover:text-[#F6FFF2] hover:border-[#A9B5AA] transition-all duration-300"
-                  >
-                    Log Out & Return Later
-                  </button>
-                </div>
               </div>
-            ) : (
-              <div id="questions-container" className="w-full">
-                {/* Progress Bar */}
-                <div className="w-full h-1 bg-[#1A211A] rounded-full mb-6 overflow-hidden">
-                  <div 
-                    className="h-full bg-[#D9FF3D] transition-all duration-500"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
 
-                {showFollowUp && (
-                  <div className="flex items-center justify-center gap-2 text-[#D9FF3D] text-sm mb-4">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Additional questions</span>
-                  </div>
-                )}
-
-                <h3 className="text-[#F6FFF2] text-lg md:text-xl font-medium mb-6 leading-snug">
-                  {currentQuestion?.question}
-                </h3>
-
-                <div className="space-y-3">
-                  {currentQuestion?.options.map((option, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleAnswer(option.score, option.redFlag)}
-                      disabled={isTransitioning}
-                      className={`w-full text-left p-4 rounded-xl border border-[#1A211A] bg-[#111611]/80 
-                        hover:border-[#D9FF3D]/50 hover:bg-[#1A211A] transition-all duration-300
-                        flex items-center justify-between group ${isTransitioning ? 'opacity-50' : ''}`}
-                    >
-                      <span className="text-[#F6FFF2] text-sm md:text-base">{option.text}</span>
-                      <ChevronRight className="w-4 h-4 text-[#A9B5AA] opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  ))}
-                </div>
-
-                <p className="text-[#A9B5AA] text-xs mt-6">
-                  Question {assessmentAnswers.length + 1} of {assessmentQuestions.length + (showFollowUp ? followUpQuestions.length : 0)}
+              {/* No Pausing Warning */}
+              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#D9FF3D]/30 rounded-lg p-6">
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  <span className="text-[#D9FF3D] font-semibold">Once started, the assessment cannot be paused or exited.</span> If you leave before completion, you will automatically be placed in <span className="text-[#D9FF3D]">Inner Work Space</span> and must wait <span className="text-[#D9FF3D] font-semibold">6 months</span> before you can retake the assessment.
                 </p>
+              </div>
+
+              {/* Preparation */}
+              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6">
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  To avoid unintended placement, please ensure you have enough <span className="text-[#F6FFF2]">uninterrupted time</span> before beginning.
+                </p>
+              </div>
+
+              {/* Honesty Section */}
+              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6">
+                <h3 className="text-[#F6FFF2] font-semibold mb-4 text-lg">A Note on Honesty</h3>
+                <ul className="text-[#A9B5AA] space-y-3 leading-relaxed">
+                  <li className="flex gap-3">
+                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
+                    <span><span className="text-[#F6FFF2] font-semibold">There is no perfect score.</span></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
+                    <span><span className="text-[#F6FFF2] font-semibold">There are no trick questions.</span></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
+                    <span>Do not use outside resources, coaching prompts, or search engines while answering.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
+                    <span>The purpose of this assessment is not to perform well — it is to understand where you truly are.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Answer From Experience */}
+              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6">
+                <h3 className="text-[#F6FFF2] font-semibold mb-4 text-lg">Answer From Your Truth</h3>
+                <ul className="text-[#A9B5AA] space-y-3 leading-relaxed mb-4">
+                  <li className="flex gap-3">
+                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
+                    <span>Answer from your <span className="text-[#F6FFF2] font-semibold">lived experience.</span></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
+                    <span>Answer from your <span className="text-[#F6FFF2] font-semibold">current patterns.</span></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
+                    <span>Answer <span className="text-[#F6FFF2] font-semibold">honestly.</span></span>
+                  </li>
+                </ul>
+                <p className="text-[#A9B5AA] leading-relaxed mb-3">
+                  The more authentic your responses, the more accurately we can meet you where you are — and help you grow into where you want to be.
+                </p>
+                <p className="text-[#D9FF3D] font-semibold">This process is about alignment, not judgment.</p>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-12">
+              <button
+                onClick={beginAssessment}
+                className="btn-primary flex-1"
+              >
+                Begin Assessment
+              </button>
+              <button
+                onClick={handleLogoutFromAssessment}
+                className="px-6 py-3 rounded-xl border border-[#1A211A] bg-transparent text-[#A9B5AA] hover:text-[#F6FFF2] hover:border-[#A9B5AA] transition-all duration-300 font-medium flex-1"
+              >
+                Log Out & Return Later
+              </button>
+            </div>
+          </div>
+        ) : (
+          // Assessment Questions
+          <div id="questions-container" className="max-w-2xl mx-auto">
+            {/* Progress Bar */}
+            <div className="w-full h-1 bg-[#1A211A] rounded-full mb-8 overflow-hidden">
+              <div
+                className="h-full bg-[#D9FF3D] transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            {showFollowUp && (
+              <div className="flex items-center justify-center gap-2 text-[#D9FF3D] text-sm mb-6">
+                <AlertCircle className="w-4 h-4" />
+                <span>Additional questions</span>
               </div>
             )}
+
+            <h3 className="text-[#F6FFF2] text-xl md:text-2xl font-medium mb-8 leading-snug">
+              {currentQuestion?.question}
+            </h3>
+
+            <div className="space-y-3">
+              {currentQuestion?.options.map((option, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleAnswer(option.score, option.redFlag)}
+                  disabled={isTransitioning}
+                  className={`w-full text-left p-4 rounded-xl border border-[#1A211A] bg-[#111611]/80
+                    hover:border-[#D9FF3D]/50 hover:bg-[#1A211A] transition-all duration-300
+                    flex items-center justify-between group ${isTransitioning ? 'opacity-50' : ''}`}
+                >
+                  <span className="text-[#F6FFF2] text-base">{option.text}</span>
+                  <ChevronRight className="w-4 h-4 text-[#A9B5AA] opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              ))}
+            </div>
+
+            <p className="text-[#A9B5AA] text-sm mt-8 text-center">
+              Question {assessmentAnswers.length + 1} of {assessmentQuestions.length + (showFollowUp ? followUpQuestions.length : 0)}
+            </p>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Exit Confirmation Modal */}
