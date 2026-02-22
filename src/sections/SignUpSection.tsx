@@ -48,9 +48,8 @@ const SignUpSection: React.FC = () => {
   const [city, setCity] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | ''>('');
 
-  // Step 3 - Photo
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string>('');
+  // Step 3 - Photos (up to 3)
+  const [photos, setPhotos] = useState<string[]>(['', '', '']); // Array of 3 photo URLs (base64)
 
   // Step 4 - Preferences
   const [partnershipIntent, setPartnershipIntent] = useState<
@@ -174,7 +173,7 @@ const SignUpSection: React.FC = () => {
         if (!gender) errs.gender = 'Please select gender';
         break;
       case 3:
-        if (!photoFile) errs.photo = 'Please upload a photo';
+        if (!photos[0]) errs.photo = 'Please upload at least one photo';
         break;
       case 4:
         if (!partnershipIntent) errs.partnershipIntent = 'Please select intent';
@@ -237,7 +236,7 @@ const SignUpSection: React.FC = () => {
         age: parseInt(age),
         city: city.trim(),
         gender: gender as 'male' | 'female',
-        photoUrl: photoPreview, // Store base64 preview
+        photoUrl: photos.filter(p => p).join('|'), // Store all photos separated by |
         partnershipIntent: partnershipIntent as
           | 'marriage'
           | 'long-term'
@@ -466,62 +465,87 @@ const SignUpSection: React.FC = () => {
           </div>
         )}
 
-        {/* Step 3 - Photo */}
+        {/* Step 3 - Photos */}
         {step === 3 && (
           <div className="space-y-6">
             <div>
-              <label className="text-sm font-medium text-[#F6FFF2] block mb-4">
-                Profile Photo
+              <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
+                Profile Photos
               </label>
-              <div className="flex flex-col items-center gap-4">
-                {photoPreview && (
-                  <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-[#D9FF3D]">
-                    <img
-                      src={photoPreview}
-                      alt="Photo preview"
-                      className="w-full h-full object-cover"
+              <p className="text-xs italic text-[#A9B5AA] mb-4">
+                At least 1 photo required. You can add up to 3 photos.
+              </p>
+
+              <div className="grid grid-cols-3 gap-3">
+                {photos.map((photoUrl, idx) => (
+                  <div key={idx} className="flex flex-col gap-2">
+                    {photoUrl && (
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden border border-[#D9FF3D]">
+                        <img
+                          src={photoUrl}
+                          alt={`Photo ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          onClick={() => {
+                            const newPhotos = [...photos];
+                            newPhotos[idx] = '';
+                            setPhotos(newPhotos);
+                          }}
+                          className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 5 * 1024 * 1024) {
+                            setErrors({ ...errors, photo: 'File size must be under 5MB' });
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            const newPhotos = [...photos];
+                            newPhotos[idx] = reader.result as string;
+                            setPhotos(newPhotos);
+                            setErrors({ ...errors, photo: '' });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                      id={`photo-input-${idx}`}
                     />
+                    <label
+                      htmlFor={`photo-input-${idx}`}
+                      className={`px-3 py-2 rounded-lg border-2 cursor-pointer transition-colors text-center font-medium text-xs ${
+                        photoUrl
+                          ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20'
+                          : idx === 0
+                            ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20'
+                            : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/50'
+                      }`}
+                    >
+                      {photoUrl ? '✓' : idx === 0 ? '+ Required' : '+ Optional'}
+                    </label>
                   </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      // Validate file size (max 5MB)
-                      if (file.size > 5 * 1024 * 1024) {
-                        setErrors({ ...errors, photo: 'File size must be under 5MB' });
-                        return;
-                      }
-                      setPhotoFile(file);
-                      // Create preview
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        setPhotoPreview(reader.result as string);
-                        setErrors({ ...errors, photo: '' });
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="hidden"
-                  id="photo-input"
-                />
-                <label
-                  htmlFor="photo-input"
-                  className="w-full px-4 py-3 rounded-lg border-2 border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] cursor-pointer hover:bg-[#D9FF3D]/20 transition-colors text-center font-medium"
-                >
-                  {photoFile ? '✓ Change Photo' : '+ Choose Photo'}
-                </label>
-                {errors.photo && (
-                  <p className="text-sm text-red-400 flex items-center gap-2">
-                    <AlertCircle size={16} />
-                    {errors.photo}
-                  </p>
-                )}
+                ))}
               </div>
-              <p className="text-xs text-[#A9B5AA] mt-3 text-center">
-                PNG, JPG, or GIF up to 5MB
+
+              {errors.photo && (
+                <p className="text-sm text-red-400 flex items-center gap-2 mt-3">
+                  <AlertCircle size={16} />
+                  {errors.photo}
+                </p>
+              )}
+
+              <p className="text-xs text-[#A9B5AA] mt-3">
+                PNG, JPG, or GIF up to 5MB each
               </p>
             </div>
           </div>
