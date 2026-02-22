@@ -33,10 +33,10 @@ const ProblemSection: React.FC = () => {
         <img
           src="https://images.unsplash.com/photo-1511497584788-876760111969?w=1920&q=80"
           alt="Misty forest"
-          className="w-full h-full object-cover opacity-50"
+          className="w-full h-full object-cover opacity-60"
         />
-        <div className="absolute inset-0 gradient-vignette opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0B0F0C]/40 via-transparent to-[#0B0F0C]/40" />
+        <div className="absolute inset-0 gradient-vignette opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B0F0C]/20 via-transparent to-[#0B0F0C]/20" />
       </div>
 
       {/* Left Circle */}
