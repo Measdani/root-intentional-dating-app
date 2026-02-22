@@ -929,7 +929,7 @@ const SignUpSection: React.FC = () => {
             </div>
 
             <button
-              onClick={() => handleCompleteSignUp(selectedTier)}
+              onClick={() => handleCompleteSignUp(selectedTier || 'monthly')}
               disabled={isLoading}
               className="w-full mt-4 py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-full font-medium hover:scale-105 disabled:opacity-50 transition-transform flex items-center justify-center gap-2"
             >
@@ -947,11 +947,11 @@ const SignUpSection: React.FC = () => {
             </button>
 
             <button
-              onClick={() => handleCompleteSignUp(null)}
+              onClick={() => handleCompleteSignUp('monthly')}
               disabled={isLoading}
-              className="w-full py-3 text-sm text-[#A9B5AA] border border-[#1A211A] rounded-full hover:border-[#D9FF3D] hover:text-[#D9FF3D] transition-colors disabled:opacity-50"
+              className="w-full py-3 text-sm text-[#D9FF3D] border border-[#D9FF3D] rounded-full hover:bg-[#D9FF3D]/10 transition-colors disabled:opacity-50 font-medium"
             >
-              Skip for testing (simulate active membership)
+              Skip for testing (use monthly plan)
             </button>
           </div>
         )}
