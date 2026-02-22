@@ -352,7 +352,7 @@ const SignUpSection: React.FC = () => {
         </div>
 
         {/* Error Summary */}
-        {Object.keys(errors).length > 0 && (
+        {Object.keys(errors).length > 0 && step !== 3 && (
           <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 space-y-2">
             {Object.entries(errors).map(([key, msg]) => (
               <div key={key} className="flex gap-2 text-sm text-red-200">
