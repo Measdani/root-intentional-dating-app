@@ -140,13 +140,6 @@ const AssessmentSection: React.FC = () => {
     }, 400);
   };
 
-  const startAssessment = () => {
-    const questionsContainer = document.getElementById('questions-container');
-    if (questionsContainer) {
-      questionsContainer.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   const beginAssessment = () => {
     setAssessmentStartTime(Date.now());
     setShowAssessmentStatement(false);
