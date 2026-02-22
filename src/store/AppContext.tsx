@@ -141,6 +141,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser.id]);
 
+  // Check for assessment abandonment and apply cooling period
+  useEffect(() => {
+    if (currentUser.id === defaultUser.id) return; // Skip for default user
+
+    try {
+      const abandonmentData = JSON.parse(localStorage.getItem('assessmentAbandonment') || '{}');
+      if (abandonmentData.coolingPeriodUntil) {
+        const coolingPeriodEndTime = new Date(abandonmentData.coolingPeriodUntil).getTime();
+        const currentTime = Date.now();
+
+        if (currentTime < coolingPeriodEndTime) {
+          // Still in cooling period - place user in Inner Work Space
+          setCurrentUserState(prev => ({
+            ...prev,
+            userStatus: 'needs-growth',
+            assessmentPassed: false,
+          }));
+          // Clear the abandonment data since we've applied the consequence
+          localStorage.removeItem('assessmentAbandonment');
+          console.log('User is in 6-month cooling period after assessment abandonment');
+        } else {
+          // Cooling period has passed - allow user to retake assessment
+          localStorage.removeItem('assessmentAbandonment');
+          console.log('Cooling period has ended - user can retake assessment');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check assessment abandonment:', error);
+    }
+  }, [currentUser.id]);
+
   const [users] = useState<User[]>(sampleUsers);
   const [hasJoinedList, setHasJoinedList] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
