@@ -509,9 +509,9 @@ const SignUpSection: React.FC = () => {
                 />
                 <label
                   htmlFor="photo-input"
-                  className="w-full px-4 py-3 rounded-lg border border-[#1A211A] bg-[#111611] text-[#F6FFF2] cursor-pointer hover:border-[#D9FF3D]/50 transition-colors text-center"
+                  className="w-full px-4 py-3 rounded-lg border-2 border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] cursor-pointer hover:bg-[#D9FF3D]/20 transition-colors text-center font-medium"
                 >
-                  {photoFile ? 'Change Photo' : 'Choose Photo'}
+                  {photoFile ? '✓ Change Photo' : '+ Choose Photo'}
                 </label>
                 {errors.photo && (
                   <p className="text-sm text-red-400 flex items-center gap-2">
