@@ -20,24 +20,40 @@ const AssessmentSection: React.FC = () => {
   const [showQuestions, setShowQuestions] = useState(false);
   const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null);
   const [answerTimestamps, setAnswerTimestamps] = useState<Array<{ questionId: string; timestamp: number; score: number }>>([]);
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
   // Track if assessment was abandoned (user left mid-assessment)
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (assessmentStartTime && showQuestions && !showAssessmentStatement) {
-        // User is leaving while in the middle of assessment
-        const abandonmentData = {
-          abandonedAt: new Date().toISOString(),
-          coolingPeriodUntil: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(), // 6 months
-          canRetakeAssessment: false
-        };
-        localStorage.setItem('assessmentAbandonment', JSON.stringify(abandonmentData));
+        // Prevent default browser confirmation
+        e.preventDefault();
+        e.returnValue = '';
+        // Show our custom dialog
+        setShowExitConfirmation(true);
+      }
+    };
+
+    const handlePopState = () => {
+      if (assessmentStartTime && showQuestions && !showAssessmentStatement) {
+        // User clicked back button
+        setShowExitConfirmation(true);
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    // Prevent back button by pushing a new state
+    if (assessmentStartTime && showQuestions && !showAssessmentStatement) {
+      window.history.pushState(null, '', window.location.href);
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [assessmentStartTime, showQuestions, showAssessmentStatement]);
 
   useEffect(() => {
@@ -157,6 +173,24 @@ const AssessmentSection: React.FC = () => {
       // If viewing full assessment, logout
       window.location.href = '/'; // This will trigger AppContext to clear session
     }
+  };
+
+  const handleConfirmExit = () => {
+    // Record that assessment was abandoned
+    const abandonmentData = {
+      abandonedAt: new Date().toISOString(),
+      coolingPeriodUntil: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(), // 6 months
+      canRetakeAssessment: false
+    };
+    localStorage.setItem('assessmentAbandonment', JSON.stringify(abandonmentData));
+
+    // Navigate away
+    window.location.href = '/';
+  };
+
+  const handleStayContinue = () => {
+    // Close the confirmation dialog and continue assessment
+    setShowExitConfirmation(false);
   };
 
   return (
@@ -365,6 +399,45 @@ const AssessmentSection: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Exit Confirmation Modal */}
+      {showExitConfirmation && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111611] border border-[#1A211A] rounded-lg max-w-md w-full p-8 space-y-6">
+            <div>
+              <h3 className="text-[#F6FFF2] font-display text-2xl mb-2">
+                Are You Sure You Want to Exit?
+              </h3>
+              <div className="space-y-4 mt-4">
+                <p className="text-[#A9B5AA] text-sm leading-relaxed">
+                  If you leave before completing the assessment, you will automatically be placed in <span className="text-[#D9FF3D] font-semibold">Inner Work Space</span>.
+                </p>
+                <p className="text-[#A9B5AA] text-sm leading-relaxed">
+                  You may retake the assessment after the required waiting period.
+                </p>
+                <p className="text-[#A9B5AA] text-sm leading-relaxed">
+                  To avoid unintended placement, we recommend completing the assessment in one sitting.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleStayContinue}
+                className="btn-primary w-full"
+              >
+                Stay & Continue Assessment
+              </button>
+              <button
+                onClick={handleConfirmExit}
+                className="w-full px-6 py-3 rounded-xl border border-[#D9FF3D]/50 bg-transparent text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition-all duration-300 font-semibold"
+              >
+                Exit & Accept Placement
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
