@@ -171,10 +171,9 @@ const AssessmentSection: React.FC = () => {
         <img
           src="https://images.unsplash.com/photo-1507041957456-9c397ce39c97?w=1920&q=80"
           alt="Forest trail"
-          className="w-full h-full object-cover opacity-60"
+          className="w-full h-full object-cover opacity-70"
         />
-        <div className="absolute inset-0 gradient-vignette opacity-20" />
-        <div className="absolute inset-0 bg-[#0B0F0C]/20" />
+        <div className="absolute inset-0 gradient-vignette opacity-10" />
       </div>
 
       {/* Content */}
