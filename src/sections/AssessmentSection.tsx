@@ -279,15 +279,15 @@ const AssessmentSection: React.FC = () => {
             </div>
 
             {/* Confirmation Checkbox */}
-            <div className="flex items-center gap-3 mt-8 mb-8 bg-[#111611]/80 border border-[#1A211A] rounded-lg p-4">
+            <div className="flex items-center gap-3 mt-8 mb-8 bg-[#0B0F0C]/95 border border-[#1A211A] rounded-lg p-4">
               <input
                 type="checkbox"
                 id="understand-assessment"
                 checked={understoodAssessment}
                 onChange={(e) => setUnderstoodAssessment(e.target.checked)}
-                className="w-5 h-5 cursor-pointer accent-[#D9FF3D]"
+                className="w-5 h-5 cursor-pointer accent-[#D9FF3D] flex-shrink-0"
               />
-              <label htmlFor="understand-assessment" className="text-[#A9B5AA] cursor-pointer flex-1">
+              <label htmlFor="understand-assessment" className="text-[#F6FFF2] cursor-pointer flex-1">
                 I understand the assessment requirements and commitment
               </label>
             </div>
