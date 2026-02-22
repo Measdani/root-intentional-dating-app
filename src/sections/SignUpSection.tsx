@@ -237,7 +237,7 @@ const SignUpSection: React.FC = () => {
         age: parseInt(age),
         city: city.trim(),
         gender: gender as 'male' | 'female',
-        photo: photoPreview, // Store base64 preview
+        photoUrl: photoPreview, // Store base64 preview
         partnershipIntent: partnershipIntent as
           | 'marriage'
           | 'long-term'
