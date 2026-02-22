@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { userService } from '@/services/userService';
 import { toast } from 'sonner';
@@ -71,6 +71,12 @@ const SignUpSection: React.FC = () => {
   // Step 5 - Policies
   const [acceptedPolicies, setAcceptedPolicies] = useState<Record<string, boolean>>({});
   const [viewingPolicy, setViewingPolicy] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState(-1);
+
+  // Reset expanded section when viewing a different policy
+  useEffect(() => {
+    setExpandedSection(-1);
+  }, [viewingPolicy]);
 
   const POLICIES = {
     platformStructure: {
@@ -699,7 +705,6 @@ const SignUpSection: React.FC = () => {
         {/* Policy Detail View */}
         {step === 5 && viewingPolicy && (() => {
           const policy = (POLICIES as Record<string, any>)[viewingPolicy];
-          const [expandedSection, setExpandedSection] = React.useState(0);
 
           if (!policy?.title) return null;
 
