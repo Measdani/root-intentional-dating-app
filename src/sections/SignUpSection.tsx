@@ -441,9 +441,12 @@ const SignUpSection: React.FC = () => {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-[#F6FFF2] block mb-3">
+              <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
                 Gender
               </label>
+              <p className="text-xs italic text-[#A9B5AA] mb-3">
+                Rooted Hearts currently supports men and women seeking opposite-sex partnerships.
+              </p>
               <div className="grid grid-cols-2 gap-3">
                 {(['male', 'female'] as const).map((g) => (
                   <button
