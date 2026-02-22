@@ -168,11 +168,12 @@ const AssessmentSection: React.FC = () => {
     };
     localStorage.setItem('assessmentAbandonment', JSON.stringify(abandonmentData));
 
-    // Log user out (trigger logout in AppContext)
-    if (window.location.href.includes('assessment')) {
-      // If viewing full assessment, logout
-      window.location.href = '/'; // This will trigger AppContext to clear session
-    }
+    // Clear current user and log out
+    localStorage.removeItem('currentUser');
+    window.dispatchEvent(new CustomEvent('user-logout'));
+
+    // Navigate to landing page
+    setCurrentView('landing');
   };
 
   const handleConfirmExit = () => {
