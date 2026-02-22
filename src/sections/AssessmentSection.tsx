@@ -173,7 +173,6 @@ const AssessmentSection: React.FC = () => {
           alt="Forest trail"
           className="w-full h-full object-cover opacity-80"
         />
-        <div className="absolute inset-0 gradient-vignette opacity-5" />
       </div>
 
       {/* Content */}
