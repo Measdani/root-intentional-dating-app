@@ -22,6 +22,24 @@ const AssessmentSection: React.FC = () => {
   const [answerTimestamps, setAnswerTimestamps] = useState<Array<{ questionId: string; timestamp: number; score: number }>>([]);
   const sectionRef = useRef<HTMLElement>(null);
 
+  // Track if assessment was abandoned (user left mid-assessment)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (assessmentStartTime && showQuestions && !showAssessmentStatement) {
+        // User is leaving while in the middle of assessment
+        const abandonmentData = {
+          abandonedAt: new Date().toISOString(),
+          coolingPeriodUntil: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(), // 6 months
+          canRetakeAssessment: false
+        };
+        localStorage.setItem('assessmentAbandonment', JSON.stringify(abandonmentData));
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [assessmentStartTime, showQuestions, showAssessmentStatement]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -125,6 +143,22 @@ const AssessmentSection: React.FC = () => {
     }, 100);
   };
 
+  const handleLogoutFromAssessment = () => {
+    // Record that assessment was abandoned
+    const abandonmentData = {
+      abandonedAt: new Date().toISOString(),
+      coolingPeriodUntil: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(), // 6 months
+      canRetakeAssessment: false
+    };
+    localStorage.setItem('assessmentAbandonment', JSON.stringify(abandonmentData));
+
+    // Log user out (trigger logout in AppContext)
+    if (window.location.href.includes('assessment')) {
+      // If viewing full assessment, logout
+      window.location.href = '/'; // This will trigger AppContext to clear session
+    }
+  };
+
   return (
     <section
       ref={sectionRef}
@@ -193,32 +227,99 @@ const AssessmentSection: React.FC = () => {
               </>
             ) : showAssessmentStatement ? (
               // Assessment Statement (show before questions begin)
-              <>
+              <div className="max-w-2xl text-left space-y-6">
                 <h2
                   className={`font-display text-[clamp(28px,4vw,48px)] text-[#F6FFF2] mb-6 transition-all duration-700 delay-200 ${
                     isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                   }`}
                 >
-                  Before We Begin
+                  Before You Begin Your Assessment
                 </h2>
+
+                {/* Time Requirements */}
                 <div
-                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-6 mb-8 transition-all duration-700 delay-300 ${
+                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-4 transition-all duration-700 delay-300 ${
                     isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                   }`}
                 >
-                  <p className="text-[#A9B5AA] text-base leading-relaxed">
-                    This assessment determines your placement within our structured connection environments. Please answer honestly. There are no trick questions.
+                  <p className="text-[#A9B5AA] text-sm leading-relaxed">
+                    Please set aside approximately <span className="text-[#D9FF3D] font-semibold">15–30 minutes</span> to complete your assessment.
                   </p>
                 </div>
-                <button
-                  onClick={beginAssessment}
-                  className={`btn-primary transition-all duration-700 delay-500 ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+
+                {/* No Pausing Warning */}
+                <div
+                  className={`bg-[#111611]/60 border border-[#D9FF3D]/30 rounded-lg p-4 transition-all duration-700 delay-400 ${
+                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                   }`}
                 >
-                  Begin Assessment
-                </button>
-              </>
+                  <p className="text-[#A9B5AA] text-sm leading-relaxed">
+                    <span className="text-[#D9FF3D] font-semibold">Once started, the assessment cannot be paused or exited.</span> If you leave before completion, you will automatically be placed in <span className="text-[#D9FF3D]">Inner Work Space</span> and must wait <span className="text-[#D9FF3D] font-semibold">6 months</span> before you can retake the assessment.
+                  </p>
+                </div>
+
+                {/* Preparation */}
+                <div
+                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-4 transition-all duration-700 delay-500 ${
+                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                  }`}
+                >
+                  <p className="text-[#A9B5AA] text-sm leading-relaxed">
+                    To avoid unintended placement, please ensure you have enough <span className="text-[#F6FFF2]">uninterrupted time</span> before beginning.
+                  </p>
+                </div>
+
+                {/* Honesty Section */}
+                <div
+                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-4 transition-all duration-700 delay-600 ${
+                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                  }`}
+                >
+                  <h3 className="text-[#F6FFF2] font-semibold mb-3 text-sm">A Note on Honesty</h3>
+                  <ul className="text-[#A9B5AA] text-sm space-y-2 leading-relaxed">
+                    <li>• <span className="text-[#F6FFF2]">There is no perfect score.</span></li>
+                    <li>• <span className="text-[#F6FFF2]">There are no trick questions.</span></li>
+                    <li>• Do not use outside resources, coaching prompts, or search engines while answering.</li>
+                    <li>• The purpose of this assessment is not to perform well — it is to understand where you truly are.</li>
+                  </ul>
+                </div>
+
+                {/* Answer From Experience */}
+                <div
+                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-4 transition-all duration-700 delay-700 ${
+                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                  }`}
+                >
+                  <h3 className="text-[#F6FFF2] font-semibold mb-3 text-sm">Answer From Your Truth</h3>
+                  <ul className="text-[#A9B5AA] text-sm space-y-2 leading-relaxed">
+                    <li>• Answer from your <span className="text-[#F6FFF2]">lived experience.</span></li>
+                    <li>• Answer from your <span className="text-[#F6FFF2]">current patterns.</span></li>
+                    <li>• Answer <span className="text-[#F6FFF2]">honestly.</span></li>
+                  </ul>
+                  <p className="text-[#A9B5AA] text-sm mt-3 leading-relaxed">
+                    The more authentic your responses, the more accurately we can meet you where you are — and help you grow into where you want to be.
+                  </p>
+                  <p className="text-[#D9FF3D] text-sm mt-3 font-semibold">This process is about alignment, not judgment.</p>
+                </div>
+
+                {/* Buttons */}
+                <div className={`flex flex-col gap-3 transition-all duration-700 delay-900 ${
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                }`}>
+                  <button
+                    onClick={beginAssessment}
+                    className="btn-primary w-full"
+                  >
+                    Begin Assessment
+                  </button>
+                  <button
+                    onClick={handleLogoutFromAssessment}
+                    className="w-full px-6 py-3 rounded-xl border border-[#1A211A] bg-transparent text-[#A9B5AA] hover:text-[#F6FFF2] hover:border-[#A9B5AA] transition-all duration-300"
+                  >
+                    Log Out & Return Later
+                  </button>
+                </div>
+              </div>
             ) : (
               <div id="questions-container" className="w-full">
                 {/* Progress Bar */}
