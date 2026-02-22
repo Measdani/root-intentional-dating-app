@@ -82,6 +82,13 @@ const SignUpSection: React.FC = () => {
     setExpandedSection(-1);
   }, [viewingPolicy]);
 
+  // Clear errors when entering step 3 (photos)
+  useEffect(() => {
+    if (step === 3) {
+      setErrors({});
+    }
+  }, [step]);
+
   const POLICIES = {
     platformStructure: {
       title: 'Platform Structure & Placement',
