@@ -73,8 +73,8 @@ const SignUpSection: React.FC = () => {
   const [viewingPolicy, setViewingPolicy] = useState<string | null>(null);
 
   const POLICIES = {
-    terms: {
-      title: 'Terms of Service',
+    platformStructure: {
+      title: 'Platform Structure & Placement',
       sections: [
         { heading: 'Payment Before Assessment', content: 'Rooted Hearts is not simply a dating site.\n\nIt is an ecosystem designed to prepare you for love, support you in love, and strengthen you between experiences.\n\nYour membership is not a payment for access to profiles alone. It supports:\n\n• The emotional readiness assessment\n• Inner Work and Alignment pathways\n• Curated environments based on alignment\n• Safety systems and background protections\n• Relationship development resources\n• Platform design built around intention, not volume\n\nWe are not built to be another swipe-based marketplace.\n\nWe are built to create emotionally stable, intentional partnerships.\n\nYou must select a membership plan and complete payment before taking the assessment. This ensures commitment to the process and helps us maintain a serious, intentional community. Membership is non-refundable once the billing period has commenced.' },
         {
@@ -84,35 +84,51 @@ const SignUpSection: React.FC = () => {
         },
         { heading: 'Our Two Connection Environments', content: 'At Rooted Hearts, we are not just matching profiles.\n\nWe are building an ecosystem designed to help you win in love.\n\nThat means meeting people who are aligned not only in attraction — but in emotional readiness, life stage, and relational capacity.\n\nFor that reason, we operate with two intentional connection environments:\n\n🌿 Inner Work Space\n\nThe Inner Work Space is designed for individuals who are:\n• Strengthening emotional regulation\n• Building accountability and communication skills\n• Navigating life transitions\n• Working through past relationship patterns\n• Developing foundational relationship stability\n\nThis is not a waiting room.\n\nIt is a structured growth environment where development is supported and respected.\n\nMembers here connect with others who are also committed to becoming healthier, more self-aware partners.\n\nGrowth & Graduation\n\nAfter six months in the Inner Work Space, members may retake the assessment.\n\nBy actively using the resource section and improving in areas that need development, you may graduate into the Alignment Space.\n\nInner Work is not permanent placement. It is a pathway.\n\nWe believe growth is possible when effort is applied intentionally.\n\n🔷 Alignment Space\n\nThe Alignment Space is designed for individuals who demonstrate:\n• Emotional stability\n• Consistent accountability\n• Healthy conflict repair\n• Clear boundaries\n• Partnership readiness\n\nThis environment offers broader matchmaking access for those prepared to build a stable, long-term partnership.\n\nAlignment Space is about connecting with others who are ready to operate from maturity rather than reaction.\n\nWhy We Separate These Spaces\n\nWe want you to feel the value in the people you communicate with.\n\nWhen individuals are at very different emotional stages, it can lead to:\n• Misalignment\n• Resentment\n• Emotional fatigue\n• Avoidable harm\n\nBy creating Inner Work and Alignment environments, we:\n• Protect emotional integrity\n• Encourage readiness\n• Reduce unnecessary conflict\n• Increase the likelihood of long-term relationship success\n\nThis structure is not about ranking.\n\nIt is about honoring where you are — and providing a pathway forward.\n\nBoth spaces are intentional.\nBoth are valuable.\nBoth are designed to support your journey toward healthy love.' },
         { heading: 'No Refunds Based on Placement', content: 'Rooted Hearts is intentionally structured.\n\nAssessment placement is not an afterthought — it is the foundation of how this platform operates.\n\nYour assessment determines which connection environment best aligns with your current relational readiness. That structure is what protects the integrity of the community and helps ensure members are meeting others at a compatible stage.\n\nBecause placement is determined immediately upon completion of the assessment, refunds cannot be processed based on environment assignment.\n\nThis policy exists to maintain seriousness, fairness, and alignment. It ensures that individuals joining the platform understand and respect the intentional structure we have built.\n\nWe are not here to punish or exclude.\n\nWe are here to align.\n\nYour membership grants access to:\n\n• The structured assessment\n• A protected connection environment\n• Growth resources\n• Messaging and communication tools\n• A community built around intentional partnership\n\nIf you choose to cancel your membership, you may do so at any time. Cancellation will stop future billing, and access will remain active through the end of your current billing period.\n\nPlease understand that this platform was created with significant research, intention, and dedication. Our goal is not to waste your time or take your money — it is to create an ecosystem that genuinely supports healthy love.\n\nBy joining, you acknowledge and accept this structure.' },
-        { heading: 'Safety & Background Verification', content: 'Rooted Hearts is an intentional dating ecosystem — and while we structure alignment carefully, meeting someone new always carries personal responsibility.\n\nYour safety matters.\n\nBackground Verification\n\nWe offer access to a third-party background verification service designed to screen for:\n\n• Sexual offense registry records\n• National and county criminal records\n• Violent offenses\n• Identity verification concerns\n\nWhile background verification is optional, we strongly encourage members to complete it and request it from individuals they plan to meet.\n\nVerification adds an additional layer of accountability and peace of mind when building connections.\n\nMeeting Safety Guidelines\n\nIf you decide to meet someone in person:\n\n• Meet in a public location\n• Arrange your own transportation\n• Inform a trusted friend or family member of your plans\n\nIf you do not have someone to share plans with:\n\n• Email yourself the date details\n• Leave yourself a voicemail with the time and location\n• Create a documented record of your meeting plans\n\nMaintaining a safety trail is a simple but powerful precaution.\n\nCommunity Responsibility\n\nPlease use sound judgment when interacting with others.\n\nIf someone:\n\n• Violates our Community Guidelines\n• Makes you feel unsafe\n• Pressures you beyond your comfort\n• Engages in harassment or manipulation\n\nReport them immediately.\n\nWe take all reports seriously and prioritize member protection.\n\nRooted Hearts provides structure, screening options, and safeguards — but your awareness and discernment are equally important.\n\nSafety is a shared responsibility.' },
-        { heading: 'Cancellation Policy', content: 'Memberships may be canceled at any time.\n\nCancellation will:\n\n• Stop future billing\n• Remain active through the end of the current billing period\n• Access will continue until the end of the paid term\n• No partial refunds or prorated credits will be issued for unused time\n\nBy continuing, you acknowledge that cancellations take effect at the end of the billing cycle and do not result in immediate termination or refund.\n\nIf you choose to cancel, your account remains private and can be reactivated if you choose to return.' },
-        { heading: 'Membership Renewal', content: 'Your membership automatically renews at the end of your billing period unless you cancel. Billing occurs on the anniversary of your original purchase date. You will receive a reminder 7 days before renewal.' },
-        { heading: 'Profile Requirements', content: 'You must be at least 25 years old to create an account. Your profile information must be truthful and accurate. Duplicate accounts are not permitted. Accounts found to violate these terms will be suspended or permanently removed.' },
-        { heading: 'Assumptions & Platform Realities', content: 'Rooted Hearts is an intentional relationship ecosystem, not a guarantee of romantic outcome.\n\nBy joining, you acknowledge and agree to the following:\n\n1. No Guaranteed Matches\n\nWe do not guarantee:\n\n• Romantic success\n• Compatibility with specific individuals\n• Engagement levels from other members\n• Long-term relationship outcomes\n\nWe provide structure, tools, and alignment — not guarantees.\n\n2. Assessment Placement Is Structural, Not Personal\n\nAssessment results reflect readiness indicators, not worth, value, or character.\n\nPlacement into Inner Work Space or Alignment Space is based on platform standards and does not imply superiority or deficiency.\n\n3. Personal Responsibility Still Applies\n\nWhile Rooted Hearts provides structure and safety tools:\n\n• You are responsible for your personal decisions\n• You are responsible for meeting safety precautions\n• You are responsible for how you communicate\n• You are responsible for your emotional participation\n\nThe platform does not replace personal discernment.\n\n4. Growth Requires Effort\n\nAccess to resources does not automatically create growth.\n\nInner Work Space is an opportunity — not a passive experience. Advancement requires intentional effort and reassessment.\n\n5. Platform Focus & Eligibility\n\nRooted Hearts is designed exclusively for adult men and women seeking opposite-sex partnerships. By continuing, you confirm you meet this eligibility requirement.\n\nAccounts misrepresenting eligibility may be removed.\n\n6. Community Integrity\n\nMembers who repeatedly violate community standards may:\n\n• Receive warnings\n• Be placed into a structured review period\n• Be removed from the platform\n\nMembership fees are not refundable due to policy violations.\n\nFinal Acknowledgment\n\nBy proceeding, you understand that Rooted Hearts is a men and women platform designed for opposite-sex partnerships. You acknowledge that the platform provides structure and tools, not guaranteed outcomes, and that your experience depends on your participation, alignment, and engagement within this ecosystem.' },
+        { heading: 'Assumptions & Platform Realities', content: 'Rooted Hearts is an intentional relationship ecosystem, not a guarantee of romantic outcome.\n\nBy joining, you acknowledge and agree to the following:\n\n1. No Guaranteed Matches\n\nWe do not guarantee:\n\n• Romantic success\n• Compatibility with specific individuals\n• Engagement levels from other members\n• Long-term relationship outcomes\n\nWe provide structure, tools, and alignment — not guarantees.\n\n2. Assessment Placement Is Structural, Not Personal\n\nAssessment results reflect readiness indicators, not worth, value, or character.\n\nPlacement into Inner Work Space or Alignment Space is based on platform standards and does not imply superiority or deficiency.\n\n3. Personal Responsibility Still Applies\n\nWhile Rooted Hearts provides structure and safety tools:\n\n• You are responsible for your personal decisions\n• You are responsible for meeting safety precautions\n• You are responsible for how you communicate\n• You are responsible for your emotional participation\n\nThe platform does not replace personal discernment.\n\n4. Growth Requires Effort\n\nAccess to resources does not automatically create growth.\n\nInner Work Space is an opportunity — not a passive experience. Advancement requires intentional effort and reassessment.\n\n5. Platform Focus & Eligibility\n\nRooted Hearts is designed exclusively for adult men and women seeking opposite-sex partnerships. By continuing, you confirm you meet this eligibility requirement.\n\nAccounts misrepresenting eligibility may be removed.\n\n6. Community Integrity\n\nMembers who repeatedly violate community standards may:\n\n• Receive warnings\n• Be placed into a structured review period\n• Be removed from the platform\n\nMembership fees are not refundable due to policy violations.' },
       ]
     },
-    privacy: {
-      title: 'Privacy Policy & Safety',
+    membershipBilling: {
+      title: 'Membership & Billing Terms',
+      sections: [
+        { heading: 'Cancellation Policy', content: 'Memberships may be canceled at any time.\n\nCancellation will:\n\n• Stop future billing\n• Remain active through the end of the current billing period\n• Access will continue until the end of the paid term\n• No partial refunds or prorated credits will be issued for unused time\n\nBy continuing, you acknowledge that cancellations take effect at the end of the billing cycle and do not result in immediate termination or refund.\n\nIf you choose to cancel, your account remains private and can be reactivated if you choose to return.' },
+        { heading: 'Membership Renewal', content: 'Your membership automatically renews at the end of your billing period unless you cancel. Billing occurs on the anniversary of your original purchase date. You will receive a reminder 7 days before renewal.' },
+        { heading: 'Billing Terms', content: 'By selecting a membership plan and completing payment, you authorize Rooted Hearts to charge your chosen payment method. Billing cycles are monthly, quarterly, or annual based on your selected tier. Your billing will occur on the anniversary of your original purchase date. You can view and update your billing information in your account settings at any time.' },
+      ]
+    },
+    safetyVerification: {
+      title: 'Safety & Verification Policy',
       sections: [
         { heading: 'Safety Policies', content: 'Rooted Hearts prioritizes member safety above all else. We conduct background checks (possibility of verification request) and maintain strict community standards. Reports of misconduct are reviewed and acted upon within 24-48 hours. We have a zero-tolerance policy for harassment, threats, or abusive behavior.' },
         { heading: 'Background Check Requirements', content: 'You may be asked to complete a background check to verify your identity and ensure community safety. This is non-negotiable for continued access to Alignment Space. Background checks include verification of identity and screening for public records. Results are kept confidential and used only for safety purposes.' },
+        { heading: 'Meeting Safety Guidelines', content: 'Rooted Hearts is an intentional dating ecosystem — and while we structure alignment carefully, meeting someone new always carries personal responsibility.\n\nYour safety matters. If you decide to meet someone in person:\n\n• Meet in a public location\n• Arrange your own transportation\n• Inform a trusted friend or family member of your plans\n\nIf you do not have someone to share plans with:\n\n• Email yourself the date details\n• Leave yourself a voicemail with the time and location\n• Create a documented record of your meeting plans\n\nMaintaining a safety trail is a simple but powerful precaution. Rooted Hearts provides structure, screening options, and safeguards — but your awareness and discernment are equally important. Safety is a shared responsibility.' },
+        { heading: 'Report Mechanism', content: 'If you experience inappropriate behavior, you can report members directly through the app. Our safety team reviews all reports and takes action as needed. Include specific details and screenshots when reporting. Reports are investigated confidentially and seriously. We take every report seriously and respond promptly.' },
+        { heading: 'Moderation & Enforcement', content: 'Our moderation team monitors for violations 24/7. First violations may result in warnings. Repeated violations result in temporary suspension. Serious violations (harassment, abuse, illegal activity) result in permanent removal. Appeals can be submitted within 30 days of removal.' },
+      ]
+    },
+    communityStandards: {
+      title: 'Community Standards',
+      sections: [
+        { heading: 'Respectful Interaction', content: 'All members agree to treat others with respect and dignity. Harassment, discrimination, or abusive behavior will result in account suspension or removal. This includes offensive language, threats, unwanted sexual content, or targeting based on protected characteristics. We maintain a safe space for all members.' },
+        { heading: 'Honest Representation', content: 'Profiles must be honest and authentic. Catfishing, fake information, or misleading photos violate community guidelines and result in removal. Use a recent photo that clearly shows your face. Do not impersonate others or create fake identities. Deception undermines community trust.' },
+        { heading: 'Appropriate Content', content: 'Explicit sexual content, hate speech, violence, or illegal activity is strictly prohibited. Photos must be appropriate and show your face clearly. Do not share contact information before private messaging. Do not use the platform for commercial purposes or self-promotion.' },
+        { heading: 'Conversation Standards', content: 'Engage in genuine, respectful conversations focused on building real connection. Do not spam members with generic messages. Avoid overly sexual conversations in initial interactions. Respect boundaries and read cues if someone is not interested in continuing dialogue.' },
+        { heading: 'Profile Requirements', content: 'You must be at least 25 years old to create an account. Your profile information must be truthful and accurate. Duplicate accounts are not permitted. Accounts found to violate these terms will be suspended or permanently removed.' },
+      ]
+    },
+    privacyData: {
+      title: 'Privacy & Data Policy',
+      sections: [
         { heading: 'Data Protection & Security', content: 'Your personal information is encrypted using industry-standard TLS security. We never sell your data to third parties. Your profile information, messages, and communications are protected with encryption. Data is stored on secure servers with regular security audits.' },
         { heading: 'Information We Collect', content: 'We collect profile information (name, age, city, photos), preference data, assessment responses, and communication history. We also collect technical data like IP address, device type, and usage patterns for service improvement. You control what information is visible to other members.' },
         { heading: 'Third-Party Services', content: 'We use third-party payment processors (Stripe) to handle billing securely. We do not share personal information with marketing partners. We use analytics services to understand user behavior and improve the platform. All third parties are bound by confidentiality agreements.' },
         { heading: 'Data Retention', content: 'Account data is retained for 12 months after account deletion for fraud prevention. You can request data deletion at any time. Communications are archived and accessible only to the parties involved. We comply with GDPR and other data protection regulations.' },
       ]
-    },
-    guidelines: {
-      title: 'Community Guidelines',
-      sections: [
-        { heading: 'Respectful Interaction', content: 'All members agree to treat others with respect and dignity. Harassment, discrimination, or abusive behavior will result in account suspension or removal. This includes offensive language, threats, unwanted sexual content, or targeting based on protected characteristics. We maintain a safe space for all members.' },
-        { heading: 'Honest Representation', content: 'Profiles must be honest and authentic. Catfishing, fake information, or misleading photos violate community guidelines and result in removal. Use a recent photo that clearly shows your face. Do not impersonate others or create fake identities. Deception undermines community trust.' },
-        { heading: 'Report Mechanism', content: 'If you experience inappropriate behavior, you can report members directly through the app. Our safety team reviews all reports and takes action as needed. Include specific details and screenshots when reporting. Reports are investigated confidentially and seriously. We take every report seriously and respond promptly.' },
-        { heading: 'Appropriate Content', content: 'Explicit sexual content, hate speech, violence, or illegal activity is strictly prohibited. Photos must be appropriate and show your face clearly. Do not share contact information before private messaging. Do not use the platform for commercial purposes or self-promotion.' },
-        { heading: 'Conversation Standards', content: 'Engage in genuine, respectful conversations focused on building real connection. Do not spam members with generic messages. Avoid overly sexual conversations in initial interactions. Respect boundaries and read cues if someone is not interested in continuing dialogue.' },
-        { heading: 'Moderation & Enforcement', content: 'Our moderation team monitors for violations 24/7. First violations may result in warnings. Repeated violations result in temporary suspension. Serious violations (harassment, abuse, illegal activity) result in permanent removal. Appeals can be submitted within 30 days of removal.' },
-      ]
     }
+  };
+
+  const PLATFORM_CONFIRMATION = {
+    heading: 'Platform Acknowledgment',
+    content: 'I confirm that Rooted Hearts is a men and women platform designed for opposite-sex partnerships and understand that my experience depends on my participation, alignment, and engagement within this ecosystem.'
   };
 
   // Step 6 - Payment
@@ -628,74 +644,66 @@ const SignUpSection: React.FC = () => {
             <label className="text-sm font-medium text-[#F6FFF2] block mb-3">
               Review & Accept Policies
             </label>
-            <div className="space-y-2">
-              {Object.entries(POLICIES).flatMap(([key, policy]: any) => {
-                if (policy.sections && Array.isArray(policy.sections)) {
-                  return policy.sections.map((section: any, idx: number) => {
-                    const sectionKey = `${key}_${idx}`;
-                    return (
-                      <div key={sectionKey} className="flex items-center gap-3 p-3 border border-[#1A211A] rounded-lg hover:border-[#D9FF3D]/50 transition-all">
-                        <input
-                          type="checkbox"
-                          checked={acceptedPolicies[sectionKey] || false}
-                          disabled
-                          className="w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C] opacity-50"
-                        />
-                        <span className="flex-1 text-sm text-[#F6FFF2]">{section.heading}</span>
-                        <button
-                          onClick={() => setViewingPolicy(sectionKey)}
-                          className="text-xs text-[#D9FF3D] hover:underline"
-                        >
-                          View Details
-                        </button>
-                      </div>
-                    );
-                  });
-                } else {
-                  return (
-                    <div key={key} className="flex items-center gap-3 p-3 border border-[#1A211A] rounded-lg hover:border-[#D9FF3D]/50 transition-all">
-                      <input
-                        type="checkbox"
-                        checked={acceptedPolicies[key] || false}
-                        disabled
-                        className="w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C] opacity-50"
-                      />
-                      <span className="flex-1 text-sm text-[#F6FFF2]">{policy.title}</span>
-                      <button
-                        onClick={() => setViewingPolicy(key)}
-                        className="text-xs text-[#D9FF3D] hover:underline"
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  );
-                }
-              })}
+            <div className="space-y-3">
+              {Object.entries(POLICIES).map(([key, policy]: any) => (
+                <div key={key} className="flex items-start gap-3 p-4 border border-[#1A211A] rounded-lg hover:border-[#D9FF3D]/50 transition-all">
+                  <input
+                    type="checkbox"
+                    checked={acceptedPolicies[key] || false}
+                    onChange={(e) => {
+                      setAcceptedPolicies(prev => ({
+                        ...prev,
+                        [key]: e.target.checked
+                      }));
+                    }}
+                    className="mt-1 w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C]"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-[#F6FFF2]">{policy.title}</span>
+                    <p className="text-xs text-[#A9B5AA] mt-1">{policy.sections?.length || 0} sections to review</p>
+                  </div>
+                  <button
+                    onClick={() => setViewingPolicy(key)}
+                    className="text-xs text-[#D9FF3D] hover:underline whitespace-nowrap ml-2"
+                  >
+                    View Details
+                  </button>
+                </div>
+              ))}
             </div>
+
+            {/* Platform Confirmation */}
+            <div className="mt-6 p-4 border border-[#1A211A] rounded-lg bg-[#111611]">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedPolicies['platformConfirmation'] || false}
+                  onChange={(e) => {
+                    setAcceptedPolicies(prev => ({
+                      ...prev,
+                      platformConfirmation: e.target.checked
+                    }));
+                  }}
+                  className="mt-1 w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C]"
+                />
+                <span className="text-sm text-[#A9B5AA]">{PLATFORM_CONFIRMATION.content}</span>
+              </label>
+            </div>
+
             <p className="text-xs text-[#A9B5AA] mt-4">
-              Click "View Details" on each policy to read and accept the terms before continuing.
+              Click "View Details" on each policy to explore the full terms before accepting.
             </p>
           </div>
         )}
 
         {/* Policy Detail View */}
         {step === 5 && viewingPolicy && (() => {
-          const parts = viewingPolicy.split('_');
-          const key = parts[0];
-          const sectionIdx = parts[1] ? parseInt(parts[1]) : null;
-          const policy = (POLICIES as Record<string, any>)[key];
-          let title = '';
-          let content = '';
+          const policy = (POLICIES as Record<string, any>)[viewingPolicy];
+          const [expandedSection, setExpandedSection] = React.useState(0);
 
-          if (sectionIdx !== null && policy?.sections && policy.sections[sectionIdx]) {
-            title = policy.sections[sectionIdx].heading;
-            content = policy.sections[sectionIdx].content;
-          } else if (policy) {
-            title = policy.title;
-            content = policy.content;
-          }
+          if (!policy?.title) return null;
 
-          return title ? (
+          return (
             <div className="space-y-4 max-h-[600px] overflow-y-auto" id="policy-detail">
               <button
                 onClick={() => setViewingPolicy(null)}
@@ -704,11 +712,41 @@ const SignUpSection: React.FC = () => {
                 ← Back to policies
               </button>
               <h3 className="text-lg font-display text-[#F6FFF2]">
-                {title}
+                {policy.title}
               </h3>
-              <div className="text-sm text-[#A9B5AA] leading-relaxed whitespace-pre-wrap">
-                {content}
+
+              {/* Sections */}
+              <div className="space-y-2">
+                {policy.sections && policy.sections.map((section: any, idx: number) => (
+                  <div key={idx} className="border border-[#1A211A] rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setExpandedSection(expandedSection === idx ? -1 : idx)}
+                      className="w-full text-left p-3 hover:bg-[#111611] transition-colors flex items-center justify-between"
+                    >
+                      <span className="text-sm font-medium text-[#F6FFF2]">{section.heading}</span>
+                      <span className="text-[#A9B5AA]">{expandedSection === idx ? '−' : '+'}</span>
+                    </button>
+                    {expandedSection === idx && (
+                      <div className="p-3 border-t border-[#1A211A] bg-[#0B0F0C]">
+                        <div className="text-xs text-[#A9B5AA] leading-relaxed whitespace-pre-wrap mb-3">
+                          {section.content}
+                        </div>
+                        {section.link && (
+                          <a
+                            href={section.link.url}
+                            className="text-xs text-[#D9FF3D] hover:underline inline-block"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {section.link.label}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
+
               <div className="mt-6 pt-4 border-t border-[#1A211A] space-y-3">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -722,18 +760,17 @@ const SignUpSection: React.FC = () => {
                     }}
                     className="mt-1 w-4 h-4 rounded border-[#1A211A] bg-[#0B0F0C]"
                   />
-                  <span className="text-sm text-[#A9B5AA]">I accept these terms</span>
+                  <span className="text-sm text-[#A9B5AA]">I agree to this policy</span>
                 </label>
                 <button
                   onClick={() => setViewingPolicy(null)}
-                  disabled={!acceptedPolicies[viewingPolicy]}
-                  className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full btn-primary"
                 >
-                  I Understand - Continue
+                  Done
                 </button>
               </div>
             </div>
-          ) : null;
+          );
         })()}
 
         {/* Step 6 - Payment */}
