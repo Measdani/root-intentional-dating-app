@@ -345,12 +345,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser.suspensionEndDate, currentUser.userStatus, currentUser.id]);
 
   // Auto-redirect suspended and needs-growth users to growth-mode view
+  // BUT: Skip users who haven't taken assessment yet (assessmentPassed is undefined/false on signup)
   useEffect(() => {
-    if ((currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') && currentView !== 'growth-mode') {
+    if (
+      (currentUser.userStatus === 'suspended' || (currentUser.userStatus === 'needs-growth' && currentUser.assessmentPassed === true)) &&
+      currentView !== 'growth-mode' &&
+      currentView !== 'assessment' // Don't interrupt assessment
+    ) {
       setPreviousView(currentView);
       setCurrentViewState('growth-mode');
     }
-  }, [currentUser.userStatus, currentView]);
+  }, [currentUser.userStatus, currentUser.assessmentPassed, currentView]);
 
   // Wrapper function to track previous view when changing views
   const setCurrentView = useCallback((view: AppView) => {
