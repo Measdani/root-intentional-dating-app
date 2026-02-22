@@ -1,9 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useApp } from '@/store/AppContext';
-import { ArrowRight } from 'lucide-react';
 
 const ProblemSection: React.FC = () => {
-  const { setCurrentView } = useApp();
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -71,17 +68,9 @@ const ProblemSection: React.FC = () => {
           MATCH.<br />
           <span className="text-[#A9B5AA]">FORGET.</span>
         </h2>
-        <p className="text-[#A9B5AA] text-lg leading-relaxed mb-6">
+        <p className="text-[#A9B5AA] text-lg leading-relaxed">
           Most apps train you to keep searching. We built something for people who want to stop.
         </p>
-        <div className="w-16 h-0.5 bg-[#D9FF3D] mb-6" />
-        <button
-          onClick={() => setCurrentView('community-blog')}
-          className="inline-flex items-center gap-2 text-[#D9FF3D] font-medium hover:gap-4 transition-all duration-300"
-        >
-          See how we are different
-          <ArrowRight className="w-4 h-4" />
-        </button>
       </div>
     </section>
   );
