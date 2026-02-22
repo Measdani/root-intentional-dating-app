@@ -16,6 +16,10 @@ const AssessmentSection: React.FC = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showAssessmentStatement, setShowAssessmentStatement] = useState(true);
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [assessmentStartTime, setAssessmentStartTime] = useState<number | null>(null);
+  const [answerTimestamps, setAnswerTimestamps] = useState<Array<{ questionId: string; timestamp: number; score: number }>>([]);
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -48,9 +52,13 @@ const AssessmentSection: React.FC = () => {
 
   const handleAnswer = (score: number, redFlag?: boolean) => {
     if (isTransitioning) return;
-    
+
     setIsTransitioning(true);
     addAssessmentAnswer(currentQuestion.id, score, redFlag);
+
+    // Track answer timestamp
+    const timestamp = Date.now();
+    setAnswerTimestamps(prev => [...prev, { questionId: currentQuestion.id, timestamp, score }]);
 
     // Check for integrity triggers
     if (!showFollowUp && redFlag && assessmentAnswers.filter(a => a.redFlag).length >= 2) {
@@ -69,8 +77,26 @@ const AssessmentSection: React.FC = () => {
         setCurrentQuestionIndex(0);
         setIsTransitioning(false);
       } else {
-        // Complete assessment
+        // Complete assessment - log data
+        const completionTime = Date.now();
+        const totalTimeTaken = assessmentStartTime ? completionTime - assessmentStartTime : 0;
         const finalAnswers = [...assessmentAnswers, { questionId: currentQuestion.id, score, redFlag }];
+
+        // Log assessment metadata
+        const assessmentLog = {
+          completionTimestamp: new Date(completionTime).toISOString(),
+          totalTimeTakenMs: totalTimeTaken,
+          totalTimeTakenSeconds: Math.round(totalTimeTaken / 1000),
+          answerPatterns: answerTimestamps,
+          questionCount: finalAnswers.length,
+          redFlagCount: finalAnswers.filter(a => a.redFlag).length,
+          suspiciousSpeed: totalTimeTaken < 15000 && finalAnswers.length > 5 // Less than 15 seconds for 5+ questions
+        };
+
+        // Store in localStorage for later analysis
+        localStorage.setItem('assessmentLog', JSON.stringify(assessmentLog));
+        console.log('Assessment completed:', assessmentLog);
+
         const result = calculateAssessmentResult(finalAnswers);
         setAssessmentResult(result);
         saveAssessmentDate();
@@ -85,6 +111,18 @@ const AssessmentSection: React.FC = () => {
     if (questionsContainer) {
       questionsContainer.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const beginAssessment = () => {
+    setAssessmentStartTime(Date.now());
+    setShowAssessmentStatement(false);
+    setShowQuestions(true);
+    setTimeout(() => {
+      const questionsContainer = document.getElementById('questions-container');
+      if (questionsContainer) {
+        questionsContainer.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   return (
@@ -124,7 +162,8 @@ const AssessmentSection: React.FC = () => {
           <div className="relative z-10 text-center px-6 md:px-12 w-full max-w-lg">
             {/*
               Show assessment preview if embedded in landing page (main element exists) and not yet answering
-              Otherwise (full page assessment view), show questions directly
+              Show statement modal if assessment is starting
+              Otherwise (full page assessment view), show questions
             */}
             {assessmentAnswers.length === 0 && document.querySelector('main.relative') ? (
               // Assessment Preview (embedded in landing page)
@@ -150,6 +189,34 @@ const AssessmentSection: React.FC = () => {
                   }`}
                 >
                   Preview the questions
+                </button>
+              </>
+            ) : showAssessmentStatement ? (
+              // Assessment Statement (show before questions begin)
+              <>
+                <h2
+                  className={`font-display text-[clamp(28px,4vw,48px)] text-[#F6FFF2] mb-6 transition-all duration-700 delay-200 ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  }`}
+                >
+                  Before We Begin
+                </h2>
+                <div
+                  className={`bg-[#111611]/60 border border-[#1A211A] rounded-lg p-6 mb-8 transition-all duration-700 delay-300 ${
+                    isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                  }`}
+                >
+                  <p className="text-[#A9B5AA] text-base leading-relaxed">
+                    This assessment determines your placement within our structured connection environments. Please answer honestly. There are no trick questions.
+                  </p>
+                </div>
+                <button
+                  onClick={beginAssessment}
+                  className={`btn-primary transition-all duration-700 delay-500 ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                  }`}
+                >
+                  Begin Assessment
                 </button>
               </>
             ) : (
