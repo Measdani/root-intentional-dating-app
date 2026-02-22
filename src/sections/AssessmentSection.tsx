@@ -202,8 +202,8 @@ const AssessmentSection: React.FC = () => {
               Learn How We Define Readiness →
             </button>
           </div>
-        ) : showAssessmentStatement ? (
-          // Assessment Statement (full-screen page)
+        ) : showAssessmentStatement && localStorage.getItem('currentUser') ? (
+          // Assessment Statement (full-screen page) - only show if logged in
           <div>
             <h1 className="font-display text-[clamp(40px,7vw,56px)] text-[#F6FFF2] mb-12 text-center">
               Before You Begin Your Assessment
