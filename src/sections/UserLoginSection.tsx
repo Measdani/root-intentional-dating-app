@@ -67,7 +67,8 @@ const UserLoginSection: React.FC = () => {
         } else if (user.assessmentPassed) {
           setCurrentView('browse');
         } else {
-          setCurrentView('growth-mode');
+          // User hasn't passed assessment - send to assessment to take/retake it
+          setCurrentView('assessment');
         }
       }
     } finally {
@@ -121,7 +122,8 @@ const UserLoginSection: React.FC = () => {
         } else if (user.assessmentPassed) {
           setCurrentView('browse');
         } else {
-          setCurrentView('growth-mode');
+          // User hasn't passed assessment - send to assessment to take/retake it
+          setCurrentView('assessment');
         }
       }
     }
@@ -144,7 +146,8 @@ const UserLoginSection: React.FC = () => {
             } else if (loginUser.assessmentPassed) {
               setCurrentView('browse');
             } else {
-              setCurrentView('growth-mode');
+              // User hasn't passed assessment - send to assessment
+              setCurrentView('assessment');
             }
           }
         }}
