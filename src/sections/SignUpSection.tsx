@@ -163,7 +163,14 @@ const SignUpSection: React.FC = () => {
         const ageNum = parseInt(age);
         if (!age || isNaN(ageNum) || ageNum < 25 || ageNum > 80)
           errs.age = 'Age must be between 25 and 80';
-        if (!city.trim()) errs.city = 'City is required';
+        const trimmedCity = city.trim();
+        if (!trimmedCity) {
+          errs.city = 'City is required';
+        } else if (trimmedCity.length < 3) {
+          errs.city = 'Please enter a valid city name (e.g. Portland, OR)';
+        } else if (/^[A-Z]{2}$/.test(trimmedCity)) {
+          errs.city = 'Please enter a city name, not a state abbreviation';
+        }
         if (!gender) errs.gender = 'Please select gender';
         break;
       case 3:
