@@ -9,7 +9,8 @@ const AssessmentSection: React.FC = () => {
     addAssessmentAnswer,
     setAssessmentResult,
     saveAssessmentDate,
-    setCurrentView
+    setCurrentView,
+    resetAssessment
   } = useApp();
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -141,6 +142,7 @@ const AssessmentSection: React.FC = () => {
     window.dispatchEvent(new CustomEvent('user-logout'));
 
     // Reset assessment state completely
+    resetAssessment();
     setShowAssessmentStatement(true);
     setShowQuestions(false);
     setShowFollowUp(false);
