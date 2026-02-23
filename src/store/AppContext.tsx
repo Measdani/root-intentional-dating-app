@@ -376,17 +376,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser.suspensionEndDate, currentUser.userStatus, currentUser.id]);
 
   // Auto-redirect suspended and needs-growth users to growth-mode view
-  // BUT: Skip users who haven't taken assessment yet (assessmentPassed is undefined/false on signup)
   useEffect(() => {
     if (
-      (currentUser.userStatus === 'suspended' || (currentUser.userStatus === 'needs-growth' && currentUser.assessmentPassed === true)) &&
+      (currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') &&
       currentView !== 'growth-mode' &&
-      currentView !== 'assessment' // Don't interrupt assessment
+      currentView !== 'assessment' && // Don't interrupt assessment
+      currentView !== 'landing' // Allow user to see landing first if they just signed up
     ) {
       setPreviousView(currentView);
       setCurrentViewState('growth-mode');
     }
-  }, [currentUser.userStatus, currentUser.assessmentPassed, currentView]);
+  }, [currentUser.userStatus, currentView]);
 
   // Auto-redirect users who passed assessment to browse view
   // This prevents users from being re-presented with the assessment they've already passed
