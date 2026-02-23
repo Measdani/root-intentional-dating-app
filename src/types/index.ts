@@ -98,6 +98,7 @@ export type AppView =
   | 'assessment'
   | 'assessment-reflection'
   | 'assessment-result'
+  | 'assessment-not-completed'
   | 'growth-mode'
   | 'paid-growth-mode'
   | 'growth-detail'
