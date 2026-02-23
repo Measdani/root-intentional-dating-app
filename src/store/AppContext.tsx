@@ -380,8 +380,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (
       (currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') &&
       currentView !== 'growth-mode' &&
-      currentView !== 'assessment' && // Don't interrupt assessment
-      currentView !== 'landing' // Allow user to see landing first if they just signed up
+      currentView !== 'assessment' // Don't interrupt assessment
     ) {
       setPreviousView(currentView);
       setCurrentViewState('growth-mode');
