@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { toast } from 'sonner';
-import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, AlertCircle, X, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
@@ -195,43 +195,6 @@ const GrowthModeSection: React.FC = () => {
           </button>
         </div>
       </header>
-
-      {/* Account Status Notification */}
-      {(currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') && !dismissNotification && (
-        <div className={currentUser.userStatus === 'suspended' ? 'bg-red-600/20 border-t border-red-500/30' : 'bg-orange-600/20 border-t border-orange-500/30'}>
-          <div className="max-w-4xl mx-auto px-6 py-4 flex items-start gap-4">
-            <AlertCircle className={currentUser.userStatus === 'suspended' ? 'w-5 h-5 text-red-400 flex-shrink-0 mt-0.5' : 'w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5'} />
-            <div className="flex-1">
-              {currentUser.userStatus === 'suspended' ? (
-                <>
-                  <h3 className="text-red-300 font-semibold mb-1">Account Status Update: Reassessment Extended</h3>
-                  <p className="text-red-200/80 text-sm mb-3">
-                    Following a review of recent activity reported by a member of the community, your reassessment eligibility has been extended. You may continue participating in the Inner Work Space during this time.
-                  </p>
-                  {currentUser.suspensionEndDate && (
-                    <p className="text-red-200/80 text-sm">
-                      <strong>Reassessment Available:</strong> {new Date(currentUser.suspensionEndDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <>
-                  <h3 className="text-orange-300 font-semibold mb-1">Account Status: Inner Work Space</h3>
-                  <p className="text-orange-200/80 text-sm">
-                    Your account has transitioned to Inner Work Space. You must complete one of the learning paths below before you can resume browsing and matching. This is an opportunity to strengthen your relationship foundation.
-                  </p>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => setDismissNotification(true)}
-              className={currentUser.userStatus === 'suspended' ? 'flex-shrink-0 text-red-300 hover:text-red-200 transition-colors' : 'flex-shrink-0 text-orange-300 hover:text-orange-200 transition-colors'}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-10">
