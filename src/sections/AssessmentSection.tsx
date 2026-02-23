@@ -189,8 +189,8 @@ const AssessmentSection: React.FC = () => {
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-3xl px-4 md:px-8 py-12">
-        {assessmentAnswers.length === 0 && document.querySelector('main.relative') ? (
-          // Assessment Preview (embedded in landing page)
+        {(assessmentAnswers.length === 0 && document.querySelector('main.relative')) || !localStorage.getItem('currentUser') ? (
+          // Assessment Preview (embedded in landing page) - or if logged out
           <div className="text-center">
             <h2 className="font-display text-[clamp(36px,6vw,64px)] text-[#F6FFF2] mb-6">
               BUILT FOR<br />INTENTIONAL LOVE
