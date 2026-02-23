@@ -158,6 +158,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             userStatus: 'needs-growth',
             assessmentPassed: false,
           }));
+          // Mark to show the assessment-not-completed page
+          sessionStorage.setItem('showAssessmentNotCompleted', 'true');
           // Clear the abandonment data since we've applied the consequence
           localStorage.removeItem('assessmentAbandonment');
           console.log('User is in 6-month cooling period after assessment abandonment');
@@ -375,15 +377,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser.suspensionEndDate, currentUser.userStatus, currentUser.id]);
 
-  // Auto-redirect suspended and needs-growth users to growth-mode view
+  // Auto-redirect suspended and needs-growth users to appropriate view
   useEffect(() => {
-    if (
-      (currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') &&
+    if ((currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') &&
       currentView !== 'growth-mode' &&
-      currentView !== 'assessment' // Don't interrupt assessment
+      currentView !== 'assessment' &&
+      currentView !== 'assessment-not-completed'
     ) {
-      setPreviousView(currentView);
-      setCurrentViewState('growth-mode');
+      // Check if we should show the assessment-not-completed page
+      const shouldShowNotCompleted = sessionStorage.getItem('showAssessmentNotCompleted') === 'true';
+
+      if (shouldShowNotCompleted) {
+        // Show the assessment-not-completed page
+        setPreviousView(currentView);
+        setCurrentViewState('assessment-not-completed');
+        // Clear the flag so it only shows once
+        sessionStorage.removeItem('showAssessmentNotCompleted');
+      } else {
+        // Route to growth-mode
+        setPreviousView(currentView);
+        setCurrentViewState('growth-mode');
+      }
     }
   }, [currentUser.userStatus, currentView]);
 
