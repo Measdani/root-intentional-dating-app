@@ -388,6 +388,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser.userStatus, currentUser.assessmentPassed, currentView]);
 
+  // Auto-redirect users who passed assessment to browse view
+  // This prevents users from being re-presented with the assessment they've already passed
+  useEffect(() => {
+    if (
+      currentUser.assessmentPassed === true &&
+      currentUser.userStatus === 'active' &&
+      currentView === 'landing'
+    ) {
+      setPreviousView(currentView);
+      setCurrentViewState('browse');
+    }
+  }, [currentUser.assessmentPassed, currentUser.userStatus, currentView]);
+
   // Wrapper function to track previous view when changing views
   const setCurrentView = useCallback((view: AppView) => {
     setPreviousView(currentView);
