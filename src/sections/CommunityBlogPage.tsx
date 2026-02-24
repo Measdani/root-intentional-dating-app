@@ -100,7 +100,7 @@ const CommunityBlogPage: React.FC = () => {
               }}
               className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
             >
-              <span className="text-sm font-medium">{currentUser?.id ? 'Back' : 'Home'}</span>
+              <span className="text-sm font-medium">{currentUser?.id ? 'My Profile' : 'Home'}</span>
               <ArrowLeft className="w-5 h-5 rotate-180" />
             </button>
           </div>
