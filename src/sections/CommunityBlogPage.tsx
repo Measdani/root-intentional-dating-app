@@ -73,10 +73,25 @@ const CommunityBlogPage: React.FC = () => {
             <button
               onClick={() => {
                 if (currentUser?.id) {
-                  // Safe views to navigate back to
+                  // Determine target view based on user status or previous view
                   const safeViews = ['browse', 'growth-mode', 'paid-growth-mode', 'inbox', 'conversation'];
-                  // If previous view is safe, use it; otherwise use browse
-                  const targetView = safeViews.includes(previousView) ? previousView : 'browse';
+                  let targetView = 'browse'; // default fallback
+
+                  // If previous view is safe, use it
+                  if (safeViews.includes(previousView)) {
+                    targetView = previousView;
+                  } else {
+                    // Otherwise, route based on user status
+                    if (currentUser.assessmentPassed === true) {
+                      targetView = 'browse';
+                    } else if (currentUser.assessmentPassed === false) {
+                      targetView = 'growth-mode';
+                    } else {
+                      targetView = 'landing';
+                    }
+                  }
+
+                  console.log('[BlogBack] Navigating from', previousView, 'to', targetView, 'userStatus:', currentUser.userStatus);
                   setCurrentView(targetView as any);
                 } else {
                   // If logged out, go to landing
