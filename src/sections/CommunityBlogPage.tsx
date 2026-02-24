@@ -72,6 +72,7 @@ const CommunityBlogPage: React.FC = () => {
             </button>
             <button
               onClick={() => {
+                console.log('[BlogMyProfile] Click detected. currentUser:', currentUser, 'previousView:', previousView);
                 if (currentUser?.id) {
                   // Determine target view based on user status or previous view
                   const safeViews = ['browse', 'growth-mode', 'paid-growth-mode', 'inbox', 'conversation'];
@@ -91,10 +92,11 @@ const CommunityBlogPage: React.FC = () => {
                     }
                   }
 
-                  console.log('[BlogMyProfile] Navigating from', previousView, 'to', targetView);
+                  console.log('[BlogMyProfile] Navigating from', previousView, 'to', targetView, 'assessmentPassed:', currentUser.assessmentPassed);
                   setCurrentView(targetView as any);
                 } else {
                   // If logged out, go to landing
+                  console.log('[BlogMyProfile] No currentUser, navigating to landing');
                   setCurrentView('landing');
                 }
               }}
