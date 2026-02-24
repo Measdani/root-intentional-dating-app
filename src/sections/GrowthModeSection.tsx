@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { toast } from 'sonner';
-import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
