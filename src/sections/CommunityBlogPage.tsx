@@ -73,8 +73,11 @@ const CommunityBlogPage: React.FC = () => {
             <button
               onClick={() => {
                 if (currentUser?.id) {
-                  // If logged in, go back to previous view (browse, growth-mode, etc.)
-                  setCurrentView(previousView !== 'community-blog' ? previousView : 'browse');
+                  // Safe views to navigate back to
+                  const safeViews = ['browse', 'growth-mode', 'paid-growth-mode', 'inbox', 'conversation'];
+                  // If previous view is safe, use it; otherwise use browse
+                  const targetView = safeViews.includes(previousView) ? previousView : 'browse';
+                  setCurrentView(targetView as any);
                 } else {
                   // If logged out, go to landing
                   setCurrentView('landing');
