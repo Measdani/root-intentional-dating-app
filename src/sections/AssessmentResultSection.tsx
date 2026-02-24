@@ -16,6 +16,7 @@ const AssessmentResultSection: React.FC = () => {
           ...JSON.parse(savedUser),
           assessmentPassed: assessmentResult.passed,
           alignmentScore: assessmentResult.percentage,
+          userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
         };
         localStorage.setItem('currentUser', JSON.stringify(updated));
         window.dispatchEvent(new CustomEvent('user-login', { detail: updated }));
