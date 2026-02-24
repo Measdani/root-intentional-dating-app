@@ -3,7 +3,6 @@ import { useApp } from '@/store/AppContext';
 import { ArrowLeft, BookOpen, Clock, Search } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
-import type { User } from '@/types';
 
 const CommunityBlogPage: React.FC = () => {
   const { setCurrentView, currentUser, previousView } = useApp();
