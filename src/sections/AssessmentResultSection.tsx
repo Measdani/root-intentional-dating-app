@@ -8,6 +8,18 @@ const AssessmentResultSection: React.FC = () => {
   if (!assessmentResult) return null;
 
   const handleContinue = () => {
+    // Save assessment result to persistent storage (survives logout/login)
+    try {
+      const persistentResult = {
+        passed: assessmentResult.passed,
+        percentage: assessmentResult.percentage,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('assessmentResult', JSON.stringify(persistentResult));
+    } catch (err) {
+      console.error('Failed to save assessment result:', err);
+    }
+
     // Write assessmentPassed + score back to currentUser in localStorage
     try {
       const savedUser = localStorage.getItem('currentUser');

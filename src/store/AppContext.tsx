@@ -106,6 +106,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             parsedUser.userStatus = suspension.userStatus;
           }
 
+          // Restore assessment result from persistent storage if user doesn't have it
+          if (parsedUser.assessmentPassed === undefined) {
+            try {
+              const savedResult = localStorage.getItem('assessmentResult');
+              if (savedResult) {
+                const result = JSON.parse(savedResult);
+                parsedUser.assessmentPassed = result.passed;
+                parsedUser.alignmentScore = result.percentage;
+                parsedUser.userStatus = result.passed ? 'active' : 'needs-growth';
+              }
+            } catch (err) {
+              console.error('Failed to restore assessment result:', err);
+            }
+          }
+
           setCurrentUserState(parsedUser);
         } else {
           setCurrentUserState(defaultUser);
