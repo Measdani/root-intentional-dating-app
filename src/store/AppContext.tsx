@@ -378,8 +378,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser.suspensionEndDate, currentUser.userStatus, currentUser.id]);
 
   // Auto-redirect suspended and needs-growth users to appropriate view
+  // Also redirect users with failed assessments (assessmentPassed === false)
   useEffect(() => {
-    if ((currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') &&
+    const shouldRedirect =
+      (currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') ||
+      (currentUser.assessmentPassed === false && currentUser.userStatus === 'active');
+
+    if (shouldRedirect &&
       currentView !== 'growth-mode' &&
       currentView !== 'assessment' &&
       currentView !== 'assessment-not-completed'
@@ -399,7 +404,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentViewState('growth-mode');
       }
     }
-  }, [currentUser.userStatus, currentView]);
+  }, [currentUser.userStatus, currentUser.assessmentPassed, currentView]);
 
   // Auto-redirect users who passed assessment to browse view
   // This prevents users from being re-presented with the assessment they've already passed
