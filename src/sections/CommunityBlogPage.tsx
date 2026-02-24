@@ -5,7 +5,7 @@ import type { BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
 
 const CommunityBlogPage: React.FC = () => {
-  const { setCurrentView } = useApp();
+  const { setCurrentView, currentUser, previousView } = useApp();
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,12 +72,17 @@ const CommunityBlogPage: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                const currentUser = localStorage.getItem('currentUser');
-                setCurrentView(currentUser ? 'profile' : 'landing');
+                if (currentUser?.id) {
+                  // If logged in, go back to previous view (browse, growth-mode, etc.)
+                  setCurrentView(previousView !== 'community-blog' ? previousView : 'browse');
+                } else {
+                  // If logged out, go to landing
+                  setCurrentView('landing');
+                }
               }}
               className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
             >
-              <span className="text-sm font-medium">{localStorage.getItem('currentUser') ? 'My Profile' : 'Home'}</span>
+              <span className="text-sm font-medium">{currentUser?.id ? 'Back' : 'Home'}</span>
               <ArrowLeft className="w-5 h-5 rotate-180" />
             </button>
           </div>
