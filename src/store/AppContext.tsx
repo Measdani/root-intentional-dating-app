@@ -382,7 +382,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const shouldRedirect =
       (currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') ||
-      (currentUser.assessmentPassed === false && currentUser.userStatus === 'active');
+      (currentUser.assessmentPassed === false); // Redirect ANY user with failed assessment
 
     if (shouldRedirect &&
       currentView !== 'growth-mode' &&
