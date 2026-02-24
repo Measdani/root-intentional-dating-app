@@ -1,13 +1,25 @@
 import React, { useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { Check, AlertTriangle, TrendingUp, RotateCcw, Lock } from 'lucide-react';
+import { assessmentService } from '@/services/assessmentService';
 
 const AssessmentResultSection: React.FC = () => {
   const { assessmentResult, setCurrentView, resetAssessment, canRetakeAssessment, getNextRetakeDate } = useApp();
 
   if (!assessmentResult) return null;
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    // Save to database first
+    try {
+      const savedUser = localStorage.getItem('currentUser');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        await assessmentService.saveAssessmentResult(user.id, assessmentResult);
+      }
+    } catch (err) {
+      console.error('Failed to save assessment result to database:', err);
+    }
+
     // Save assessment result to persistent storage (survives logout/login)
     try {
       const persistentResult = {
