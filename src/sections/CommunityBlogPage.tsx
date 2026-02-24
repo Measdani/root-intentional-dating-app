@@ -3,9 +3,10 @@ import { useApp } from '@/store/AppContext';
 import { ArrowLeft, BookOpen, Clock, Search } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
+import type { User } from '@/types';
 
 const CommunityBlogPage: React.FC = () => {
-  const { setCurrentView } = useApp();
+  const { setCurrentView, currentUser, previousView } = useApp();
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,12 +73,35 @@ const CommunityBlogPage: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                const currentUser = localStorage.getItem('currentUser');
-                setCurrentView(currentUser ? 'profile' : 'landing');
+                if (currentUser?.id) {
+                  // Determine target view based on user status or previous view
+                  const safeViews = ['browse', 'growth-mode', 'paid-growth-mode', 'inbox', 'conversation'];
+                  let targetView = 'browse'; // default fallback
+
+                  // If previous view is safe, use it
+                  if (safeViews.includes(previousView)) {
+                    targetView = previousView;
+                  } else {
+                    // Otherwise, route based on user status
+                    if (currentUser.assessmentPassed === true) {
+                      targetView = 'browse';
+                    } else if (currentUser.assessmentPassed === false) {
+                      targetView = 'growth-mode';
+                    } else {
+                      targetView = 'landing';
+                    }
+                  }
+
+                  console.log('[BlogMyProfile] Navigating from', previousView, 'to', targetView);
+                  setCurrentView(targetView as any);
+                } else {
+                  // If logged out, go to landing
+                  setCurrentView('landing');
+                }
               }}
               className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
             >
-              <span className="text-sm font-medium">{localStorage.getItem('currentUser') ? 'My Profile' : 'Home'}</span>
+              <span className="text-sm font-medium">{currentUser?.id ? 'My Profile' : 'Home'}</span>
               <ArrowLeft className="w-5 h-5 rotate-180" />
             </button>
           </div>
