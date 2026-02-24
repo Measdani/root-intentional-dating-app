@@ -62,13 +62,23 @@ const CommunityBlogPage: React.FC = () => {
       <div className="min-h-screen bg-[#0F140F] text-white">
         {/* Header */}
         <div className="sticky top-0 z-50 bg-[#111611]/95 backdrop-blur border-b border-[#1A211A] px-4 sm:px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center gap-3">
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
             <button
               onClick={() => setSelectedBlog(null)}
               className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="text-sm font-medium">Back to Articles</span>
+            </button>
+            <button
+              onClick={() => {
+                const currentUser = localStorage.getItem('currentUser');
+                setCurrentView(currentUser ? 'profile' : 'landing');
+              }}
+              className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
+            >
+              <span className="text-sm font-medium">{localStorage.getItem('currentUser') ? 'My Profile' : 'Home'}</span>
+              <ArrowLeft className="w-5 h-5 rotate-180" />
             </button>
           </div>
         </div>
