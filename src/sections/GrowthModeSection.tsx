@@ -50,6 +50,20 @@ const GrowthModeSection: React.FC = () => {
     const saved = localStorage.getItem('community-blogs');
     return saved ? JSON.parse(saved) : [];
   });
+  const isModuleOnly = (blog: any): boolean => {
+    const raw = blog?.moduleOnly ?? blog?.module_only;
+    if (typeof raw === 'boolean') return raw;
+    if (typeof raw === 'number') return raw === 1;
+    if (typeof raw === 'string') {
+      const normalized = raw.trim().toLowerCase();
+      return normalized === 'true' || normalized === '1' || normalized === 't' || normalized === 'yes';
+    }
+    return false;
+  };
+  const publicBlogs = useMemo(
+    () => blogs.filter((blog) => !isModuleOnly(blog) && blog.published !== false),
+    [blogs]
+  );
   const [pathProgress] = useState<Record<string, number>>({
     g1: 75,
     g2: 100,
@@ -657,14 +671,14 @@ const GrowthModeSection: React.FC = () => {
               </p>
             </div>
 
-            {blogs.length === 0 ? (
+            {publicBlogs.length === 0 ? (
               <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 text-[#1A211A] mx-auto mb-4" />
                 <p className="text-[#A9B5AA]">No articles available yet</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-6">
-                {blogs.map((blog: any) => (
+                {publicBlogs.map((blog: any) => (
                   <div
                     key={blog.id}
                     onClick={() => setCurrentView('community-blog')}

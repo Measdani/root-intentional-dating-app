@@ -13,6 +13,17 @@ const PaidGrowthModeSection: React.FC = () => {
     return saved ? JSON.parse(saved) : paidGrowthResources;
   });
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
+  const isModuleOnly = (blog: any): boolean => {
+    const raw = blog?.moduleOnly ?? blog?.module_only;
+    if (typeof raw === 'boolean') return raw;
+    if (typeof raw === 'number') return raw === 1;
+    if (typeof raw === 'string') {
+      const normalized = raw.trim().toLowerCase();
+      return normalized === 'true' || normalized === '1' || normalized === 't' || normalized === 'yes';
+    }
+    return false;
+  };
+  const publicBlogs = blogs.filter((blog) => !isModuleOnly(blog) && blog.published !== false);
 
   // Reload notifications when section loads
   useEffect(() => {
@@ -306,14 +317,14 @@ const PaidGrowthModeSection: React.FC = () => {
         {activeTab === 'blog' && (
           <div className="mb-12">
             <h3 className="text-2xl font-bold text-[#F6FFF2] mb-6">Community Blog</h3>
-            {blogs.length === 0 ? (
+            {publicBlogs.length === 0 ? (
               <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 text-emerald-500/30 mx-auto mb-4" />
                 <p className="text-[#A9B5AA]">No articles available yet</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-6">
-                {blogs.map((blog) => (
+                {publicBlogs.map((blog) => (
                   <div
                     key={blog.id}
                     onClick={() => setCurrentView('community-blog')}
