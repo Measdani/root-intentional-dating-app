@@ -138,6 +138,15 @@ const AssessmentResultSection: React.FC = () => {
       'Communication clarity and repair skills',
       'Boundary awareness and consistency'
     ];
+  const normalizedIntegrityFlags = assessmentResult.integrityFlags.map((flag) => {
+    if (flag === 'Multiple concerning responses detected') {
+      return 'Your responses indicate meaningful opportunities for deeper skill development.';
+    }
+    if (flag === 'Significant growth areas identified') {
+      return 'Strengthening these areas will improve relationship stability and connection quality.';
+    }
+    return flag;
+  });
 
   const formatRetakeDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -192,9 +201,9 @@ const AssessmentResultSection: React.FC = () => {
             </div>
           ) : (
             <div className="mb-10 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-              <p className="text-[#D9FF3D] font-semibold mb-2">Growth Mode Activated</p>
+              <p className="text-[#D9FF3D] font-semibold mb-2">Growth Mode: Skill Development Phase</p>
               <p className="text-sm text-[#A9B5AA] leading-relaxed mb-3">
-                Following a review of recent activity, your assessment is paused to allow intentional skill development before re-entry into the alignment pool.
+                Based on your assessment responses, Growth Mode has been activated to support intentional skill development before re-entry into the alignment pool.
               </p>
               <div className="flex items-center gap-2 text-sm text-[#F6FFF2]">
                 <Lock className="w-4 h-4 text-[#A9B5AA]" />
@@ -242,14 +251,14 @@ const AssessmentResultSection: React.FC = () => {
           )}
 
           {/* Integrity Flags */}
-          {assessmentResult.integrityFlags.length > 0 && (
+          {normalizedIntegrityFlags.length > 0 && (
             <div className="mb-10 p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
                 <div>
-                  <h4 className="text-amber-500 font-medium mb-1">Areas for Attention</h4>
+                  <h4 className="text-amber-500 font-medium mb-1">Growth Insights</h4>
                   <ul className="space-y-1">
-                    {assessmentResult.integrityFlags.map((flag, idx) => (
+                    {normalizedIntegrityFlags.map((flag, idx) => (
                       <li key={idx} className="text-[#A9B5AA] text-sm">{flag}</li>
                     ))}
                   </ul>

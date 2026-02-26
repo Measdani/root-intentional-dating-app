@@ -417,10 +417,10 @@ export const calculateAssessmentResult = (answers: { questionId: string; score: 
   const integrityFlags: string[] = [];
   
   if (redFlags >= 3) {
-    integrityFlags.push('Multiple concerning responses detected');
+    integrityFlags.push('Your responses indicate meaningful opportunities for deeper skill development.');
   }
   if (percentage < 60) {
-    integrityFlags.push('Significant growth areas identified');
+    integrityFlags.push('Strengthening these areas will improve relationship stability and connection quality.');
   }
   
   // Calculate category scores
