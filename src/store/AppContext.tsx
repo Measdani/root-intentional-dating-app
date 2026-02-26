@@ -913,17 +913,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const saveAssessmentDate = useCallback(() => {
     try {
-      localStorage.setItem('rooted_last_assessment_date', Date.now().toString());
+      const timestamp = Date.now().toString();
+      localStorage.setItem(`rooted_last_assessment_date_${currentUser.id}`, timestamp);
+      // Backward compatibility for older flows that still read legacy key.
+      localStorage.setItem('rooted_last_assessment_date', timestamp);
     } catch (error) {
       console.error('Failed to save assessment date:', error);
     }
-  }, []);
+  }, [currentUser.id]);
 
   const getNextRetakeDate = useCallback((): Date | null => {
     try {
-      const lastDate = localStorage.getItem('rooted_last_assessment_date');
-      if (!lastDate) return null;
-      const timestamp = parseInt(lastDate, 10);
+      const userScoped = localStorage.getItem(`rooted_last_assessment_date_${currentUser.id}`);
+      const legacy = localStorage.getItem('rooted_last_assessment_date');
+      let timestamp = userScoped ? parseInt(userScoped, 10) : NaN;
+
+      if (!Number.isFinite(timestamp)) {
+        // Fallback: infer from persisted assessment result for this user.
+        const saved = localStorage.getItem(`assessmentResult_${currentUser.id}`);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            const inferred = Number(parsed?.timestamp);
+            if (Number.isFinite(inferred)) {
+              timestamp = inferred;
+              localStorage.setItem(`rooted_last_assessment_date_${currentUser.id}`, String(inferred));
+            }
+          } catch (error) {
+            console.warn('Failed to parse user assessment result timestamp:', error);
+          }
+        }
+      }
+
+      if (!Number.isFinite(timestamp) && legacy) {
+        const legacyTimestamp = parseInt(legacy, 10);
+        if (Number.isFinite(legacyTimestamp)) {
+          timestamp = legacyTimestamp;
+        }
+      }
+
+      if (!Number.isFinite(timestamp)) return null;
       const nextDate = new Date(timestamp);
       nextDate.setMonth(nextDate.getMonth() + 6);
       return nextDate;
@@ -931,7 +960,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Failed to get next retake date:', error);
       return null;
     }
-  }, []);
+  }, [currentUser.id]);
 
   const canRetakeAssessment = useCallback((): boolean => {
     const nextRetakeDate = getNextRetakeDate();

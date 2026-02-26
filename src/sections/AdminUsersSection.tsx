@@ -10,11 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Eye, Trash2, Lock, Unlock } from 'lucide-react';
 import { mockAdminUsers } from '@/data/adminUsers';
+import { userService } from '@/services/userService';
 import type { UserStatus, AssessmentStatus } from '@/types/admin';
 
 const AdminUsersSection: React.FC = () => {
-  const { users, setSelectedUser, updateUserStatus, deleteUser } = useAdmin();
+  const { users, setSelectedUser, updateUserStatus, deleteUser, updateUser } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
+  const [assessmentLookup, setAssessmentLookup] = useState('');
   const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -33,6 +35,47 @@ const AdminUsersSection: React.FC = () => {
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
   const paginatedUsers = filteredUsers.slice(startIdx, startIdx + itemsPerPage);
+
+  const assessmentLookupUser = useMemo(() => {
+    const query = assessmentLookup.trim().toLowerCase();
+    if (!query) return null;
+    return displayUsers.find((user) => (
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query)
+    )) || null;
+  }, [assessmentLookup, displayUsers]);
+
+  const getNextRetakeDateForUser = (userId: string): Date | null => {
+    try {
+      let timestamp = Number(localStorage.getItem(`rooted_last_assessment_date_${userId}`));
+
+      if (!Number.isFinite(timestamp)) {
+        const scopedResult = localStorage.getItem(`assessmentResult_${userId}`);
+        if (scopedResult) {
+          const parsed = JSON.parse(scopedResult);
+          timestamp = Number(parsed?.timestamp);
+        }
+      }
+
+      if (!Number.isFinite(timestamp)) return null;
+
+      const nextDate = new Date(timestamp);
+      nextDate.setMonth(nextDate.getMonth() + 6);
+      return nextDate;
+    } catch (error) {
+      console.warn('Failed to compute retake date for user:', error);
+      return null;
+    }
+  };
+
+  const formatDate = (date: Date | null): string => {
+    if (!date) return 'Not scheduled';
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
 
   const statusColors: Record<UserStatus, string> = {
     active: 'bg-green-500/10 text-green-300 border-green-500/30',
@@ -60,6 +103,65 @@ const AdminUsersSection: React.FC = () => {
     toast.success('User deleted successfully');
   };
 
+  const handleEnableAssessmentRetake = async () => {
+    if (!assessmentLookupUser) {
+      toast.error('No user found for this lookup.');
+      return;
+    }
+
+    const userId = assessmentLookupUser.id;
+    const nextUserStatus = assessmentLookupUser.status === 'suspended' ? 'suspended' : 'active';
+
+    try {
+      await userService.updateUser(userId, {
+        assessmentPassed: null as any,
+        alignmentScore: null as any,
+        userStatus: nextUserStatus,
+      } as any);
+    } catch (error) {
+      console.warn('Supabase user update failed, continuing local override:', error);
+    }
+
+    updateUser(userId, {
+      assessmentStatus: 'not-taken',
+      assessmentScore: undefined,
+      alignmentScore: undefined,
+      status: nextUserStatus,
+    } as any);
+
+    try {
+      localStorage.removeItem(`assessmentResult_${userId}`);
+      localStorage.removeItem(`rooted_last_assessment_date_${userId}`);
+
+      const legacyResult = localStorage.getItem('assessmentResult');
+      if (legacyResult) {
+        const parsed = JSON.parse(legacyResult);
+        if (parsed?.userId === userId) {
+          localStorage.removeItem('assessmentResult');
+        }
+      }
+
+      const currentUserRaw = localStorage.getItem('currentUser');
+      if (currentUserRaw) {
+        const currentUser = JSON.parse(currentUserRaw);
+        if (currentUser?.id === userId) {
+          const updatedCurrentUser = {
+            ...currentUser,
+            userStatus: nextUserStatus,
+          } as any;
+          delete updatedCurrentUser.assessmentPassed;
+          delete updatedCurrentUser.alignmentScore;
+          localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
+          window.dispatchEvent(new CustomEvent('user-login', { detail: updatedCurrentUser }));
+        }
+      }
+    } catch (error) {
+      console.warn('Local assessment unlock cleanup failed:', error);
+    }
+
+    toast.success(`Assessment retake enabled for ${assessmentLookupUser.name}.`);
+  };
+
   return (
     <div className="min-h-screen bg-[#0B0F0C] p-4 md:p-8">
       <Card className="bg-[#111611] border-[#1A211A] p-6 mb-6">
@@ -79,6 +181,46 @@ const AdminUsersSection: React.FC = () => {
           </Select>
           <div className="flex items-center justify-end text-sm text-[#A9B5AA]">{filteredUsers.length} of {displayUsers.length} users</div>
         </div>
+      </Card>
+
+      <Card className="bg-[#111611] border-[#1A211A] p-6 mb-6 space-y-4">
+        <div className="space-y-1">
+          <h3 className="text-[#F6FFF2] font-medium">Assessment Retake Override</h3>
+          <p className="text-sm text-[#A9B5AA]">
+            Look up a user by name or email, then enable assessment retake immediately.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+          <Input
+            placeholder="Lookup user by name or email..."
+            value={assessmentLookup}
+            onChange={(e) => setAssessmentLookup(e.target.value)}
+            className="bg-[#0B0F0C] border-[#1A211A] text-[#F6FFF2]"
+          />
+          <Button
+            onClick={handleEnableAssessmentRetake}
+            disabled={!assessmentLookupUser}
+            className="bg-[#D9FF3D] text-[#0B0F0C] hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+          >
+            Enable Assessment Retake
+          </Button>
+        </div>
+
+        {assessmentLookupUser ? (
+          <div className="p-4 rounded-xl border border-[#1A211A] bg-[#0B0F0C]">
+            <p className="text-sm text-[#F6FFF2] font-medium">
+              {assessmentLookupUser.name} ({assessmentLookupUser.email})
+            </p>
+            <p className="text-xs text-[#A9B5AA] mt-1">
+              Current assessment: {assessmentLookupUser.assessmentStatus} {typeof assessmentLookupUser.assessmentScore === 'number' ? `(${assessmentLookupUser.assessmentScore}%)` : ''}
+            </p>
+            <p className="text-xs text-[#A9B5AA]">
+              Next retake window: {formatDate(getNextRetakeDateForUser(assessmentLookupUser.id))}
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-[#A9B5AA]">No matching user found yet.</p>
+        )}
       </Card>
 
       <Card className="bg-[#111611] border-[#1A211A] overflow-hidden">

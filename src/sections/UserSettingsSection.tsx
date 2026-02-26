@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { toast } from 'sonner';
-import { ArrowLeft, Download, Trash2, UserX, ShieldCheck, Bell, Eye, Lock } from 'lucide-react';
+import { ArrowLeft, Download, Trash2, UserX, ShieldCheck, Bell, Eye, Lock, RotateCcw } from 'lucide-react';
 import { userService } from '@/services/userService';
 import {
   applyCoreLock,
@@ -20,6 +20,8 @@ const UserSettingsSection: React.FC = () => {
   const {
     currentUser,
     setCurrentView,
+    canRetakeAssessment,
+    getNextRetakeDate,
     interactions,
     addNotification,
     blockedUsers,
@@ -71,6 +73,12 @@ const UserSettingsSection: React.FC = () => {
       year: 'numeric',
     });
   };
+
+  const nextRetakeDate = useMemo(() => getNextRetakeDate(), [getNextRetakeDate]);
+  const retakeDateLabel = nextRetakeDate ? formatDate(nextRetakeDate) : 'Not scheduled yet';
+  const retakeStatusCopy = currentUser.assessmentPassed === true
+    ? 'Assessment completed in Alignment Space.'
+    : (canRetakeAssessment() ? 'Eligible for reassessment now.' : 'Retake is currently locked.');
 
   const notifyMatchesOfCoreChange = (settingLabel: string) => {
     matchedUserIds.forEach((userId) => {
@@ -254,6 +262,23 @@ const UserSettingsSection: React.FC = () => {
               <p className="text-[#A9B5AA]">Coming soon</p>
             </div>
           </div>
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 bg-[#0B0F0C] border border-[#1A211A] rounded-xl">
+            <div>
+              <p className="text-sm text-[#F6FFF2]">Retake Assessment</p>
+              <p className="text-xs text-[#A9B5AA]">
+                Next retake date: <span className="text-[#F6FFF2]">{retakeDateLabel}</span>
+              </p>
+            </div>
+            <button
+              disabled
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-[#1A211A] text-[#6E776E] cursor-not-allowed"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Retake Assessment
+            </button>
+          </div>
+          <p className="text-xs text-[#A9B5AA]">{retakeStatusCopy}</p>
 
           <div className="grid md:grid-cols-3 gap-3">
             <input
