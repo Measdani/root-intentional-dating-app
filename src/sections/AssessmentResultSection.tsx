@@ -8,16 +8,19 @@ const AssessmentResultSection: React.FC = () => {
   if (!assessmentResult) return null;
 
   const handleContinue = () => {
+    console.log('[AssessmentResult] handleContinue called. assessmentResult:', assessmentResult);
     // Write assessmentPassed + score back to currentUser in localStorage
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
+        console.log('[AssessmentResult] assessmentResult.passed:', assessmentResult.passed);
         const updated = {
           ...JSON.parse(savedUser),
           assessmentPassed: assessmentResult.passed,
           alignmentScore: assessmentResult.percentage,
           userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
         };
+        console.log('[AssessmentResult] Setting userStatus to:', updated.userStatus);
         localStorage.setItem('currentUser', JSON.stringify(updated));
         window.dispatchEvent(new CustomEvent('user-login', { detail: updated }));
       }
