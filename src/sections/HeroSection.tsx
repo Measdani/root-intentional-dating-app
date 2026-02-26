@@ -3,7 +3,7 @@ import { useApp } from '@/store/AppContext';
 import { ChevronDown } from 'lucide-react';
 
 const HeroSection: React.FC = () => {
-  const { setShowEmailModal, hasJoinedList, setCurrentView } = useApp();
+  const { setCurrentView } = useApp();
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -69,14 +69,6 @@ const HeroSection: React.FC = () => {
             >
               Dating for people who are intentional.
             </p>
-            <button
-              onClick={() => setShowEmailModal(true)}
-              className={`btn-primary transition-all duration-700 delay-700 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
-            >
-              {hasJoinedList ? 'You are on the list' : 'Join the list'}
-            </button>
           </div>
         </div>
       </div>
@@ -102,14 +94,14 @@ const HeroSection: React.FC = () => {
         <ChevronDown className="w-5 h-5 text-[#A9B5AA] scroll-indicator" />
       </button>
 
-      {/* Top Right Sign Up Button */}
+      {/* Top Right Login Button */}
       <button
-        onClick={() => setCurrentView('sign-up')}
+        onClick={() => setCurrentView('user-login')}
         className={`absolute top-8 right-8 z-20 btn-primary text-xs py-2.5 px-5 transition-all duration-700 delay-600 ${
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        Sign Up
+        Login
       </button>
 
       {/* Logo Top Left */}

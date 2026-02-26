@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
+import { useAdmin } from '@/store/AdminContext';
 import { userService } from '@/services/userService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { testUsers } from '@/data/testUsers';
+import { mockAdminCredentials } from '@/data/admins';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import type { AssessmentResult } from '@/types';
 
 const UserLoginSection: React.FC = () => {
   const { setCurrentView, setAssessmentResult } = useApp();
+  const { login: adminLogin } = useAdmin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -125,13 +128,33 @@ const UserLoginSection: React.FC = () => {
     setIsLoading(true);
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const isAdminEmail = Object.prototype.hasOwnProperty.call(mockAdminCredentials, normalizedEmail);
+
+      // Silent admin login path through the regular login screen.
+      if (isAdminEmail) {
+        const adminAuthenticated = await adminLogin(normalizedEmail, password);
+        if (!adminAuthenticated) {
+          setError('Invalid email or password');
+          toast.error('Invalid email or password');
+          setIsLoading(false);
+          return;
+        }
+
+        localStorage.removeItem('currentUser');
+        window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
+        setCurrentView('admin-dashboard');
+        setIsLoading(false);
+        return;
+      }
+
       // Tester accounts are canonical and should never drift.
       // If email matches a tester, never fall back to Supabase.
-      const testerByEmail = getCanonicalTestUser(email);
+      const testerByEmail = getCanonicalTestUser(normalizedEmail);
       let user: any = null;
 
       if (testerByEmail) {
-        user = getCanonicalTestUser(email, password);
+        user = getCanonicalTestUser(normalizedEmail, password);
         if (!user) {
           setError('Invalid email or password');
           toast.error('Invalid email or password');
@@ -140,7 +163,7 @@ const UserLoginSection: React.FC = () => {
         }
       } else {
         // Non-tester accounts come from Supabase.
-        user = await userService.getUserByEmail(email);
+        user = await userService.getUserByEmail(normalizedEmail);
       }
 
       if (!user) {

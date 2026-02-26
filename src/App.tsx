@@ -40,7 +40,6 @@ import CommunityGuidelinesSection from '@/sections/CommunityGuidelinesSection';
 import EmailModal from '@/components/EmailModal';
 import ContactSupportModal from '@/components/ContactSupportModal';
 import Footer from '@/components/Footer';
-import AdminAccessButton from '@/components/AdminAccessButton';
 import UserAccessButton from '@/components/UserAccessButton';
 
 const AppContent: React.FC = () => {
@@ -161,8 +160,7 @@ const AppContent: React.FC = () => {
         <>
           <EmailModal />
           <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
-          <AdminAccessButton />
-          <UserAccessButton />
+          {currentView !== 'landing' && <UserAccessButton />}
         </>
       )}
       <Toaster theme="dark" position="bottom-right" />
