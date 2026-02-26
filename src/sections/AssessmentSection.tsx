@@ -144,7 +144,9 @@ const AssessmentSection: React.FC = () => {
         const result = calculateAssessmentResult(finalAnswers);
         setAssessmentResult(result);
         saveAssessmentDate();
-        setCurrentView('assessment-reflection');
+        // Always show the result screen first so users can review strengths,
+        // growth focus areas, and choose where to go next.
+        setCurrentView('assessment-result');
         setIsTransitioning(false);
       }
     }, 400);
