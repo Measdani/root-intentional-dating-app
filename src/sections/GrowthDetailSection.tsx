@@ -588,7 +588,11 @@ const GrowthDetailSection: React.FC = () => {
                               <h4 className="font-bold text-white mb-1 group-hover:text-[#D9FF3D] transition">
                                 📄 {blog.title}
                               </h4>
-                              <p className="text-sm text-gray-400">{blog.excerpt}</p>
+                              {(blog.content || blog.excerpt) && (
+                                <p className="text-sm text-gray-400">
+                                  {`${(blog.content || blog.excerpt || '').slice(0, 180)}${(blog.content || blog.excerpt || '').length > 180 ? '...' : ''}`}
+                                </p>
+                              )}
                               {blog.readTime && (
                                 <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                                   <Clock className="w-3 h-3" />

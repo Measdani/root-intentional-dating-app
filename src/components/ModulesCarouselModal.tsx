@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 interface BlogArticle {
   id: string;
   title: string;
+  content?: string;
   excerpt?: string;
   readTime?: string;
 }
@@ -49,6 +50,7 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
           const mappedBlogs = data.map((row: any) => ({
             id: row.id,
             title: row.title,
+            content: row.content,
             excerpt: row.excerpt,
             readTime: row.read_time,
           }));
@@ -149,8 +151,10 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
                         className="w-full text-left bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4 hover:border-[#D9FF3D] transition cursor-pointer"
                       >
                         <h5 className="font-medium text-white mb-1">📄 {blog.title}</h5>
-                        {blog.excerpt && (
-                          <p className="text-sm text-[#A9B5AA] mb-2">{blog.excerpt}</p>
+                        {(blog.content || blog.excerpt) && (
+                          <p className="text-sm text-[#A9B5AA] mb-2">
+                            {`${(blog.content || blog.excerpt || '').slice(0, 180)}${(blog.content || blog.excerpt || '').length > 180 ? '...' : ''}`}
+                          </p>
                         )}
                         {blog.readTime && (
                           <p className="text-xs text-[#666]">⏱️ {blog.readTime} read</p>
@@ -230,7 +234,7 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
             </button>
             <div className="space-y-4">
               <h2 className="text-3xl font-display text-[#D9FF3D]">{selectedBlog.title}</h2>
-              {selectedBlog.excerpt && (
+              {selectedBlog.excerpt && !selectedBlog.content && (
                 <p className="text-[#A9B5AA]">{selectedBlog.excerpt}</p>
               )}
               {selectedBlog.content && (

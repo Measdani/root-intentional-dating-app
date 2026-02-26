@@ -1,6 +1,16 @@
 import { supabase } from '@/lib/supabase'
 import type { BlogArticle } from '@/types'
 
+function toBoolean(value: unknown): boolean {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') return value === 1
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    return normalized === 'true' || normalized === '1' || normalized === 't' || normalized === 'yes'
+  }
+  return false
+}
+
 export const blogService = {
   async createBlog(blog: BlogArticle): Promise<{ error: string | null }> {
     try {
@@ -59,7 +69,10 @@ export const blogService = {
       }
 
       console.log(`Successfully loaded ${data.length} published blogs from Supabase`)
-      return data.map(mapRowToBlog)
+      // Public/community blog feed must never include module-only posts.
+      return data
+        .map(mapRowToBlog)
+        .filter((blog) => !blog.moduleOnly)
     } catch (e: any) {
       console.error('Unexpected error fetching blogs:', e)
       return []
@@ -149,11 +162,13 @@ export const blogService = {
 }
 
 function mapRowToBlog(row: any): BlogArticle {
+  const moduleOnlyRaw = row.module_only ?? row.moduleOnly
+
   return {
     id: row.id,
     title: row.title,
     content: row.content,
-    moduleOnly: row.module_only,
+    moduleOnly: toBoolean(moduleOnlyRaw),
     category: row.category,
     excerpt: row.excerpt,
     author: row.author,
