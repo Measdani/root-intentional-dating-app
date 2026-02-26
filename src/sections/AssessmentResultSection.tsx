@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { Check, AlertTriangle, TrendingUp, RotateCcw, Lock } from 'lucide-react';
 
@@ -7,27 +7,28 @@ const AssessmentResultSection: React.FC = () => {
 
   if (!assessmentResult) return null;
 
-  const handleContinue = () => {
-    console.log('[AssessmentResult] handleContinue called. assessmentResult:', assessmentResult);
-    // Write assessmentPassed + score back to currentUser in localStorage
+  // Auto-save assessment result immediately when it's received
+  useEffect(() => {
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
-        console.log('[AssessmentResult] assessmentResult.passed:', assessmentResult.passed);
         const updated = {
           ...JSON.parse(savedUser),
           assessmentPassed: assessmentResult.passed,
           alignmentScore: assessmentResult.percentage,
           userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
         };
-        console.log('[AssessmentResult] Setting userStatus to:', updated.userStatus);
         localStorage.setItem('currentUser', JSON.stringify(updated));
         window.dispatchEvent(new CustomEvent('user-login', { detail: updated }));
+        console.log('[AssessmentResult] Auto-saved result. userStatus:', updated.userStatus);
       }
     } catch (err) {
-      console.error('Failed to update assessmentPassed:', err);
+      console.error('Failed to auto-save assessment result:', err);
     }
+  }, [assessmentResult]);
 
+  const handleContinue = () => {
+    console.log('[AssessmentResult] handleContinue called');
     // Route based on assessment result
     if (assessmentResult.passed) {
       setCurrentView('browse');
