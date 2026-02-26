@@ -71,7 +71,14 @@ const UserLoginSection: React.FC = () => {
     }
 
     const savedResult = getSavedAssessmentResult(user.id);
-    const hasCompletedAssessment = user.assessmentPassed === false || Boolean(savedResult);
+    const hasScoredAssessment =
+      typeof user.alignmentScore === 'number' ||
+      typeof user.assessmentScore === 'number';
+
+    const hasCompletedAssessment =
+      Boolean(savedResult) ||
+      user.userStatus === 'needs-growth' ||
+      (user.assessmentPassed === false && hasScoredAssessment);
 
     if (hasCompletedAssessment) {
       if (savedResult) {

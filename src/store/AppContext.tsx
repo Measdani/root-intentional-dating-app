@@ -395,9 +395,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Auto-redirect suspended and needs-growth users to appropriate view
   // Also redirect users with failed assessments (assessmentPassed === false)
   useEffect(() => {
+    let hasStoredAssessmentResult = false;
+    try {
+      const userScopedResult = localStorage.getItem(`assessmentResult_${currentUser.id}`);
+      if (userScopedResult) {
+        hasStoredAssessmentResult = true;
+      } else {
+        const legacyResult = localStorage.getItem('assessmentResult');
+        if (legacyResult) {
+          const parsed = JSON.parse(legacyResult);
+          hasStoredAssessmentResult = !parsed?.userId || parsed.userId === currentUser.id;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to inspect stored assessment result:', error);
+    }
+
+    const hasFailedAssessmentSignal =
+      currentUser.assessmentPassed === false &&
+      (typeof currentUser.alignmentScore === 'number' || hasStoredAssessmentResult);
+
     const shouldRedirect =
       (currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') ||
-      (currentUser.assessmentPassed === false); // Redirect ANY user with failed assessment
+      hasFailedAssessmentSignal;
 
     if (shouldRedirect &&
       currentView !== 'growth-mode' &&
