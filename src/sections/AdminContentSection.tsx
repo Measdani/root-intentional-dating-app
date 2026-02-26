@@ -95,6 +95,26 @@ const AdminContentSection: React.FC = () => {
     loadResources();
   }, []);
 
+  const moduleOnlyBlogsByCategory = React.useMemo(() => {
+    const grouped: Record<string, BlogArticle[]> = {};
+
+    blogs
+      .filter((blog) => blog.moduleOnly)
+      .forEach((blog) => {
+        const category = blog.category?.trim() || 'Uncategorized';
+        if (!grouped[category]) {
+          grouped[category] = [];
+        }
+        grouped[category].push(blog);
+      });
+
+    Object.values(grouped).forEach((items) => {
+      items.sort((a, b) => a.title.localeCompare(b.title));
+    });
+
+    return Object.entries(grouped).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [blogs]);
+
   const handleAddNew = () => {
     setFormData({
       title: '',
@@ -612,29 +632,47 @@ const AdminContentSection: React.FC = () => {
                       <div className="mt-3 pt-3 border-t border-[#1A211A]">
                         <label className="block text-xs font-medium text-[#A9B5AA] mb-2">Attach Module Blogs (optional)</label>
                         <div className="space-y-2 bg-[#0B0F0C] p-3 rounded-lg border border-[#1A211A]">
-                          {blogs.filter(b => b.moduleOnly).length > 0 ? (
-                            blogs
-                              .filter(b => b.moduleOnly)
-                              .map(blog => (
-                                <label key={blog.id} className="flex items-center gap-2 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={(module.blogIds || []).includes(blog.id)}
-                                    onChange={(e) => {
-                                      const updated = [...(formData.modules || [])];
-                                      const currentBlogIds = module.blogIds || [];
-                                      if (e.target.checked) {
-                                        updated[idx] = { ...module, blogIds: [...currentBlogIds, blog.id] };
-                                      } else {
-                                        updated[idx] = { ...module, blogIds: currentBlogIds.filter(id => id !== blog.id) };
-                                      }
-                                      setFormData({ ...formData, modules: updated });
-                                    }}
-                                    className="w-4 h-4 rounded cursor-pointer"
-                                  />
-                                  <span className="text-sm text-[#F6FFF2]">{blog.title}</span>
-                                </label>
-                              ))
+                          {moduleOnlyBlogsByCategory.length > 0 ? (
+                            moduleOnlyBlogsByCategory.map(([category, categoryBlogs]) => {
+                              const selectedCount = categoryBlogs.filter((blog) =>
+                                (module.blogIds || []).includes(blog.id)
+                              ).length;
+
+                              return (
+                                <details key={`${idx}-${category}`} className="group rounded-md border border-[#1A211A] bg-[#111611]/40">
+                                  <summary className="list-none [&::-webkit-details-marker]:hidden cursor-pointer px-3 py-2 text-sm text-[#F6FFF2] flex items-center justify-between gap-2 hover:bg-[#111611]/70">
+                                    <div className="flex items-center gap-2">
+                                      <ChevronDown className="w-4 h-4 text-[#A9B5AA] transition-transform group-open:rotate-180" />
+                                      <span>{category}</span>
+                                    </div>
+                                    <span className="text-xs text-[#A9B5AA]">{selectedCount}/{categoryBlogs.length} selected</span>
+                                  </summary>
+
+                                  <div className="px-3 pb-3 pt-1 space-y-2 border-t border-[#1A211A]">
+                                    {categoryBlogs.map((blog) => (
+                                      <label key={blog.id} className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={(module.blogIds || []).includes(blog.id)}
+                                          onChange={(e) => {
+                                            const updated = [...(formData.modules || [])];
+                                            const currentBlogIds = module.blogIds || [];
+                                            if (e.target.checked) {
+                                              updated[idx] = { ...module, blogIds: [...currentBlogIds, blog.id] };
+                                            } else {
+                                              updated[idx] = { ...module, blogIds: currentBlogIds.filter(id => id !== blog.id) };
+                                            }
+                                            setFormData({ ...formData, modules: updated });
+                                          }}
+                                          className="w-4 h-4 rounded cursor-pointer"
+                                        />
+                                        <span className="text-sm text-[#F6FFF2]">{blog.title}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </details>
+                              );
+                            })
                           ) : (
                             <p className="text-xs text-[#A9B5AA] italic">No module-only blogs available</p>
                           )}
