@@ -497,28 +497,18 @@ const GrowthModeSection: React.FC = () => {
         {/* Score Card */}
         {assessmentResult && (
           <div className="bg-[#111611] rounded-[24px] border border-[#1A211A] p-6 md:p-8 mb-10">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
-              <div className="text-center md:text-left">
-                <p className="font-mono-label text-[#A9B5AA] mb-2">Your Assessment Score</p>
-                <div className="flex items-baseline gap-2 justify-center md:justify-start">
-                  <span className="text-5xl font-display text-[#F6FFF2]">{assessmentResult.percentage}%</span>
-                  <span className="text-[#A9B5AA]">/ 78% threshold</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="text-center px-6 py-3 bg-[#1A211A] rounded-xl">
-                  <Calendar className="w-5 h-5 text-[#D9FF3D] mx-auto mb-1" />
-                  <p className="text-xs text-[#A9B5AA]">Retake in</p>
-                  <p className="text-[#F6FFF2] font-medium">6 months</p>
-                </div>
+            <div className="flex justify-center md:justify-end mb-6">
+              <div className="text-center px-6 py-3 bg-[#1A211A] rounded-xl">
+                <Calendar className="w-5 h-5 text-[#D9FF3D] mx-auto mb-1" />
+                <p className="text-xs text-[#A9B5AA]">Next Assessment Window:</p>
+                <p className="text-[#F6FFF2] font-medium">6 Months</p>
               </div>
             </div>
 
             {/* Assessment Areas Section */}
             {assessmentResult.categoryScores && (
               <div className="mb-6 pt-6 border-t border-[#1A211A]">
-                <p className="font-mono-label text-[#A9B5AA] mb-4">Assessment Areas</p>
+                <p className="font-mono-label text-[#A9B5AA] mb-4">Areas of Improvement</p>
                 <div className="space-y-3">
                   {Object.entries(assessmentResult.categoryScores).map(([category, score]) => (
                     <div key={category} className="flex items-center gap-4">
@@ -540,7 +530,7 @@ const GrowthModeSection: React.FC = () => {
                   ))}
                 </div>
                 <p className="text-xs text-[#A9B5AA] mt-4 opacity-75">
-                  These areas can be strengthened through guided practice.
+                  These skills can be strengthened through guided practice and reflection.
                 </p>
               </div>
             )}
@@ -553,14 +543,17 @@ const GrowthModeSection: React.FC = () => {
               </p>
               <div className="space-y-2">
                 <p className="text-[#F6FFF2] text-sm leading-relaxed">
-                  <span className="font-medium">Six months allows for measurable behavioral change,</span> not temporary motivation.
+                  Growth is not a weekend decision.
                 </p>
                 <p className="text-[#F6FFF2] text-sm leading-relaxed">
-                  <span className="font-medium">Lasting growth requires repetition, reflection, and practice over time.</span>
+                  It is built through consistent reflection, intentional practice, and real-life application.
+                </p>
+                <p className="text-[#F6FFF2] text-sm leading-relaxed">
+                  Six months allows new patterns to take root so what changes is not just how you answer questions, but how you show up.
                 </p>
               </div>
               <p className="text-xs text-[#A9B5AA] mt-3 opacity-75">
-                This protects you from rushing into dynamics you are still learning to navigate — and protects your future partner from avoidable harm. Healthy relationships deserve readiness, not urgency.
+                This protects your future relationship from instability and ensures you enter connection grounded, not rushed. Healthy love requires readiness.
               </p>
             </div>
           </div>
