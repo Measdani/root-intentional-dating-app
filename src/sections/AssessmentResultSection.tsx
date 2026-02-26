@@ -125,6 +125,20 @@ const AssessmentResultSection: React.FC = () => {
   const canRetake = useMemo(() => canRetakeAssessment(), [canRetakeAssessment]);
   const nextRetakeDate = useMemo(() => getNextRetakeDate(), [getNextRetakeDate]);
 
+  const strengths = [
+    'You showed honesty in your responses, which is the foundation for growth.',
+    'You completed a reflective process that many avoid.',
+    'You now have clarity on where to focus for healthier partnership.'
+  ];
+
+  const developmentAreas = assessmentResult.growthAreas.length > 0
+    ? assessmentResult.growthAreas
+    : [
+      'Emotional regulation during conflict',
+      'Communication clarity and repair skills',
+      'Boundary awareness and consistency'
+    ];
+
   const formatRetakeDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -224,6 +238,18 @@ const AssessmentResultSection: React.FC = () => {
             </div>
           </div>
 
+          {!assessmentResult.passed && !canRetake && (
+            <div className="mb-10 px-4 py-3.5 bg-[#1A211A]/50 border border-[#1A211A] rounded-lg flex items-center justify-center gap-3">
+              <Lock className="w-4 h-4 text-[#A9B5AA]" />
+              <div className="text-center sm:text-left">
+                <p className="text-sm text-[#F6FFF2] font-medium">Assessment Locked</p>
+                <p className="text-xs text-[#A9B5AA]">
+                  You can retake on {nextRetakeDate ? formatRetakeDate(nextRetakeDate) : 'later'}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Integrity Flags */}
           {assessmentResult.integrityFlags.length > 0 && (
             <div className="mb-10 p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
@@ -258,6 +284,27 @@ const AssessmentResultSection: React.FC = () => {
             </div>
           )}
 
+          {!assessmentResult.passed && (
+            <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+                <h3 className="text-[#D9FF3D] font-medium mb-3">Your Strengths</h3>
+                <ul className="space-y-2">
+                  {strengths.map((strength, idx) => (
+                    <li key={idx} className="text-sm text-[#A9B5AA]">{strength}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+                <h3 className="text-amber-500 font-medium mb-3">Where To Improve</h3>
+                <ul className="space-y-2">
+                  {developmentAreas.map((area, idx) => (
+                    <li key={idx} className="text-sm text-[#A9B5AA] capitalize">{area}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4">
             <button
@@ -267,6 +314,14 @@ const AssessmentResultSection: React.FC = () => {
               {assessmentResult.passed ? 'Explore Profiles' : 'Enter Inner Work Space'}
             </button>
             {!assessmentResult.passed && (
+              <button
+                onClick={() => setCurrentView('community-blog')}
+                className="px-6 py-3 rounded-lg border border-[#D9FF3D] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition-all duration-200 font-medium"
+              >
+                Visit Blog to Learn More
+              </button>
+            )}
+            {!assessmentResult.passed && (
               canRetake ? (
                 <button
                   onClick={handleRetake}
@@ -275,17 +330,7 @@ const AssessmentResultSection: React.FC = () => {
                   <RotateCcw className="w-4 h-4" />
                   Retake Assessment
                 </button>
-              ) : (
-                <div className="flex-1 sm:flex-1 px-4 py-3.5 bg-[#1A211A]/50 border border-[#1A211A] rounded-lg flex items-center justify-center gap-3">
-                  <Lock className="w-4 h-4 text-[#A9B5AA]" />
-                  <div className="text-center sm:text-left">
-                    <p className="text-sm text-[#F6FFF2] font-medium">Assessment Locked</p>
-                    <p className="text-xs text-[#A9B5AA]">
-                      You can retake on {nextRetakeDate ? formatRetakeDate(nextRetakeDate) : 'later'}
-                    </p>
-                  </div>
-                </div>
-              )
+              ) : null
             )}
           </div>
         </div>
