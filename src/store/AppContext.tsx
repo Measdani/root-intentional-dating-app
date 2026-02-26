@@ -402,6 +402,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (shouldRedirect &&
       currentView !== 'growth-mode' &&
       currentView !== 'assessment' &&
+      currentView !== 'assessment-result' &&
       currentView !== 'assessment-not-completed'
     ) {
       // Check if we should show the assessment-not-completed page
