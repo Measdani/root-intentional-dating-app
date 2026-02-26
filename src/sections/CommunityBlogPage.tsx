@@ -5,7 +5,7 @@ import type { BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
 
 const CommunityBlogPage: React.FC = () => {
-  const { setCurrentView, currentUser } = useApp();
+  const { setCurrentView } = useApp();
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
