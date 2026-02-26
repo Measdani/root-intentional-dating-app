@@ -21,16 +21,20 @@ interface Module {
 
 interface ModulesCarouselModalProps {
   isOpen: boolean;
+  resourceId?: string;
   resourceTitle: string;
   modules: Module[];
   onClose: () => void;
+  onModuleViewed?: (resourceId: string, moduleId: string, totalModules: number) => void;
 }
 
 const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
   isOpen,
+  resourceId,
   resourceTitle,
   modules,
   onClose,
+  onModuleViewed,
 }) => {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
@@ -62,6 +66,22 @@ const ModulesCarouselModal: React.FC<ModulesCarouselModalProps> = ({
     };
     loadBlogs();
   }, []);
+
+  // Reset to first module when opening or switching resources
+  useEffect(() => {
+    if (!isOpen) return;
+    setCurrentModuleIndex(0);
+    setSelectedBlog(null);
+  }, [isOpen, resourceId]);
+
+  // Notify parent whenever a module has been viewed
+  useEffect(() => {
+    if (!isOpen || !onModuleViewed || !resourceId || modules.length === 0) return;
+
+    const currentModule = modules[currentModuleIndex];
+    const moduleId = currentModule?.id || `${resourceId}-module-${currentModuleIndex + 1}`;
+    onModuleViewed(resourceId, moduleId, modules.length);
+  }, [isOpen, currentModuleIndex, modules, onModuleViewed, resourceId]);
 
   if (!isOpen || !modules || modules.length === 0) return null;
 

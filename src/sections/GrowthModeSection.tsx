@@ -8,6 +8,15 @@ import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
 
+type ResourceProgressMap = Record<
+  string,
+  {
+    viewedModuleIds: string[];
+    totalModules: number;
+    updatedAt: number;
+  }
+>;
+
 const GrowthModeSection: React.FC = () => {
   const {
     assessmentResult,
@@ -64,14 +73,11 @@ const GrowthModeSection: React.FC = () => {
     () => blogs.filter((blog) => !isModuleOnly(blog) && blog.published !== false),
     [blogs]
   );
-  const [pathProgress] = useState<Record<string, number>>({
-    g1: 75,
-    g2: 100,
-    g3: 0,
-    g4: 50,
-    g5: 25,
-    g6: 40,
-  });
+  const progressStorageKey = useMemo(
+    () => `rooted_growth_module_progress_${currentUser.id}`,
+    [currentUser.id]
+  );
+  const [resourceProgress, setResourceProgress] = useState<ResourceProgressMap>({});
 
   // Load fresh interactions on component mount and when entering browse/inbox tabs
   useEffect(() => {
@@ -96,6 +102,62 @@ const GrowthModeSection: React.FC = () => {
       }
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(progressStorageKey);
+      if (!saved) {
+        setResourceProgress({});
+        return;
+      }
+
+      const parsed = JSON.parse(saved);
+      if (!parsed || typeof parsed !== 'object') {
+        setResourceProgress({});
+        return;
+      }
+
+      const normalized: ResourceProgressMap = {};
+      Object.entries(parsed as Record<string, any>).forEach(([resourceId, value]) => {
+        if (!value || typeof value !== 'object') return;
+
+        const viewedModuleIds = Array.isArray(value.viewedModuleIds)
+          ? Array.from(
+              new Set(
+                value.viewedModuleIds.filter(
+                  (moduleId: unknown): moduleId is string =>
+                    typeof moduleId === 'string' && moduleId.trim().length > 0
+                )
+              )
+            )
+          : [];
+
+        const totalModulesRaw = Number(value.totalModules);
+        const totalModules = Number.isFinite(totalModulesRaw) && totalModulesRaw > 0
+          ? Math.round(totalModulesRaw)
+          : viewedModuleIds.length;
+
+        normalized[resourceId] = {
+          viewedModuleIds,
+          totalModules,
+          updatedAt: Number.isFinite(Number(value.updatedAt)) ? Number(value.updatedAt) : Date.now(),
+        };
+      });
+
+      setResourceProgress(normalized);
+    } catch (error) {
+      console.warn('Failed to load growth resource progress:', error);
+      setResourceProgress({});
+    }
+  }, [progressStorageKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(progressStorageKey, JSON.stringify(resourceProgress));
+    } catch (error) {
+      console.warn('Failed to save growth resource progress:', error);
+    }
+  }, [progressStorageKey, resourceProgress]);
 
   // Calculate unread message count for growth mode inbox
   const unreadMessageCount = useMemo(() => {
@@ -170,11 +232,69 @@ const GrowthModeSection: React.FC = () => {
   };
 
   // Get status based on progress
-  const getPathStatus = (resourceId: string) => {
-    const progress = pathProgress[resourceId] || 0;
+  const getPathStatus = (progress: number) => {
     if (progress === 100) return 'completed';
     if (progress > 0) return 'in-progress';
     return 'not-started';
+  };
+
+  const getResourceProgress = (resource: any): number => {
+    if (!resource?.id) return 0;
+
+    const saved = resourceProgress[resource.id];
+    const moduleIds = Array.isArray(resource.modules)
+      ? resource.modules.map((module: any, index: number) => (
+          typeof module?.id === 'string' && module.id.trim().length > 0
+            ? module.id
+            : `${resource.id}-module-${index + 1}`
+        ))
+      : [];
+
+    const totalModules = moduleIds.length > 0 ? moduleIds.length : (saved?.totalModules || 0);
+    if (totalModules <= 0) return 0;
+
+    const viewedSet = new Set(saved?.viewedModuleIds || []);
+    const viewedCount = moduleIds.length > 0
+      ? moduleIds.filter((moduleId) => viewedSet.has(moduleId)).length
+      : viewedSet.size;
+
+    const percentage = Math.round((Math.min(viewedCount, totalModules) / totalModules) * 100);
+    return Math.max(0, Math.min(100, percentage));
+  };
+
+  const handleModuleViewed = (resourceId: string, moduleId: string, totalModules: number) => {
+    if (!resourceId || !moduleId) return;
+
+    setResourceProgress((previous) => {
+      const current = previous[resourceId] || {
+        viewedModuleIds: [],
+        totalModules: 0,
+        updatedAt: Date.now(),
+      };
+
+      const viewedSet = new Set(current.viewedModuleIds);
+      const beforeSize = viewedSet.size;
+      viewedSet.add(moduleId);
+
+      const nextTotalModules = Math.max(
+        current.totalModules || 0,
+        Number.isFinite(totalModules) ? totalModules : 0,
+        viewedSet.size
+      );
+
+      if (beforeSize === viewedSet.size && nextTotalModules === current.totalModules) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        [resourceId]: {
+          viewedModuleIds: Array.from(viewedSet),
+          totalModules: nextTotalModules,
+          updatedAt: Date.now(),
+        },
+      };
+    });
   };
 
   // Get color based on status
@@ -615,8 +735,8 @@ const GrowthModeSection: React.FC = () => {
           <p className="text-[#A9B5AA] text-sm mb-6">Work through these guided resources at your own pace to develop essential skills for lasting connections.</p>
           <div className="grid md:grid-cols-2 gap-4">
             {resources.map((resource: any) => {
-              const status = getPathStatus(resource.id);
-              const progress = pathProgress[resource.id] || 0;
+              const progress = getResourceProgress(resource);
+              const status = getPathStatus(progress);
               const isCompleted = progress === 100;
 
               return (
@@ -774,9 +894,11 @@ const GrowthModeSection: React.FC = () => {
       {/* Modules Carousel Modal */}
       <ModulesCarouselModal
         isOpen={!!selectedResourceForModal}
+        resourceId={selectedResourceForModal?.id}
         resourceTitle={selectedResourceForModal?.title || ''}
         modules={selectedResourceForModal?.modules || []}
         onClose={() => setSelectedResourceForModal(null)}
+        onModuleViewed={handleModuleViewed}
       />
 
       {/* Background Check Modal */}

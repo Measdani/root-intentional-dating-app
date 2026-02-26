@@ -14,12 +14,13 @@ interface ModuleContent {
 }
 
 const GrowthDetailSection: React.FC = () => {
-  const { setCurrentView } = useApp();
+  const { setCurrentView, currentUser } = useApp();
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [resources, setResources] = useState(growthResources);
+  const progressStorageKey = `rooted_growth_module_progress_${currentUser.id}`;
 
   // Load resources AND blogs on mount
   useEffect(() => {
@@ -397,6 +398,47 @@ const GrowthDetailSection: React.FC = () => {
 
   const resource = selectedResourceId ? resources.find(r => r.id === selectedResourceId) : null;
   const content = selectedModuleId ? moduleContent[selectedModuleId] : null;
+
+  useEffect(() => {
+    if (!selectedResourceId || !selectedModuleId) return;
+
+    const currentResource = resources.find((r) => r.id === selectedResourceId);
+    if (!currentResource) return;
+
+    const moduleIds = (currentResource.modules || []).map((module, index) =>
+      typeof module?.id === 'string' && module.id.trim().length > 0
+        ? module.id
+        : `${selectedResourceId}-module-${index + 1}`
+    );
+    const totalModules = moduleIds.length;
+    if (totalModules === 0) return;
+
+    const moduleId = moduleIds.includes(selectedModuleId) ? selectedModuleId : moduleIds[0];
+
+    try {
+      const saved = localStorage.getItem(progressStorageKey);
+      const parsed = saved ? JSON.parse(saved) : {};
+      const current = parsed?.[selectedResourceId] || { viewedModuleIds: [], totalModules: 0 };
+      const viewedSet = new Set(
+        Array.isArray(current.viewedModuleIds) ? current.viewedModuleIds.filter((id: unknown) => typeof id === 'string') : []
+      );
+
+      viewedSet.add(moduleId);
+
+      const next = {
+        ...parsed,
+        [selectedResourceId]: {
+          viewedModuleIds: Array.from(viewedSet),
+          totalModules: Math.max(Number(current.totalModules) || 0, totalModules),
+          updatedAt: Date.now(),
+        },
+      };
+
+      localStorage.setItem(progressStorageKey, JSON.stringify(next));
+    } catch (error) {
+      console.warn('Failed to save growth detail progress:', error);
+    }
+  }, [selectedResourceId, selectedModuleId, resources, progressStorageKey]);
 
   return (
     <div className="min-h-screen bg-[#0F140F] text-white">
