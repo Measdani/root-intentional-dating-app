@@ -1,10 +1,10 @@
 import React, { useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
-import { Check, AlertTriangle, TrendingUp, RotateCcw, Lock } from 'lucide-react';
+import { Check, AlertTriangle, TrendingUp, Lock } from 'lucide-react';
 import { assessmentService } from '@/services/assessmentService';
 
 const AssessmentResultSection: React.FC = () => {
-  const { assessmentResult, setCurrentView, resetAssessment, canRetakeAssessment, getNextRetakeDate } = useApp();
+  const { assessmentResult, setCurrentView, canRetakeAssessment, getNextRetakeDate } = useApp();
 
   if (!assessmentResult) return null;
 
@@ -147,17 +147,6 @@ const AssessmentResultSection: React.FC = () => {
     });
   };
 
-  const handleRetake = () => {
-    resetAssessment();
-    setCurrentView('landing');
-    setTimeout(() => {
-      const section = document.getElementById('section-assessment');
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
-  };
-
   return (
     <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center p-6">
       {/* Background */}
@@ -196,56 +185,62 @@ const AssessmentResultSection: React.FC = () => {
             </p>
           </div>
 
-          {/* Score Display */}
-          <div className="flex items-center justify-center gap-8 mb-10">
-            <div className="text-center">
-              <div className="text-5xl font-display text-[#F6FFF2] mb-1">
-                {assessmentResult.percentage}%
+          {assessmentResult.passed ? (
+            <div className="flex items-center justify-center gap-8 mb-10">
+              <div className="text-center">
+                <div className="text-5xl font-display text-[#F6FFF2] mb-1">
+                  {assessmentResult.percentage}%
+                </div>
+                <div className="font-mono-label text-[#A9B5AA]">Overall Score</div>
               </div>
-              <div className="font-mono-label text-[#A9B5AA]">Overall Score</div>
-            </div>
-            <div className="w-px h-16 bg-[#1A211A]" />
-            <div className="text-center">
-              <div className="text-5xl font-display text-[#D9FF3D] mb-1">
-                78%
+              <div className="w-px h-16 bg-[#1A211A]" />
+              <div className="text-center">
+                <div className="text-5xl font-display text-[#D9FF3D] mb-1">
+                  78%
+                </div>
+                <div className="font-mono-label text-[#A9B5AA]">Threshold</div>
               </div>
-              <div className="font-mono-label text-[#A9B5AA]">Threshold</div>
             </div>
-          </div>
+          ) : (
+            <div className="mb-10 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+              <p className="text-[#D9FF3D] font-semibold mb-2">Growth Mode Activated</p>
+              <p className="text-sm text-[#A9B5AA] leading-relaxed mb-3">
+                Following a review of recent activity, your assessment is paused to allow intentional skill development before re-entry into the alignment pool.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-[#F6FFF2]">
+                <Lock className="w-4 h-4 text-[#A9B5AA]" />
+                <span>
+                  {canRetake
+                    ? 'Retake available now'
+                    : `Retake available: ${nextRetakeDate ? formatRetakeDate(nextRetakeDate) : 'later'}`}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Category Scores */}
-          <div className="mb-10">
-            <h3 className="font-mono-label text-[#A9B5AA] mb-4">Category Breakdown</h3>
-            <div className="space-y-3">
-              {Object.entries(assessmentResult.categoryScores).map(([category, score]) => (
-                <div key={category} className="flex items-center gap-4">
-                  <span className="text-[#F6FFF2] text-sm capitalize flex-1">
-                    {category.replace(/-/g, ' ')}
-                  </span>
-                  <div className="flex-1 max-w-[200px]">
-                    <div className="h-2 bg-[#1A211A] rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-1000 ${
-                          score >= 70 ? 'bg-[#D9FF3D]' : score >= 50 ? 'bg-amber-500' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${score}%` }}
-                      />
+          {assessmentResult.passed && (
+            <div className="mb-10">
+              <h3 className="font-mono-label text-[#A9B5AA] mb-4">Category Breakdown</h3>
+              <div className="space-y-3">
+                {Object.entries(assessmentResult.categoryScores).map(([category, score]) => (
+                  <div key={category} className="flex items-center gap-4">
+                    <span className="text-[#F6FFF2] text-sm capitalize flex-1">
+                      {category.replace(/-/g, ' ')}
+                    </span>
+                    <div className="flex-1 max-w-[200px]">
+                      <div className="h-2 bg-[#1A211A] rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-1000 ${
+                            score >= 70 ? 'bg-[#D9FF3D]' : score >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${score}%` }}
+                        />
+                      </div>
                     </div>
+                    <span className="text-[#F6FFF2] text-sm w-12 text-right">{score}%</span>
                   </div>
-                  <span className="text-[#F6FFF2] text-sm w-12 text-right">{score}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {!assessmentResult.passed && !canRetake && (
-            <div className="mb-10 px-4 py-3.5 bg-[#1A211A]/50 border border-[#1A211A] rounded-lg flex items-center justify-center gap-3">
-              <Lock className="w-4 h-4 text-[#A9B5AA]" />
-              <div className="text-center sm:text-left">
-                <p className="text-sm text-[#F6FFF2] font-medium">Assessment Locked</p>
-                <p className="text-xs text-[#A9B5AA]">
-                  You can retake on {nextRetakeDate ? formatRetakeDate(nextRetakeDate) : 'later'}
-                </p>
+                ))}
               </div>
             </div>
           )}
@@ -267,23 +262,6 @@ const AssessmentResultSection: React.FC = () => {
             </div>
           )}
 
-          {/* Growth Areas */}
-          {!assessmentResult.passed && assessmentResult.growthAreas.length > 0 && (
-            <div className="mb-10">
-              <h3 className="font-mono-label text-[#A9B5AA] mb-3">Recommended Growth Areas</h3>
-              <div className="flex flex-wrap gap-2">
-                {assessmentResult.growthAreas.map((area, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1.5 bg-[#1A211A] text-[#F6FFF2] text-sm rounded-full"
-                  >
-                    {area}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
           {!assessmentResult.passed && (
             <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
@@ -295,7 +273,7 @@ const AssessmentResultSection: React.FC = () => {
                 </ul>
               </div>
               <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-                <h3 className="text-amber-500 font-medium mb-3">Where To Improve</h3>
+                <h3 className="text-amber-500 font-medium mb-3">Growth Focus Areas</h3>
                 <ul className="space-y-2">
                   {developmentAreas.map((area, idx) => (
                     <li key={idx} className="text-sm text-[#A9B5AA] capitalize">{area}</li>
@@ -318,19 +296,8 @@ const AssessmentResultSection: React.FC = () => {
                 onClick={() => setCurrentView('community-blog')}
                 className="px-6 py-3 rounded-lg border border-[#D9FF3D] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition-all duration-200 font-medium"
               >
-                Visit Blog to Learn More
+                Explore Our Relationship Philosophy
               </button>
-            )}
-            {!assessmentResult.passed && (
-              canRetake ? (
-                <button
-                  onClick={handleRetake}
-                  className="btn-outline flex items-center justify-center gap-2"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Retake Assessment
-                </button>
-              ) : null
             )}
           </div>
         </div>
