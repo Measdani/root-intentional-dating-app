@@ -6,6 +6,7 @@ import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, Brain, Ta
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
+import { getUserSettingsForUser } from '@/services/userSettingsService';
 
 const GrowthModeSection: React.FC = () => {
   const {
@@ -114,10 +115,26 @@ const GrowthModeSection: React.FC = () => {
   // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
   // Exclude users the current user has blocked AND users who have blocked the current user (mutual blocking)
   const growthModeUsers = useMemo(() => {
+    const viewerSettings = getUserSettingsForUser(currentUser.id, currentUser);
     return users.filter(
-      u => !u.assessmentPassed && u.id !== currentUser.id && u.gender !== currentUser.gender && !isUserBlocked(u.id) && !isBlockedByUser(u.id)
+      u => {
+        if (u.assessmentPassed) return false;
+        if (u.id === currentUser.id) return false;
+        if (u.gender === currentUser.gender) return false;
+        if (isUserBlocked(u.id) || isBlockedByUser(u.id)) return false;
+
+        const candidateSettings = getUserSettingsForUser(u.id, u);
+        if (candidateSettings.visibility.profileVisibility === 'paused') return false;
+        if (candidateSettings.visibility.profileVisibility === 'private') {
+          const existingConversation = getConversation(u.id);
+          if (!existingConversation || existingConversation.fromUserId !== u.id) return false;
+        }
+        if (viewerSettings.safety.onlyMatchWithVerifiedAccounts && !u.backgroundCheckVerified) return false;
+
+        return true;
+      }
     );
-  }, [users, currentUser.id, currentUser.gender, isUserBlocked, isBlockedByUser]);
+  }, [users, currentUser.id, currentUser.gender, currentUser, isUserBlocked, isBlockedByUser, getConversation]);
 
   // Map categories to icons
   const getCategoryIcon = (category: string) => {

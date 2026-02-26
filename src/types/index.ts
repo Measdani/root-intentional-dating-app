@@ -118,6 +118,7 @@ export type AppView =
   | 'admin-reports'
   | 'admin-support'
   | 'user-login'
+  | 'user-settings'
   | 'privacy-policy'
   | 'terms-of-service'
   | 'community-guidelines'

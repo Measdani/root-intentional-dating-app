@@ -26,8 +26,7 @@ const UserAccessButton: React.FC = () => {
         <button
           onClick={() => {
             if (currentUser) {
-              localStorage.removeItem('currentUser');
-              setCurrentView('landing');
+              setCurrentView('user-settings');
             } else {
               setCurrentView('user-login');
             }
@@ -41,7 +40,7 @@ const UserAccessButton: React.FC = () => {
 
         {showTooltip && (
           <div className="absolute top-16 right-0 bg-[#111611] border border-[#1A211A] text-[#F6FFF2] text-xs px-3 py-2 rounded-lg whitespace-nowrap pointer-events-none">
-            {currentUser ? `${currentUser.name} (Logout)` : 'User Login'}
+            {currentUser ? `${currentUser.name} (Settings)` : 'User Login'}
           </div>
         )}
       </div>

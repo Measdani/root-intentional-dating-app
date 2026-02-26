@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { calculateAlignmentScore } from '@/data/users';
 import type { User } from '@/types';
+import { getUserSettingsForUser } from '@/services/userSettingsService';
 
 const BrowseSection: React.FC = () => {
   const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, setSelectedConversation, isUserBlocked, isBlockedByUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
@@ -16,6 +17,11 @@ const BrowseSection: React.FC = () => {
     { id: 'wants-children', label: 'Wants Children' },
     { id: 'no-children', label: 'No Children' },
   ];
+
+  const viewerSettings = useMemo(
+    () => getUserSettingsForUser(currentUser.id, currentUser),
+    [currentUser.id]
+  );
 
   // Reload notifications when browse section loads
   useEffect(() => {
@@ -39,6 +45,13 @@ const BrowseSection: React.FC = () => {
     // Show only opposite gender
     const oppositeGender = currentUser.gender === 'male' ? 'female' : 'male';
     if (user.gender !== oppositeGender) return false;
+    const candidateSettings = getUserSettingsForUser(user.id, user);
+    if (candidateSettings.visibility.profileVisibility === 'paused') return false;
+    if (candidateSettings.visibility.profileVisibility === 'private') {
+      const existingConversation = getConversation(user.id);
+      if (!existingConversation || existingConversation.fromUserId !== user.id) return false;
+    }
+    if (viewerSettings.safety.onlyMatchWithVerifiedAccounts && !user.backgroundCheckVerified) return false;
     if (selectedFilter === 'high') return (user.alignmentScore || 0) >= 90;
     if (selectedFilter === 'wants-children') return user.familyAlignment.wantsChildren === 'wants';
     if (selectedFilter === 'no-children') return !user.familyAlignment.hasChildren;
@@ -193,6 +206,17 @@ const BrowseSection: React.FC = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUsers.map((user, idx) => {
             const conversation = getConversation(user.id);
+            const candidateSettings = getUserSettingsForUser(user.id, user);
+            const firstPhoto = (user.photoUrl || '').split('|').filter(Boolean)[0];
+            const canShowPhoto =
+              candidateSettings.visibility.photoVisibility === 'first-photo-only'
+                ? Boolean(firstPhoto)
+                : candidateSettings.visibility.photoVisibility === 'blur-until-mutual'
+                  ? arePhotosUnlocked(user.id) && Boolean(firstPhoto)
+                  : false;
+            const showLockOverlay =
+              candidateSettings.visibility.photoVisibility === 'blur-until-mutual' &&
+              !arePhotosUnlocked(user.id);
             console.log(`Browse-${user.name}(${user.id}):`, conversation ? '✅ FOUND' : '❌ NULL');
 
             return (
@@ -220,9 +244,9 @@ const BrowseSection: React.FC = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="relative w-12 h-12 flex-shrink-0">
-                      {arePhotosUnlocked(user.id) && user.photoUrl ? (
+                      {canShowPhoto ? (
                         <img
-                          src={user.photoUrl}
+                          src={firstPhoto}
                           alt={user.name}
                           className="w-full h-full rounded-full object-cover"
                         />
@@ -233,7 +257,7 @@ const BrowseSection: React.FC = () => {
                               {user.name[0]}
                             </span>
                           </div>
-                          {!arePhotosUnlocked(user.id) && (
+                          {showLockOverlay && (
                             <div className="absolute inset-0 bg-[#0B0F0C]/30 rounded-full flex items-center justify-center">
                               <Lock className="w-4 h-4 text-[#F6FFF2]" />
                             </div>

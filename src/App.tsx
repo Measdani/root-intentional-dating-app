@@ -33,6 +33,7 @@ import AdminContentSection from '@/sections/AdminContentSection';
 import AdminSupportSection from '@/sections/AdminSupportSection';
 import UserLoginSection from '@/sections/UserLoginSection';
 import SignUpSection from '@/sections/SignUpSection';
+import UserSettingsSection from '@/sections/UserSettingsSection';
 import PrivacyPolicySection from '@/sections/PrivacyPolicySection';
 import TermsOfServiceSection from '@/sections/TermsOfServiceSection';
 import CommunityGuidelinesSection from '@/sections/CommunityGuidelinesSection';
@@ -53,6 +54,10 @@ const AppContent: React.FC = () => {
 
     if (currentView === 'sign-up') {
       return <SignUpSection />;
+    }
+
+    if (currentView === 'user-settings') {
+      return <UserSettingsSection />;
     }
 
     // Public blog view (no authentication required)
