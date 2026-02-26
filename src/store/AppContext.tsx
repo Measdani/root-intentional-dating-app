@@ -404,7 +404,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentView !== 'assessment' &&
       currentView !== 'assessment-result' &&
       currentView !== 'assessment-not-completed' &&
-      currentView !== 'community-blog'
+      currentView !== 'community-blog' &&
+      currentView !== 'clarity-room'
     ) {
       // Check if we should show the assessment-not-completed page
       const shouldShowNotCompleted = sessionStorage.getItem('showAssessmentNotCompleted') === 'true';
