@@ -71,14 +71,11 @@ const CommunityBlogPage: React.FC = () => {
               <span className="text-sm font-medium">Back to Articles</span>
             </button>
             <button
-              onClick={() => {
-                console.log('Button onClick fired!');
-                alert('BUTTON CLICKED - TEST');
-                setCurrentView('landing');
-              }}
-              style={{ padding: '12px 20px', backgroundColor: '#FF0000', color: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}
+              onClick={() => setCurrentView('landing')}
+              className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
             >
-              TEST BUTTON - CLICK ME
+              <span className="text-sm font-medium">Home</span>
+              <ArrowLeft className="w-5 h-5 rotate-180" />
             </button>
           </div>
         </div>
