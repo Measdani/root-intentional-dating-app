@@ -72,33 +72,9 @@ const CommunityBlogPage: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                console.log('[BlogMyProfile] Click detected. currentUser:', currentUser, 'previousView:', previousView);
-                if (currentUser?.id) {
-                  // Determine target view based on user status or previous view
-                  const safeViews = ['browse', 'growth-mode', 'paid-growth-mode', 'inbox', 'conversation'];
-                  let targetView = 'browse'; // default fallback
-
-                  // If previous view is safe, use it
-                  if (safeViews.includes(previousView)) {
-                    targetView = previousView;
-                  } else {
-                    // Otherwise, route based on user status
-                    if (currentUser.assessmentPassed === true) {
-                      targetView = 'browse';
-                    } else if (currentUser.assessmentPassed === false) {
-                      targetView = 'growth-mode';
-                    } else {
-                      targetView = 'landing';
-                    }
-                  }
-
-                  console.log('[BlogMyProfile] Navigating from', previousView, 'to', targetView, 'assessmentPassed:', currentUser.assessmentPassed);
-                  setCurrentView(targetView as any);
-                } else {
-                  // If logged out, go to landing
-                  console.log('[BlogMyProfile] No currentUser, navigating to landing');
-                  setCurrentView('landing');
-                }
+                // For now, always go back to landing (test to ensure navigation works)
+                console.log('[BlogMyProfile] Click detected, navigating to landing');
+                setCurrentView('landing');
               }}
               className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
             >
