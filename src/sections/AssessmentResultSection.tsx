@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { Check, AlertTriangle, TrendingUp, RotateCcw, Lock } from 'lucide-react';
 import { assessmentService } from '@/services/assessmentService';
@@ -7,6 +7,61 @@ const AssessmentResultSection: React.FC = () => {
   const { assessmentResult, setCurrentView, resetAssessment, canRetakeAssessment, getNextRetakeDate } = useApp();
 
   if (!assessmentResult) return null;
+
+  // Auto-save assessment result immediately when component mounts
+  useEffect(() => {
+    const saveResult = async () => {
+      console.log('[AssessmentResult] Component mounted, auto-saving result...', {
+        passed: assessmentResult.passed,
+        percentage: assessmentResult.percentage
+      });
+
+      // Save to database first
+      try {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          const user = JSON.parse(savedUser);
+          await assessmentService.saveAssessmentResult(user.id, assessmentResult);
+          console.log('[AssessmentResult] Saved to Supabase');
+        }
+      } catch (err) {
+        console.error('[AssessmentResult] Failed to save to database:', err);
+      }
+
+      // Save assessment result to persistent storage (survives logout/login)
+      try {
+        const persistentResult = {
+          passed: assessmentResult.passed,
+          percentage: assessmentResult.percentage,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem('assessmentResult', JSON.stringify(persistentResult));
+        console.log('[AssessmentResult] Saved to localStorage assessmentResult');
+      } catch (err) {
+        console.error('[AssessmentResult] Failed to save assessmentResult:', err);
+      }
+
+      // Write assessmentPassed + score back to currentUser in localStorage
+      try {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          const updated = {
+            ...JSON.parse(savedUser),
+            assessmentPassed: assessmentResult.passed,
+            alignmentScore: assessmentResult.percentage,
+            userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
+          };
+          localStorage.setItem('currentUser', JSON.stringify(updated));
+          window.dispatchEvent(new CustomEvent('user-login', { detail: updated }));
+          console.log('[AssessmentResult] Auto-saved result. userStatus:', updated.userStatus);
+        }
+      } catch (err) {
+        console.error('[AssessmentResult] Failed to update assessmentPassed:', err);
+      }
+    };
+
+    saveResult();
+  }, [assessmentResult]);
 
   const handleContinue = async () => {
     // Save to database first
