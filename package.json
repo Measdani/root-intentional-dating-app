@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "vercel-build": "npm run build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview"
   },
   "dependencies": {

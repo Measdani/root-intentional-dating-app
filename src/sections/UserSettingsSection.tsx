@@ -20,6 +20,7 @@ const UserSettingsSection: React.FC = () => {
   const {
     currentUser,
     setCurrentView,
+    resetAssessment,
     canRetakeAssessment,
     getNextRetakeDate,
     interactions,
@@ -76,9 +77,29 @@ const UserSettingsSection: React.FC = () => {
 
   const nextRetakeDate = useMemo(() => getNextRetakeDate(), [getNextRetakeDate]);
   const retakeDateLabel = nextRetakeDate ? formatDate(nextRetakeDate) : 'Not scheduled yet';
+  const failedAssessment = currentUser.assessmentPassed === false;
+  const canRetakeNow = failedAssessment && canRetakeAssessment();
+  const retakeAvailabilityLabel = failedAssessment
+    ? (canRetakeNow ? 'Available now' : retakeDateLabel)
+    : 'Not required';
   const retakeStatusCopy = currentUser.assessmentPassed === true
     ? 'Assessment completed in Alignment Space.'
     : (canRetakeAssessment() ? 'Eligible for reassessment now.' : 'Retake is currently locked.');
+
+  const handleRetakeAssessment = () => {
+    if (!failedAssessment) {
+      toast.info('Retake is only available for members in Inner Work Space.');
+      return;
+    }
+    if (!canRetakeNow) {
+      toast.info(`Retake is available on ${retakeDateLabel}.`);
+      return;
+    }
+
+    resetAssessment();
+    setCurrentView('assessment');
+    toast.success('Assessment unlocked. You can retake it now.');
+  };
 
   const notifyMatchesOfCoreChange = (settingLabel: string) => {
     matchedUserIds.forEach((userId) => {
@@ -267,12 +288,17 @@ const UserSettingsSection: React.FC = () => {
             <div>
               <p className="text-sm text-[#F6FFF2]">Retake Assessment</p>
               <p className="text-xs text-[#A9B5AA]">
-                Next retake date: <span className="text-[#F6FFF2]">{retakeDateLabel}</span>
+                Retake available: <span className="text-[#F6FFF2]">{retakeAvailabilityLabel}</span>
               </p>
             </div>
             <button
-              disabled
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-[#1A211A] text-[#6E776E] cursor-not-allowed"
+              onClick={handleRetakeAssessment}
+              disabled={!canRetakeNow}
+              className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border ${
+                canRetakeNow
+                  ? 'border-[#D9FF3D] text-[#D9FF3D] hover:bg-[#D9FF3D]/10'
+                  : 'border-[#1A211A] text-[#6E776E] cursor-not-allowed'
+              }`}
             >
               <RotateCcw className="w-4 h-4" />
               Retake Assessment

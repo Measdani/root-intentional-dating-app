@@ -12,7 +12,6 @@ const GrowthModeSection: React.FC = () => {
   const {
     assessmentResult,
     setCurrentView,
-    resetAssessment,
     currentUser,
     users,
     interactions,
@@ -183,17 +182,6 @@ const GrowthModeSection: React.FC = () => {
     // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
     window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
     setCurrentView('landing');
-  };
-
-  const handleRetake = () => {
-    resetAssessment();
-    setCurrentView('landing');
-    setTimeout(() => {
-      const section = document.getElementById('section-assessment');
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
   };
 
   return (
@@ -709,14 +697,6 @@ const GrowthModeSection: React.FC = () => {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {currentUser.userStatus === 'needs-growth' && (
-            <button
-              onClick={handleRetake}
-              className="btn-primary"
-            >
-              Retake Assessment
-            </button>
-          )}
           <button
             onClick={handleLogout}
             className="btn-outline"
