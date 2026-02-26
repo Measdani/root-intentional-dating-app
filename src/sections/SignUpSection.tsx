@@ -218,6 +218,54 @@ const SignUpSection: React.FC = () => {
     setStep((prev) => (prev - 1) as typeof step);
   };
 
+  const isDuplicateEmailError = (message: string | null | undefined) => {
+    const normalized = (message || '').toLowerCase();
+    return (
+      normalized.includes('duplicate key value violates unique constraint') ||
+      normalized.includes('users_email_key') ||
+      normalized.includes('already exists')
+    );
+  };
+
+  const stripInlinePhotoPayloads = (photoUrl?: string) => {
+    if (!photoUrl) return photoUrl;
+    const kept = photoUrl
+      .split('|')
+      .map((url) => url.trim())
+      .filter((url) => url.length > 0 && !url.startsWith('data:'))
+      .join('|');
+    return kept || undefined;
+  };
+
+  const persistCurrentUserSession = (user: User): User => {
+    try {
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      return user;
+    } catch (error) {
+      console.warn('Primary currentUser save failed, retrying with trimmed payload:', error);
+    }
+
+    const lightweightUser: User = {
+      ...user,
+      photoUrl: stripInlinePhotoPayloads(user.photoUrl),
+    };
+
+    const cacheKeysToPurge = [
+      'assessmentLog',
+      'community-blogs',
+      'growth-resources',
+      'paid-growth-resources',
+      'rooted-admin-data',
+      'rooted-admin-users',
+      'rooted-admin-reports',
+      'rooted-admin-support-messages',
+    ];
+    cacheKeysToPurge.forEach((key) => localStorage.removeItem(key));
+
+    localStorage.setItem('currentUser', JSON.stringify(lightweightUser));
+    return lightweightUser;
+  };
+
   const handleCompleteSignUp = async (
     tier: 'monthly' | 'quarterly' | 'annual' | null
   ) => {
@@ -279,23 +327,32 @@ const SignUpSection: React.FC = () => {
       // Save to Supabase
       const { error: supabaseError } = await userService.createUser(newUser);
       if (supabaseError) {
-        console.warn('User saved to Supabase with warning:', supabaseError);
-        // Continue anyway - localStorage will work as fallback
+        if (isDuplicateEmailError(supabaseError)) {
+          const message = 'This email is already in use. If an account was blocked, it cannot be recreated with the same email.';
+          setErrors({ submit: message });
+          toast.error('Email already in use. Please use a different email.');
+          return;
+        }
+
+        console.warn('Supabase user create failed:', supabaseError);
+        setErrors({ submit: 'Account creation failed. Please try again.' });
+        toast.error('Account creation failed. Please try again.');
+        return;
       }
 
-      // Persist to localStorage
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
+      // Persist to localStorage (with quota-safe fallback)
+      const sessionUser = persistCurrentUserSession(newUser);
 
       // Trigger AppContext to pick up the new user
-      window.dispatchEvent(new CustomEvent('user-login', { detail: newUser }));
+      window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
 
       // Notify admin context of new user
-      window.dispatchEvent(new CustomEvent('new-user', { detail: newUser }));
+      window.dispatchEvent(new CustomEvent('new-user', { detail: sessionUser }));
 
       // Brief delay to let state settle
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      toast.success(`Welcome, ${newUser.name}! Let's start with assessment.`);
+      toast.success(`Welcome, ${sessionUser.name}! Let's start with assessment.`);
 
       // Route to assessment - cannot skip
       setCurrentView('assessment');

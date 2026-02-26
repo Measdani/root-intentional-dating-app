@@ -181,10 +181,10 @@ const UserSettingsSection: React.FC = () => {
   const handleDeleteAccount = async () => {
     if (!window.confirm('Delete account permanently? This action cannot be undone.')) return;
 
-    try {
-      await userService.deleteUser(currentUser.id);
-    } catch (error) {
-      console.warn('Delete user call failed, continuing local cleanup:', error);
+    const deleted = await userService.deleteUser(currentUser.id);
+    if (!deleted) {
+      toast.error('Account deletion could not be completed. Please contact support.');
+      return;
     }
 
     removeUserSettingsForUser(currentUser.id);
