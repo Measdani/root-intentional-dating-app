@@ -33,11 +33,12 @@ const ProblemSection: React.FC = () => {
         <img
           src="https://images.unsplash.com/photo-1511497584788-876760111969?w=1920&q=80"
           alt="Misty forest"
-          className="w-full h-full object-cover opacity-65"
+          className="w-full h-full object-cover opacity-90 brightness-110 contrast-105"
         />
-        <div className="absolute inset-0 gradient-vignette opacity-18" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0B0F0C]/25 via-transparent to-[#0B0F0C]/25" />
-        <div className="absolute inset-y-0 right-0 w-[55vw] bg-gradient-to-l from-[#0B0F0C]/50 via-[#0B0F0C]/30 to-transparent" />
+        <div className="absolute inset-0 gradient-vignette opacity-8" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B0F0C]/8 via-transparent to-[#0B0F0C]/8" />
+        <div className="absolute inset-y-0 right-0 w-[55vw] bg-gradient-to-l from-[#0B0F0C]/25 via-[#0B0F0C]/12 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/6 to-transparent" />
       </div>
 
       {/* Left Circle */}
@@ -64,7 +65,7 @@ const ProblemSection: React.FC = () => {
           isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-[40vw]'
         }`}
       >
-        <div className="rounded-2xl border border-white/20 bg-[#0B0F0C]/60 backdrop-blur-sm p-6 shadow-[0_10px_35px_rgba(0,0,0,0.45)]">
+        <div className="rounded-2xl border border-white/25 bg-[#0B0F0C]/35 backdrop-blur-[1px] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
           <h2 className="font-display font-bold text-[clamp(36px,5vw,72px)] text-white mb-6 leading-none drop-shadow-[0_3px_14px_rgba(0,0,0,0.65)]">
             SWIPE.<br />
             MATCH.<br />
