@@ -72,7 +72,7 @@ const CommunityBlogPage: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                // For now, always go back to landing (test to ensure navigation works)
+                alert('Button clicked! Navigating to landing...');
                 console.log('[BlogMyProfile] Click detected, navigating to landing');
                 setCurrentView('landing');
               }}
