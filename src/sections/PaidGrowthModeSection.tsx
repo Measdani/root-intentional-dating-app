@@ -3,12 +3,15 @@ import { useApp } from '@/store/AppContext';
 import { paidGrowthResources } from '@/data/assessment';
 import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock, Brain } from 'lucide-react';
 import type { BlogArticle } from '@/types';
+import ModulesCarouselModal from '@/components/ModulesCarouselModal';
+import { resourceService } from '@/services/resourceService';
 
 const PaidGrowthModeSection: React.FC = () => {
   const { setCurrentView, currentUser, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
   const [activeResource, setActiveResource] = useState<string | null>(null);
+  const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'resources' | 'blog'>('resources');
-  const [resources] = useState(() => {
+  const [resources, setResources] = useState(() => {
     const saved = localStorage.getItem('paid-growth-resources');
     return saved ? JSON.parse(saved) : paidGrowthResources;
   });
@@ -36,6 +39,26 @@ const PaidGrowthModeSection: React.FC = () => {
     if (saved) {
       setBlogs(JSON.parse(saved));
     }
+  }, []);
+
+  // Load paid resources from Supabase, fallback to local storage/default data
+  useEffect(() => {
+    const loadPaidResources = async () => {
+      try {
+        const supabaseResources = await resourceService.getResources('paid');
+        if (supabaseResources.length > 0) {
+          setResources(supabaseResources);
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to load paid resources from Supabase:', error);
+      }
+
+      const saved = localStorage.getItem('paid-growth-resources');
+      setResources(saved ? JSON.parse(saved) : paidGrowthResources);
+    };
+
+    loadPaidResources();
   }, []);
   const [pathProgress] = useState<Record<string, number>>({
     pg1: 60,
@@ -226,11 +249,18 @@ const PaidGrowthModeSection: React.FC = () => {
               const status = getPathStatus(resource.id);
               const progress = pathProgress[resource.id] || 0;
               const isCompleted = progress === 100;
+              const hasModules = Array.isArray(resource.modules) && resource.modules.length > 0;
 
               return (
                 <div
                   key={resource.id}
-                  onClick={() => setActiveResource(activeResource === resource.id ? null : resource.id)}
+                  onClick={() => {
+                    if (hasModules) {
+                      setSelectedResourceForModal(resource);
+                      return;
+                    }
+                    setActiveResource(activeResource === resource.id ? null : resource.id);
+                  }}
                   className={`rounded-[20px] border p-5 cursor-pointer transition-all duration-300 ${
                     getStatusColor(status)
                   } ${activeResource === resource.id ? 'ring-2 ring-emerald-500/50' : ''}`}
@@ -284,6 +314,11 @@ const PaidGrowthModeSection: React.FC = () => {
                       <Clock className="w-3 h-3" />
                       {resource.estimatedTime}
                     </span>
+                    {hasModules && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300">
+                        {resource.modules.length} modules
+                      </span>
+                    )}
                     <span className={`px-2 py-0.5 rounded-full ${
                       status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
                       status === 'in-progress' ? 'bg-blue-500/20 text-blue-400' :
@@ -393,6 +428,14 @@ const PaidGrowthModeSection: React.FC = () => {
           </p>
         </div>
       </main>
+
+      <ModulesCarouselModal
+        isOpen={!!selectedResourceForModal}
+        resourceId={selectedResourceForModal?.id}
+        resourceTitle={selectedResourceForModal?.title || ''}
+        modules={selectedResourceForModal?.modules || []}
+        onClose={() => setSelectedResourceForModal(null)}
+      />
     </div>
   );
 };
