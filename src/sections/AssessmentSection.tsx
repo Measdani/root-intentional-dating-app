@@ -13,6 +13,16 @@ const AssessmentSection: React.FC = () => {
     currentUser
   } = useApp();
 
+  // Early return: prevent users who have already passed from accessing the assessment
+  if (currentUser.assessmentPassed === true && currentUser.userStatus === 'active') {
+    // Use useEffect to redirect after render
+    useEffect(() => {
+      console.log('[AssessmentSection] User has already passed - redirecting to browse');
+      setCurrentView('browse');
+    }, []);
+    return null;
+  }
+
   const [isVisible, setIsVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showFollowUp, setShowFollowUp] = useState(false);
