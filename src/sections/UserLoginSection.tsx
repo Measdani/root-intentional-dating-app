@@ -26,6 +26,15 @@ const UserLoginSection: React.FC = () => {
     return new Date().getTime() < user.suspensionEndDate;
   };
 
+  const getCanonicalTestUser = (userEmail: string, checkPassword?: string): any | null => {
+    const tester = testUsers.find(
+      (u) => u.email.toLowerCase() === userEmail.trim().toLowerCase()
+    );
+    if (!tester) return null;
+    if (checkPassword !== undefined && tester.password !== checkPassword) return null;
+    return { ...tester };
+  };
+
   const normalizeAssessmentResult = (raw: any): AssessmentResult | null => {
     if (!raw || typeof raw !== 'object') return null;
 
@@ -48,6 +57,10 @@ const UserLoginSection: React.FC = () => {
         const saved = localStorage.getItem(key);
         if (!saved) continue;
         const parsed = JSON.parse(saved);
+        // Guard against cross-user leakage from legacy global key.
+        if (userId && parsed?.userId && parsed.userId !== userId) {
+          continue;
+        }
         const normalized = normalizeAssessmentResult(parsed);
         if (normalized) return normalized;
       } catch (error) {
@@ -59,36 +72,41 @@ const UserLoginSection: React.FC = () => {
   };
 
   const routeAfterLogin = (user: any) => {
+    const canonicalTester = user?.email ? getCanonicalTestUser(user.email) : null;
+    const effectiveUser = canonicalTester || user;
+
     if (isSuspended(user)) {
       toast.info('Your account is currently under suspension. Please review the growth resources.');
       setCurrentView('growth-mode');
       return;
     }
 
-    if (user.assessmentPassed === true) {
+    if (effectiveUser.assessmentPassed === true) {
       setCurrentView('browse');
       return;
     }
 
-    const savedResult = getSavedAssessmentResult(user.id);
+    // Tester accounts must stay canonical and not inherit persisted results
+    // from other test sessions/users.
+    const savedResult = canonicalTester ? null : getSavedAssessmentResult(effectiveUser.id);
     const hasScoredAssessment =
-      typeof user.alignmentScore === 'number' ||
-      typeof user.assessmentScore === 'number';
+      typeof effectiveUser.alignmentScore === 'number' ||
+      typeof effectiveUser.assessmentScore === 'number';
 
     const hasCompletedAssessment =
       Boolean(savedResult) ||
-      user.userStatus === 'needs-growth' ||
-      (user.assessmentPassed === false && hasScoredAssessment);
+      effectiveUser.userStatus === 'needs-growth' ||
+      (effectiveUser.assessmentPassed === false && hasScoredAssessment);
 
     if (hasCompletedAssessment) {
       if (savedResult) {
         setAssessmentResult(savedResult);
       } else {
-        const fallbackPercentage = Number(user.alignmentScore ?? user.assessmentScore ?? 0);
+        const fallbackPercentage = Number(effectiveUser.assessmentScore ?? effectiveUser.alignmentScore ?? 0);
         setAssessmentResult({
           totalScore: Math.round(fallbackPercentage),
           percentage: fallbackPercentage,
-          passed: false,
+          passed: Boolean(effectiveUser.assessmentPassed),
           categoryScores: {},
           integrityFlags: [],
           growthAreas: [],
@@ -107,16 +125,22 @@ const UserLoginSection: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Try to find user in Supabase first
-      let user: any = await userService.getUserByEmail(email);
+      // Tester accounts are canonical and should never drift.
+      // If email matches a tester, never fall back to Supabase.
+      const testerByEmail = getCanonicalTestUser(email);
+      let user: any = null;
 
-      // Fall back to test users if not found in Supabase
-      if (!user) {
-        user = testUsers.find(u => u.email === email && u.password === password) || null;
-      } else if (user && !testUsers.find(u => u.email === email && u.password === password)) {
-        // User exists in Supabase but password check would fail
-        // For now, allow login if user exists in Supabase
-        // In production, would validate password hash
+      if (testerByEmail) {
+        user = getCanonicalTestUser(email, password);
+        if (!user) {
+          setError('Invalid email or password');
+          toast.error('Invalid email or password');
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        // Non-tester accounts come from Supabase.
+        user = await userService.getUserByEmail(email);
       }
 
       if (!user) {
@@ -157,7 +181,7 @@ const UserLoginSection: React.FC = () => {
   };
 
   const handleDemoLogin = async (userEmail: string) => {
-    let user: any = testUsers.find(u => u.email === userEmail);
+    let user: any = getCanonicalTestUser(userEmail);
 
     // If not in test users, try Supabase
     if (!user) {
