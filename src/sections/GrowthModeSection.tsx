@@ -121,16 +121,18 @@ const GrowthModeSection: React.FC = () => {
       Object.entries(parsed as Record<string, any>).forEach(([resourceId, value]) => {
         if (!value || typeof value !== 'object') return;
 
-        const viewedModuleIds = Array.isArray(value.viewedModuleIds)
-          ? Array.from(
-              new Set(
-                value.viewedModuleIds.filter(
-                  (moduleId: unknown): moduleId is string =>
-                    typeof moduleId === 'string' && moduleId.trim().length > 0
-                )
-              )
-            )
+        const rawViewedModuleIds: unknown[] = Array.isArray(value.viewedModuleIds)
+          ? value.viewedModuleIds
           : [];
+
+        const viewedModuleIds: string[] = Array.from(
+          new Set(
+            rawViewedModuleIds.filter(
+              (moduleId: unknown): moduleId is string =>
+                typeof moduleId === 'string' && moduleId.trim().length > 0
+            )
+          )
+        );
 
         const totalModulesRaw = Number(value.totalModules);
         const totalModules = Number.isFinite(totalModulesRaw) && totalModulesRaw > 0
@@ -242,7 +244,7 @@ const GrowthModeSection: React.FC = () => {
     if (!resource?.id) return 0;
 
     const saved = resourceProgress[resource.id];
-    const moduleIds = Array.isArray(resource.modules)
+    const moduleIds: string[] = Array.isArray(resource.modules)
       ? resource.modules.map((module: any, index: number) => (
           typeof module?.id === 'string' && module.id.trim().length > 0
             ? module.id
@@ -253,9 +255,9 @@ const GrowthModeSection: React.FC = () => {
     const totalModules = moduleIds.length > 0 ? moduleIds.length : (saved?.totalModules || 0);
     if (totalModules <= 0) return 0;
 
-    const viewedSet = new Set(saved?.viewedModuleIds || []);
+    const viewedSet = new Set<string>(saved?.viewedModuleIds || []);
     const viewedCount = moduleIds.length > 0
-      ? moduleIds.filter((moduleId) => viewedSet.has(moduleId)).length
+      ? moduleIds.filter((moduleId: string) => viewedSet.has(moduleId)).length
       : viewedSet.size;
 
     const percentage = Math.round((Math.min(viewedCount, totalModules) / totalModules) * 100);
@@ -272,7 +274,7 @@ const GrowthModeSection: React.FC = () => {
         updatedAt: Date.now(),
       };
 
-      const viewedSet = new Set(current.viewedModuleIds);
+      const viewedSet = new Set<string>(current.viewedModuleIds);
       const beforeSize = viewedSet.size;
       viewedSet.add(moduleId);
 
