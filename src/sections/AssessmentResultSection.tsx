@@ -176,30 +176,19 @@ const AssessmentResultSection: React.FC = () => {
               )}
             </div>
             <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-3">
-              {assessmentResult.passed ? 'You Passed' : 'Inner Work Space'}
+              {assessmentResult.passed ? 'Welcome to Alignment Space' : 'Inner Work Space'}
             </h2>
             <p className="text-[#A9B5AA] text-lg">
               {assessmentResult.passed
-                ? 'You demonstrate the readiness this community values.'
+                ? 'You demonstrate emotional maturity, integrity, and intentionality - the foundation this community is built on.'
                 : 'This is not rejection. It is preparation.'}
             </p>
           </div>
 
           {assessmentResult.passed ? (
-            <div className="flex items-center justify-center gap-8 mb-10">
-              <div className="text-center">
-                <div className="text-5xl font-display text-[#F6FFF2] mb-1">
-                  {assessmentResult.percentage}%
-                </div>
-                <div className="font-mono-label text-[#A9B5AA]">Overall Score</div>
-              </div>
-              <div className="w-px h-16 bg-[#1A211A]" />
-              <div className="text-center">
-                <div className="text-5xl font-display text-[#D9FF3D] mb-1">
-                  78%
-                </div>
-                <div className="font-mono-label text-[#A9B5AA]">Threshold</div>
-              </div>
+            <div className="mb-10 text-center p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+              <p className="font-mono-label text-[#A9B5AA] mb-2">Alignment Score</p>
+              <p className="text-5xl font-display text-[#D9FF3D]">{assessmentResult.percentage}%</p>
             </div>
           ) : (
             <div className="mb-10 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
@@ -221,7 +210,7 @@ const AssessmentResultSection: React.FC = () => {
           {/* Category Scores */}
           {assessmentResult.passed && (
             <div className="mb-10">
-              <h3 className="font-mono-label text-[#A9B5AA] mb-4">Category Breakdown</h3>
+              <h3 className="font-mono-label text-[#A9B5AA] mb-4">Relationship Readiness Profile</h3>
               <div className="space-y-3">
                 {Object.entries(assessmentResult.categoryScores).map(([category, score]) => (
                   <div key={category} className="flex items-center gap-4">
@@ -232,7 +221,7 @@ const AssessmentResultSection: React.FC = () => {
                       <div className="h-2 bg-[#1A211A] rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-1000 ${
-                            score >= 70 ? 'bg-[#D9FF3D]' : score >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                            score >= 70 ? 'bg-[#D9FF3D]' : 'bg-amber-400'
                           }`}
                           style={{ width: `${score}%` }}
                         />
@@ -242,6 +231,13 @@ const AssessmentResultSection: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {assessmentResult.passed && (
+            <div className="mb-10 p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+              <h3 className="text-[#D9FF3D] font-medium mb-2">Areas to Continue Strengthening</h3>
+              <p className="text-sm text-[#A9B5AA]">Accountability (Growth Focus)</p>
             </div>
           )}
 
