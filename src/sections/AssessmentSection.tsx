@@ -9,7 +9,8 @@ const AssessmentSection: React.FC = () => {
     addAssessmentAnswer,
     setAssessmentResult,
     saveAssessmentDate,
-    setCurrentView
+    setCurrentView,
+    currentUser
   } = useApp();
 
   const [isVisible, setIsVisible] = useState(false);
@@ -80,6 +81,14 @@ const AssessmentSection: React.FC = () => {
     const fallback = setTimeout(() => setIsVisible(true), 200);
     return () => clearTimeout(fallback);
   }, []);
+
+  // Prevent users who have already passed from retaking the assessment
+  useEffect(() => {
+    if (currentUser.assessmentPassed === true && currentUser.userStatus === 'active') {
+      console.log('[AssessmentSection] User has already passed - redirecting to browse');
+      setCurrentView('browse');
+    }
+  }, [currentUser.assessmentPassed, currentUser.userStatus, setCurrentView]);
 
   const currentQuestions = showFollowUp ? followUpQuestions : assessmentQuestions;
   const currentQuestion = currentQuestions[currentQuestionIndex];
