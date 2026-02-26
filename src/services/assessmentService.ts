@@ -1,16 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { AssessmentResult } from '@/types'
 
-interface SavedAssessmentResult {
-  id: string
-  user_id: string
-  passed: boolean
-  percentage: number
-  answered_at: number
-  integrity_flags?: string[]
-  growth_areas?: string[]
-}
-
 export const assessmentService = {
   async saveAssessmentResult(
     userId: string,
@@ -89,6 +79,8 @@ function mapRowToAssessmentResult(row: any): AssessmentResult {
   return {
     passed: row.passed,
     percentage: row.percentage,
+    totalScore: Math.round((row.percentage / 100) * 100), // Derive from percentage
+    categoryScores: {}, // Not stored in database, provide empty object
     integrityFlags: row.integrity_flags || [],
     growthAreas: row.growth_areas || [],
   }
