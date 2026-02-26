@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { User } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 const UserAccessButton: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
@@ -35,7 +35,7 @@ const UserAccessButton: React.FC = () => {
           onMouseLeave={() => setShowTooltip(false)}
           className="group relative w-12 h-12 bg-green-600 text-white rounded-full shadow-lg hover:scale-110 transition-transform flex items-center justify-center"
         >
-          <User className="w-5 h-5" />
+          <Settings className="w-5 h-5" />
         </button>
 
         {showTooltip && (
