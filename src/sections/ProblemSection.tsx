@@ -37,6 +37,7 @@ const ProblemSection: React.FC = () => {
         />
         <div className="absolute inset-0 gradient-vignette opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0B0F0C]/40 via-transparent to-[#0B0F0C]/40" />
+        <div className="absolute inset-y-0 right-0 w-[55vw] bg-gradient-to-l from-[#0B0F0C]/70 via-[#0B0F0C]/45 to-transparent" />
       </div>
 
       {/* Left Circle */}
@@ -63,14 +64,16 @@ const ProblemSection: React.FC = () => {
           isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-[40vw]'
         }`}
       >
-        <h2 className="font-display text-[clamp(36px,5vw,72px)] text-[#F6FFF2] mb-6 leading-none">
-          SWIPE.<br />
-          MATCH.<br />
-          <span className="text-[#A9B5AA]">FORGET.</span>
-        </h2>
-        <p className="text-[#A9B5AA] text-lg leading-relaxed">
-          Most apps train you to keep searching. We built something for people who want to stop.
-        </p>
+        <div className="rounded-2xl border border-white/10 bg-[#0B0F0C]/35 backdrop-blur-[2px] p-6">
+          <h2 className="font-display text-[clamp(36px,5vw,72px)] text-[#F6FFF2] mb-6 leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
+            SWIPE.<br />
+            MATCH.<br />
+            <span className="text-[#DDE7DE]">FORGET.</span>
+          </h2>
+          <p className="text-[#E8F2E8] text-lg leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)]">
+            Most apps train you to keep searching. We built something for people who want to stop.
+          </p>
+        </div>
       </div>
     </section>
   );
