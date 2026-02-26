@@ -9,9 +9,10 @@ import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { testUsers } from '@/data/testUsers';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
+import type { AssessmentResult } from '@/types';
 
 const UserLoginSection: React.FC = () => {
-  const { setCurrentView } = useApp();
+  const { setCurrentView, setAssessmentResult } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,6 +24,74 @@ const UserLoginSection: React.FC = () => {
   const isSuspended = (user: any): boolean => {
     if (!user?.suspensionEndDate) return false;
     return new Date().getTime() < user.suspensionEndDate;
+  };
+
+  const normalizeAssessmentResult = (raw: any): AssessmentResult | null => {
+    if (!raw || typeof raw !== 'object') return null;
+
+    const percentage = typeof raw.percentage === 'number' ? raw.percentage : 0;
+    return {
+      totalScore: typeof raw.totalScore === 'number' ? raw.totalScore : Math.round(percentage),
+      percentage,
+      passed: Boolean(raw.passed),
+      categoryScores: raw.categoryScores && typeof raw.categoryScores === 'object' ? raw.categoryScores : {},
+      integrityFlags: Array.isArray(raw.integrityFlags) ? raw.integrityFlags : [],
+      growthAreas: Array.isArray(raw.growthAreas) ? raw.growthAreas : [],
+    };
+  };
+
+  const getSavedAssessmentResult = (userId?: string): AssessmentResult | null => {
+    const keys = userId ? [`assessmentResult_${userId}`, 'assessmentResult'] : ['assessmentResult'];
+
+    for (const key of keys) {
+      try {
+        const saved = localStorage.getItem(key);
+        if (!saved) continue;
+        const parsed = JSON.parse(saved);
+        const normalized = normalizeAssessmentResult(parsed);
+        if (normalized) return normalized;
+      } catch (error) {
+        console.error('Failed to parse saved assessment result:', error);
+      }
+    }
+
+    return null;
+  };
+
+  const routeAfterLogin = (user: any) => {
+    if (isSuspended(user)) {
+      toast.info('Your account is currently under suspension. Please review the growth resources.');
+      setCurrentView('growth-mode');
+      return;
+    }
+
+    if (user.assessmentPassed === true) {
+      setCurrentView('browse');
+      return;
+    }
+
+    const savedResult = getSavedAssessmentResult(user.id);
+    const hasCompletedAssessment = user.assessmentPassed === false || Boolean(savedResult);
+
+    if (hasCompletedAssessment) {
+      if (savedResult) {
+        setAssessmentResult(savedResult);
+      } else {
+        const fallbackPercentage = Number(user.alignmentScore ?? user.assessmentScore ?? 0);
+        setAssessmentResult({
+          totalScore: Math.round(fallbackPercentage),
+          percentage: fallbackPercentage,
+          passed: false,
+          categoryScores: {},
+          integrityFlags: [],
+          growthAreas: [],
+        });
+      }
+      setCurrentView('assessment-result');
+      return;
+    }
+
+    setCurrentView('assessment');
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -60,16 +129,7 @@ const UserLoginSection: React.FC = () => {
         setLoginUser(user);
         setShowBackgroundCheckModal(true);
       } else {
-        // Check if user is suspended - redirect to growth-mode if suspended
-        if (isSuspended(user)) {
-          toast.info('Your account is currently under suspension. Please review the growth resources.');
-          setCurrentView('growth-mode');
-        } else if (user.assessmentPassed) {
-          setCurrentView('browse');
-        } else {
-          // User hasn't passed assessment - send to assessment to take/retake it
-          setCurrentView('assessment');
-        }
+        routeAfterLogin(user);
       }
     } finally {
       setIsLoading(false);
@@ -85,14 +145,7 @@ const UserLoginSection: React.FC = () => {
       window.dispatchEvent(new CustomEvent('user-login', { detail: updatedUser }));
 
       // Now redirect to appropriate view
-      if (isSuspended(updatedUser)) {
-        toast.info('Your account is currently under suspension. Please review the growth resources.');
-        setCurrentView('growth-mode');
-      } else if (updatedUser.assessmentPassed) {
-        setCurrentView('browse');
-      } else {
-        setCurrentView('growth-mode');
-      }
+      routeAfterLogin(updatedUser);
     }
   };
 
@@ -115,16 +168,7 @@ const UserLoginSection: React.FC = () => {
         setLoginUser(user);
         setShowBackgroundCheckModal(true);
       } else {
-        // Check if user is suspended - redirect to growth-mode if suspended
-        if (isSuspended(user)) {
-          toast.info('Your account is currently under suspension. Please review the growth resources.');
-          setCurrentView('growth-mode');
-        } else if (user.assessmentPassed) {
-          setCurrentView('browse');
-        } else {
-          // User hasn't passed assessment - send to assessment to take/retake it
-          setCurrentView('assessment');
-        }
+        routeAfterLogin(user);
       }
     }
   };
@@ -141,14 +185,7 @@ const UserLoginSection: React.FC = () => {
           setShowBackgroundCheckModal(false);
           // Redirect without verification
           if (loginUser) {
-            if (isSuspended(loginUser)) {
-              setCurrentView('growth-mode');
-            } else if (loginUser.assessmentPassed) {
-              setCurrentView('browse');
-            } else {
-              // User hasn't passed assessment - send to assessment
-              setCurrentView('assessment');
-            }
+            routeAfterLogin(loginUser);
           }
         }}
         onVerified={handleBackgroundCheckVerified}

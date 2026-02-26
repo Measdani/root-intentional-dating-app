@@ -11,6 +11,7 @@ const AssessmentResultSection: React.FC = () => {
   // Auto-save assessment result immediately when component mounts
   useEffect(() => {
     const saveResult = async () => {
+      let userId: string | undefined;
       console.log('[AssessmentResult] Component mounted, auto-saving result...', {
         passed: assessmentResult.passed,
         percentage: assessmentResult.percentage
@@ -21,6 +22,7 @@ const AssessmentResultSection: React.FC = () => {
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
           const user = JSON.parse(savedUser);
+          userId = user.id;
           await assessmentService.saveAssessmentResult(user.id, assessmentResult);
           console.log('[AssessmentResult] Saved to Supabase');
         }
@@ -31,11 +33,14 @@ const AssessmentResultSection: React.FC = () => {
       // Save assessment result to persistent storage (survives logout/login)
       try {
         const persistentResult = {
-          passed: assessmentResult.passed,
-          percentage: assessmentResult.percentage,
+          ...assessmentResult,
           timestamp: Date.now(),
+          userId,
         };
         localStorage.setItem('assessmentResult', JSON.stringify(persistentResult));
+        if (userId) {
+          localStorage.setItem(`assessmentResult_${userId}`, JSON.stringify(persistentResult));
+        }
         console.log('[AssessmentResult] Saved to localStorage assessmentResult');
       } catch (err) {
         console.error('[AssessmentResult] Failed to save assessmentResult:', err);
@@ -64,11 +69,13 @@ const AssessmentResultSection: React.FC = () => {
   }, [assessmentResult]);
 
   const handleContinue = async () => {
+    let userId: string | undefined;
     // Save to database first
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
         const user = JSON.parse(savedUser);
+        userId = user.id;
         await assessmentService.saveAssessmentResult(user.id, assessmentResult);
       }
     } catch (err) {
@@ -78,11 +85,14 @@ const AssessmentResultSection: React.FC = () => {
     // Save assessment result to persistent storage (survives logout/login)
     try {
       const persistentResult = {
-        passed: assessmentResult.passed,
-        percentage: assessmentResult.percentage,
+        ...assessmentResult,
         timestamp: Date.now(),
+        userId,
       };
       localStorage.setItem('assessmentResult', JSON.stringify(persistentResult));
+      if (userId) {
+        localStorage.setItem(`assessmentResult_${userId}`, JSON.stringify(persistentResult));
+      }
     } catch (err) {
       console.error('Failed to save assessment result:', err);
     }
