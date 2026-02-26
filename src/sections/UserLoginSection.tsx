@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
 import { useAdmin } from '@/store/AdminContext';
 import { userService } from '@/services/userService';
+import { assessmentService } from '@/services/assessmentService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,7 +75,7 @@ const UserLoginSection: React.FC = () => {
     return null;
   };
 
-  const routeAfterLogin = (user: any) => {
+  const routeAfterLogin = async (user: any) => {
     const canonicalTester = user?.email ? getCanonicalTestUser(user.email) : null;
     const effectiveUser = canonicalTester || user;
 
@@ -91,7 +92,23 @@ const UserLoginSection: React.FC = () => {
 
     // Tester accounts must stay canonical and not inherit persisted results
     // from other test sessions/users.
-    const savedResult = canonicalTester ? null : getSavedAssessmentResult(effectiveUser.id);
+    let savedResult = canonicalTester ? null : getSavedAssessmentResult(effectiveUser.id);
+    if (!canonicalTester && !savedResult && effectiveUser.id) {
+      savedResult = await assessmentService.getLatestAssessmentResult(effectiveUser.id);
+      if (savedResult) {
+        try {
+          const persistentResult = {
+            ...savedResult,
+            timestamp: Date.now(),
+            userId: effectiveUser.id,
+          };
+          localStorage.setItem(`assessmentResult_${effectiveUser.id}`, JSON.stringify(persistentResult));
+          localStorage.setItem('assessmentResult', JSON.stringify(persistentResult));
+        } catch (error) {
+          console.warn('Failed to cache fetched assessment result:', error);
+        }
+      }
+    }
     const hasScoredAssessment =
       typeof effectiveUser.alignmentScore === 'number' ||
       typeof effectiveUser.assessmentScore === 'number';
@@ -183,7 +200,7 @@ const UserLoginSection: React.FC = () => {
         setLoginUser(user);
         setShowBackgroundCheckModal(true);
       } else {
-        routeAfterLogin(user);
+        await routeAfterLogin(user);
       }
     } finally {
       setIsLoading(false);
@@ -199,7 +216,7 @@ const UserLoginSection: React.FC = () => {
       window.dispatchEvent(new CustomEvent('user-login', { detail: updatedUser }));
 
       // Now redirect to appropriate view
-      routeAfterLogin(updatedUser);
+      void routeAfterLogin(updatedUser);
     }
   };
 
@@ -222,7 +239,7 @@ const UserLoginSection: React.FC = () => {
         setLoginUser(user);
         setShowBackgroundCheckModal(true);
       } else {
-        routeAfterLogin(user);
+        await routeAfterLogin(user);
       }
     }
   };
@@ -239,7 +256,7 @@ const UserLoginSection: React.FC = () => {
           setShowBackgroundCheckModal(false);
           // Redirect without verification
           if (loginUser) {
-            routeAfterLogin(loginUser);
+            void routeAfterLogin(loginUser);
           }
         }}
         onVerified={handleBackgroundCheckVerified}

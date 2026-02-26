@@ -191,6 +191,48 @@ const GrowthModeSection: React.FC = () => {
     }
   };
 
+  const formatCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'emotional-regulation':
+        return 'Emotional Regulation';
+      case 'accountability':
+        return 'Accountability';
+      case 'autonomy':
+        return 'Autonomy & Wholeness';
+      case 'boundaries':
+        return 'Boundaries';
+      case 'conflict-repair':
+        return 'Conflict & Repair';
+      default:
+        return category
+          .replace(/-/g, ' ')
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+  };
+
+  const improvementAreas = useMemo(() => {
+    if (!assessmentResult) return [];
+
+    const scoreBasedAreas = Object.entries(assessmentResult.categoryScores || {})
+      .filter(([, score]) => typeof score === 'number' && Number.isFinite(score) && score < 70)
+      .map(([category, score]) => ({
+        id: category,
+        label: formatCategoryLabel(category),
+        score: Math.round(score),
+      }))
+      .sort((a, b) => a.score - b.score);
+
+    if (scoreBasedAreas.length > 0) return scoreBasedAreas;
+
+    return (assessmentResult.growthAreas || [])
+      .filter((area) => typeof area === 'string' && area.trim().length > 0)
+      .map((area) => ({
+        id: area.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        label: area,
+        score: null as number | null,
+      }));
+  }, [assessmentResult]);
+
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
@@ -506,34 +548,42 @@ const GrowthModeSection: React.FC = () => {
             </div>
 
             {/* Assessment Areas Section */}
-            {assessmentResult.categoryScores && (
-              <div className="mb-6 pt-6 border-t border-[#1A211A]">
-                <p className="font-mono-label text-[#A9B5AA] mb-4">Areas of Improvement</p>
+            <div className="mb-6 pt-6 border-t border-[#1A211A]">
+              <p className="font-mono-label text-[#A9B5AA] mb-4">Areas of Improvement</p>
+              {improvementAreas.length > 0 ? (
                 <div className="space-y-3">
-                  {Object.entries(assessmentResult.categoryScores).map(([category, score]) => (
-                    <div key={category} className="flex items-center gap-4">
-                      <span className="text-[#F6FFF2] text-sm capitalize flex-1">
-                        {category.replace(/-/g, ' ')}
-                      </span>
-                      <div className="flex-1 max-w-[150px]">
-                        <div className="h-1.5 bg-[#1A211A] rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-1000 ${
-                              score >= 70 ? 'bg-[#D9FF3D]' : score >= 50 ? 'bg-amber-500' : 'bg-[#A9B5AA]'
-                            }`}
-                            style={{ width: `${score}%` }}
-                          />
-                        </div>
-                      </div>
-                      <span className="text-[#F6FFF2] text-sm w-10 text-right">{score}%</span>
+                  {improvementAreas.map((area) => (
+                    <div key={area.id} className="flex items-center gap-4">
+                      <span className="text-[#F6FFF2] text-sm flex-1">{area.label}</span>
+                      {typeof area.score === 'number' ? (
+                        <>
+                          <div className="flex-1 max-w-[150px]">
+                            <div className="h-1.5 bg-[#1A211A] rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-1000 ${
+                                  area.score >= 50 ? 'bg-amber-500' : 'bg-[#A9B5AA]'
+                                }`}
+                                style={{ width: `${area.score}%` }}
+                              />
+                            </div>
+                          </div>
+                          <span className="text-[#F6FFF2] text-sm w-10 text-right">{area.score}%</span>
+                        </>
+                      ) : (
+                        <span className="text-xs text-[#A9B5AA]">Growth Focus</span>
+                      )}
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-[#A9B5AA] mt-4 opacity-75">
-                  These skills can be strengthened through guided practice and reflection.
+              ) : (
+                <p className="text-sm text-[#A9B5AA]">
+                  Detailed improvement categories will appear after your next completed assessment.
                 </p>
-              </div>
-            )}
+              )}
+              <p className="text-xs text-[#A9B5AA] mt-4 opacity-75">
+                These skills can be strengthened through guided practice and reflection.
+              </p>
+            </div>
 
             {/* Why 6 Months Matters */}
             <div className="pt-6 border-t border-[#1A211A]">
