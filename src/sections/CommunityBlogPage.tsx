@@ -172,13 +172,17 @@ const CommunityBlogPage: React.FC = () => {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setCurrentView('landing')}
-              className="p-2 hover:bg-[#1A211A] rounded-lg transition"
+              onClick={() => {
+                const currentUser = localStorage.getItem('currentUser');
+                setCurrentView(currentUser ? 'profile' : 'landing');
+              }}
+              className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
             >
               <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">{localStorage.getItem('currentUser') ? 'My Profile' : 'Home'}</span>
             </button>
-            <h1 className="text-2xl font-bold">Community Blog</h1>
           </div>
+          <h1 className="text-2xl font-bold">Community Blog</h1>
         </div>
       </div>
 

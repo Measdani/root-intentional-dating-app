@@ -31,7 +31,6 @@ const GrowthModeSection: React.FC = () => {
     reloadNotifications,
     reloadInteractions,
   } = useApp();
-  const [dismissNotification, setDismissNotification] = useState(false);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources' | 'blog'>('browse');
   const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
