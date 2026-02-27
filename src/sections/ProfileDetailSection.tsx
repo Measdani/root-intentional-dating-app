@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { useCommunity } from '@/modules';
 import { MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag, BookOpen } from 'lucide-react';
 import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
+import { getUserSettingsForUser } from '@/services/userSettingsService';
 import type { UserGenderIdentity, UserIdentityExpression } from '@/types';
 
 const formatGenderIdentity = (value?: UserGenderIdentity): string => {
@@ -89,6 +90,10 @@ const ProfileDetailSection: React.FC = () => {
   const conversation = getConversation(selectedUser.id);
   const isLgbtqCommunity = activeCommunity.id === 'lgbtq';
   const hasMutualInterest = Boolean(conversation && conversation.status !== 'pending_response');
+  const selectedUserSettings = useMemo(
+    () => getUserSettingsForUser(selectedUser.id, selectedUser),
+    [selectedUser.id]
+  );
 
   const genderIdentityValue = selectedUser.genderIdentity ?? selectedUser.gender;
   const genderIdentityLabel =
@@ -110,8 +115,12 @@ const ProfileDetailSection: React.FC = () => {
       ? `Self-described: ${selectedUser.identityExpressionCustom.trim()}`
       : formatIdentityExpression(selectedUser.identityExpression);
   const hasIdentityExpression = Boolean(selectedUser.identityExpression);
-  const identityExpressionHidden =
-    selectedUser.identityExpressionVisibility === 'after-mutual-interest' && !hasMutualInterest;
+  const genderIdentityVisibility = selectedUserSettings.visibility.genderIdentityVisibility;
+  const identityExpressionVisibility = selectedUserSettings.visibility.identityExpressionVisibility;
+  const genderIdentityHiddenByVisibility =
+    genderIdentityVisibility === 'after-mutual-interest' && !hasMutualInterest;
+  const identityExpressionHiddenByVisibility =
+    identityExpressionVisibility === 'after-mutual-interest' && !hasMutualInterest;
 
   const handleExpressInterest = (message: string) => {
     expressInterest(selectedUser.id, message);
@@ -388,7 +397,13 @@ const ProfileDetailSection: React.FC = () => {
                     <div className="space-y-4">
                       <div>
                         <p className="text-xs text-[#A9B5AA] mb-1">Gender Identity</p>
-                        <p className="text-[#F6FFF2]">{genderIdentityLabel}</p>
+                        {genderIdentityVisibility === 'private' ? (
+                          <p className="text-[#A9B5AA] text-sm">Private</p>
+                        ) : genderIdentityHiddenByVisibility ? (
+                          <p className="text-[#A9B5AA] text-sm">Visible after mutual interest.</p>
+                        ) : (
+                          <p className="text-[#F6FFF2]">{genderIdentityLabel}</p>
+                        )}
                       </div>
 
                       {openToDatingLabels.length > 0 && (
@@ -410,10 +425,10 @@ const ProfileDetailSection: React.FC = () => {
                       {hasIdentityExpression && (
                         <div>
                           <p className="text-xs text-[#A9B5AA] mb-1">Identity Expression</p>
-                          {identityExpressionHidden ? (
-                            <p className="text-[#A9B5AA] text-sm">
-                              Visible after mutual interest.
-                            </p>
+                          {identityExpressionVisibility === 'private' ? (
+                            <p className="text-[#A9B5AA] text-sm">Private</p>
+                          ) : identityExpressionHiddenByVisibility ? (
+                            <p className="text-[#A9B5AA] text-sm">Visible after mutual interest.</p>
                           ) : (
                             <p className="text-[#F6FFF2]">{identityExpressionLabel}</p>
                           )}

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/store/AppContext';
+import { useCommunity } from '@/modules';
 import { toast } from 'sonner';
 import { ArrowLeft, Download, Trash2, UserX, ShieldCheck, Bell, Eye, Lock, RotateCcw } from 'lucide-react';
 import { userService } from '@/services/userService';
@@ -29,12 +30,14 @@ const UserSettingsSection: React.FC = () => {
     unblockUser,
     users,
   } = useApp();
+  const { activeCommunity } = useCommunity();
 
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [lockModalDate, setLockModalDate] = useState<Date | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const isLgbtqUser = currentUser.poolId === 'lgbtq' || activeCommunity.id === 'lgbtq';
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -404,6 +407,71 @@ const UserSettingsSection: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {isLgbtqUser && (
+            <>
+              <div className="space-y-3">
+                <p className="text-sm text-[#A9B5AA]">Gender identity visibility</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: 'Always visible', value: 'always-visible' },
+                    { label: 'After mutual interest', value: 'after-mutual-interest' },
+                    { label: 'Private', value: 'private' },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleFlexibleUpdate((prev) => ({
+                        ...prev,
+                        visibility: {
+                          ...prev.visibility,
+                          genderIdentityVisibility: option.value as UserSettings['visibility']['genderIdentityVisibility'],
+                        },
+                      }))}
+                      className={`px-3 py-2 rounded-lg border text-sm ${
+                        settings.visibility.genderIdentityVisibility === option.value
+                          ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                          : 'border-[#1A211A] text-[#A9B5AA]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm text-[#A9B5AA]">Identity expression visibility</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: 'Always visible', value: 'always-visible' },
+                    { label: 'After mutual interest', value: 'after-mutual-interest' },
+                    { label: 'Private', value: 'private' },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleFlexibleUpdate((prev) => ({
+                        ...prev,
+                        visibility: {
+                          ...prev.visibility,
+                          identityExpressionVisibility: option.value as UserSettings['visibility']['identityExpressionVisibility'],
+                        },
+                      }))}
+                      className={`px-3 py-2 rounded-lg border text-sm ${
+                        settings.visibility.identityExpressionVisibility === option.value
+                          ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                          : 'border-[#1A211A] text-[#A9B5AA]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-[#A9B5AA]">
+                  After mutual interest keeps identity details hidden until both users engage.
+                </p>
+              </div>
+            </>
+          )}
         </section>
 
         <section className="bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5">

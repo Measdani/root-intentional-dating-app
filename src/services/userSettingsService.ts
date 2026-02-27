@@ -4,6 +4,7 @@ export const CORE_LOCK_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type ProfileVisibilityMode = 'alignment-pool' | 'paused' | 'private';
 export type PhotoVisibilityMode = 'blur-until-mutual' | 'first-photo-only' | 'hidden';
+export type IdentityFieldVisibilityMode = 'always-visible' | 'after-mutual-interest' | 'private';
 export type RelationshipIntentSetting =
   | 'marriage-focused'
   | 'long-term-partnership'
@@ -37,6 +38,8 @@ export interface UserSettings {
   visibility: {
     profileVisibility: ProfileVisibilityMode;
     photoVisibility: PhotoVisibilityMode;
+    genderIdentityVisibility: IdentityFieldVisibilityMode;
+    identityExpressionVisibility: IdentityFieldVisibilityMode;
   };
   alignmentPreferences: {
     relationshipIntent: RelationshipIntentSetting;
@@ -100,10 +103,34 @@ const mapChildrenPreference = (user?: User): ChildrenPreferenceSetting => {
   return 'open-to-partner-with-children';
 };
 
+const mapIdentityVisibility = (
+  user: User | undefined,
+  field: 'gender-identity' | 'identity-expression'
+): IdentityFieldVisibilityMode => {
+  const isLgbtq = user?.poolId === 'lgbtq';
+  const defaultVisibility: IdentityFieldVisibilityMode = isLgbtq
+    ? 'after-mutual-interest'
+    : 'always-visible';
+
+  if (field === 'gender-identity') return defaultVisibility;
+
+  if (user?.identityExpressionVisibility === 'after-mutual-interest') {
+    return 'after-mutual-interest';
+  }
+
+  if (user?.identityExpressionVisibility === 'always-visible') {
+    return 'always-visible';
+  }
+
+  return defaultVisibility;
+};
+
 export const createDefaultUserSettings = (user?: User): UserSettings => ({
   visibility: {
     profileVisibility: 'alignment-pool',
     photoVisibility: 'blur-until-mutual',
+    genderIdentityVisibility: mapIdentityVisibility(user, 'gender-identity'),
+    identityExpressionVisibility: mapIdentityVisibility(user, 'identity-expression'),
   },
   alignmentPreferences: {
     relationshipIntent: mapIntent(user?.partnershipIntent),
@@ -141,6 +168,49 @@ export const createDefaultUserSettings = (user?: User): UserSettings => ({
   coreLocks: createEmptyCoreLocks(),
 });
 
+const normalizeUserSettings = (settings: UserSettings | undefined, user?: User): UserSettings => {
+  const defaults = createDefaultUserSettings(user);
+
+  if (!settings) return defaults;
+
+  return {
+    ...defaults,
+    ...settings,
+    visibility: {
+      ...defaults.visibility,
+      ...settings.visibility,
+    },
+    alignmentPreferences: {
+      ...defaults.alignmentPreferences,
+      ...settings.alignmentPreferences,
+      lifestyleDealbreakers: {
+        ...defaults.alignmentPreferences.lifestyleDealbreakers,
+        ...settings.alignmentPreferences?.lifestyleDealbreakers,
+      },
+    },
+    growth: {
+      ...defaults.growth,
+      ...settings.growth,
+    },
+    communicationBoundaries: {
+      ...defaults.communicationBoundaries,
+      ...settings.communicationBoundaries,
+    },
+    safety: {
+      ...defaults.safety,
+      ...settings.safety,
+    },
+    notifications: {
+      ...defaults.notifications,
+      ...settings.notifications,
+    },
+    coreLocks: {
+      ...createEmptyCoreLocks(),
+      ...settings.coreLocks,
+    },
+  };
+};
+
 export const getAllUserSettingsMap = (): Record<string, UserSettings> => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -162,16 +232,15 @@ const saveAllUserSettingsMap = (map: Record<string, UserSettings>) => {
 
 export const getUserSettingsForUser = (userId: string, user?: User): UserSettings => {
   const map = getAllUserSettingsMap();
-  if (!map[userId]) {
-    map[userId] = createDefaultUserSettings(user);
-    saveAllUserSettingsMap(map);
-  }
-  return map[userId];
+  const normalized = normalizeUserSettings(map[userId], user);
+  map[userId] = normalized;
+  saveAllUserSettingsMap(map);
+  return normalized;
 };
 
 export const saveUserSettingsForUser = (userId: string, settings: UserSettings): void => {
   const map = getAllUserSettingsMap();
-  map[userId] = settings;
+  map[userId] = normalizeUserSettings(settings);
   saveAllUserSettingsMap(map);
 };
 
@@ -205,4 +274,3 @@ export const applyCoreLock = (settings: UserSettings, key: CoreSettingKey, now =
     },
   };
 };
-
