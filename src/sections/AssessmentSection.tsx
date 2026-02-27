@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
+import { useCommunity } from '@/modules';
 import { assessmentQuestions, followUpQuestions, calculateAssessmentResult } from '@/data/assessment';
 import { ChevronRight, AlertCircle } from 'lucide-react';
 
@@ -12,6 +13,9 @@ const AssessmentSection: React.FC = () => {
     setCurrentView,
     currentUser
   } = useApp();
+  const { activeCommunity } = useCommunity();
+  const isLgbtqCommunity = activeCommunity.id === 'lgbtq';
+  const innerWorkLabel = isLgbtqCommunity ? 'LGBTQ+ Inner Work Space' : 'Inner Work Space';
 
   const [isVisible, setIsVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -237,9 +241,17 @@ const AssessmentSection: React.FC = () => {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
             >
-              <p>A brief readiness assessment. Real structure. Thoughtful placement.</p>
+              <p>
+                {isLgbtqCommunity
+                  ? 'A brief LGBTQ+ readiness assessment. Real structure. Thoughtful placement.'
+                  : 'A brief readiness assessment. Real structure. Thoughtful placement.'}
+              </p>
               <p className="text-[#F6FFF2]">This isn't about perfection.<br />It's about alignment.</p>
-              <p>Before joining, take a moment to understand how we define relationship readiness and why structure matters here.</p>
+              <p>
+                {isLgbtqCommunity
+                  ? 'Before joining this space, take a moment to understand how we define relationship readiness, safety, and structure.'
+                  : 'Before joining, take a moment to understand how we define relationship readiness and why structure matters here.'}
+              </p>
             </div>
             <button
               onClick={() => setCurrentView('community-blog')}
@@ -258,7 +270,7 @@ const AssessmentSection: React.FC = () => {
             }`}
           >
             <h1 className="font-display text-[clamp(40px,7vw,56px)] text-[#F6FFF2] mb-12 text-center">
-              Before You Begin Your Assessment
+              {isLgbtqCommunity ? 'Before You Begin Your LGBTQ+ Assessment' : 'Before You Begin Your Assessment'}
             </h1>
 
             <div className="space-y-6">
@@ -272,7 +284,7 @@ const AssessmentSection: React.FC = () => {
               {/* No Pausing Warning */}
               <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#D9FF3D]/30 rounded-lg p-6">
                 <p className="text-[#A9B5AA] text-base leading-relaxed">
-                  <span className="text-[#D9FF3D] font-semibold">Once started, the assessment cannot be paused or exited.</span> If you leave before completion, you will automatically be placed in <span className="text-[#D9FF3D]">Inner Work Space</span> and must wait <span className="text-[#D9FF3D] font-semibold">6 months</span> before you can retake the assessment.
+                  <span className="text-[#D9FF3D] font-semibold">Once started, the assessment cannot be paused or exited.</span> If you leave before completion, you will automatically be placed in <span className="text-[#D9FF3D]">{innerWorkLabel}</span> and must wait <span className="text-[#D9FF3D] font-semibold">6 months</span> before you can retake the assessment.
                 </p>
               </div>
 
@@ -416,7 +428,7 @@ const AssessmentSection: React.FC = () => {
               </h3>
               <div className="space-y-4 mt-4">
                 <p className="text-[#A9B5AA] text-sm leading-relaxed">
-                  If you leave before completing the assessment, you will automatically be placed in <span className="text-[#D9FF3D] font-semibold">Inner Work Space</span>.
+                  If you leave before completing the assessment, you will automatically be placed in <span className="text-[#D9FF3D] font-semibold">{innerWorkLabel}</span>.
                 </p>
                 <p className="text-[#A9B5AA] text-sm leading-relaxed">
                   You may retake the assessment after the required waiting period.

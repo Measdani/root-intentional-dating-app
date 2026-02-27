@@ -1,10 +1,13 @@
 import React, { useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
+import { useCommunity } from '@/modules';
 import { Check, AlertTriangle, TrendingUp, Lock } from 'lucide-react';
 import { assessmentService } from '@/services/assessmentService';
 
 const AssessmentResultSection: React.FC = () => {
   const { assessmentResult, setCurrentView, canRetakeAssessment, getNextRetakeDate } = useApp();
+  const { activeCommunity } = useCommunity();
+  const isLgbtqCommunity = activeCommunity.id === 'lgbtq';
 
   if (!assessmentResult) return null;
 
@@ -185,12 +188,22 @@ const AssessmentResultSection: React.FC = () => {
               )}
             </div>
             <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-3">
-              {assessmentResult.passed ? 'Welcome to Alignment Space' : 'Inner Work Space'}
+              {assessmentResult.passed
+                ? isLgbtqCommunity
+                  ? 'Welcome to LGBTQ+ Alignment Space'
+                  : 'Welcome to Alignment Space'
+                : isLgbtqCommunity
+                  ? 'LGBTQ+ Inner Work Space'
+                  : 'Inner Work Space'}
             </h2>
             <p className="text-[#A9B5AA] text-lg">
               {assessmentResult.passed
-                ? 'You demonstrate emotional maturity, integrity, and intentionality - the foundation this community is built on.'
-                : 'This is not rejection. It is preparation.'}
+                ? isLgbtqCommunity
+                  ? 'You demonstrate emotional maturity, integrity, and intentionality - the foundation of this LGBTQ+ community space.'
+                  : 'You demonstrate emotional maturity, integrity, and intentionality - the foundation this community is built on.'
+                : isLgbtqCommunity
+                  ? 'This is not rejection. It is preparation for stronger, safer connection.'
+                  : 'This is not rejection. It is preparation.'}
             </p>
           </div>
 
@@ -203,7 +216,9 @@ const AssessmentResultSection: React.FC = () => {
             <div className="mb-10 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
               <p className="text-[#D9FF3D] font-semibold mb-2">Growth Mode: Skill Development Phase</p>
               <p className="text-sm text-[#A9B5AA] leading-relaxed mb-3">
-                Based on your assessment responses, Growth Mode has been activated to support intentional skill development before re-entry into the alignment pool.
+                {isLgbtqCommunity
+                  ? 'Based on your assessment responses, Growth Mode has been activated to support intentional skill development before re-entry into the LGBTQ+ alignment pool.'
+                  : 'Based on your assessment responses, Growth Mode has been activated to support intentional skill development before re-entry into the alignment pool.'}
               </p>
               <div className="flex items-center gap-2 text-sm text-[#F6FFF2]">
                 <Lock className="w-4 h-4 text-[#A9B5AA]" />
@@ -294,7 +309,13 @@ const AssessmentResultSection: React.FC = () => {
               onClick={handleContinue}
               className="btn-primary flex-1"
             >
-              {assessmentResult.passed ? 'Explore Profiles' : 'Enter Inner Work Space'}
+              {assessmentResult.passed
+                ? isLgbtqCommunity
+                  ? 'Explore LGBTQ+ Profiles'
+                  : 'Explore Profiles'
+                : isLgbtqCommunity
+                  ? 'Enter LGBTQ+ Inner Work Space'
+                  : 'Enter Inner Work Space'}
             </button>
             {!assessmentResult.passed && (
               <button
