@@ -204,6 +204,11 @@ const UserLoginSection: React.FC = () => {
       (effectiveUser.assessmentPassed === false && hasScoredAssessment);
 
     if (hasCompletedAssessment) {
+      const resolvedPassed =
+        typeof effectiveUser.assessmentPassed === 'boolean'
+          ? effectiveUser.assessmentPassed
+          : Boolean(savedResult?.passed);
+
       if (savedResult) {
         setAssessmentResult(savedResult);
       } else {
@@ -211,13 +216,13 @@ const UserLoginSection: React.FC = () => {
         setAssessmentResult({
           totalScore: Math.round(fallbackPercentage),
           percentage: fallbackPercentage,
-          passed: Boolean(effectiveUser.assessmentPassed),
+          passed: resolvedPassed,
           categoryScores: {},
           integrityFlags: [],
           growthAreas: [],
         });
       }
-      setCurrentView('assessment-result');
+      setCurrentView(resolvedPassed ? 'browse' : 'growth-mode');
       return;
     }
 
