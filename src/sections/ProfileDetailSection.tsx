@@ -1,11 +1,58 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
+import { useCommunity } from '@/modules';
 import { MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag, BookOpen } from 'lucide-react';
 import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
+import type { UserGenderIdentity, UserIdentityExpression } from '@/types';
+
+const formatGenderIdentity = (value?: UserGenderIdentity): string => {
+  switch (value) {
+    case 'male':
+      return 'Man';
+    case 'female':
+      return 'Woman';
+    case 'non-binary':
+      return 'Non-binary';
+    case 'trans-man':
+      return 'Trans Man';
+    case 'trans-woman':
+      return 'Trans Woman';
+    case 'self-describe':
+      return 'Self-described';
+    case 'prefer-not-to-say':
+      return 'Prefer not to say';
+    default:
+      return 'Not provided';
+  }
+};
+
+const formatIdentityExpression = (value?: UserIdentityExpression): string => {
+  switch (value) {
+    case 'femme':
+      return 'Femme';
+    case 'masc':
+      return 'Masc';
+    case 'androgynous':
+      return 'Androgynous';
+    case 'stud':
+      return 'Stud';
+    case 'soft-masc':
+      return 'Soft masc';
+    case 'gender-fluid':
+      return 'Gender-fluid';
+    case 'self-describe':
+      return 'Self-described';
+    case 'prefer-not-to-say':
+      return 'Prefer not to say';
+    default:
+      return 'Not provided';
+  }
+};
 
 const ProfileDetailSection: React.FC = () => {
   const { selectedUser, currentUser, setCurrentView, setSelectedUser, setSelectedConversation, expressInterest, arePhotosUnlocked, getConversation, reportUser, blockUser, isUserBlocked, isBlockedByUser } = useApp();
+  const { activeCommunity } = useCommunity();
   const [showModal, setShowModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
@@ -40,6 +87,31 @@ const ProfileDetailSection: React.FC = () => {
   const sharedValues = selectedUser.values.filter(v => currentUser.values.includes(v));
   const photosUnlocked = arePhotosUnlocked(selectedUser.id);
   const conversation = getConversation(selectedUser.id);
+  const isLgbtqCommunity = activeCommunity.id === 'lgbtq';
+  const hasMutualInterest = Boolean(conversation && conversation.status !== 'pending_response');
+
+  const genderIdentityValue = selectedUser.genderIdentity ?? selectedUser.gender;
+  const genderIdentityLabel =
+    genderIdentityValue === 'self-describe' && selectedUser.genderIdentityCustom?.trim()
+      ? `Self-described: ${selectedUser.genderIdentityCustom.trim()}`
+      : formatGenderIdentity(genderIdentityValue);
+
+  const openToDatingLabels = (selectedUser.openToDating ?? []).flatMap((value) => {
+    if (value === 'self-describe') {
+      return selectedUser.openToDatingCustom?.trim()
+        ? [`Self-described: ${selectedUser.openToDatingCustom.trim()}`]
+        : ['Self-described'];
+    }
+    return [formatGenderIdentity(value)];
+  });
+
+  const identityExpressionLabel =
+    selectedUser.identityExpression === 'self-describe' && selectedUser.identityExpressionCustom?.trim()
+      ? `Self-described: ${selectedUser.identityExpressionCustom.trim()}`
+      : formatIdentityExpression(selectedUser.identityExpression);
+  const hasIdentityExpression = Boolean(selectedUser.identityExpression);
+  const identityExpressionHidden =
+    selectedUser.identityExpressionVisibility === 'after-mutual-interest' && !hasMutualInterest;
 
   const handleExpressInterest = (message: string) => {
     expressInterest(selectedUser.id, message);
@@ -306,6 +378,59 @@ const ProfileDetailSection: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {isLgbtqCommunity && (
+                  <div className="bg-[#1A211A]/50 rounded-2xl p-6 mb-6">
+                    <h3 className="font-mono-label text-[#A9B5AA] mb-4">
+                      Identity & Connection
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-[#A9B5AA] mb-1">Gender Identity</p>
+                        <p className="text-[#F6FFF2]">{genderIdentityLabel}</p>
+                      </div>
+
+                      {openToDatingLabels.length > 0 && (
+                        <div>
+                          <p className="text-xs text-[#A9B5AA] mb-1">Open To Dating</p>
+                          <div className="flex flex-wrap gap-2">
+                            {openToDatingLabels.map((label, index) => (
+                              <span
+                                key={`${label}-${index}`}
+                                className="px-2.5 py-1 bg-[#0B0F0C] border border-[#2A312A] text-[#F6FFF2] text-xs rounded-full"
+                              >
+                                {label}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {hasIdentityExpression && (
+                        <div>
+                          <p className="text-xs text-[#A9B5AA] mb-1">Identity Expression</p>
+                          {identityExpressionHidden ? (
+                            <p className="text-[#A9B5AA] text-sm">
+                              Visible after mutual interest.
+                            </p>
+                          ) : (
+                            <p className="text-[#F6FFF2]">{identityExpressionLabel}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedUser.communityBoundaries?.trim() && (
+                        <div>
+                          <p className="text-xs text-[#A9B5AA] mb-1">Community Boundaries</p>
+                          <p className="text-[#F6FFF2] text-sm leading-relaxed">
+                            {selectedUser.communityBoundaries.trim()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Alignment Breakdown */}
                 <div className="bg-[#1A211A]/50 rounded-2xl p-6">
