@@ -18,12 +18,19 @@ const NAMESPACE_PREFIXES = [
   'congrats_shown_',
 ];
 
+const NON_NAMESPACED_PREFIXES = [
+  'rooted-admin-',
+];
+
 const toNamespacedKey = (communityId: CommunityId, key: string): string =>
   `intentional:${communityId}:${key}`;
 
 const shouldNamespace = (key: string): boolean =>
-  NAMESPACE_EXACT_KEYS.has(key) ||
-  NAMESPACE_PREFIXES.some((prefix) => key.startsWith(prefix));
+  !NON_NAMESPACED_PREFIXES.some((prefix) => key.startsWith(prefix)) &&
+  (
+    NAMESPACE_EXACT_KEYS.has(key) ||
+    NAMESPACE_PREFIXES.some((prefix) => key.startsWith(prefix))
+  );
 
 interface StoragePatchState {
   activeCommunityId: CommunityId;

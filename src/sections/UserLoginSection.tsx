@@ -34,6 +34,54 @@ const UserLoginSection: React.FC = () => {
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [loginUser, setLoginUser] = useState<any>(null);
 
+  const stripInlinePhotoPayloads = (photoUrl?: string) => {
+    if (!photoUrl) return photoUrl;
+    const kept = photoUrl
+      .split('|')
+      .map((url) => url.trim())
+      .filter((url) => url.length > 0 && !url.startsWith('data:'))
+      .join('|');
+    return kept || undefined;
+  };
+
+  const persistCurrentUserSession = (user: any) => {
+    try {
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      return user;
+    } catch (error) {
+      console.warn('Primary currentUser save failed, retrying with trimmed payload:', error);
+    }
+
+    const lightweightUser = {
+      ...user,
+      photoUrl: stripInlinePhotoPayloads(user.photoUrl),
+    };
+
+    const cacheKeysToPurge = [
+      'assessmentLog',
+      'community-blogs',
+      'growth-resources',
+      'paid-growth-resources',
+      'rooted-admin-data',
+      'rooted-admin-users',
+      'rooted-admin-reports',
+      'rooted-admin-support-messages',
+      // Cleanup legacy namespaced admin caches that may have already consumed quota.
+      'intentional:rooted:rooted-admin-data',
+      'intentional:rooted:rooted-admin-users',
+      'intentional:rooted:rooted-admin-reports',
+      'intentional:rooted:rooted-admin-support-messages',
+      'intentional:lgbtq:rooted-admin-data',
+      'intentional:lgbtq:rooted-admin-users',
+      'intentional:lgbtq:rooted-admin-reports',
+      'intentional:lgbtq:rooted-admin-support-messages',
+    ];
+    cacheKeysToPurge.forEach((key) => localStorage.removeItem(key));
+
+    localStorage.setItem('currentUser', JSON.stringify(lightweightUser));
+    return lightweightUser;
+  };
+
   // Check if user is currently suspended
   const isSuspended = (user: any): boolean => {
     if (!user?.suspensionEndDate) return false;
@@ -228,18 +276,22 @@ const UserLoginSection: React.FC = () => {
       }
 
       const pooledUser = resolveUserForActivePool(user);
-      localStorage.setItem('currentUser', JSON.stringify(pooledUser));
+      const sessionUser = persistCurrentUserSession(pooledUser);
       // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
-      window.dispatchEvent(new CustomEvent('user-login', { detail: pooledUser }));
-      toast.success(`Welcome back, ${pooledUser.name}!`);
+      window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
+      toast.success(`Welcome back, ${sessionUser.name}!`);
 
       // Show background check modal only if user passed assessment AND hasn't verified yet
-      if (pooledUser.assessmentPassed && !pooledUser.backgroundCheckVerified) {
-        setLoginUser(pooledUser);
+      if (sessionUser.assessmentPassed && !sessionUser.backgroundCheckVerified) {
+        setLoginUser(sessionUser);
         setShowBackgroundCheckModal(true);
       } else {
-        await routeAfterLogin(pooledUser);
+        await routeAfterLogin(sessionUser);
       }
+    } catch (error) {
+      console.error('Login failed:', error);
+      setError('Unable to complete sign in. Please clear storage and try again.');
+      toast.error('Unable to complete sign in. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -248,38 +300,50 @@ const UserLoginSection: React.FC = () => {
   const handleBackgroundCheckVerified = () => {
     setShowBackgroundCheckModal(false);
     if (loginUser) {
-      // Update user in localStorage with verified status
-      const updatedUser = { ...loginUser, backgroundCheckVerified: true, backgroundCheckStatus: 'verified', backgroundCheckDate: Date.now() };
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      window.dispatchEvent(new CustomEvent('user-login', { detail: updatedUser }));
+      try {
+        // Update user in localStorage with verified status
+        const updatedUser = { ...loginUser, backgroundCheckVerified: true, backgroundCheckStatus: 'verified', backgroundCheckDate: Date.now() };
+        const sessionUser = persistCurrentUserSession(updatedUser);
+        window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
 
-      // Now redirect to appropriate view
-      void routeAfterLogin(updatedUser);
+        // Now redirect to appropriate view
+        void routeAfterLogin(sessionUser);
+      } catch (error) {
+        console.error('Failed to persist verified user session:', error);
+        setError('Unable to complete sign in. Please clear storage and try again.');
+        toast.error('Unable to complete sign in. Please try again.');
+      }
     }
   };
 
   const handleDemoLogin = async (userEmail: string) => {
-    let user: any = getCanonicalTestUser(userEmail);
+    try {
+      let user: any = getCanonicalTestUser(userEmail);
 
-    // If not in test users, try Supabase
-    if (!user) {
-      user = await userService.getUserByEmail(userEmail);
-    }
-
-    if (user) {
-      const pooledUser = resolveUserForActivePool(user);
-      localStorage.setItem('currentUser', JSON.stringify(pooledUser));
-      // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
-      window.dispatchEvent(new CustomEvent('user-login', { detail: pooledUser }));
-      toast.success(`Welcome, ${pooledUser.name}!`);
-
-      // Show background check modal only if user passed assessment AND hasn't verified yet
-      if (pooledUser.assessmentPassed && !pooledUser.backgroundCheckVerified) {
-        setLoginUser(pooledUser);
-        setShowBackgroundCheckModal(true);
-      } else {
-        await routeAfterLogin(pooledUser);
+      // If not in test users, try Supabase
+      if (!user) {
+        user = await userService.getUserByEmail(userEmail);
       }
+
+      if (user) {
+        const pooledUser = resolveUserForActivePool(user);
+        const sessionUser = persistCurrentUserSession(pooledUser);
+        // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
+        window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
+        toast.success(`Welcome, ${sessionUser.name}!`);
+
+        // Show background check modal only if user passed assessment AND hasn't verified yet
+        if (sessionUser.assessmentPassed && !sessionUser.backgroundCheckVerified) {
+          setLoginUser(sessionUser);
+          setShowBackgroundCheckModal(true);
+        } else {
+          await routeAfterLogin(sessionUser);
+        }
+      }
+    } catch (error) {
+      console.error('Demo login failed:', error);
+      setError('Unable to complete sign in. Please clear storage and try again.');
+      toast.error('Unable to complete sign in. Please try again.');
     }
   };
 

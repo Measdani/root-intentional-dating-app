@@ -69,6 +69,32 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 const ADMIN_STORAGE_KEY = 'rooted-admin-session';
 const DATA_STORAGE_KEY = 'rooted-admin-data';
 
+const safeSetLocalStorage = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    console.warn(`Failed to cache ${key}:`, error);
+    return false;
+  }
+};
+
+const stripInlinePhotoPayloads = (photoUrl?: string) => {
+  if (!photoUrl) return photoUrl;
+  const kept = photoUrl
+    .split('|')
+    .map((url) => url.trim())
+    .filter((url) => url.length > 0 && !url.startsWith('data:'))
+    .join('|');
+  return kept || undefined;
+};
+
+const compactAdminUsersForCache = (users: UserWithAdminData[]): UserWithAdminData[] =>
+  users.map((user) => ({
+    ...user,
+    photoUrl: stripInlinePhotoPayloads(user.photoUrl),
+  }));
+
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<AdminSession>({
     adminUser: null,
@@ -142,7 +168,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (supabaseReports.length > 0) {
           setReports(supabaseReports);
           // Backfill localStorage for offline compatibility
-          localStorage.setItem('rooted-admin-reports', JSON.stringify(supabaseReports));
+          safeSetLocalStorage('rooted-admin-reports', JSON.stringify(supabaseReports));
         } else {
           // Supabase is empty - use localStorage
           const savedReports = localStorage.getItem('rooted-admin-reports');
@@ -166,7 +192,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (supabaseMessages.length > 0) {
           setSupportMessages(supabaseMessages);
           // Backfill localStorage for offline compatibility
-          localStorage.setItem('rooted-admin-support-messages', JSON.stringify(supabaseMessages));
+          safeSetLocalStorage('rooted-admin-support-messages', JSON.stringify(supabaseMessages));
         } else {
           // Supabase is empty - use localStorage
           const savedMessages = localStorage.getItem('rooted-admin-support-messages');
@@ -198,7 +224,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           })) as any;
           setUsers(adminUsers);
           // Backfill localStorage for offline compatibility
-          localStorage.setItem('rooted-admin-users', JSON.stringify(adminUsers));
+          safeSetLocalStorage('rooted-admin-users', JSON.stringify(compactAdminUsersForCache(adminUsers)));
         } else {
           // Supabase is empty - use localStorage
           const savedUsers = localStorage.getItem('rooted-admin-users');
@@ -251,7 +277,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Save reports to localStorage when they change
   useEffect(() => {
     try {
-      localStorage.setItem('rooted-admin-reports', JSON.stringify(reports));
+      safeSetLocalStorage('rooted-admin-reports', JSON.stringify(reports));
     } catch {
       // Fall back silently
     }
@@ -260,7 +286,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Save support messages to localStorage when they change
   useEffect(() => {
     try {
-      localStorage.setItem('rooted-admin-support-messages', JSON.stringify(supportMessages));
+      safeSetLocalStorage('rooted-admin-support-messages', JSON.stringify(supportMessages));
     } catch {
       // Fall back silently
     }
@@ -269,7 +295,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Save users to localStorage when they change
   useEffect(() => {
     try {
-      localStorage.setItem('rooted-admin-users', JSON.stringify(users));
+      safeSetLocalStorage(
+        'rooted-admin-users',
+        JSON.stringify(compactAdminUsersForCache(users))
+      );
     } catch {
       // Fall back silently
     }
@@ -277,19 +306,19 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Save session to localStorage
   const saveSession = useCallback((newSession: AdminSession) => {
-    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(newSession));
+    safeSetLocalStorage(ADMIN_STORAGE_KEY, JSON.stringify(newSession));
     setSession(newSession);
   }, []);
 
   // Save data to localStorage
   const saveData = useCallback(() => {
     const data = {
-      users,
+      users: compactAdminUsersForCache(users),
       assessmentQuestions,
       growthResources,
       membershipTiers,
     };
-    localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(data));
+    safeSetLocalStorage(DATA_STORAGE_KEY, JSON.stringify(data));
   }, [users, assessmentQuestions, growthResources, membershipTiers]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
