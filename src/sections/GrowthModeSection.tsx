@@ -1,5 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
+import {
+  canUsersMatch,
+  communityIdToPoolId,
+  getUserPoolId,
+  isUserInPool,
+  useCommunity,
+} from '@/modules';
 import { growthResources } from '@/data/assessment';
 import { toast } from 'sonner';
 import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
@@ -7,6 +14,7 @@ import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
+import type { User } from '@/types';
 
 type ResourceProgressMap = Record<
   string,
@@ -18,6 +26,7 @@ type ResourceProgressMap = Record<
 >;
 
 const GrowthModeSection: React.FC = () => {
+  const { activeCommunity } = useCommunity();
   const {
     assessmentResult,
     setCurrentView,
@@ -189,15 +198,21 @@ const GrowthModeSection: React.FC = () => {
     return count;
   }, [interactions, currentUser.id]);
 
-  // Filter users who haven't passed assessment (growth-mode pool) and are opposite gender
+  // Filter users who haven't passed assessment (growth-mode pool)
   // Exclude users the current user has blocked AND users who have blocked the current user (mutual blocking)
   const growthModeUsers = useMemo(() => {
     const viewerSettings = getUserSettingsForUser(currentUser.id, currentUser);
+    const activePool = communityIdToPoolId(activeCommunity.id);
+    const viewerPool = getUserPoolId(currentUser, activePool);
+
+    if (!isUserInPool(currentUser, activePool)) return [];
+
     return users.filter(
       u => {
         if (u.assessmentPassed) return false;
         if (u.id === currentUser.id) return false;
-        if (u.gender === currentUser.gender) return false;
+        if (!isUserInPool(u, viewerPool)) return false;
+        if (!canUsersMatch(currentUser, u, activeCommunity.matchingMode)) return false;
         if (isUserBlocked(u.id) || isBlockedByUser(u.id)) return false;
 
         const candidateSettings = getUserSettingsForUser(u.id, u);
@@ -211,7 +226,15 @@ const GrowthModeSection: React.FC = () => {
         return true;
       }
     );
-  }, [users, currentUser.id, currentUser.gender, currentUser, isUserBlocked, isBlockedByUser, getConversation]);
+  }, [
+    users,
+    currentUser.id,
+    currentUser,
+    activeCommunity.matchingMode,
+    isUserBlocked,
+    isBlockedByUser,
+    getConversation,
+  ]);
 
   // Map categories to icons
   const getCategoryIcon = (category: string) => {
@@ -553,6 +576,8 @@ const GrowthModeSection: React.FC = () => {
             {(() => {
               const receivedInterests = getReceivedInterests();
               const sentInterests = getSentInterests();
+              const activePool = communityIdToPoolId(activeCommunity.id);
+              const viewerPool = getUserPoolId(currentUser, activePool);
 
               // Combine both received and sent interests
               const allInterests = [...receivedInterests, ...sentInterests];
@@ -571,7 +596,13 @@ const GrowthModeSection: React.FC = () => {
                     : interest.fromUserId;
                   return users.find(u => u.id === otherUserId);
                 })
-                .filter((u) => u && u.id !== currentUser.id && u.gender !== currentUser.gender);
+                .filter((u): u is User => Boolean(u))
+                .filter(
+                  (u) =>
+                    u.id !== currentUser.id &&
+                    isUserInPool(u, viewerPool) &&
+                    canUsersMatch(currentUser, u, activeCommunity.matchingMode)
+                );
 
               return growthModeMatches.length > 0 ? (
                 <div className="space-y-4">

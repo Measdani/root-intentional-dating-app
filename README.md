@@ -2,6 +2,18 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Community Modules
+
+This project now supports a modular community architecture (shared code, isolated sessions/logins per community area).
+
+- Architecture guide: `docs/MODULAR_COMMUNITY_ARCHITECTURE.md`
+- Auth tabs:
+  - `[ Rooted Hearts ]` -> `core` pool
+  - `[ Rooted Hearts LGBTQ+ ]` -> `lgbtq` pool
+- Quick switch:
+  - `/?community=rooted`
+  - `/?community=lgbtq`
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

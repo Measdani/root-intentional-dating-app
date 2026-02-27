@@ -3,42 +3,58 @@ import type { User } from '@/types'
 
 export const userService = {
   async createUser(user: User): Promise<{ error: string | null; data?: User }> {
-    const { error, data } = await supabase
+    const basePayload = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      age: user.age,
+      city: user.city,
+      gender: user.gender,
+      partnership_intent: user.partnershipIntent,
+      family_alignment: user.familyAlignment,
+      values: user.values,
+      growth_focus: user.growthFocus,
+      relationship_vision: user.relationshipVision,
+      communication_style: user.communicationStyle,
+      photo_url: user.photoUrl,
+      bio: user.bio,
+      assessment_passed: user.assessmentPassed,
+      alignment_score: user.alignmentScore,
+      membership_tier: user.membershipTier,
+      membership_status: user.membershipStatus,
+      billing_period_end: user.billingPeriodEnd,
+      consent_timestamp: user.consentTimestamp,
+      consent_version: user.consentVersion,
+      cancel_at_period_end: user.cancelAtPeriodEnd,
+      user_status: user.userStatus,
+      background_check_verified: user.backgroundCheckVerified,
+      background_check_status: user.backgroundCheckStatus,
+      background_check_date: user.backgroundCheckDate,
+      suspension_end_date: user.suspensionEndDate,
+      is_admin: user.isAdmin,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    }
+
+    let { error, data } = await supabase
       .from('users')
       .insert({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        age: user.age,
-        city: user.city,
-        gender: user.gender,
-        partnership_intent: user.partnershipIntent,
-        family_alignment: user.familyAlignment,
-        values: user.values,
-        growth_focus: user.growthFocus,
-        relationship_vision: user.relationshipVision,
-        communication_style: user.communicationStyle,
-        photo_url: user.photoUrl,
-        bio: user.bio,
-        assessment_passed: user.assessmentPassed,
-        alignment_score: user.alignmentScore,
-        membership_tier: user.membershipTier,
-        membership_status: user.membershipStatus,
-        billing_period_end: user.billingPeriodEnd,
-        consent_timestamp: user.consentTimestamp,
-        consent_version: user.consentVersion,
-        cancel_at_period_end: user.cancelAtPeriodEnd,
-        user_status: user.userStatus,
-        background_check_verified: user.backgroundCheckVerified,
-        background_check_status: user.backgroundCheckStatus,
-        background_check_date: user.backgroundCheckDate,
-        suspension_end_date: user.suspensionEndDate,
-        is_admin: user.isAdmin,
-        created_at: Date.now(),
-        updated_at: Date.now(),
+        ...basePayload,
+        ...(user.poolId ? { pool_id: user.poolId } : {}),
       })
       .select()
       .single()
+
+    if (error && user.poolId && isMissingPoolIdColumnError(error.message)) {
+      // Backward-compatible retry for schemas that have not added pool_id yet.
+      const retry = await supabase
+        .from('users')
+        .insert(basePayload)
+        .select()
+        .single()
+      error = retry.error
+      data = retry.data
+    }
 
     if (error) {
       console.warn('Supabase user create failed:', error.message)
@@ -115,6 +131,7 @@ export const userService = {
     if (updates.consentTimestamp !== undefined) updateData.consent_timestamp = updates.consentTimestamp
     if (updates.consentVersion !== undefined) updateData.consent_version = updates.consentVersion
     if (updates.cancelAtPeriodEnd !== undefined) updateData.cancel_at_period_end = updates.cancelAtPeriodEnd
+    if (updates.poolId !== undefined) updateData.pool_id = updates.poolId
     if (updates.userStatus !== undefined) updateData.user_status = updates.userStatus
     if (updates.backgroundCheckVerified !== undefined) updateData.background_check_verified = updates.backgroundCheckVerified
     if (updates.backgroundCheckStatus !== undefined) updateData.background_check_status = updates.backgroundCheckStatus
@@ -124,10 +141,19 @@ export const userService = {
 
     updateData.updated_at = Date.now()
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from('users')
       .update(updateData)
       .eq('id', userId)
+
+    if (error && updateData.pool_id !== undefined && isMissingPoolIdColumnError(error.message)) {
+      delete updateData.pool_id
+      const retry = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', userId)
+      error = retry.error
+    }
 
     if (error) {
       console.warn('Failed to update user:', error.message)
@@ -176,6 +202,7 @@ function mapRowToUser(row: any): User {
     consentTimestamp: row.consent_timestamp,
     consentVersion: row.consent_version,
     cancelAtPeriodEnd: row.cancel_at_period_end,
+    poolId: row.pool_id === 'lgbtq' ? 'lgbtq' : row.pool_id === 'core' ? 'core' : undefined,
     userStatus: row.user_status,
     backgroundCheckVerified: row.background_check_verified,
     backgroundCheckStatus: row.background_check_status,
@@ -183,4 +210,13 @@ function mapRowToUser(row: any): User {
     suspensionEndDate: row.suspension_end_date,
     isAdmin: row.is_admin,
   }
+}
+
+function isMissingPoolIdColumnError(message: string): boolean {
+  const normalized = (message || '').toLowerCase()
+  return normalized.includes('pool_id') && (
+    normalized.includes('column') ||
+    normalized.includes('schema cache') ||
+    normalized.includes('does not exist')
+  )
 }

@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
 import { useAdmin } from '@/store/AdminContext';
+import AuthPoolTabs from '@/components/AuthPoolTabs';
+import {
+  communityIdToPoolId,
+  getCommunityDefinition,
+  getUserPoolId,
+  persistUserPoolMembership,
+  poolIdToCommunityId,
+  useCommunity,
+} from '@/modules';
 import { userService } from '@/services/userService';
 import { assessmentService } from '@/services/assessmentService';
 import { Button } from '@/components/ui/button';
@@ -17,6 +26,7 @@ import type { AssessmentResult } from '@/types';
 const UserLoginSection: React.FC = () => {
   const { setCurrentView, setAssessmentResult } = useApp();
   const { login: adminLogin } = useAdmin();
+  const { activeCommunity, activeCommunityId, switchCommunity } = useCommunity();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -73,6 +83,33 @@ const UserLoginSection: React.FC = () => {
     }
 
     return null;
+  };
+
+  const resolveUserForActivePool = (rawUser: any) => {
+    const selectedPoolId = communityIdToPoolId(activeCommunityId);
+    const accountPoolId = getUserPoolId(rawUser, selectedPoolId);
+    const user = {
+      ...rawUser,
+      poolId: accountPoolId,
+    };
+
+    persistUserPoolMembership(user, accountPoolId);
+
+    if (accountPoolId !== selectedPoolId) {
+      const targetCommunityId = poolIdToCommunityId(accountPoolId);
+      const targetCommunity = getCommunityDefinition(targetCommunityId);
+      switchCommunity(targetCommunityId);
+
+      window.dispatchEvent(
+        new CustomEvent('auth-pool-redirect-banner', {
+          detail: {
+            message: `You're signed in to ${targetCommunity.name}. We redirected you to your space.`,
+          },
+        })
+      );
+    }
+
+    return user;
   };
 
   const routeAfterLogin = async (user: any) => {
@@ -190,17 +227,18 @@ const UserLoginSection: React.FC = () => {
         return;
       }
 
-      localStorage.setItem('currentUser', JSON.stringify(user));
+      const pooledUser = resolveUserForActivePool(user);
+      localStorage.setItem('currentUser', JSON.stringify(pooledUser));
       // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
-      window.dispatchEvent(new CustomEvent('user-login', { detail: user }));
-      toast.success(`Welcome back, ${user.name}!`);
+      window.dispatchEvent(new CustomEvent('user-login', { detail: pooledUser }));
+      toast.success(`Welcome back, ${pooledUser.name}!`);
 
       // Show background check modal only if user passed assessment AND hasn't verified yet
-      if (user.assessmentPassed && !user.backgroundCheckVerified) {
-        setLoginUser(user);
+      if (pooledUser.assessmentPassed && !pooledUser.backgroundCheckVerified) {
+        setLoginUser(pooledUser);
         setShowBackgroundCheckModal(true);
       } else {
-        await routeAfterLogin(user);
+        await routeAfterLogin(pooledUser);
       }
     } finally {
       setIsLoading(false);
@@ -229,17 +267,18 @@ const UserLoginSection: React.FC = () => {
     }
 
     if (user) {
-      localStorage.setItem('currentUser', JSON.stringify(user));
+      const pooledUser = resolveUserForActivePool(user);
+      localStorage.setItem('currentUser', JSON.stringify(pooledUser));
       // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
-      window.dispatchEvent(new CustomEvent('user-login', { detail: user }));
-      toast.success(`Welcome, ${user.name}!`);
+      window.dispatchEvent(new CustomEvent('user-login', { detail: pooledUser }));
+      toast.success(`Welcome, ${pooledUser.name}!`);
 
       // Show background check modal only if user passed assessment AND hasn't verified yet
-      if (user.assessmentPassed && !user.backgroundCheckVerified) {
-        setLoginUser(user);
+      if (pooledUser.assessmentPassed && !pooledUser.backgroundCheckVerified) {
+        setLoginUser(pooledUser);
         setShowBackgroundCheckModal(true);
       } else {
-        await routeAfterLogin(user);
+        await routeAfterLogin(pooledUser);
       }
     }
   };
@@ -264,12 +303,14 @@ const UserLoginSection: React.FC = () => {
 
       <Card className="relative w-full max-w-md bg-[#111611] border-[#1A211A] shadow-2xl">
         <div className="p-8 space-y-6">
+          <AuthPoolTabs />
+
           <div className="space-y-2 text-center">
             <h1 className="text-3xl font-display font-bold text-[#F6FFF2]">
-              Welcome to Rooted Hearts
+              {activeCommunity.loginTitle}
             </h1>
             <p className="text-sm text-[#A9B5AA]">
-              Sign in to browse profiles
+              {activeCommunity.loginSubtitle}
             </p>
           </div>
 
@@ -322,7 +363,7 @@ const UserLoginSection: React.FC = () => {
           </form>
 
           <p className="text-center text-sm text-[#A9B5AA]">
-            New to Rooted Hearts?{' '}
+            New to {activeCommunity.name}?{' '}
             <button
               onClick={() => setCurrentView('sign-up')}
               className="text-[#D9FF3D] hover:underline font-medium"

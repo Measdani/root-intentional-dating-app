@@ -21,6 +21,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 94,
     photoUrl: 'https://i.pravatar.cc/300?u=maya&img=1',
     membershipTier: 'monthly',
+    poolId: 'core',
     email: 'maya@example.com',
   },
   {
@@ -43,6 +44,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 91,
     photoUrl: 'https://i.pravatar.cc/300?u=james&img=2',
     membershipTier: 'monthly',
+    poolId: 'core',
     email: 'james@example.com',
   },
   {
@@ -65,6 +67,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 88,
     photoUrl: 'https://i.pravatar.cc/300?u=sofia&img=3',
     membershipTier: 'quarterly',
+    poolId: 'lgbtq',
     email: 'sofia@example.com',
   },
   {
@@ -87,6 +90,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 96,
     photoUrl: 'https://i.pravatar.cc/300?u=david&img=4',
     membershipTier: 'quarterly',
+    poolId: 'core',
     email: 'david@example.com',
   },
   {
@@ -109,6 +113,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 89,
     photoUrl: 'https://i.pravatar.cc/300?u=rachel&img=5',
     membershipTier: 'quarterly',
+    poolId: 'core',
     email: 'rachel@example.com',
   },
   {
@@ -131,6 +136,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 85,
     photoUrl: 'https://i.pravatar.cc/300?u=marcus&img=6',
     membershipTier: 'annual',
+    poolId: 'lgbtq',
     email: 'marcus@example.com',
   },
   {
@@ -153,6 +159,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 91,
     photoUrl: 'https://i.pravatar.cc/300?u=alex&img=7',
     membershipTier: 'annual',
+    poolId: 'core',
     email: 'alex@example.com',
     // For testing: suspended for 6 months from now
     userStatus: 'suspended',
@@ -179,6 +186,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 85,
     photoUrl: 'https://i.pravatar.cc/300?u=admin&img=8',
     membershipTier: 'annual',
+    poolId: 'core',
     email: 'admin@therealestreset.com',
     isAdmin: true,
     userStatus: 'active',
@@ -203,6 +211,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 88,
     photoUrl: 'https://i.pravatar.cc/300?u=jordan&img=9',
     membershipTier: 'quarterly',
+    poolId: 'core',
     email: 'jordan.mitchell@example.com',
     userStatus: 'active',
   },
@@ -226,6 +235,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 90,
     photoUrl: 'https://i.pravatar.cc/300?u=emma&img=10',
     membershipTier: 'monthly',
+    poolId: 'lgbtq',
     email: 'emma.richardson@example.com',
     userStatus: 'active',
   },
@@ -249,6 +259,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 72,
     photoUrl: 'https://i.pravatar.cc/300?u=casey&img=11',
     membershipTier: 'monthly',
+    poolId: 'lgbtq',
     email: 'casey.thompson@example.com',
     userStatus: 'needs-growth',
   },

@@ -1,9 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
+import CommunitySwitcher from '@/components/CommunitySwitcher';
+import { useCommunity } from '@/modules';
 import { ChevronDown } from 'lucide-react';
 
 const HeroSection: React.FC = () => {
   const { setCurrentView } = useApp();
+  const { activeCommunity } = useCommunity();
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -60,14 +63,14 @@ const HeroSection: React.FC = () => {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
             >
-              ROOTED HEARTS
+              {activeCommunity.heroTitle}
             </h1>
             <p
               className={`text-[clamp(16px,2vw,24px)] text-[#A9B5AA] max-w-md mx-auto mb-10 transition-all duration-700 delay-500 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
             >
-              Dating for people who are intentional.
+              {activeCommunity.heroTagline}
             </p>
           </div>
         </div>
@@ -95,14 +98,19 @@ const HeroSection: React.FC = () => {
       </button>
 
       {/* Top Right Login Button */}
-      <button
-        onClick={() => setCurrentView('user-login')}
-        className={`absolute top-8 right-8 z-20 btn-primary text-xs py-2.5 px-5 transition-all duration-700 delay-600 ${
+      <div
+        className={`absolute top-8 right-8 z-20 transition-all duration-700 delay-600 ${
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        Login
-      </button>
+        <button
+          onClick={() => setCurrentView('user-login')}
+          className="btn-primary text-xs py-2.5 px-5"
+        >
+          Login
+        </button>
+        <CommunitySwitcher className="mt-2 text-right" />
+      </div>
 
       {/* Logo Top Left */}
       <div
@@ -110,7 +118,7 @@ const HeroSection: React.FC = () => {
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        <span className="font-display text-xl text-[#F6FFF2]">ROOTED HEARTS</span>
+        <span className="font-display text-xl text-[#F6FFF2]">{activeCommunity.heroTitle}</span>
       </div>
     </section>
   );

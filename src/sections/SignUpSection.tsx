@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
+import AuthPoolTabs from '@/components/AuthPoolTabs';
+import { communityIdToPoolId, persistUserPoolMembership, useCommunity } from '@/modules';
 import { userService } from '@/services/userService';
 import { toast } from 'sonner';
 import {
@@ -8,7 +10,7 @@ import {
   ChevronRight,
   ChevronLeft,
 } from 'lucide-react';
-import type { User } from '@/types';
+import type { User, UserGenderIdentity, UserIdentityExpression } from '@/types';
 
 const VALUES_BY_CATEGORY = {
   'Character & Integrity': ['Honesty', 'Loyalty', 'Accountability', 'Integrity'],
@@ -29,8 +31,36 @@ const STEP_LABELS = [
   'Membership',
 ];
 
+const ROOTED_GENDER_OPTIONS: { value: UserGenderIdentity; label: string }[] = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+];
+
+const LGBTQ_GENDER_IDENTITY_OPTIONS: { value: UserGenderIdentity; label: string }[] = [
+  { value: 'male', label: 'Man' },
+  { value: 'female', label: 'Woman' },
+  { value: 'non-binary', label: 'Non-binary' },
+  { value: 'trans-man', label: 'Trans Man' },
+  { value: 'trans-woman', label: 'Trans Woman' },
+  { value: 'self-describe', label: 'Prefer to self-describe' },
+  { value: 'prefer-not-to-say', label: 'Prefer not to say' },
+];
+
+const IDENTITY_EXPRESSION_OPTIONS: { value: UserIdentityExpression; label: string }[] = [
+  { value: 'femme', label: 'Femme' },
+  { value: 'masc', label: 'Masc' },
+  { value: 'androgynous', label: 'Androgynous' },
+  { value: 'stud', label: 'Stud' },
+  { value: 'soft-masc', label: 'Soft masc' },
+  { value: 'gender-fluid', label: 'Gender-fluid' },
+  { value: 'self-describe', label: 'Prefer to self-describe' },
+  { value: 'prefer-not-to-say', label: 'Prefer not to say' },
+];
+
 const SignUpSection: React.FC = () => {
   const { setCurrentView } = useApp();
+  const { activeCommunity, activeCommunityId } = useCommunity();
+  const isLgbtqCommunity = activeCommunity.id === 'lgbtq';
 
   // Step tracking
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
@@ -46,7 +76,10 @@ const SignUpSection: React.FC = () => {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [city, setCity] = useState('');
-  const [gender, setGender] = useState<'male' | 'female' | ''>('');
+  const [gender, setGender] = useState<UserGenderIdentity | ''>('');
+  const [genderIdentityCustom, setGenderIdentityCustom] = useState('');
+  const [identityExpression, setIdentityExpression] = useState<UserIdentityExpression | ''>('');
+  const [identityExpressionCustom, setIdentityExpressionCustom] = useState('');
 
   // Step 3 - Photos (up to 3)
   const [photos, setPhotos] = useState<string[]>(['', '', '']); // Array of 3 photo URLs (base64)
@@ -88,6 +121,29 @@ const SignUpSection: React.FC = () => {
       setErrors({});
     }
   }, [step]);
+
+  useEffect(() => {
+    if (gender !== 'self-describe') {
+      setGenderIdentityCustom('');
+    }
+  }, [gender]);
+
+  useEffect(() => {
+    if (identityExpression !== 'self-describe') {
+      setIdentityExpressionCustom('');
+    }
+  }, [identityExpression]);
+
+  useEffect(() => {
+    if (isLgbtqCommunity) return;
+
+    setIdentityExpression('');
+    setIdentityExpressionCustom('');
+    if (gender !== '' && gender !== 'male' && gender !== 'female') {
+      setGender('');
+      setGenderIdentityCustom('');
+    }
+  }, [isLgbtqCommunity, gender]);
 
   const POLICIES = {
     platformStructure: {
@@ -145,7 +201,7 @@ const SignUpSection: React.FC = () => {
 
   const PLATFORM_CONFIRMATION = {
     heading: 'Platform Acknowledgment',
-    content: 'I confirm that Rooted Hearts is a men and women platform designed for opposite-sex partnerships and understand that my experience depends on my participation, alignment, and engagement within this ecosystem.'
+    content: activeCommunity.signupPlatformConfirmation,
   };
 
   // Step 6 - Payment
@@ -177,7 +233,21 @@ const SignUpSection: React.FC = () => {
         } else if (/^[A-Z]{2}$/.test(trimmedCity)) {
           errs.city = 'Please enter a city name, not a state abbreviation';
         }
-        if (!gender) errs.gender = 'Please select gender';
+        if (!gender) {
+          errs.gender = isLgbtqCommunity
+            ? 'Please select a gender identity'
+            : 'Please select gender';
+        }
+        if (gender === 'self-describe' && !genderIdentityCustom.trim()) {
+          errs.genderIdentityCustom = 'Please self-describe your gender identity';
+        }
+        if (
+          isLgbtqCommunity &&
+          identityExpression === 'self-describe' &&
+          !identityExpressionCustom.trim()
+        ) {
+          errs.identityExpressionCustom = 'Please self-describe your identity expression';
+        }
         break;
       case 3:
         if (!photos[0]) errs.photo = 'Please upload at least one photo';
@@ -290,7 +360,12 @@ const SignUpSection: React.FC = () => {
         name: name.trim(),
         age: parseInt(age),
         city: city.trim(),
-        gender: gender as 'male' | 'female',
+        gender: gender as UserGenderIdentity,
+        genderIdentity: gender as UserGenderIdentity,
+        genderIdentityCustom: gender === 'self-describe' ? genderIdentityCustom.trim() : undefined,
+        identityExpression: identityExpression || undefined,
+        identityExpressionCustom:
+          identityExpression === 'self-describe' ? identityExpressionCustom.trim() : undefined,
         photoUrl: photos.filter(p => p).join('|'), // Store all photos separated by |
         partnershipIntent: partnershipIntent as
           | 'marriage'
@@ -322,6 +397,7 @@ const SignUpSection: React.FC = () => {
         userStatus: 'active',
         backgroundCheckVerified: false,
         backgroundCheckStatus: 'pending',
+        poolId: communityIdToPoolId(activeCommunityId),
       };
 
       // Save to Supabase
@@ -342,6 +418,7 @@ const SignUpSection: React.FC = () => {
 
       // Persist to localStorage (with quota-safe fallback)
       const sessionUser = persistCurrentUserSession(newUser);
+      persistUserPoolMembership(sessionUser, sessionUser.poolId ?? communityIdToPoolId(activeCommunityId));
 
       // Trigger AppContext to pick up the new user
       window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
@@ -371,6 +448,8 @@ const SignUpSection: React.FC = () => {
 
       <div className="relative w-full max-w-lg bg-[#111611] rounded-[28px] border border-[#1A211A] shadow-2xl p-8 space-y-6">
         {/* Header */}
+        <AuthPoolTabs />
+
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-display font-bold text-[#F6FFF2]">
             {step === 1 && 'Create Your Account'}
@@ -505,27 +584,76 @@ const SignUpSection: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
-                Gender
+                {isLgbtqCommunity ? 'Gender Identity' : 'Gender'}
               </label>
               <p className="text-xs italic text-[#A9B5AA] mb-3">
-                Rooted Hearts currently supports men and women seeking opposite-sex partnerships.
+                {activeCommunity.signupGenderGuidance}
               </p>
-              <div className="grid grid-cols-2 gap-3">
-                {(['male', 'female'] as const).map((g) => (
+              <div className={`grid gap-3 ${isLgbtqCommunity ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2'}`}>
+                {(isLgbtqCommunity ? LGBTQ_GENDER_IDENTITY_OPTIONS : ROOTED_GENDER_OPTIONS).map((option) => (
                   <button
-                    key={g}
-                    onClick={() => setGender(g)}
-                    className={`py-3 rounded-xl border capitalize font-medium transition-all ${
-                      gender === g
+                    key={option.value}
+                    type="button"
+                    onClick={() => setGender(option.value)}
+                    className={`py-3 rounded-xl border font-medium transition-all ${
+                      gender === option.value
                         ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
                         : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/50'
                     }`}
                   >
-                    {g}
+                    {option.label}
                   </button>
                 ))}
               </div>
+              {gender === 'self-describe' && (
+                <input
+                  type="text"
+                  value={genderIdentityCustom}
+                  onChange={(e) => setGenderIdentityCustom(e.target.value)}
+                  placeholder="Share your gender identity"
+                  className="mt-3 w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
+                />
+              )}
             </div>
+
+            {isLgbtqCommunity && (
+              <div>
+                <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
+                  Identity expression (optional)
+                </label>
+                <p className="text-xs italic text-[#A9B5AA] mb-3">
+                  If you'd like, share how you present. You'll control when this becomes visible - like photos.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {IDENTITY_EXPRESSION_OPTIONS.map((option) => {
+                    const isSelected = identityExpression === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setIdentityExpression(isSelected ? '' : option.value)}
+                        className={`py-3 rounded-xl border font-medium transition-all ${
+                          isSelected
+                            ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                            : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/50'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {identityExpression === 'self-describe' && (
+                  <input
+                    type="text"
+                    value={identityExpressionCustom}
+                    onChange={(e) => setIdentityExpressionCustom(e.target.value)}
+                    placeholder="Share your identity expression"
+                    className="mt-3 w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
 

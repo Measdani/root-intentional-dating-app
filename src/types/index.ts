@@ -1,9 +1,32 @@
+export type UserGenderIdentity =
+  | 'male'
+  | 'female'
+  | 'non-binary'
+  | 'trans-man'
+  | 'trans-woman'
+  | 'self-describe'
+  | 'prefer-not-to-say';
+
+export type UserIdentityExpression =
+  | 'femme'
+  | 'masc'
+  | 'androgynous'
+  | 'stud'
+  | 'soft-masc'
+  | 'gender-fluid'
+  | 'self-describe'
+  | 'prefer-not-to-say';
+
 export interface User {
   id: string;
   name: string;
   age: number;
   city: string;
-  gender: 'male' | 'female';
+  gender: UserGenderIdentity;
+  genderIdentity?: UserGenderIdentity;
+  genderIdentityCustom?: string;
+  identityExpression?: UserIdentityExpression;
+  identityExpressionCustom?: string;
   partnershipIntent: 'marriage' | 'long-term' | 'life-partnership';
   familyAlignment: {
     hasChildren: boolean;
@@ -31,6 +54,7 @@ export interface User {
   consentVersion?: string; // Policy version accepted (e.g., "v1.0")
   membershipStatus?: 'active' | 'inactive' | 'cancelled'; // Subscription state
   cancelAtPeriodEnd?: boolean; // Whether subscription cancels at period end
+  poolId?: 'core' | 'lgbtq'; // Which community pool this account belongs to
 }
 
 export interface AssessmentQuestion {

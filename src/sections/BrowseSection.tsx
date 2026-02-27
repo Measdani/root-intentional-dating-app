@@ -1,4 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import {
+  useCommunity,
+  canUsersMatch,
+  communityIdToPoolId,
+  getUserPoolId,
+  isUserInPool,
+} from '@/modules';
 import { useApp } from '@/store/AppContext';
 import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +14,7 @@ import type { User } from '@/types';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
 
 const BrowseSection: React.FC = () => {
+  const { activeCommunity } = useCommunity();
   const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, setSelectedConversation, isUserBlocked, isBlockedByUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
@@ -35,16 +43,21 @@ const BrowseSection: React.FC = () => {
       calculateAlignmentScore(currentUser, user)
   })).sort((a, b) => (b.alignmentScore || 0) - (a.alignmentScore || 0));
 
+  const activePool = communityIdToPoolId(activeCommunity.id);
+  const viewerPool = getUserPoolId(currentUser, activePool);
+
   const filteredUsers = usersWithUpdatedScores.filter(user => {
+    // Keep users scoped to the active community pool.
+    if (!isUserInPool(currentUser, activePool)) return false;
+    if (!isUserInPool(user, viewerPool)) return false;
+
     // Exclude current user from browse list
     if (user.id === currentUser.id) return false;
     // Exclude users that current user blocked
     if (isUserBlocked(user.id)) return false;
     // Exclude users that have blocked the current user
     if (isBlockedByUser(user.id)) return false;
-    // Show only opposite gender
-    const oppositeGender = currentUser.gender === 'male' ? 'female' : 'male';
-    if (user.gender !== oppositeGender) return false;
+    if (!canUsersMatch(currentUser, user, activeCommunity.matchingMode)) return false;
     const candidateSettings = getUserSettingsForUser(user.id, user);
     if (candidateSettings.visibility.profileVisibility === 'paused') return false;
     if (candidateSettings.visibility.profileVisibility === 'private') {

@@ -45,6 +45,31 @@ import UserAccessButton from '@/components/UserAccessButton';
 const AppContent: React.FC = () => {
   const { currentView, showSupportModal, setShowSupportModal, currentUser } = useApp();
   const { session } = useAdmin();
+  const [authPoolBanner, setAuthPoolBanner] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+    const handlePoolRedirectBanner = (event: Event) => {
+      const customEvent = event as CustomEvent<{ message?: string }>;
+      const message = customEvent.detail?.message;
+      if (!message || typeof message !== 'string') return;
+
+      setAuthPoolBanner(message);
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(() => setAuthPoolBanner(null), 5000);
+    };
+
+    window.addEventListener('auth-pool-redirect-banner', handlePoolRedirectBanner);
+    return () => {
+      window.removeEventListener('auth-pool-redirect-banner', handlePoolRedirectBanner);
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+    };
+  }, []);
 
   const renderView = () => {
     if (currentView === 'user-login') {
@@ -150,6 +175,11 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="relative bg-[#0B0F0C] min-h-screen flex flex-col">
+      {authPoolBanner && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[120] px-4 py-2 rounded-lg border border-[#2A312A] bg-[#111611] text-[#E8F2E8] text-sm shadow-xl">
+          {authPoolBanner}
+        </div>
+      )}
       <div className="flex-1">
         {renderView()}
       </div>
