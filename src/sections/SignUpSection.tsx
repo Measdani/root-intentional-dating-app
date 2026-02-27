@@ -67,6 +67,17 @@ const OPEN_TO_DATING_OPTIONS: { value: UserGenderIdentity; label: string }[] = [
   { value: 'prefer-not-to-say', label: 'Prefer not to say' },
 ];
 
+type PolicySection = {
+  heading: string;
+  content: string;
+  link?: { label: string; url: string };
+};
+
+type PolicyDefinition = {
+  title: string;
+  sections: PolicySection[];
+};
+
 const SignUpSection: React.FC = () => {
   const { setCurrentView } = useApp();
   const { activeCommunity, activeCommunityId } = useCommunity();
@@ -167,7 +178,7 @@ const SignUpSection: React.FC = () => {
     }
   }, [isLgbtqCommunity, gender]);
 
-  const POLICIES = {
+  const POLICIES: Record<string, PolicyDefinition> = {
     platformStructure: {
       title: 'Platform Structure & Placement',
       sections: [
@@ -220,6 +231,80 @@ const SignUpSection: React.FC = () => {
       ]
     }
   };
+
+  if (isLgbtqCommunity) {
+    const assumptionsIndex = POLICIES.platformStructure.sections.findIndex(
+      (section) => section.heading === 'Assumptions & Platform Realities'
+    );
+    if (assumptionsIndex >= 0) {
+      POLICIES.platformStructure.sections[assumptionsIndex] = {
+        heading: 'Assumptions & Platform Realities',
+        content: 'Rooted Hearts LGBTQ+ is an intentional relationship ecosystem, not a guarantee of romantic outcome.\n\nBy joining, you acknowledge and agree to the following:\n\n1. No Guaranteed Matches\n\nWe do not guarantee romantic success, compatibility with specific individuals, engagement levels from other members, or long-term relationship outcomes.\n\n2. Assessment Placement Is Structural, Not Personal\n\nAssessment results reflect readiness indicators, not worth, value, or character.\n\n3. Personal Responsibility Still Applies\n\nYou remain responsible for your personal decisions, safety precautions, communication, and emotional participation.\n\n4. Growth Requires Effort\n\nAccess to resources does not automatically create growth.\n\n5. Pool Focus & Eligibility\n\nRooted Hearts LGBTQ+ is a dedicated LGBTQ+ pool for adults 25+ who are residents of the United States and seeking intentional partnership.\n\n6. Community Integrity\n\nMembers who repeatedly violate community standards may receive warnings, structured review, suspension, or removal.',
+      };
+    }
+
+    const platformInsertIndex =
+      assumptionsIndex >= 0 ? assumptionsIndex : POLICIES.platformStructure.sections.length;
+    POLICIES.platformStructure.sections.splice(platformInsertIndex, 0, {
+      heading: 'LGBTQ+ Pool Structure',
+      content: 'Rooted Hearts LGBTQ+ is a dedicated dating pool. Profiles from the core Rooted Hearts pool are not visible within this space, and vice versa.\n\nIdentity visibility may be structured (for example, visible after mutual interest) to protect users from being reduced to labels or prematurely categorized.',
+    });
+
+    const moderationIndex = POLICIES.safetyVerification.sections.findIndex(
+      (section) => section.heading === 'Moderation & Enforcement'
+    );
+    const safetyInsertIndex =
+      moderationIndex >= 0 ? moderationIndex : POLICIES.safetyVerification.sections.length;
+    POLICIES.safetyVerification.sections.splice(
+      safetyInsertIndex,
+      0,
+      {
+        heading: 'Identity & Respect Safeguards',
+        content: 'Harassment based on gender identity or sexual orientation is strictly prohibited.\n\nFetishization of identity groups is not tolerated.\n\nAttempting to pressure users to disclose identity details before they are visible under platform rules is prohibited.\n\nMisrepresentation of identity for deceptive purposes may result in removal.',
+      },
+      {
+        heading: 'Outing Protection',
+        content: 'Sharing or threatening to share another user\'s identity outside the platform without consent will result in immediate removal.',
+      },
+      {
+        heading: 'Anti-Fetishization & Exploitation Policy',
+        content: 'Rooted Hearts LGBTQ+ exists to foster intentional partnership, not identity-based consumption. Messaging or behavior that treats identity as a novelty, experiment, or conquest is grounds for review and removal.',
+      }
+    );
+
+    POLICIES.communityStandards.sections.splice(1, 0, {
+      heading: 'Respect for Identity & Expression',
+      content: 'Respect stated pronouns.\n\nDo not debate, invalidate, or challenge another user\'s identity.\n\nNo discriminatory language.\n\nNo sexualized openers referencing identity expression.',
+    });
+
+    const dataRetentionIndex = POLICIES.privacyData.sections.findIndex(
+      (section) => section.heading === 'Data Retention'
+    );
+    const privacyInsertIndex =
+      dataRetentionIndex >= 0 ? dataRetentionIndex : POLICIES.privacyData.sections.length;
+    POLICIES.privacyData.sections.splice(privacyInsertIndex, 0, {
+      heading: 'Identity Field Visibility',
+      content: 'Identity expression and sexual orientation fields may be private, visible after mutual interest, or public based on user settings. Rooted Hearts does not disclose private identity fields outside of the platform\'s structured visibility rules.',
+    });
+
+    POLICIES.lgbtqIdentityRespectAddendum = {
+      title: 'LGBTQ+ Identity & Respect Addendum',
+      sections: [
+        {
+          heading: 'Identity Safety & Protection',
+          content: 'Users must respect how others identify, including stated names and pronouns. Identity is not up for debate on this platform. Harassment, hate speech, slurs, threats, and intimidation are prohibited.',
+        },
+        {
+          heading: 'Structured Visibility & Boundaries',
+          content: 'Rooted Hearts LGBTQ+ may keep identity details private or reveal them after mutual interest based on platform settings. Pressuring others for disclosure, bypassing visibility rules, or outing users outside the platform is prohibited and may result in immediate removal.',
+        },
+        {
+          heading: 'Anti-Fetishization & Enforcement',
+          content: 'This space exists for intentional partnership, not identity-based consumption. Sexualized introductions tied to identity, novelty-seeking, exploitative behavior, or deceptive identity misrepresentation may result in suspension or permanent removal.',
+        },
+      ],
+    };
+  }
 
   const PLATFORM_CONFIRMATION = {
     heading: 'Platform Acknowledgment',
@@ -298,7 +383,8 @@ const SignUpSection: React.FC = () => {
         if (!growthFocus.trim()) errs.growthFocus = 'Growth focus is required';
         break;
       case 6:
-        const allAccepted = Object.values(acceptedPolicies).every(v => v);
+        const requiredPolicyKeys = [...Object.keys(POLICIES), 'platformConfirmation'];
+        const allAccepted = requiredPolicyKeys.every((key) => acceptedPolicies[key] === true);
         if (!allAccepted) errs.policies = 'You must accept all policies to continue';
         break;
     }
