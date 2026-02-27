@@ -1,7 +1,15 @@
 import React from 'react';
 import { useCommunity } from '@/modules';
 
-const AuthPoolTabs: React.FC = () => {
+interface AuthPoolTabsProps {
+  locked?: boolean;
+  lockedMessage?: string;
+}
+
+const AuthPoolTabs: React.FC<AuthPoolTabsProps> = ({
+  locked = false,
+  lockedMessage,
+}) => {
   const { activeCommunityId, communities, switchCommunity } = useCommunity();
 
   const orderedCommunities = [...communities].sort((a, b) => {
@@ -20,11 +28,18 @@ const AuthPoolTabs: React.FC = () => {
             <button
               key={community.id}
               type="button"
-              onClick={() => switchCommunity(community.id)}
+              onClick={() => {
+                if (locked) return;
+                switchCommunity(community.id);
+              }}
+              disabled={locked}
+              aria-disabled={locked}
               className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 isActive
                   ? 'bg-[#D9FF3D] text-[#0B0F0C]'
-                  : 'text-[#A9B5AA] hover:text-[#F6FFF2] hover:bg-[#1A211A]'
+                  : locked
+                    ? 'text-[#6E786F] cursor-not-allowed'
+                    : 'text-[#A9B5AA] hover:text-[#F6FFF2] hover:bg-[#1A211A]'
               }`}
             >
               {community.name}
@@ -32,6 +47,11 @@ const AuthPoolTabs: React.FC = () => {
           );
         })}
       </div>
+      {locked && (
+        <p className="mt-2 px-2 text-[11px] text-[#A9B5AA]">
+          {lockedMessage ?? 'Pool selection is locked during signup. Close enrollment to switch spaces.'}
+        </p>
+      )}
     </div>
   );
 };

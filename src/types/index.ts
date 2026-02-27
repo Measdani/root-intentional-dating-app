@@ -17,6 +17,8 @@ export type UserIdentityExpression =
   | 'self-describe'
   | 'prefer-not-to-say';
 
+export type UserIdentityVisibility = 'after-mutual-interest' | 'always-visible';
+
 export interface User {
   id: string;
   name: string;
@@ -25,8 +27,11 @@ export interface User {
   gender: UserGenderIdentity;
   genderIdentity?: UserGenderIdentity;
   genderIdentityCustom?: string;
+  openToDating?: UserGenderIdentity[];
+  openToDatingCustom?: string;
   identityExpression?: UserIdentityExpression;
   identityExpressionCustom?: string;
+  identityExpressionVisibility?: UserIdentityVisibility;
   partnershipIntent: 'marriage' | 'long-term' | 'life-partnership';
   familyAlignment: {
     hasChildren: boolean;
@@ -40,6 +45,7 @@ export interface User {
   alignmentScore?: number;
   photoUrl?: string;
   bio?: string;
+  communityBoundaries?: string;
   suspensionEndDate?: number; // Timestamp when suspension expires (6 months from issue date)
   assessmentPassed?: boolean; // Track if user passed the assessment
   membershipTier?: 'monthly' | 'quarterly' | 'annual'; // User's membership plan

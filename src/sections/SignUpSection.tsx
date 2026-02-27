@@ -57,6 +57,16 @@ const IDENTITY_EXPRESSION_OPTIONS: { value: UserIdentityExpression; label: strin
   { value: 'prefer-not-to-say', label: 'Prefer not to say' },
 ];
 
+const OPEN_TO_DATING_OPTIONS: { value: UserGenderIdentity; label: string }[] = [
+  { value: 'male', label: 'Man' },
+  { value: 'female', label: 'Woman' },
+  { value: 'non-binary', label: 'Non-binary' },
+  { value: 'trans-man', label: 'Trans Man' },
+  { value: 'trans-woman', label: 'Trans Woman' },
+  { value: 'self-describe', label: 'Prefer to self-describe' },
+  { value: 'prefer-not-to-say', label: 'Prefer not to say' },
+];
+
 const SignUpSection: React.FC = () => {
   const { setCurrentView } = useApp();
   const { activeCommunity, activeCommunityId } = useCommunity();
@@ -88,6 +98,8 @@ const SignUpSection: React.FC = () => {
   const [partnershipIntent, setPartnershipIntent] = useState<
     'marriage' | 'long-term' | 'life-partnership' | ''
   >('');
+  const [openToDating, setOpenToDating] = useState<UserGenderIdentity[]>([]);
+  const [openToDatingCustom, setOpenToDatingCustom] = useState('');
   const [hasChildren, setHasChildren] = useState<boolean | null>(null);
   const [wantsChildren, setWantsChildren] = useState<
     'wants' | 'open' | 'does-not-want' | 'unsure' | ''
@@ -104,6 +116,7 @@ const SignUpSection: React.FC = () => {
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
   const [growthFocus, setGrowthFocus] = useState('');
   const [bio, setBio] = useState('');
+  const [communityBoundaries, setCommunityBoundaries] = useState('');
 
   // Step 6 - Policies
   const [acceptedPolicies, setAcceptedPolicies] = useState<Record<string, boolean>>({});
@@ -135,10 +148,19 @@ const SignUpSection: React.FC = () => {
   }, [identityExpression]);
 
   useEffect(() => {
+    if (!openToDating.includes('self-describe')) {
+      setOpenToDatingCustom('');
+    }
+  }, [openToDating]);
+
+  useEffect(() => {
     if (isLgbtqCommunity) return;
 
+    setOpenToDating([]);
+    setOpenToDatingCustom('');
     setIdentityExpression('');
     setIdentityExpressionCustom('');
+    setCommunityBoundaries('');
     if (gender !== '' && gender !== 'male' && gender !== 'female') {
       setGender('');
       setGenderIdentityCustom('');
@@ -241,6 +263,22 @@ const SignUpSection: React.FC = () => {
         if (gender === 'self-describe' && !genderIdentityCustom.trim()) {
           errs.genderIdentityCustom = 'Please self-describe your gender identity';
         }
+        break;
+      case 3:
+        if (!photos[0]) errs.photo = 'Please upload at least one photo';
+        break;
+      case 4:
+        if (!partnershipIntent) errs.partnershipIntent = 'Please select intent';
+        if (isLgbtqCommunity && openToDating.length === 0) {
+          errs.openToDating = 'Select at least one option for who you are open to dating';
+        }
+        if (
+          isLgbtqCommunity &&
+          openToDating.includes('self-describe') &&
+          !openToDatingCustom.trim()
+        ) {
+          errs.openToDatingCustom = 'Please self-describe who you are open to dating';
+        }
         if (
           isLgbtqCommunity &&
           identityExpression === 'self-describe' &&
@@ -248,12 +286,6 @@ const SignUpSection: React.FC = () => {
         ) {
           errs.identityExpressionCustom = 'Please self-describe your identity expression';
         }
-        break;
-      case 3:
-        if (!photos[0]) errs.photo = 'Please upload at least one photo';
-        break;
-      case 4:
-        if (!partnershipIntent) errs.partnershipIntent = 'Please select intent';
         if (hasChildren === null)
           errs.hasChildren = 'Please answer this question';
         if (!wantsChildren) errs.wantsChildren = 'Please make a selection';
@@ -363,9 +395,20 @@ const SignUpSection: React.FC = () => {
         gender: gender as UserGenderIdentity,
         genderIdentity: gender as UserGenderIdentity,
         genderIdentityCustom: gender === 'self-describe' ? genderIdentityCustom.trim() : undefined,
-        identityExpression: identityExpression || undefined,
+        openToDating: isLgbtqCommunity ? openToDating : undefined,
+        openToDatingCustom:
+          isLgbtqCommunity && openToDating.includes('self-describe')
+            ? openToDatingCustom.trim()
+            : undefined,
+        identityExpression: isLgbtqCommunity ? identityExpression || undefined : undefined,
         identityExpressionCustom:
-          identityExpression === 'self-describe' ? identityExpressionCustom.trim() : undefined,
+          isLgbtqCommunity && identityExpression === 'self-describe'
+            ? identityExpressionCustom.trim()
+            : undefined,
+        identityExpressionVisibility:
+          isLgbtqCommunity && identityExpression && identityExpression !== 'prefer-not-to-say'
+            ? 'after-mutual-interest'
+            : undefined,
         photoUrl: photos.filter(p => p).join('|'), // Store all photos separated by |
         partnershipIntent: partnershipIntent as
           | 'marriage'
@@ -387,6 +430,10 @@ const SignUpSection: React.FC = () => {
         values: selectedValues,
         growthFocus: growthFocus.trim(),
         bio: bio.trim() || undefined,
+        communityBoundaries:
+          isLgbtqCommunity && communityBoundaries.trim()
+            ? communityBoundaries.trim()
+            : undefined,
         assessmentPassed: false,
         membershipTier: tier ?? 'monthly',
         membershipStatus: 'active',
@@ -448,7 +495,10 @@ const SignUpSection: React.FC = () => {
 
       <div className="relative w-full max-w-lg bg-[#111611] rounded-[28px] border border-[#1A211A] shadow-2xl p-8 space-y-6">
         {/* Header */}
-        <AuthPoolTabs />
+        <AuthPoolTabs
+          locked
+          lockedMessage="Pool selection is locked during signup. Close enrollment to switch spaces."
+        />
 
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-display font-bold text-[#F6FFF2]">
@@ -616,44 +666,6 @@ const SignUpSection: React.FC = () => {
               )}
             </div>
 
-            {isLgbtqCommunity && (
-              <div>
-                <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
-                  Identity expression (optional)
-                </label>
-                <p className="text-xs italic text-[#A9B5AA] mb-3">
-                  If you'd like, share how you present. You'll control when this becomes visible - like photos.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {IDENTITY_EXPRESSION_OPTIONS.map((option) => {
-                    const isSelected = identityExpression === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setIdentityExpression(isSelected ? '' : option.value)}
-                        className={`py-3 rounded-xl border font-medium transition-all ${
-                          isSelected
-                            ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
-                            : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/50'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {identityExpression === 'self-describe' && (
-                  <input
-                    type="text"
-                    value={identityExpressionCustom}
-                    onChange={(e) => setIdentityExpressionCustom(e.target.value)}
-                    placeholder="Share your identity expression"
-                    className="mt-3 w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
-                  />
-                )}
-              </div>
-            )}
           </div>
         )}
 
@@ -774,6 +786,93 @@ const SignUpSection: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            {isLgbtqCommunity && (
+              <div>
+                <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
+                  Who are you open to dating?
+                </label>
+                <p className="text-xs italic text-[#A9B5AA] mb-3">
+                  Select all that apply.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {OPEN_TO_DATING_OPTIONS.map((option) => {
+                    const isSelected = openToDating.includes(option.value);
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setOpenToDating((previous) => (
+                            previous.includes(option.value)
+                              ? previous.filter((value) => value !== option.value)
+                              : [...previous, option.value]
+                          ));
+                        }}
+                        className={`py-3 rounded-xl border font-medium transition-all ${
+                          isSelected
+                            ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                            : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/50'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {openToDating.includes('self-describe') && (
+                  <input
+                    type="text"
+                    value={openToDatingCustom}
+                    onChange={(e) => setOpenToDatingCustom(e.target.value)}
+                    placeholder="Share who you're open to dating"
+                    className="mt-3 w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
+                  />
+                )}
+              </div>
+            )}
+
+            {isLgbtqCommunity && (
+              <div>
+                <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
+                  Identity expression (optional)
+                </label>
+                <p className="text-xs italic text-[#A9B5AA] mb-2">
+                  If you'd like, share how you present. You'll control when this becomes visible - like photos.
+                </p>
+                <p className="text-xs text-[#A9B5AA] mb-3">
+                  Default visibility: after mutual interest.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {IDENTITY_EXPRESSION_OPTIONS.map((option) => {
+                    const isSelected = identityExpression === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setIdentityExpression(isSelected ? '' : option.value)}
+                        className={`py-3 rounded-xl border font-medium transition-all ${
+                          isSelected
+                            ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                            : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/50'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {identityExpression === 'self-describe' && (
+                  <input
+                    type="text"
+                    value={identityExpressionCustom}
+                    onChange={(e) => setIdentityExpressionCustom(e.target.value)}
+                    placeholder="Share your identity expression"
+                    className="mt-3 w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
+                  />
+                )}
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-[#F6FFF2] block mb-3">
@@ -938,6 +1037,24 @@ const SignUpSection: React.FC = () => {
                 {bio.length} / 500
               </p>
             </div>
+
+            {isLgbtqCommunity && (
+              <div>
+                <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
+                  Community boundaries (optional)
+                </label>
+                <p className="text-xs italic text-[#A9B5AA] mb-2">
+                  Share anything that helps you feel safe and respected in connection.
+                </p>
+                <textarea
+                  value={communityBoundaries}
+                  onChange={(e) => setCommunityBoundaries(e.target.value)}
+                  placeholder={'e.g., "No fetishizing," "Respect pronouns," "Serious dating only," "No secrecy."'}
+                  rows={3}
+                  className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors resize-none"
+                />
+              </div>
+            )}
           </div>
         )}
 
