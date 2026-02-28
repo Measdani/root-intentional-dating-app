@@ -10,6 +10,7 @@ import {
 import { toast } from 'sonner';
 import { reportService } from '@/services/reportService';
 import { supportService } from '@/services/supportService';
+import { userService } from '@/services/userService';
 
 interface AppState {
   currentView: AppView;
@@ -74,6 +75,28 @@ interface AppContextType extends AppState {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const isUserLike = (value: unknown): value is User =>
+  Boolean(value && typeof value === 'object' && typeof (value as { id?: unknown }).id === 'string');
+
+const normalizeUser = (user: User): User => applyRelationshipModeToUser(user);
+
+const upsertUserById = (existingUsers: User[], user: User): User[] => {
+  const normalizedUser = normalizeUser(user);
+  const existingIndex = existingUsers.findIndex((candidate) => candidate.id === normalizedUser.id);
+
+  if (existingIndex === -1) {
+    return [...existingUsers, normalizedUser];
+  }
+
+  const mergedUser = { ...existingUsers[existingIndex], ...normalizedUser };
+  const nextUsers = [...existingUsers];
+  nextUsers[existingIndex] = mergedUser;
+  return nextUsers;
+};
+
+const mergeUsersById = (existingUsers: User[], usersToMerge: User[]): User[] =>
+  usersToMerge.reduce((nextUsers, user) => upsertUserById(nextUsers, user), existingUsers);
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentView, setCurrentViewState] = useState<AppView>('landing');
   const [previousView, setPreviousView] = useState<AppView>('landing');
@@ -96,10 +119,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return applyRelationshipModeToUser(defaultUser);
   });
 
+  const [users, setUsers] = useState<User[]>(() => {
+    const seededUsers = sampleUsers.map((user) => normalizeUser(user));
+    const usersWithCurrent = upsertUserById(seededUsers, currentUser);
+
+    try {
+      const savedUsersRaw = localStorage.getItem('rooted-admin-users');
+      if (!savedUsersRaw) return usersWithCurrent;
+
+      const parsedUsers = JSON.parse(savedUsersRaw);
+      if (!Array.isArray(parsedUsers)) return usersWithCurrent;
+
+      const persistedUsers = parsedUsers
+        .filter(isUserLike)
+        .map((user) => normalizeUser(user));
+      return mergeUsersById(usersWithCurrent, persistedUsers);
+    } catch (error) {
+      console.warn('Failed to load users from localStorage:', error);
+      return usersWithCurrent;
+    }
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncUsersFromSupabase = async () => {
+      try {
+        const remoteUsers = await userService.getAllUsers();
+        if (cancelled || remoteUsers.length === 0) return;
+
+        const normalizedRemoteUsers = remoteUsers.map((user) => normalizeUser(user));
+        setUsers((prev) => mergeUsersById(prev, normalizedRemoteUsers));
+      } catch (error) {
+        console.warn('Failed to sync users from Supabase:', error);
+      }
+    };
+
+    void syncUsersFromSupabase();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Update currentUser when localStorage changes (on login/logout)
   useEffect(() => {
+    const syncUsersFromStorage = () => {
+      try {
+        const savedUsersRaw = localStorage.getItem('rooted-admin-users');
+        if (!savedUsersRaw) return;
+
+        const parsedUsers = JSON.parse(savedUsersRaw);
+        if (!Array.isArray(parsedUsers)) return;
+
+        const persistedUsers = parsedUsers
+          .filter(isUserLike)
+          .map((user) => normalizeUser(user));
+        setUsers((prev) => mergeUsersById(prev, persistedUsers));
+      } catch (error) {
+        console.warn('Failed to sync users from localStorage:', error);
+      }
+    };
+
     const handleStorageChange = () => {
       try {
+        syncUsersFromStorage();
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
           const parsedUser = JSON.parse(savedUser) as User;
@@ -127,9 +211,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           }
 
-          setCurrentUserState(applyRelationshipModeToUser(parsedUser));
+          const normalizedUser = normalizeUser(parsedUser);
+          setCurrentUserState(normalizedUser);
+          setUsers((prev) => upsertUserById(prev, normalizedUser));
         } else {
-          setCurrentUserState(applyRelationshipModeToUser(defaultUser));
+          const fallbackUser = normalizeUser(defaultUser);
+          setCurrentUserState(fallbackUser);
+          setUsers((prev) => upsertUserById(prev, fallbackUser));
         }
       } catch (error) {
         console.error('Failed to update user from localStorage:', error);
@@ -139,13 +227,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Listen for both storage events (from other tabs) and custom user-login event (same tab)
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('user-login', handleStorageChange);
+    window.addEventListener('new-user', handleStorageChange as EventListener);
     window.addEventListener('relationship-mode-updated', handleStorageChange as EventListener);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('user-login', handleStorageChange);
+      window.removeEventListener('new-user', handleStorageChange as EventListener);
       window.removeEventListener('relationship-mode-updated', handleStorageChange as EventListener);
     };
   }, []);
+
+  useEffect(() => {
+    setUsers((prev) => upsertUserById(prev, currentUser));
+  }, [currentUser]);
 
   // Apply stored suspensions when currentUser changes (e.g., on login)
   useEffect(() => {
@@ -197,7 +291,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser.id]);
 
-  const [users] = useState<User[]>(sampleUsers);
   const [hasJoinedList, setHasJoinedList] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);

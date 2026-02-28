@@ -21,7 +21,7 @@ export const sampleUsers: User[] = [
     alignmentScore: 94,
     photoUrl: 'https://i.pravatar.cc/300?u=maya&img=1',
     membershipTier: 'monthly',
-    poolId: 'core-inner',
+    poolId: 'core-advanced',
     email: 'maya@example.com',
   },
   {
@@ -159,11 +159,9 @@ export const sampleUsers: User[] = [
     alignmentScore: 91,
     photoUrl: 'https://i.pravatar.cc/300?u=alex&img=7',
     membershipTier: 'annual',
-    poolId: 'core-inner',
+    poolId: 'core-advanced',
     email: 'alex@example.com',
-    // For testing: suspended for 6 months from now
-    userStatus: 'suspended',
-    suspensionEndDate: Date.now() + (6 * 30 * 24 * 60 * 60 * 1000), // 6 months from now
+    userStatus: 'active',
   },
   // TEST ACCOUNTS
   {
