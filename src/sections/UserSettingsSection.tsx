@@ -1,8 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { toast } from 'sonner';
-import { ArrowLeft, Download, Trash2, UserX, ShieldCheck, Bell, Eye, Lock, RotateCcw } from 'lucide-react';
+import {
+  ArrowLeft,
+  Download,
+  Trash2,
+  UserX,
+  ShieldCheck,
+  Bell,
+  Eye,
+  Lock,
+  RotateCcw,
+  Loader2,
+  MessageSquare,
+} from 'lucide-react';
 import { userService } from '@/services/userService';
+import type { SupportCategory, SupportMessage } from '@/types';
 import {
   applyCoreLock,
   getCoreSettingUnlockDate,
@@ -15,6 +28,67 @@ import {
 } from '@/services/userSettingsService';
 
 const LOCK_COPY_TITLE = 'Intentional Stability Policy';
+const SUPPORT_MESSAGES_STORAGE_KEY = 'rooted-admin-support-messages';
+
+type SettingsSupportIssueType =
+  | 'password-issue'
+  | 'account-issue'
+  | 'billing-issue'
+  | 'technical-issue'
+  | 'feature-request'
+  | 'other';
+
+const SETTINGS_SUPPORT_ISSUE_OPTIONS: {
+  value: SettingsSupportIssueType;
+  label: string;
+  description: string;
+  category: SupportCategory;
+}[] = [
+  {
+    value: 'password-issue',
+    label: 'Password issue',
+    description: 'Reset, change, or sign-in password problems.',
+    category: 'account',
+  },
+  {
+    value: 'account-issue',
+    label: 'Account issue',
+    description: 'Profile access, verification, or account state.',
+    category: 'account',
+  },
+  {
+    value: 'technical-issue',
+    label: 'Technical issue',
+    description: 'Bugs, crashes, or unexpected behavior.',
+    category: 'technical',
+  },
+  {
+    value: 'billing-issue',
+    label: 'Billing issue',
+    description: 'Membership, charges, and renewal questions.',
+    category: 'billing',
+  },
+  {
+    value: 'feature-request',
+    label: 'Feature request',
+    description: 'Share a product improvement idea.',
+    category: 'feature-request',
+  },
+  {
+    value: 'other',
+    label: 'Other',
+    description: 'Anything else you need help with.',
+    category: 'other',
+  },
+];
+
+const SUPPORT_CATEGORY_LABELS: Record<SupportCategory, string> = {
+  technical: 'Technical issue',
+  account: 'Account question',
+  billing: 'Billing',
+  'feature-request': 'Feature request',
+  other: 'Other',
+};
 
 const UserSettingsSection: React.FC = () => {
   const {
@@ -28,12 +102,19 @@ const UserSettingsSection: React.FC = () => {
     blockedUsers,
     unblockUser,
     users,
+    submitSupportRequest,
   } = useApp();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [lockModalDate, setLockModalDate] = useState<Date | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [supportIssueType, setSupportIssueType] = useState<SettingsSupportIssueType>('password-issue');
+  const [supportSubject, setSupportSubject] = useState('');
+  const [supportDetails, setSupportDetails] = useState('');
+  const [supportReferenceId, setSupportReferenceId] = useState<string | null>(null);
+  const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
+  const [recentSupportTickets, setRecentSupportTickets] = useState<SupportMessage[]>([]);
   const isLgbtqUser = false;
 
   useEffect(() => {
@@ -85,6 +166,66 @@ const UserSettingsSection: React.FC = () => {
   const retakeStatusCopy = currentUser.assessmentPassed === true
     ? 'Assessment completed in Alignment Space.'
     : (canRetakeAssessment() ? 'Eligible for reassessment now.' : 'Retake is currently locked.');
+  const hasPrioritySupport =
+    currentUser.membershipTier === 'quarterly' || currentUser.membershipTier === 'annual';
+  const supportSubjectMaxLength = 100;
+  const supportDetailsMinLength = 30;
+  const supportDetailsMaxLength = 1200;
+
+  const loadRecentSupportTickets = useCallback(() => {
+    try {
+      const stored = localStorage.getItem(SUPPORT_MESSAGES_STORAGE_KEY);
+      if (!stored) {
+        setRecentSupportTickets([]);
+        return;
+      }
+
+      const parsed = JSON.parse(stored);
+      if (!Array.isArray(parsed)) {
+        setRecentSupportTickets([]);
+        return;
+      }
+
+      const tickets = parsed
+        .filter(
+          (entry: any) =>
+            entry &&
+            entry.userId === currentUser.id &&
+            typeof entry.id === 'string' &&
+            typeof entry.subject === 'string' &&
+            typeof entry.message === 'string' &&
+            typeof entry.status === 'string'
+        )
+        .sort((a: any, b: any) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+        .slice(0, 5) as SupportMessage[];
+
+      setRecentSupportTickets(tickets);
+    } catch (error) {
+      console.warn('Failed to load recent support tickets:', error);
+      setRecentSupportTickets([]);
+    }
+  }, [currentUser.id]);
+
+  useEffect(() => {
+    loadRecentSupportTickets();
+  }, [loadRecentSupportTickets]);
+
+  useEffect(() => {
+    const handleNewSupportMessage = (event: Event) => {
+      const customEvent = event as CustomEvent<SupportMessage>;
+      const newTicket = customEvent.detail;
+      if (!newTicket || newTicket.userId !== currentUser.id) return;
+
+      setRecentSupportTickets((previous) =>
+        [newTicket, ...previous.filter((ticket) => ticket.id !== newTicket.id)].slice(0, 5)
+      );
+    };
+
+    window.addEventListener('new-support-message', handleNewSupportMessage as EventListener);
+    return () => {
+      window.removeEventListener('new-support-message', handleNewSupportMessage as EventListener);
+    };
+  }, [currentUser.id]);
 
   const handleRetakeAssessment = () => {
     if (!failedAssessment) {
@@ -213,6 +354,56 @@ const UserSettingsSection: React.FC = () => {
     setNewPassword('');
     setConfirmPassword('');
     toast.success('Password updated for this MVP session.');
+  };
+
+  const handleSupportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmittingSupport) return;
+
+    const selectedIssue =
+      SETTINGS_SUPPORT_ISSUE_OPTIONS.find((option) => option.value === supportIssueType) ||
+      SETTINGS_SUPPORT_ISSUE_OPTIONS[0];
+    const trimmedSubject = supportSubject.trim();
+    const trimmedDetails = supportDetails.trim();
+
+    if (trimmedSubject.length < 4) {
+      toast.error('Please add a clear subject for your ticket.');
+      return;
+    }
+    if (trimmedDetails.length < supportDetailsMinLength) {
+      toast.error(`Please share at least ${supportDetailsMinLength} characters so support can help quickly.`);
+      return;
+    }
+
+    setIsSubmittingSupport(true);
+    try {
+      const supportId = await submitSupportRequest(
+        selectedIssue.category,
+        `[${selectedIssue.label}] ${trimmedSubject}`,
+        trimmedDetails
+      );
+      setSupportReferenceId(supportId);
+      setSupportSubject('');
+      setSupportDetails('');
+      loadRecentSupportTickets();
+    } catch (error) {
+      console.error('Failed to submit support ticket:', error);
+      toast.error('Unable to submit your ticket right now. Please try again.');
+    } finally {
+      setIsSubmittingSupport(false);
+    }
+  };
+
+  const getSupportStatusClass = (status: SupportMessage['status']) => {
+    switch (status) {
+      case 'resolved':
+        return 'border-green-500/30 bg-green-500/10 text-green-300';
+      case 'in-progress':
+        return 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300';
+      case 'unread':
+      default:
+        return 'border-blue-500/30 bg-blue-500/10 text-blue-300';
+    }
   };
 
   const lockHint = (key: CoreSettingKey) => {
@@ -855,6 +1046,129 @@ const UserSettingsSection: React.FC = () => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5">
+          <h2 className="font-display text-xl flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-[#D9FF3D]" />
+            Support Tickets
+          </h2>
+          <p className="text-sm text-[#A9B5AA]">
+            Open a ticket for password issues, account issues, billing, technical problems, or anything else.
+          </p>
+          <p className="text-xs text-[#A9B5AA]">
+            {hasPrioritySupport
+              ? 'Priority support is active on your plan.'
+              : 'Priority support is available on quarterly and annual plans.'}
+          </p>
+
+          <form onSubmit={handleSupportSubmit} className="space-y-4">
+            <div>
+              <p className="text-sm text-[#A9B5AA] mb-2">Issue type</p>
+              <div className="grid md:grid-cols-2 gap-2">
+                {SETTINGS_SUPPORT_ISSUE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSupportIssueType(option.value)}
+                    className={`p-3 rounded-lg border text-left transition-colors ${
+                      supportIssueType === option.value
+                        ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                        : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/40'
+                    }`}
+                  >
+                    <p className="text-sm font-medium">{option.label}</p>
+                    <p className="text-xs opacity-80 mt-1">{option.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm text-[#A9B5AA] block mb-2">Subject</label>
+              <input
+                type="text"
+                value={supportSubject}
+                onChange={(e) => setSupportSubject(e.target.value.slice(0, supportSubjectMaxLength))}
+                placeholder="Brief summary of your issue"
+                className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
+              />
+              <p className="text-xs text-[#A9B5AA] mt-1">
+                {supportSubject.length}/{supportSubjectMaxLength}
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm text-[#A9B5AA] block mb-2">Details</label>
+              <textarea
+                value={supportDetails}
+                onChange={(e) => setSupportDetails(e.target.value.slice(0, supportDetailsMaxLength))}
+                placeholder="Share details so our team can resolve this quickly."
+                rows={4}
+                className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors resize-none"
+              />
+              <p className="text-xs text-[#A9B5AA] mt-1">
+                {supportDetails.length}/{supportDetailsMaxLength} (minimum {supportDetailsMinLength})
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={
+                isSubmittingSupport ||
+                supportSubject.trim().length < 4 ||
+                supportDetails.trim().length < supportDetailsMinLength
+              }
+              className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmittingSupport ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Submitting ticket...
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="w-4 h-4" />
+                  Submit Ticket
+                </>
+              )}
+            </button>
+          </form>
+
+          {supportReferenceId && (
+            <div className="text-xs text-[#A9B5AA] bg-[#0B0F0C] border border-[#1A211A] rounded-lg px-3 py-2">
+              Latest ticket reference: <span className="text-[#F6FFF2] font-mono">{supportReferenceId}</span>
+            </div>
+          )}
+
+          <div className="pt-2 border-t border-[#1A211A]">
+            <p className="text-sm text-[#A9B5AA] mb-3">Recent Tickets</p>
+            {recentSupportTickets.length === 0 ? (
+              <p className="text-sm text-[#A9B5AA]">No tickets submitted yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {recentSupportTickets.map((ticket) => (
+                  <div key={ticket.id} className="bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-3 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-[#F6FFF2] font-medium truncate">
+                        {ticket.subject}
+                      </span>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full border text-[#A9B5AA] border-[#1A211A]">
+                        {SUPPORT_CATEGORY_LABELS[ticket.category] || 'Other'}
+                      </span>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full border ${getSupportStatusClass(ticket.status)}`}>
+                        {ticket.status.replace('-', ' ')}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#A9B5AA]">
+                      <span className="font-mono">{ticket.id}</span>
+                      <span>{new Date(ticket.createdAt).toLocaleString('en-US')}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
