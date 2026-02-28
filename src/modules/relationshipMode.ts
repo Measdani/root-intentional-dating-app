@@ -253,13 +253,11 @@ export const enterBreakMode = (userId: string): RelationshipModeActionResult => 
     return {
       ok: false,
       reason: 'Break Mode is already active.',
-      remainingMs: snapshot.remainingCooldownMs,
     };
   }
 
-  const cooldownEndsAt = Date.now() + RELATIONSHIP_MODE_COOLDOWN_MS;
   store.modeByUserId[userId] = 'break';
-  store.reEntryCooldownByUserId[userId] = cooldownEndsAt;
+  delete store.reEntryCooldownByUserId[userId];
   delete store.exclusivePartnerByUserId[userId];
   removeRequestsForUser(store, userId);
   writeStore(store);
@@ -269,7 +267,6 @@ export const enterBreakMode = (userId: string): RelationshipModeActionResult => 
     ok: true,
     kind: 'break-entered',
     affectedUserIds: [userId],
-    cooldownEndsAt,
   };
 };
 
@@ -281,16 +278,10 @@ export const exitBreakMode = (userId: string): RelationshipModeActionResult => {
   if (snapshot.mode !== 'break') {
     return { ok: false, reason: 'Break Mode is not active for this account.' };
   }
-  if (snapshot.remainingCooldownMs > 0) {
-    return {
-      ok: false,
-      reason: `Break Mode can be exited in ${formatModeDuration(snapshot.remainingCooldownMs)}.`,
-      remainingMs: snapshot.remainingCooldownMs,
-    };
-  }
+  const cooldownEndsAt = Date.now() + RELATIONSHIP_MODE_COOLDOWN_MS;
 
   store.modeByUserId[userId] = 'active';
-  delete store.reEntryCooldownByUserId[userId];
+  store.reEntryCooldownByUserId[userId] = cooldownEndsAt;
   writeStore(store);
   dispatchModeUpdated([userId]);
 
@@ -298,6 +289,7 @@ export const exitBreakMode = (userId: string): RelationshipModeActionResult => {
     ok: true,
     kind: 'break-exited',
     affectedUserIds: [userId],
+    cooldownEndsAt,
   };
 };
 

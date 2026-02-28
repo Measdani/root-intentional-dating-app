@@ -129,6 +129,7 @@ const UserSettingsSection: React.FC = () => {
   const [recentSupportTickets, setRecentSupportTickets] = useState<SupportMessage[]>([]);
   const [modeRefreshTick, setModeRefreshTick] = useState(0);
   const [exclusiveTargetId, setExclusiveTargetId] = useState('');
+  const [showBreakModeConfirm, setShowBreakModeConfirm] = useState(false);
   const isLgbtqUser = false;
 
   useEffect(() => {
@@ -239,9 +240,7 @@ const UserSettingsSection: React.FC = () => {
         : 'Active';
   const modeStatusMessage =
     relationshipModeSnapshot.mode === 'break'
-      ? relationshipModeSnapshot.remainingCooldownMs > 0
-        ? `Break Mode is active. You can return to Active mode in ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`
-        : 'Break Mode is active. You can now return to Active mode.'
+      ? "You're now in Break Mode. You can exit anytime from Settings."
       : relationshipModeSnapshot.mode === 'exclusive'
         ? 'Exclusive Mode is active. Search is paused and messaging is restricted to your exclusive partner.'
         : relationshipModeSnapshot.remainingCooldownMs > 0
@@ -285,8 +284,9 @@ const UserSettingsSection: React.FC = () => {
       return;
     }
 
+    setShowBreakModeConfirm(false);
     syncCurrentUserModeToSession();
-    toast.success('Break Mode is active. New matching is paused.');
+    toast.success("You're now in Break Mode. You can exit anytime from Settings.");
   };
 
   const handleExitBreak = () => {
@@ -297,7 +297,7 @@ const UserSettingsSection: React.FC = () => {
     }
 
     syncCurrentUserModeToSession();
-    toast.success('You are back in Active mode.');
+    toast.success('You are back in Active mode. A 24-hour cooldown is now active before new connections.');
   };
 
   const handleRequestExclusive = () => {
@@ -950,7 +950,7 @@ const UserSettingsSection: React.FC = () => {
               <span className="text-sm px-2.5 py-1 rounded-full border border-[#D9FF3D]/40 bg-[#D9FF3D]/10 text-[#D9FF3D]">
                 {relationshipModeLabel}
               </span>
-              {relationshipModeSnapshot.cooldownEndsAt && (
+              {relationshipModeSnapshot.mode === 'active' && relationshipModeSnapshot.cooldownEndsAt && (
                 <span className="text-xs text-[#A9B5AA]">
                   Cooldown ends {formatDateTime(relationshipModeSnapshot.cooldownEndsAt)}
                 </span>
@@ -968,25 +968,18 @@ const UserSettingsSection: React.FC = () => {
             <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4 space-y-3">
               <p className="text-sm text-[#F6FFF2] font-medium">Break Mode</p>
               <p className="text-xs text-[#A9B5AA]">
-                Removes you from search and pauses new matches. A 24-hour cooldown applies before you can return.
+                Removes you from search and pauses new matches. When you leave Break Mode, a 24-hour cooldown applies before new connections.
               </p>
               {relationshipModeSnapshot.mode === 'break' ? (
                 <button
                   onClick={handleExitBreak}
-                  disabled={relationshipModeSnapshot.remainingCooldownMs > 0}
-                  className={`w-full px-3 py-2 rounded-lg border text-sm ${
-                    relationshipModeSnapshot.remainingCooldownMs > 0
-                      ? 'border-[#1A211A] text-[#6E776E] cursor-not-allowed'
-                      : 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20'
-                  }`}
+                  className="w-full px-3 py-2 rounded-lg border text-sm border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20"
                 >
-                  {relationshipModeSnapshot.remainingCooldownMs > 0
-                    ? `Return in ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}`
-                    : 'Return to Active Mode'}
+                  Return to Active Mode
                 </button>
               ) : (
                 <button
-                  onClick={handleEnterBreak}
+                  onClick={() => setShowBreakModeConfirm(true)}
                   disabled={relationshipModeSnapshot.mode === 'exclusive'}
                   className={`w-full px-3 py-2 rounded-lg border text-sm ${
                     relationshipModeSnapshot.mode === 'exclusive'
@@ -1727,6 +1720,52 @@ const UserSettingsSection: React.FC = () => {
               <Lock className="w-4 h-4" />
               Okay
             </button>
+          </div>
+        </div>
+      )}
+
+      {showBreakModeConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="max-w-xl w-full bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-4">
+            <p className="text-sm text-[#D9FF3D]">🌿 Enter Break Mode</p>
+            <h3 className="font-display text-2xl text-[#F6FFF2]">Take a Break from the Dating Pool?</h3>
+            <p className="text-sm text-[#A9B5AA]">You’re about to step into Break Mode.</p>
+            <p className="text-sm text-[#A9B5AA]">
+              This space is designed for reflection without outside distractions.
+            </p>
+
+            <div className="space-y-2">
+              <p className="text-sm text-[#F6FFF2]">While in Break Mode:</p>
+              <p className="text-sm text-[#A9B5AA]">• Your profile will be removed from search</p>
+              <p className="text-sm text-[#A9B5AA]">• You will not receive new matches</p>
+              <p className="text-sm text-[#A9B5AA]">• You retain access to all growth resources</p>
+            </div>
+
+            <p className="text-sm text-[#A9B5AA]">This does not affect your membership.</p>
+
+            <div className="space-y-2">
+              <p className="text-sm text-[#F6FFF2]">Returning to the Dating Pool:</p>
+              <p className="text-sm text-[#A9B5AA]">• You may reactivate your profile</p>
+              <p className="text-sm text-[#A9B5AA]">• A 24-hour cooldown period applies before becoming visible again</p>
+              <p className="text-sm text-[#A9B5AA]">• Your previous environment (Inner Work or Alignment) will remain the same</p>
+            </div>
+
+            <p className="text-sm text-[#A9B5AA]">Break Mode is about intentional pacing — not starting over.</p>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowBreakModeConfirm(false)}
+                className="flex-1 px-4 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEnterBreak}
+                className="flex-1 px-4 py-2 rounded-lg border border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20 transition-colors"
+              >
+                Enter Break Mode
+              </button>
+            </div>
           </div>
         </div>
       )}
