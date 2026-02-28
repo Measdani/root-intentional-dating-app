@@ -42,9 +42,7 @@ const InboxSection: React.FC = () => {
   ).values());
   const relationshipModeSnapshot = getRelationshipModeSnapshot(currentUser.id);
   const modeStatusMessage = relationshipModeSnapshot.mode === 'break'
-    ? (relationshipModeSnapshot.remainingCooldownMs > 0
-      ? `Break Mode is active. Matching is paused for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`
-      : 'Break Mode is active. Matching is paused until you return to Active mode.')
+    ? "You're now in Break Mode. You can exit anytime from Settings."
     : relationshipModeSnapshot.mode === 'exclusive'
       ? 'Exclusive Mode is active. Messaging is limited to your exclusive partner.'
       : relationshipModeSnapshot.remainingCooldownMs > 0

@@ -41,10 +41,7 @@ const BrowseSection: React.FC = () => {
   const canReceiveNewMatches = isUserAvailableForNewMatches(currentUser.id);
   const modeStatusMessage = useMemo(() => {
     if (relationshipModeSnapshot.mode === 'break') {
-      if (relationshipModeSnapshot.remainingCooldownMs > 0) {
-        return `Break Mode is active. New matches are paused for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`;
-      }
-      return 'Break Mode is active. New matches are paused until you return to Active mode.';
+      return "You're now in Break Mode. You can exit anytime from Settings.";
     }
 
     if (relationshipModeSnapshot.mode === 'exclusive') {
