@@ -573,12 +573,6 @@ const GrowthModeSection: React.FC = () => {
           <div>
             <div className="text-center mb-10">
               <h2 className="font-display text-3xl text-[#F6FFF2] mb-2">Inner Work Space Community</h2>
-              <p className="text-[#A9B5AA] max-w-2xl mx-auto">
-                Build your foundation with others on a similar journey. This space is dedicated to those who are working on their relationship skills and emotional growth. You'll connect with others focused on self-awareness, emotional regulation, and healthy partnership dynamics.
-              </p>
-              <p className="text-[#A9B5AA] max-w-2xl mx-auto mt-4">
-                Once you've completed the Inner Work Space resources or after 6 months, you'll unlock full access to the dating pool, where you can connect with individuals who are ready for deeper relationships.
-              </p>
             </div>
 
             {modeStatusMessage && (
