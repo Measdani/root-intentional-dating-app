@@ -18,6 +18,17 @@ import { userService } from '@/services/userService';
 import { supportService } from '@/services/supportService';
 import type { SupportCategory, SupportMessage } from '@/types';
 import {
+  cancelExclusiveRequest,
+  declineExclusiveRequest,
+  enterBreakMode,
+  exitBreakMode,
+  exitExclusiveMode,
+  formatModeDuration,
+  getRelationshipModeSnapshot,
+  getUserRelationshipMode,
+  requestExclusiveMode,
+} from '@/modules';
+import {
   applyCoreLock,
   getCoreSettingUnlockDate,
   getUserSettingsForUser,
@@ -116,6 +127,8 @@ const UserSettingsSection: React.FC = () => {
   const [supportReferenceId, setSupportReferenceId] = useState<string | null>(null);
   const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
   const [recentSupportTickets, setRecentSupportTickets] = useState<SupportMessage[]>([]);
+  const [modeRefreshTick, setModeRefreshTick] = useState(0);
+  const [exclusiveTargetId, setExclusiveTargetId] = useState('');
   const isLgbtqUser = false;
 
   useEffect(() => {
@@ -141,6 +154,52 @@ const UserSettingsSection: React.FC = () => {
 
     return Array.from(ids);
   }, [interactions, currentUser.id]);
+  const relationshipModeSnapshot = useMemo(
+    () => getRelationshipModeSnapshot(currentUser.id),
+    [currentUser.id, currentUser.mode, modeRefreshTick]
+  );
+  const exclusiveCandidates = useMemo(
+    () => users.filter((user) => matchedUserIds.includes(user.id) && user.id !== currentUser.id),
+    [users, matchedUserIds, currentUser.id]
+  );
+  const exclusivePartnerUser = useMemo(
+    () => users.find((user) => user.id === relationshipModeSnapshot.exclusivePartnerId),
+    [users, relationshipModeSnapshot.exclusivePartnerId]
+  );
+  const outgoingExclusiveTargetUser = useMemo(
+    () => users.find((user) => user.id === relationshipModeSnapshot.outgoingExclusiveRequestTo),
+    [users, relationshipModeSnapshot.outgoingExclusiveRequestTo]
+  );
+  const incomingExclusiveRequesterUser = useMemo(
+    () => users.find((user) => user.id === relationshipModeSnapshot.incomingExclusiveRequestFrom),
+    [users, relationshipModeSnapshot.incomingExclusiveRequestFrom]
+  );
+
+  useEffect(() => {
+    if (exclusiveCandidates.length === 0) {
+      setExclusiveTargetId('');
+      return;
+    }
+
+    setExclusiveTargetId((previous) =>
+      exclusiveCandidates.some((candidate) => candidate.id === previous)
+        ? previous
+        : exclusiveCandidates[0].id
+    );
+  }, [exclusiveCandidates]);
+
+  useEffect(() => {
+    const handleModeUpdated = () => setModeRefreshTick((previous) => previous + 1);
+    window.addEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
+    const interval = window.setInterval(() => {
+      setModeRefreshTick((previous) => previous + 1);
+    }, 60000);
+
+    return () => {
+      window.removeEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
+      window.clearInterval(interval);
+    };
+  }, []);
 
   const persistSettings = (next: UserSettings) => {
     if (!currentUser?.id) return;
@@ -172,6 +231,154 @@ const UserSettingsSection: React.FC = () => {
   const supportSubjectMaxLength = 100;
   const supportDetailsMinLength = 30;
   const supportDetailsMaxLength = 1200;
+  const relationshipModeLabel =
+    relationshipModeSnapshot.mode === 'break'
+      ? 'Break'
+      : relationshipModeSnapshot.mode === 'exclusive'
+        ? 'Exclusive'
+        : 'Active';
+  const modeStatusMessage =
+    relationshipModeSnapshot.mode === 'break'
+      ? relationshipModeSnapshot.remainingCooldownMs > 0
+        ? `Break Mode is active. You can return to Active mode in ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`
+        : 'Break Mode is active. You can now return to Active mode.'
+      : relationshipModeSnapshot.mode === 'exclusive'
+        ? 'Exclusive Mode is active. Search is paused and messaging is restricted to your exclusive partner.'
+        : relationshipModeSnapshot.remainingCooldownMs > 0
+          ? `Re-entry cooldown is active for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`
+          : 'Active mode is available for normal browsing and matching.';
+
+  const formatDateTime = (timestamp?: number | null) => {
+    if (!timestamp || !Number.isFinite(timestamp)) return 'N/A';
+    return new Date(timestamp).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
+  const syncCurrentUserModeToSession = useCallback(() => {
+    try {
+      const stored = localStorage.getItem('currentUser');
+      if (!stored) return;
+
+      const parsed = JSON.parse(stored);
+      if (!parsed || parsed.id !== currentUser.id) return;
+
+      const nextMode = getUserRelationshipMode(currentUser.id);
+      const updatedUser = { ...parsed, mode: nextMode };
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      window.dispatchEvent(new CustomEvent('user-login', { detail: updatedUser }));
+    } catch (error) {
+      console.warn('Failed to sync relationship mode to session user:', error);
+    } finally {
+      setModeRefreshTick((previous) => previous + 1);
+    }
+  }, [currentUser.id]);
+
+  const handleEnterBreak = () => {
+    const result = enterBreakMode(currentUser.id);
+    if (!result.ok) {
+      toast.info(result.reason);
+      return;
+    }
+
+    syncCurrentUserModeToSession();
+    toast.success('Break Mode is active. New matching is paused.');
+  };
+
+  const handleExitBreak = () => {
+    const result = exitBreakMode(currentUser.id);
+    if (!result.ok) {
+      toast.info(result.reason);
+      return;
+    }
+
+    syncCurrentUserModeToSession();
+    toast.success('You are back in Active mode.');
+  };
+
+  const handleRequestExclusive = () => {
+    if (!exclusiveTargetId) {
+      toast.info('Select a member first.');
+      return;
+    }
+
+    const result = requestExclusiveMode(currentUser.id, exclusiveTargetId);
+    if (!result.ok) {
+      toast.info(result.reason);
+      return;
+    }
+
+    syncCurrentUserModeToSession();
+    if (result.kind === 'exclusive-entered') {
+      toast.success('Exclusive Mode is now active for both members.');
+      return;
+    }
+    toast.success('Exclusive request sent.');
+  };
+
+  const handleCancelExclusive = () => {
+    const result = cancelExclusiveRequest(currentUser.id);
+    if (!result.ok) {
+      toast.info(result.reason);
+      return;
+    }
+
+    syncCurrentUserModeToSession();
+    toast.success('Exclusive request cancelled.');
+  };
+
+  const handleAcceptExclusive = () => {
+    const requesterId = relationshipModeSnapshot.incomingExclusiveRequestFrom;
+    if (!requesterId) {
+      toast.info('No incoming request to accept.');
+      return;
+    }
+
+    const result = requestExclusiveMode(currentUser.id, requesterId);
+    if (!result.ok) {
+      toast.info(result.reason);
+      return;
+    }
+
+    syncCurrentUserModeToSession();
+    if (result.kind === 'exclusive-entered') {
+      toast.success('Exclusive Mode is now active for both members.');
+      return;
+    }
+    toast.success('Exclusive request accepted.');
+  };
+
+  const handleDeclineExclusive = () => {
+    const requesterId = relationshipModeSnapshot.incomingExclusiveRequestFrom;
+    if (!requesterId) {
+      toast.info('No incoming request to decline.');
+      return;
+    }
+
+    const result = declineExclusiveRequest(currentUser.id, requesterId);
+    if (!result.ok) {
+      toast.info(result.reason);
+      return;
+    }
+
+    syncCurrentUserModeToSession();
+    toast.success('Exclusive request declined.');
+  };
+
+  const handleExitExclusive = () => {
+    const result = exitExclusiveMode(currentUser.id);
+    if (!result.ok) {
+      toast.info(result.reason);
+      return;
+    }
+
+    syncCurrentUserModeToSession();
+    toast.success('Exclusive Mode ended. Re-entry cooldown is now active.');
+  };
 
   const loadRecentSupportTickets = useCallback(async () => {
     try {
@@ -729,6 +936,173 @@ const UserSettingsSection: React.FC = () => {
               </div>
             </>
           )}
+        </section>
+
+        <section className="bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5">
+          <h2 className="font-display text-xl">Break & Relationship Mode</h2>
+          <p className="text-sm text-[#A9B5AA]">
+            Use Break Mode for a solo pause or Exclusive Mode for a mutual relationship agreement.
+          </p>
+
+          <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4 space-y-2">
+            <p className="text-sm text-[#A9B5AA]">Current mode</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm px-2.5 py-1 rounded-full border border-[#D9FF3D]/40 bg-[#D9FF3D]/10 text-[#D9FF3D]">
+                {relationshipModeLabel}
+              </span>
+              {relationshipModeSnapshot.cooldownEndsAt && (
+                <span className="text-xs text-[#A9B5AA]">
+                  Cooldown ends {formatDateTime(relationshipModeSnapshot.cooldownEndsAt)}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-[#A9B5AA]">{modeStatusMessage}</p>
+            {relationshipModeSnapshot.mode !== 'active' && (
+              <p className="text-xs text-emerald-300">
+                Inner and Advanced growth resources are unlocked while this mode is active.
+              </p>
+            )}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4 space-y-3">
+              <p className="text-sm text-[#F6FFF2] font-medium">Break Mode</p>
+              <p className="text-xs text-[#A9B5AA]">
+                Removes you from search and pauses new matches. A 24-hour cooldown applies before you can return.
+              </p>
+              {relationshipModeSnapshot.mode === 'break' ? (
+                <button
+                  onClick={handleExitBreak}
+                  disabled={relationshipModeSnapshot.remainingCooldownMs > 0}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                    relationshipModeSnapshot.remainingCooldownMs > 0
+                      ? 'border-[#1A211A] text-[#6E776E] cursor-not-allowed'
+                      : 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20'
+                  }`}
+                >
+                  {relationshipModeSnapshot.remainingCooldownMs > 0
+                    ? `Return in ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}`
+                    : 'Return to Active Mode'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleEnterBreak}
+                  disabled={relationshipModeSnapshot.mode === 'exclusive'}
+                  className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                    relationshipModeSnapshot.mode === 'exclusive'
+                      ? 'border-[#1A211A] text-[#6E776E] cursor-not-allowed'
+                      : 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20'
+                  }`}
+                >
+                  Enter Break Mode
+                </button>
+              )}
+            </div>
+
+            <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4 space-y-3">
+              <p className="text-sm text-[#F6FFF2] font-medium">Exclusive Mode</p>
+              <p className="text-xs text-[#A9B5AA]">
+                Requires mutual selection. Search is paused and messaging is restricted to the exclusive partner.
+              </p>
+
+              {relationshipModeSnapshot.mode === 'exclusive' ? (
+                <>
+                  <p className="text-xs text-[#A9B5AA]">
+                    Partner: <span className="text-[#F6FFF2]">{exclusivePartnerUser?.name || 'Unknown member'}</span>
+                  </p>
+                  <button
+                    onClick={handleExitExclusive}
+                    className="w-full px-3 py-2 rounded-lg border border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20 text-sm"
+                  >
+                    Exit Exclusive Mode
+                  </button>
+                </>
+              ) : (
+                <>
+                  {relationshipModeSnapshot.incomingExclusiveRequestFrom && (
+                    <div className="rounded-lg border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-3 space-y-2">
+                      <p className="text-xs text-[#F6FFF2]">
+                        Incoming request from {incomingExclusiveRequesterUser?.name || relationshipModeSnapshot.incomingExclusiveRequestFrom}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAcceptExclusive}
+                          className="flex-1 px-3 py-2 rounded-lg border border-[#D9FF3D] text-[#D9FF3D] text-sm hover:bg-[#D9FF3D]/10"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={handleDeclineExclusive}
+                          className="flex-1 px-3 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] text-sm hover:text-[#F6FFF2]"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {relationshipModeSnapshot.outgoingExclusiveRequestTo ? (
+                    <div className="rounded-lg border border-[#1A211A] p-3 space-y-2">
+                      <p className="text-xs text-[#A9B5AA]">
+                        Waiting on {outgoingExclusiveTargetUser?.name || relationshipModeSnapshot.outgoingExclusiveRequestTo}
+                      </p>
+                      <button
+                        onClick={handleCancelExclusive}
+                        className="w-full px-3 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] text-sm hover:text-[#F6FFF2]"
+                      >
+                        Cancel Request
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <select
+                        value={exclusiveTargetId}
+                        onChange={(e) => setExclusiveTargetId(e.target.value)}
+                        disabled={exclusiveCandidates.length === 0}
+                        className="w-full px-3 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-sm text-[#F6FFF2] focus:border-[#D9FF3D] focus:outline-none"
+                      >
+                        {exclusiveCandidates.length === 0 ? (
+                          <option value="">No connected members yet</option>
+                        ) : (
+                          exclusiveCandidates.map((candidate) => (
+                            <option key={candidate.id} value={candidate.id}>
+                              {candidate.name}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                      <button
+                        onClick={handleRequestExclusive}
+                        disabled={
+                          exclusiveCandidates.length === 0 ||
+                          !exclusiveTargetId ||
+                          relationshipModeSnapshot.mode !== 'active' ||
+                          relationshipModeSnapshot.remainingCooldownMs > 0
+                        }
+                        className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                          exclusiveCandidates.length === 0 ||
+                          !exclusiveTargetId ||
+                          relationshipModeSnapshot.mode !== 'active' ||
+                          relationshipModeSnapshot.remainingCooldownMs > 0
+                            ? 'border-[#1A211A] text-[#6E776E] cursor-not-allowed'
+                            : 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20'
+                        }`}
+                      >
+                        Send Exclusive Request
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setCurrentView(currentUser.assessmentPassed ? 'paid-growth-mode' : 'growth-mode')}
+            className="btn-outline"
+          >
+            Open Alignment Space Resources
+          </button>
         </section>
 
         <section className="bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5">

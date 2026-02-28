@@ -18,6 +18,7 @@ export type UserIdentityExpression =
   | 'prefer-not-to-say';
 
 export type UserIdentityVisibility = 'after-mutual-interest' | 'always-visible';
+export type RelationshipMode = 'active' | 'break' | 'exclusive';
 
 export interface User {
   id: string;
@@ -61,6 +62,7 @@ export interface User {
   membershipStatus?: 'active' | 'inactive' | 'cancelled'; // Subscription state
   cancelAtPeriodEnd?: boolean; // Whether subscription cancels at period end
   poolId?: 'core-inner' | 'core-advanced'; // Which lane this account belongs to
+  mode?: RelationshipMode;
 }
 
 export interface AssessmentQuestion {

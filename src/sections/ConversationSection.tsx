@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
+import { getMessageBlockReason } from '@/modules';
 import { ArrowLeft, MessageCircle, Lock, Flag, Image, Shield } from 'lucide-react';
 import PhotoConsentPrompt from '@/components/PhotoConsentPrompt';
 import ResponseModal from '@/components/ResponseModal';
@@ -89,8 +90,10 @@ const ConversationSection: React.FC = () => {
   }
 
   const handleResponseSubmit = (message: string) => {
-    respondToInterest(otherUserId, message);
-    setShowResponseModal(false);
+    const sent = respondToInterest(otherUserId, message);
+    if (sent) {
+      setShowResponseModal(false);
+    }
   };
 
   const handleConsentClick = () => {
@@ -104,6 +107,7 @@ const ConversationSection: React.FC = () => {
 
   // Get the first (initial) message
   const initialMessage = selectedConversation.messages[0];
+  const messageRestrictionReason = getMessageBlockReason(currentUser.id, otherUserId);
 
   // Show prompt if showConsentPrompt is true AND they haven't made a choice
   // (Clicking Photo Consent resets hasUserMadeChoice to false, which reopens the prompt)
@@ -240,6 +244,12 @@ const ConversationSection: React.FC = () => {
           })}
         </div>
 
+        {messageRestrictionReason && (
+          <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            {messageRestrictionReason}
+          </div>
+        )}
+
         {/* Status-based rendering */}
         {selectedConversation.status === 'pending_response' && selectedConversation.fromUserId === currentUser.id && (
           <div className="bg-[#111611] rounded-2xl border border-[#1A211A] p-8 text-center">
@@ -294,7 +304,7 @@ const ConversationSection: React.FC = () => {
         )}
 
         {/* Action Button - Only show Respond if current user didn't initiate */}
-        {selectedConversation.status === 'pending_response' && selectedConversation.fromUserId !== currentUser.id && (
+        {selectedConversation.status === 'pending_response' && selectedConversation.fromUserId !== currentUser.id && !messageRestrictionReason && (
           <div className="flex gap-4 mt-8">
             <button
               onClick={() => setShowResponseModal(true)}
@@ -307,7 +317,7 @@ const ConversationSection: React.FC = () => {
         )}
 
         {/* Continue Message Button - Show after user makes photo consent choice or after photos unlocked */}
-        {((selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && hasUserMadeChoice) || selectedConversation.status === 'photos_unlocked' ? (
+        {((((selectedConversation.status === 'both_messaged' || selectedConversation.status === 'awaiting_consent') && hasUserMadeChoice) || selectedConversation.status === 'photos_unlocked') && !messageRestrictionReason) ? (
           <div className="flex gap-4 mt-8">
             <button
               onClick={() => setShowResponseModal(true)}

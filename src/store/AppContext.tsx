@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { AppView, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory, AdminNotification } from '@/types';
 import { sampleUsers, currentUser as defaultUser } from '@/data/users';
+import {
+  applyRelationshipModeToUser,
+  canUsersExchangeMessages,
+  getMessageBlockReason,
+  getNewMatchBlockReason,
+} from '@/modules';
 import { toast } from 'sonner';
 import { reportService } from '@/services/reportService';
 import { supportService } from '@/services/supportService';
@@ -28,8 +34,8 @@ interface AppContextType extends AppState {
   setHasJoinedList: (value: boolean) => void;
   setShowEmailModal: (value: boolean) => void;
   resetAssessment: () => void;
-  expressInterest: (toUserId: string, message: string) => void;
-  respondToInterest: (fromUserId: string, message: string) => void;
+  expressInterest: (toUserId: string, message: string) => boolean;
+  respondToInterest: (fromUserId: string, message: string) => boolean;
   markMessagesAsRead: (conversationId: string) => void;
   grantPhotoConsent: (conversationId: string) => void;
   withdrawPhotoConsent: (conversationId: string) => void;
@@ -82,12 +88,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
-        return JSON.parse(savedUser) as User;
+        return applyRelationshipModeToUser(JSON.parse(savedUser) as User);
       }
     } catch (error) {
       console.error('Failed to load user from localStorage:', error);
     }
-    return defaultUser;
+    return applyRelationshipModeToUser(defaultUser);
   });
 
   // Update currentUser when localStorage changes (on login/logout)
@@ -121,9 +127,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           }
 
-          setCurrentUserState(parsedUser);
+          setCurrentUserState(applyRelationshipModeToUser(parsedUser));
         } else {
-          setCurrentUserState(defaultUser);
+          setCurrentUserState(applyRelationshipModeToUser(defaultUser));
         }
       } catch (error) {
         console.error('Failed to update user from localStorage:', error);
@@ -133,9 +139,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Listen for both storage events (from other tabs) and custom user-login event (same tab)
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('user-login', handleStorageChange);
+    window.addEventListener('relationship-mode-updated', handleStorageChange as EventListener);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('user-login', handleStorageChange);
+      window.removeEventListener('relationship-mode-updated', handleStorageChange as EventListener);
     };
   }, []);
 
@@ -364,11 +372,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         suspensionProcessedRef.current = suspensionKey;
 
         // Suspension has expired - transition to needs-growth status
-        const updatedUser = {
+        const updatedUser = applyRelationshipModeToUser({
           ...currentUser,
           userStatus: 'needs-growth' as const,
           suspensionEndDate: undefined,
-        };
+        });
         setCurrentUserState(updatedUser);
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
 
@@ -476,13 +484,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // NOTE: Auto-response and auto-consent features removed
   // All messaging and consent decisions are now controlled by users only
 
-  const expressInterest = useCallback((toUserId: string, message: string) => {
+  const expressInterest = useCallback((toUserId: string, message: string): boolean => {
     console.log('expressInterest called:', { toUserId, message, currentUserId: currentUser.id });
+
+    const blockReason = getNewMatchBlockReason(currentUser.id, toUserId);
+    if (blockReason) {
+      toast.info(blockReason);
+      return false;
+    }
 
     // Check if already expressed interest to this user
     if (interactions.sentInterests[toUserId]) {
       toast.info('You already expressed interest in this person');
-      return;
+      return false;
     }
 
     // Create deterministic conversationId using sorted user pair so both users share same thread
@@ -533,9 +547,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // NOTE: Auto-response feature disabled to allow natural conversation flow
     // Users should reply manually without system auto-generating responses
+    return true;
   }, [currentUser.id, interactions.sentInterests]);
 
-  const respondToInterest = useCallback((fromUserId: string, message: string) => {
+  const respondToInterest = useCallback((fromUserId: string, message: string): boolean => {
+    const blockReason = getMessageBlockReason(currentUser.id, fromUserId);
+    if (blockReason) {
+      toast.info(blockReason);
+      return false;
+    }
+
+    let didSend = false;
     setInteractions(prev => {
       // Find the conversation with this user (could be keyed by either user ID)
       let baseInteraction = null;
@@ -629,6 +651,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       });
 
+      didSend = true;
+
       return {
         ...prev,
         receivedInterests: updatedReceivedInterests,
@@ -636,7 +660,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     });
 
+    if (!didSend) {
+      toast.error('Conversation not found.');
+      return false;
+    }
+
     toast.success('Message sent!');
+    return true;
   }, [currentUser.id]);
 
   const markMessagesAsRead = useCallback((conversationId: string) => {
@@ -889,7 +919,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const uniqueConversations = Array.from(new Map(
       allInteractions.map(i => [i.conversationId, i])
     ).values());
-    return uniqueConversations.filter(i => i.toUserId === currentUser.id);
+    return uniqueConversations
+      .filter(i => i.toUserId === currentUser.id)
+      .filter(i => canUsersExchangeMessages(currentUser.id, i.fromUserId));
   }, [currentUser.id, interactions]);
 
   const getSentInterests = useCallback((): UserInteraction[] => {
@@ -901,7 +933,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const uniqueConversations = Array.from(new Map(
       allInteractions.map(i => [i.conversationId, i])
     ).values());
-    return uniqueConversations.filter(i => i.fromUserId === currentUser.id);
+    return uniqueConversations
+      .filter(i => i.fromUserId === currentUser.id)
+      .filter(i => canUsersExchangeMessages(currentUser.id, i.toUserId));
   }, [currentUser.id, interactions]);
 
   const getUnreadCount = useCallback((): number => {
@@ -1082,11 +1116,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Update currentUser if they're the suspended user
     if (currentUser.id === userId) {
-      const updatedUser = {
+      const updatedUser = applyRelationshipModeToUser({
         ...currentUser,
         suspensionEndDate,
         userStatus: 'suspended' as const,
-      };
+      });
       setCurrentUserState(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     }
@@ -1101,11 +1135,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Update currentUser if they're the reinstated user
     if (currentUser.id === userId) {
-      const updatedUser = {
+      const updatedUser = applyRelationshipModeToUser({
         ...currentUser,
         suspensionEndDate: undefined,
         userStatus: 'active' as const,
-      };
+      });
       setCurrentUserState(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     }

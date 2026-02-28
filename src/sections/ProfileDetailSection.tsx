@@ -123,7 +123,9 @@ const ProfileDetailSection: React.FC = () => {
     identityExpressionVisibility === 'after-mutual-interest' && !hasMutualInterest;
 
   const handleExpressInterest = (message: string) => {
-    expressInterest(selectedUser.id, message);
+    const sent = expressInterest(selectedUser.id, message);
+    if (!sent) return;
+
     // Close modal and navigate to conversation view
     setShowModal(false);
     // Create conversation object to navigate to it

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
+import { formatModeDuration, getRelationshipModeSnapshot } from '@/modules';
 import type { User } from '@/types';
 import { ArrowLeft, MessageCircle, Check, Clock, Flag, HelpCircle, BookOpen } from 'lucide-react';
 import ReportUserModal from '@/components/ReportUserModal';
@@ -39,11 +40,28 @@ const InboxSection: React.FC = () => {
   const uniqueConversations = Array.from(new Map(
     allInteractions.map(i => [i.conversationId, i])
   ).values());
+  const relationshipModeSnapshot = getRelationshipModeSnapshot(currentUser.id);
+  const modeStatusMessage = relationshipModeSnapshot.mode === 'break'
+    ? (relationshipModeSnapshot.remainingCooldownMs > 0
+      ? `Break Mode is active. Matching is paused for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`
+      : 'Break Mode is active. Matching is paused until you return to Active mode.')
+    : relationshipModeSnapshot.mode === 'exclusive'
+      ? 'Exclusive Mode is active. Messaging is limited to your exclusive partner.'
+      : relationshipModeSnapshot.remainingCooldownMs > 0
+        ? `Re-entry cooldown is active for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`
+        : null;
+  const modeFilteredConversations = relationshipModeSnapshot.mode === 'exclusive' && relationshipModeSnapshot.exclusivePartnerId
+    ? uniqueConversations.filter(
+        (conversation) =>
+          conversation.fromUserId === relationshipModeSnapshot.exclusivePartnerId ||
+          conversation.toUserId === relationshipModeSnapshot.exclusivePartnerId
+      )
+    : uniqueConversations;
 
   console.log('InboxSection - uniqueConversations:', uniqueConversations);
 
-  const sentInterests = uniqueConversations.filter(i => i.fromUserId === currentUser.id);
-  const receivedInterests = uniqueConversations.filter(i => i.toUserId === currentUser.id);
+  const sentInterests = modeFilteredConversations.filter(i => i.fromUserId === currentUser.id);
+  const receivedInterests = modeFilteredConversations.filter(i => i.toUserId === currentUser.id);
 
   console.log('InboxSection - sentInterests (filtered):', sentInterests);
   console.log('InboxSection - receivedInterests (filtered):', receivedInterests);
@@ -151,6 +169,12 @@ const InboxSection: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 py-8">
+        {modeStatusMessage && (
+          <div className="mb-6 rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 px-4 py-3 text-sm text-[#F6FFF2]">
+            {modeStatusMessage}
+          </div>
+        )}
+
         {/* Admin Notifications */}
         {getUnreadNotifications().map(notification => (
           <div

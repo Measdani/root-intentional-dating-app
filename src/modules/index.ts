@@ -24,5 +24,23 @@ export {
   withUserPoolId,
 } from './poolMembership';
 export { installStorageNamespace, setStorageNamespaceCommunity } from './storageNamespace';
+export {
+  RELATIONSHIP_MODE_COOLDOWN_MS,
+  applyRelationshipModeToUser,
+  canUsersCreateNewMatch,
+  canUsersExchangeMessages,
+  cancelExclusiveRequest,
+  declineExclusiveRequest,
+  enterBreakMode,
+  exitBreakMode,
+  exitExclusiveMode,
+  formatModeDuration,
+  getMessageBlockReason,
+  getNewMatchBlockReason,
+  getRelationshipModeSnapshot,
+  getUserRelationshipMode,
+  isUserAvailableForNewMatches,
+  requestExclusiveMode,
+} from './relationshipMode';
 export type { CommunityDefinition, CommunityId, CommunityMatchingMode } from './types';
 export type { PoolFamily, PoolId, PoolTrack } from './poolMembership';

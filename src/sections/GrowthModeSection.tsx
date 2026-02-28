@@ -1,14 +1,18 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import {
+  canUsersExchangeMessages,
   canUsersMatch,
   communityIdToPoolId,
+  formatModeDuration,
+  getRelationshipModeSnapshot,
   getUserPoolId,
+  isUserAvailableForNewMatches,
   isUserInPool,
   poolIdToCommunityId,
   useCommunity,
 } from '@/modules';
-import { growthResources } from '@/data/assessment';
+import { growthResources, paidGrowthResources } from '@/data/assessment';
 import { toast } from 'sonner';
 import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
@@ -56,6 +60,46 @@ const GrowthModeSection: React.FC = () => {
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
+  const [modeRefreshTick, setModeRefreshTick] = useState(0);
+
+  useEffect(() => {
+    const handleModeUpdated = () => setModeRefreshTick((previous) => previous + 1);
+    window.addEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
+    const interval = window.setInterval(() => {
+      setModeRefreshTick((previous) => previous + 1);
+    }, 60000);
+
+    return () => {
+      window.removeEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const relationshipModeSnapshot = useMemo(
+    () => getRelationshipModeSnapshot(currentUser.id),
+    [currentUser.id, modeRefreshTick]
+  );
+  const modeResourceAccessActive = relationshipModeSnapshot.mode !== 'active';
+  const canReceiveNewMatches = isUserAvailableForNewMatches(currentUser.id);
+
+  const modeStatusMessage = useMemo(() => {
+    if (relationshipModeSnapshot.mode === 'break') {
+      if (relationshipModeSnapshot.remainingCooldownMs > 0) {
+        return `Break Mode is active. New matches are paused for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`;
+      }
+      return 'Break Mode is active. New matches are paused until you return to Active mode.';
+    }
+
+    if (relationshipModeSnapshot.mode === 'exclusive') {
+      return 'Exclusive Mode is active. Search is paused and messaging is limited to your exclusive partner.';
+    }
+
+    if (relationshipModeSnapshot.remainingCooldownMs > 0) {
+      return `Re-entry cooldown is active for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`;
+    }
+
+    return null;
+  }, [relationshipModeSnapshot]);
 
   // Log state changes
   useEffect(() => {
@@ -88,6 +132,23 @@ const GrowthModeSection: React.FC = () => {
     [currentUser.id]
   );
   const [resourceProgress, setResourceProgress] = useState<ResourceProgressMap>({});
+  const combinedModeResources = useMemo(() => {
+    if (!modeResourceAccessActive) return resources;
+
+    const savedPaidResources = localStorage.getItem('paid-growth-resources');
+    const paidResources = savedPaidResources ? JSON.parse(savedPaidResources) : paidGrowthResources;
+    const paidList = Array.isArray(paidResources) ? paidResources : [];
+
+    const seen = new Set<string>();
+    return [...resources, ...paidList].filter((resource: any) => {
+      const key = typeof resource?.id === 'string' && resource.id.length > 0
+        ? resource.id
+        : JSON.stringify(resource);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [modeResourceAccessActive, resources]);
 
   // Load fresh interactions on component mount and when entering browse/inbox tabs
   useEffect(() => {
@@ -186,6 +247,11 @@ const GrowthModeSection: React.FC = () => {
     // Count unread messages from other users
     let count = 0;
     uniqueConversations.forEach(conversation => {
+      const otherUserId = conversation.fromUserId === currentUser.id
+        ? conversation.toUserId
+        : conversation.fromUserId;
+      if (!canUsersExchangeMessages(currentUser.id, otherUserId)) return;
+
       if (conversation.messages) {
         conversation.messages.forEach(message => {
           // Count unread messages from the other user
@@ -208,12 +274,14 @@ const GrowthModeSection: React.FC = () => {
     const viewerCommunityMatches = poolIdToCommunityId(viewerPool) === activeCommunity.id;
 
     if (!viewerCommunityMatches) return [];
+    if (!isUserAvailableForNewMatches(currentUser.id)) return [];
 
     return users.filter(
       u => {
         if (u.assessmentPassed) return false;
         if (u.id === currentUser.id) return false;
         if (!isUserInPool(u, viewerPool)) return false;
+        if (!isUserAvailableForNewMatches(u.id)) return false;
         if (!canUsersMatch(currentUser, u, activeCommunity.matchingMode)) return false;
         if (isUserBlocked(u.id) || isBlockedByUser(u.id)) return false;
 
@@ -236,6 +304,7 @@ const GrowthModeSection: React.FC = () => {
     isUserBlocked,
     isBlockedByUser,
     getConversation,
+    modeRefreshTick,
   ]);
 
   // Map categories to icons
@@ -515,6 +584,12 @@ const GrowthModeSection: React.FC = () => {
               </p>
             </div>
 
+            {modeStatusMessage && (
+              <div className="mb-6 rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 px-4 py-3 text-sm text-[#F6FFF2]">
+                {modeStatusMessage}
+              </div>
+            )}
+
             {growthModeUsers.length > 0 ? (
               <div className="grid md:grid-cols-2 gap-6">
                 {growthModeUsers.map((user) => (
@@ -559,7 +634,11 @@ const GrowthModeSection: React.FC = () => {
             ) : (
               <div className="text-center py-12">
                 <Users className="w-12 h-12 text-[#1A211A] mx-auto mb-4" />
-                <p className="text-[#A9B5AA]">No members in growth mode yet. Check back soon!</p>
+                <p className="text-[#A9B5AA]">
+                  {canReceiveNewMatches
+                    ? 'No members in growth mode yet. Check back soon!'
+                    : 'New matching is paused while your mode is active.'}
+                </p>
               </div>
             )}
           </div>
@@ -769,10 +848,15 @@ const GrowthModeSection: React.FC = () => {
 
         {/* Growth Resources */}
         <div className="mb-12">
+          {modeResourceAccessActive && (
+            <div className="mb-5 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+              Break/Exclusive Mode is active, so Inner and Advanced growth resources are temporarily unlocked here.
+            </div>
+          )}
           <h3 className="font-mono-label text-[#F6FFF2] mb-2">Complete 2 Paths in 6 Months to Re-enter Matchmaking</h3>
           <p className="text-[#A9B5AA] text-sm mb-6">Work through these guided resources at your own pace to develop essential skills for lasting connections.</p>
           <div className="grid md:grid-cols-2 gap-4">
-            {resources.map((resource: any) => {
+            {combinedModeResources.map((resource: any) => {
               const progress = getResourceProgress(resource);
               const status = getPathStatus(progress);
               const isCompleted = progress === 100;
@@ -1076,14 +1160,16 @@ const GrowthModeSection: React.FC = () => {
               <button
                 onClick={() => {
                   const existingConversation = getConversation(selectedProfileUser.id);
+                  let sent = false;
 
                   // Only express interest if there's no existing conversation
                   if (!existingConversation) {
-                    expressInterest(selectedProfileUser.id, messageText);
+                    sent = expressInterest(selectedProfileUser.id, messageText);
                   } else if (messageText.trim()) {
                     // If conversation exists, just respond
-                    respondToInterest(selectedProfileUser.id, messageText);
+                    sent = respondToInterest(selectedProfileUser.id, messageText);
                   }
+                  if (!sent) return;
 
                   // Close the modal and show background check if needed
                   setMessageText('');

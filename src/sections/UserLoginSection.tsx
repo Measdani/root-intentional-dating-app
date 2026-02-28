@@ -4,6 +4,7 @@ import { useApp } from '@/store/AppContext';
 import { useAdmin } from '@/store/AdminContext';
 import AuthPoolTabs from '@/components/AuthPoolTabs';
 import {
+  applyRelationshipModeToUser,
   communityIdToPoolId,
   getUserPoolId,
   persistUserPoolMembership,
@@ -45,16 +46,17 @@ const UserLoginSection: React.FC = () => {
   };
 
   const persistCurrentUserSession = (user: any) => {
+    const sessionUser = applyRelationshipModeToUser(user);
     try {
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      return user;
+      localStorage.setItem('currentUser', JSON.stringify(sessionUser));
+      return sessionUser;
     } catch (error) {
       console.warn('Primary currentUser save failed, retrying with trimmed payload:', error);
     }
 
     const lightweightUser = {
-      ...user,
-      photoUrl: stripInlinePhotoPayloads(user.photoUrl),
+      ...sessionUser,
+      photoUrl: stripInlinePhotoPayloads(sessionUser.photoUrl),
     };
 
     const cacheKeysToPurge = [

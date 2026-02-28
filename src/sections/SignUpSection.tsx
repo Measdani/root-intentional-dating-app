@@ -457,6 +457,7 @@ const SignUpSection: React.FC = () => {
         backgroundCheckVerified: false,
         backgroundCheckStatus: 'pending',
         poolId: communityIdToPoolId(activeCommunityId),
+        mode: 'active',
       };
 
       // Save to Supabase

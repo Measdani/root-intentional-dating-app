@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
-import { paidGrowthResources } from '@/data/assessment';
+import { growthResources, paidGrowthResources } from '@/data/assessment';
+import { getRelationshipModeSnapshot } from '@/modules';
 import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock, Brain } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
@@ -11,9 +12,14 @@ const PaidGrowthModeSection: React.FC = () => {
   const [activeResource, setActiveResource] = useState<string | null>(null);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'resources' | 'blog'>('resources');
+  const [modeRefreshTick, setModeRefreshTick] = useState(0);
   const [resources, setResources] = useState(() => {
     const saved = localStorage.getItem('paid-growth-resources');
     return saved ? JSON.parse(saved) : paidGrowthResources;
+  });
+  const [coreResources, setCoreResources] = useState(() => {
+    const saved = localStorage.getItem('growth-resources');
+    return saved ? JSON.parse(saved) : growthResources;
   });
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const isModuleOnly = (blog: any): boolean => {
@@ -60,6 +66,12 @@ const PaidGrowthModeSection: React.FC = () => {
 
     loadPaidResources();
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'resources') return;
+    const saved = localStorage.getItem('growth-resources');
+    setCoreResources(saved ? JSON.parse(saved) : growthResources);
+  }, [activeTab]);
   const [pathProgress] = useState<Record<string, number>>({
     pg1: 60,
     pg2: 30,
@@ -67,6 +79,37 @@ const PaidGrowthModeSection: React.FC = () => {
     pg4: 45,
     pg5: 25,
   });
+
+  useEffect(() => {
+    const handleModeUpdated = () => setModeRefreshTick((previous) => previous + 1);
+    window.addEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
+    const interval = window.setInterval(() => {
+      setModeRefreshTick((previous) => previous + 1);
+    }, 60000);
+    return () => {
+      window.removeEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const relationshipModeSnapshot = useMemo(
+    () => getRelationshipModeSnapshot(currentUser.id),
+    [currentUser.id, modeRefreshTick]
+  );
+  const modeResourceAccessActive = relationshipModeSnapshot.mode !== 'active';
+  const visibleResources = useMemo(() => {
+    if (!modeResourceAccessActive) return resources;
+
+    const seen = new Set<string>();
+    return [...coreResources, ...resources].filter((resource: any) => {
+      const key = typeof resource?.id === 'string' && resource.id.length > 0
+        ? resource.id
+        : JSON.stringify(resource);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [coreResources, modeResourceAccessActive, resources]);
 
   // Map categories to icons
   const getCategoryIcon = (category: string) => {
@@ -120,6 +163,7 @@ const PaidGrowthModeSection: React.FC = () => {
 
   // Check if user has paid membership
   const isPaidMember = currentUser.membershipTier === 'quarterly' || currentUser.membershipTier === 'annual';
+  const canAccessPremiumResources = isPaidMember || modeResourceAccessActive;
 
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
@@ -178,7 +222,15 @@ const PaidGrowthModeSection: React.FC = () => {
             You've demonstrated the readiness to build intentional, lasting partnerships. These resources are designed to help you deepen your capacity to love and be loved.
           </p>
           <p className="text-[#A9B5AA] text-base max-w-2xl mx-auto leading-relaxed">
-            <span className="text-emerald-400 font-medium">As a paid member,</span> you have access to advanced growth paths that will help you navigate partnership, intimacy, shared vision, and resilience. Your investment in growth today becomes the foundation of exceptional relationships.
+            {modeResourceAccessActive && !isPaidMember ? (
+              <>
+                <span className="text-emerald-400 font-medium">Break/Exclusive Mode is active,</span> so advanced resources are temporarily unlocked while your mode is active.
+              </>
+            ) : (
+              <>
+                <span className="text-emerald-400 font-medium">As a paid member,</span> you have access to advanced growth paths that will help you navigate partnership, intimacy, shared vision, and resilience. Your investment in growth today becomes the foundation of exceptional relationships.
+              </>
+            )}
           </p>
         </div>
 
@@ -242,10 +294,15 @@ const PaidGrowthModeSection: React.FC = () => {
         {/* Growth Resources */}
         {activeTab === 'resources' && (
         <div className="mb-12">
+          {modeResourceAccessActive && (
+            <div className="mb-5 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+              Inner and Advanced resources are both visible while Break/Exclusive Mode is active.
+            </div>
+          )}
           <h3 className="font-mono-label text-[#F6FFF2] mb-2">Deepen Your Alignment</h3>
           <p className="text-[#A9B5AA] text-sm mb-6">These advanced resources help you become the best partner you can be. Work through them at your own pace as you navigate relationship building.</p>
           <div className="grid md:grid-cols-2 gap-4">
-            {resources.map((resource: any) => {
+            {visibleResources.map((resource: any) => {
               const status = getPathStatus(resource.id);
               const progress = pathProgress[resource.id] || 0;
               const isCompleted = progress === 100;
@@ -388,7 +445,7 @@ const PaidGrowthModeSection: React.FC = () => {
         )}
 
         {/* Membership Check */}
-        {!isPaidMember && (
+        {!canAccessPremiumResources && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-[20px] p-6 mb-12 text-center">
             <Lock className="w-8 h-8 text-amber-400 mx-auto mb-3" />
             <p className="text-amber-300 font-medium mb-2">Premium Content</p>

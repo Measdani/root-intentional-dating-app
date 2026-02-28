@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
+  formatModeDuration,
+  getRelationshipModeSnapshot,
   useCommunity,
   canUsersMatch,
   communityIdToPoolId,
   getUserPoolId,
+  isUserAvailableForNewMatches,
   isUserInPool,
   poolIdToCommunityId,
 } from '@/modules';
@@ -31,6 +34,29 @@ const BrowseSection: React.FC = () => {
     () => getUserSettingsForUser(currentUser.id, currentUser),
     [currentUser.id]
   );
+  const relationshipModeSnapshot = useMemo(
+    () => getRelationshipModeSnapshot(currentUser.id),
+    [currentUser.id, currentUser.mode]
+  );
+  const canReceiveNewMatches = isUserAvailableForNewMatches(currentUser.id);
+  const modeStatusMessage = useMemo(() => {
+    if (relationshipModeSnapshot.mode === 'break') {
+      if (relationshipModeSnapshot.remainingCooldownMs > 0) {
+        return `Break Mode is active. New matches are paused for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`;
+      }
+      return 'Break Mode is active. New matches are paused until you return to Active mode.';
+    }
+
+    if (relationshipModeSnapshot.mode === 'exclusive') {
+      return 'Exclusive Mode is active. Search is paused and messaging is limited to your exclusive partner.';
+    }
+
+    if (relationshipModeSnapshot.remainingCooldownMs > 0) {
+      return `Re-entry cooldown is active for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`;
+    }
+
+    return null;
+  }, [relationshipModeSnapshot]);
 
   // Reload notifications when browse section loads
   useEffect(() => {
@@ -49,9 +75,12 @@ const BrowseSection: React.FC = () => {
   const viewerCommunityMatches = poolIdToCommunityId(viewerPool) === activeCommunity.id;
 
   const filteredUsers = usersWithUpdatedScores.filter(user => {
+    if (!canReceiveNewMatches) return false;
+
     // Keep users scoped to the viewer's exact lane within the active community.
     if (!viewerCommunityMatches) return false;
     if (!isUserInPool(user, viewerPool)) return false;
+    if (!isUserAvailableForNewMatches(user.id)) return false;
 
     // Exclude current user from browse list
     if (user.id === currentUser.id) return false;
@@ -190,6 +219,12 @@ const BrowseSection: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
+        {modeStatusMessage && (
+          <div className="mb-6 rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 px-4 py-3 text-sm text-[#F6FFF2]">
+            {modeStatusMessage}
+          </div>
+        )}
+
         {/* Admin Notifications */}
         {getUnreadNotifications().map(notification => (
           <div
@@ -355,7 +390,11 @@ const BrowseSection: React.FC = () => {
 
         {filteredUsers.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-[#A9B5AA] text-lg">No matches found with current filters.</p>
+            <p className="text-[#A9B5AA] text-lg">
+              {canReceiveNewMatches
+                ? 'No matches found with current filters.'
+                : 'New matching is paused while your current mode is active.'}
+            </p>
             <button
               onClick={() => setSelectedFilter(null)}
               className="mt-4 text-[#D9FF3D] text-sm hover:underline"
