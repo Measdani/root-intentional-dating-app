@@ -603,6 +603,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       message,
       timestamp: Date.now(),
       messageType: 'initial',
+      read: false,
     };
 
     const newInteraction: UserInteraction = {
@@ -695,6 +696,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         message,
         timestamp: Date.now(),
         messageType: 'response',
+        read: false,
       };
 
       const allMessages = [...baseInteraction.messages, responseMessage];
@@ -1032,11 +1034,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser.id, interactions]);
 
   const getUnreadCount = useCallback((): number => {
-    const receivedInterests = getReceivedInterests();
-    return receivedInterests.filter(
-      conv => conv.status === 'pending_response'
-    ).length;
-  }, [getReceivedInterests]);
+    const allInteractions = [
+      ...Object.values(interactions.sentInterests),
+      ...Object.values(interactions.receivedInterests),
+    ];
+    const uniqueConversations = Array.from(
+      new Map(allInteractions.map((interaction) => [interaction.conversationId, interaction])).values()
+    );
+
+    return uniqueConversations.filter((conversation) => {
+      const otherUserId = conversation.fromUserId === currentUser.id
+        ? conversation.toUserId
+        : conversation.fromUserId;
+
+      if (!canUsersExchangeMessages(currentUser.id, otherUserId)) return false;
+
+      return conversation.messages.some(
+        (message) => message.fromUserId !== currentUser.id && !message.read
+      );
+    }).length;
+  }, [currentUser.id, interactions]);
 
   const saveAssessmentDate = useCallback(() => {
     try {
