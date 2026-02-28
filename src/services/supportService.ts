@@ -40,6 +40,20 @@ export const supportService = {
     return data.map(mapRowToSupportMessage)
   },
 
+  async getSupportMessagesByUser(userId: string): Promise<SupportMessage[]> {
+    const { data, error } = await supabase
+      .from('support_messages')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (error || !data) {
+      console.warn('Failed to fetch user support messages from Supabase:', error?.message)
+      return []
+    }
+    return data.map(mapRowToSupportMessage)
+  },
+
   async updateStatus(
     messageId: string,
     status: SupportMessage['status'],

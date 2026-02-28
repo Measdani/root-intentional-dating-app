@@ -15,6 +15,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { userService } from '@/services/userService';
+import { supportService } from '@/services/supportService';
 import type { SupportCategory, SupportMessage } from '@/types';
 import {
   applyCoreLock,
@@ -172,7 +173,17 @@ const UserSettingsSection: React.FC = () => {
   const supportDetailsMinLength = 30;
   const supportDetailsMaxLength = 1200;
 
-  const loadRecentSupportTickets = useCallback(() => {
+  const loadRecentSupportTickets = useCallback(async () => {
+    try {
+      const supabaseTickets = await supportService.getSupportMessagesByUser(currentUser.id);
+      if (supabaseTickets.length > 0) {
+        setRecentSupportTickets(supabaseTickets.slice(0, 5));
+        return;
+      }
+    } catch (error) {
+      console.warn('Failed to load support tickets from Supabase, falling back to local storage:', error);
+    }
+
     try {
       const stored = localStorage.getItem(SUPPORT_MESSAGES_STORAGE_KEY);
       if (!stored) {
@@ -207,7 +218,7 @@ const UserSettingsSection: React.FC = () => {
   }, [currentUser.id]);
 
   useEffect(() => {
-    loadRecentSupportTickets();
+    void loadRecentSupportTickets();
   }, [loadRecentSupportTickets]);
 
   useEffect(() => {
@@ -226,6 +237,47 @@ const UserSettingsSection: React.FC = () => {
       window.removeEventListener('new-support-message', handleNewSupportMessage as EventListener);
     };
   }, [currentUser.id]);
+
+  useEffect(() => {
+    const handleStorageUpdate = (event: StorageEvent) => {
+      if (event.key && event.key !== SUPPORT_MESSAGES_STORAGE_KEY) return;
+      void loadRecentSupportTickets();
+    };
+
+    window.addEventListener('storage', handleStorageUpdate);
+    return () => window.removeEventListener('storage', handleStorageUpdate);
+  }, [loadRecentSupportTickets]);
+
+  useEffect(() => {
+    const refreshOnFocus = () => {
+      void loadRecentSupportTickets();
+    };
+    const refreshOnVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void loadRecentSupportTickets();
+      }
+    };
+
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshOnVisibilityChange);
+    };
+  }, [loadRecentSupportTickets]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void loadRecentSupportTickets();
+    }, 15000);
+    return () => window.clearInterval(interval);
+  }, [loadRecentSupportTickets]);
+
+  useEffect(() => {
+    if (!supportReferenceId) return;
+    const timeout = window.setTimeout(() => setSupportReferenceId(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [supportReferenceId]);
 
   const handleRetakeAssessment = () => {
     if (!failedAssessment) {
@@ -383,9 +435,10 @@ const UserSettingsSection: React.FC = () => {
         trimmedDetails
       );
       setSupportReferenceId(supportId);
+      setSupportIssueType('password-issue');
       setSupportSubject('');
       setSupportDetails('');
-      loadRecentSupportTickets();
+      void loadRecentSupportTickets();
     } catch (error) {
       console.error('Failed to submit support ticket:', error);
       toast.error('Unable to submit your ticket right now. Please try again.');
@@ -394,15 +447,31 @@ const UserSettingsSection: React.FC = () => {
     }
   };
 
-  const getSupportStatusClass = (status: SupportMessage['status']) => {
-    switch (status) {
+  const getUserTicketStatus = (ticket: SupportMessage): { label: string; className: string } => {
+    if (ticket.adminResponse && ticket.adminResponse.trim().length > 0) {
+      return {
+        label: 'response ready',
+        className: 'border-[#D9FF3D]/40 bg-[#D9FF3D]/10 text-[#D9FF3D]',
+      };
+    }
+
+    switch (ticket.status) {
       case 'resolved':
-        return 'border-green-500/30 bg-green-500/10 text-green-300';
+        return {
+          label: 'resolved',
+          className: 'border-green-500/30 bg-green-500/10 text-green-300',
+        };
       case 'in-progress':
-        return 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300';
+        return {
+          label: 'in review',
+          className: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
+        };
       case 'unread':
       default:
-        return 'border-blue-500/30 bg-blue-500/10 text-blue-300';
+        return {
+          label: 'received',
+          className: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
+        };
     }
   };
 
@@ -1073,7 +1142,10 @@ const UserSettingsSection: React.FC = () => {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setSupportIssueType(option.value)}
+                    onClick={() => {
+                      setSupportReferenceId(null);
+                      setSupportIssueType(option.value);
+                    }}
                     className={`p-3 rounded-lg border text-left transition-colors ${
                       supportIssueType === option.value
                         ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
@@ -1092,7 +1164,10 @@ const UserSettingsSection: React.FC = () => {
               <input
                 type="text"
                 value={supportSubject}
-                onChange={(e) => setSupportSubject(e.target.value.slice(0, supportSubjectMaxLength))}
+                onChange={(e) => {
+                  setSupportReferenceId(null);
+                  setSupportSubject(e.target.value.slice(0, supportSubjectMaxLength));
+                }}
                 placeholder="Brief summary of your issue"
                 className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
               />
@@ -1105,7 +1180,10 @@ const UserSettingsSection: React.FC = () => {
               <label className="text-sm text-[#A9B5AA] block mb-2">Details</label>
               <textarea
                 value={supportDetails}
-                onChange={(e) => setSupportDetails(e.target.value.slice(0, supportDetailsMaxLength))}
+                onChange={(e) => {
+                  setSupportReferenceId(null);
+                  setSupportDetails(e.target.value.slice(0, supportDetailsMaxLength));
+                }}
                 placeholder="Share details so our team can resolve this quickly."
                 rows={4}
                 className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors resize-none"
@@ -1159,14 +1237,20 @@ const UserSettingsSection: React.FC = () => {
                       <span className="text-[11px] px-2 py-0.5 rounded-full border text-[#A9B5AA] border-[#1A211A]">
                         {SUPPORT_CATEGORY_LABELS[ticket.category] || 'Other'}
                       </span>
-                      <span className={`text-[11px] px-2 py-0.5 rounded-full border ${getSupportStatusClass(ticket.status)}`}>
-                        {ticket.status.replace('-', ' ')}
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full border ${getUserTicketStatus(ticket).className}`}>
+                        {getUserTicketStatus(ticket).label}
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#A9B5AA]">
                       <span className="font-mono">{ticket.id}</span>
                       <span>{new Date(ticket.createdAt).toLocaleString('en-US')}</span>
                     </div>
+                    {ticket.adminResponse && (
+                      <div className="mt-2 border-t border-[#1A211A] pt-2">
+                        <p className="text-[11px] text-[#A9B5AA] mb-1">Support response</p>
+                        <p className="text-sm text-[#F6FFF2] whitespace-pre-wrap">{ticket.adminResponse}</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

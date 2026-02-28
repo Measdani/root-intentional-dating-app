@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAdmin } from '@/store/AdminContext';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import {
 import type { SupportMessage, SupportMessageStatus, SupportCategory } from '@/types';
 
 const AdminSupportSection: React.FC = () => {
-  const { supportMessages = [], supportMessageStats } = useAdmin();
+  const { supportMessages = [], supportMessageStats, updateSupportMessageStatus } = useAdmin();
 
   const [selectedMessage, setSelectedMessage] = useState<SupportMessage | null>(null);
   const [filterStatus, setFilterStatus] = useState<SupportMessageStatus | 'all'>('all');
@@ -94,23 +94,43 @@ const AdminSupportSection: React.FC = () => {
     setShowDetailModal(true);
   };
 
+  useEffect(() => {
+    if (!selectedMessage) return;
+    const liveMessage = supportMessages.find((message) => message.id === selectedMessage.id);
+    if (!liveMessage) return;
+    setSelectedMessage(liveMessage);
+  }, [supportMessages, selectedMessage]);
+
   const handleMarkInProgress = () => {
     if (!selectedMessage) return;
-    // Update status in AdminContext
+    updateSupportMessageStatus(selectedMessage.id, 'in-progress', selectedMessage.adminResponse);
+    setSelectedMessage({
+      ...selectedMessage,
+      status: 'in-progress',
+      updatedAt: Date.now(),
+    });
     toast.success('Message marked as in progress');
   };
 
   const handleOpenResponse = () => {
+    setAdminResponse(selectedMessage?.adminResponse || '');
     setShowResponseModal(true);
   };
 
   const handleSubmitResponse = () => {
     if (!selectedMessage || !adminResponse.trim()) return;
 
-    // Update message with response and mark as resolved
+    const trimmedResponse = adminResponse.trim();
+    updateSupportMessageStatus(selectedMessage.id, 'resolved', trimmedResponse);
+    setSelectedMessage({
+      ...selectedMessage,
+      status: 'resolved',
+      adminResponse: trimmedResponse,
+      updatedAt: Date.now(),
+      resolvedAt: Date.now(),
+    });
     toast.success('Response sent and message resolved');
     setShowResponseModal(false);
-    setShowDetailModal(false);
     setAdminResponse('');
   };
 
