@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAdmin } from '@/store/AdminContext';
 import { useApp } from '@/store/AppContext';
+import { getUserPoolId, persistUserPoolMembership, toInnerPool } from '@/modules';
+import { userService } from '@/services/userService';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import {
@@ -492,7 +494,7 @@ const AdminReportsSection: React.FC = () => {
 
                 {/* Tier 2: 6-Month Suspension */}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     // Calculate suspension end date (6 months from now)
                     const suspensionEndDate = new Date();
                     suspensionEndDate.setMonth(suspensionEndDate.getMonth() + 6);
@@ -504,6 +506,20 @@ const AdminReportsSection: React.FC = () => {
 
                     // Update report status
                     updateReportStatus(selectedReport.id, 'resolved');
+
+                    // Demote advanced accounts to inner lane inside their own entity.
+                    const fallbackPool = 'core-inner';
+                    const reportedPool = getUserPoolId(reportedUser, fallbackPool);
+                    const demotedPool = toInnerPool(reportedPool);
+                    persistUserPoolMembership(
+                      { id: selectedReport.reportedUserId, email: reportedUser.email },
+                      demotedPool
+                    );
+                    await userService.updateUser(selectedReport.reportedUserId, {
+                      poolId: demotedPool,
+                      userStatus: 'suspended',
+                      suspensionEndDate: suspensionEndDate.getTime(),
+                    });
 
                     // Suspend the user - they will be redirected to growth-mode on next login
                     suspendUser(selectedReport.reportedUserId, suspensionEndDate.getTime());

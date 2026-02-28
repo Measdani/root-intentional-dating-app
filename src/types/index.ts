@@ -60,7 +60,7 @@ export interface User {
   consentVersion?: string; // Policy version accepted (e.g., "v1.0")
   membershipStatus?: 'active' | 'inactive' | 'cancelled'; // Subscription state
   cancelAtPeriodEnd?: boolean; // Whether subscription cancels at period end
-  poolId?: 'core' | 'lgbtq'; // Which community pool this account belongs to
+  poolId?: 'core-inner' | 'core-advanced'; // Which lane this account belongs to
 }
 
 export interface AssessmentQuestion {

@@ -18,20 +18,6 @@ export const COMMUNITIES: Record<CommunityId, CommunityDefinition> = {
       'I confirm that Rooted Hearts is a men and women platform designed for opposite-sex partnerships and understand that my experience depends on my participation, alignment, and engagement within this ecosystem.',
     matchingMode: 'opposite-gender',
   },
-  lgbtq: {
-    id: 'lgbtq',
-    name: 'Rooted Hearts LGBTQ+',
-    shortName: 'LGBTQ+',
-    heroTitle: 'ROOTED LGBTQ+',
-    heroTagline: 'Intentional dating for the LGBTQ+ community.',
-    loginTitle: 'Welcome to Rooted Hearts LGBTQ+',
-    loginSubtitle: 'Sign in to browse LGBTQ+ community profiles',
-    signupGenderGuidance:
-      'Rooted Hearts LGBTQ+ supports diverse identities. Choose what best reflects you - you can control when this is visible later.',
-    signupPlatformConfirmation:
-      'I confirm that I am joining the LGBTQ+ community area and understand that my experience depends on participation, alignment, and respectful engagement within this ecosystem.',
-    matchingMode: 'inclusive',
-  },
 };
 
 export const COMMUNITY_LIST = Object.values(COMMUNITIES);
@@ -47,6 +33,9 @@ export const getCommunityDefinition = (communityId: CommunityId): CommunityDefin
 const parseCommunityId = (value: string | null | undefined): CommunityId | null => {
   if (!value) return null;
   const normalized = value.trim().toLowerCase();
+  if (normalized === 'lgbtq' || normalized === 'lgbtq-inner' || normalized === 'lgbtq-advanced' || normalized === 'lgbtq-test') {
+    return 'rooted';
+  }
   return isCommunityId(normalized) ? normalized : null;
 };
 

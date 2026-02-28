@@ -88,7 +88,7 @@ const ProfileDetailSection: React.FC = () => {
   const sharedValues = selectedUser.values.filter(v => currentUser.values.includes(v));
   const photosUnlocked = arePhotosUnlocked(selectedUser.id);
   const conversation = getConversation(selectedUser.id);
-  const isLgbtqCommunity = activeCommunity.id === 'lgbtq';
+  const isLgbtqCommunity = activeCommunity.matchingMode === 'inclusive';
   const hasMutualInterest = Boolean(conversation && conversation.status !== 'pending_response');
   const selectedUserSettings = useMemo(
     () => getUserSettingsForUser(selectedUser.id, selectedUser),

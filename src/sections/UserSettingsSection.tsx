@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { useCommunity } from '@/modules';
 import { toast } from 'sonner';
 import { ArrowLeft, Download, Trash2, UserX, ShieldCheck, Bell, Eye, Lock, RotateCcw } from 'lucide-react';
 import { userService } from '@/services/userService';
@@ -30,14 +29,12 @@ const UserSettingsSection: React.FC = () => {
     unblockUser,
     users,
   } = useApp();
-  const { activeCommunity } = useCommunity();
-
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [lockModalDate, setLockModalDate] = useState<Date | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const isLgbtqUser = currentUser.poolId === 'lgbtq' || activeCommunity.id === 'lgbtq';
+  const isLgbtqUser = false;
 
   useEffect(() => {
     if (!currentUser?.id) return;

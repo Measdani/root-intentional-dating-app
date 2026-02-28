@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
+import {
+  communityIdToPoolId,
+  getUserPoolId,
+  persistUserPoolMembership,
+  toAdvancedPool,
+  toInnerPool,
+  useCommunity,
+} from '@/modules';
+import { userService } from '@/services/userService';
 import { BookOpen, ArrowRight } from 'lucide-react';
 
 const AssessmentReflectionSection: React.FC = () => {
   const { assessmentResult, setCurrentView } = useApp();
+  const { activeCommunityId } = useCommunity();
   const [selectedBlog, setSelectedBlog] = useState<string | null>(null);
 
   if (!assessmentResult) return null;
@@ -48,12 +58,26 @@ const AssessmentReflectionSection: React.FC = () => {
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
+        const rawUser = JSON.parse(savedUser);
+        const currentPoolId = getUserPoolId(rawUser, communityIdToPoolId(activeCommunityId));
+        const nextPoolId = assessmentResult.passed
+          ? toAdvancedPool(currentPoolId)
+          : toInnerPool(currentPoolId);
         const updated = {
-          ...JSON.parse(savedUser),
+          ...rawUser,
           assessmentPassed: assessmentResult.passed,
           alignmentScore: assessmentResult.percentage,
+          userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
+          poolId: nextPoolId,
         };
+        persistUserPoolMembership(updated, nextPoolId);
         localStorage.setItem('currentUser', JSON.stringify(updated));
+        void userService.updateUser(updated.id, {
+          assessmentPassed: updated.assessmentPassed,
+          alignmentScore: updated.alignmentScore,
+          userStatus: updated.userStatus,
+          poolId: updated.poolId,
+        });
         window.dispatchEvent(new CustomEvent('user-login', { detail: updated }));
       }
     } catch (err) {

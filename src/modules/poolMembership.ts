@@ -1,12 +1,25 @@
 import type { User } from '@/types';
 import type { CommunityId } from './types';
 
-export type PoolId = 'core' | 'lgbtq';
+export type PoolFamily = 'core';
+export type PoolTrack = 'inner' | 'advanced';
+export type PoolId = 'core-inner' | 'core-advanced';
 
 const POOL_MEMBERSHIP_STORAGE_KEY = 'intentional_user_pool_membership_v1';
 
-const isPoolId = (value: unknown): value is PoolId =>
-  value === 'core' || value === 'lgbtq';
+const normalizePoolId = (value: unknown): PoolId | null => {
+  if (value === 'core-inner' || value === 'core-advanced') {
+    return value;
+  }
+
+  // Legacy aliases from older pool structures.
+  if (value === 'core') return 'core-inner';
+  if (value === 'lgbtq' || value === 'lgbtq-inner') return 'core-inner';
+  if (value === 'lgbtq-advanced' || value === 'lgbtq-test') return 'core-advanced';
+  return null;
+};
+
+const isPoolId = (value: unknown): value is PoolId => normalizePoolId(value) !== null;
 
 const readPoolMembershipMap = (): Record<string, PoolId> => {
   if (typeof window === 'undefined') return {};
@@ -15,7 +28,15 @@ const readPoolMembershipMap = (): Record<string, PoolId> => {
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object') return {};
-    return parsed as Record<string, PoolId>;
+
+    const normalizedMap: Record<string, PoolId> = {};
+    Object.entries(parsed as Record<string, unknown>).forEach(([key, value]) => {
+      const normalizedPoolId = normalizePoolId(value);
+      if (normalizedPoolId) {
+        normalizedMap[key] = normalizedPoolId;
+      }
+    });
+    return normalizedMap;
   } catch (error) {
     console.warn('Failed to read pool membership map:', error);
     return {};
@@ -31,14 +52,25 @@ const writePoolMembershipMap = (map: Record<string, PoolId>): void => {
   }
 };
 
-export const communityIdToPoolId = (communityId: CommunityId): PoolId =>
-  communityId === 'lgbtq' ? 'lgbtq' : 'core';
+export const getPoolFamily = (_poolId: PoolId): PoolFamily => 'core';
 
-export const poolIdToCommunityId = (poolId: PoolId): CommunityId =>
-  poolId === 'lgbtq' ? 'lgbtq' : 'rooted';
+export const getPoolTrack = (poolId: PoolId): PoolTrack =>
+  poolId.endsWith('-advanced') ? 'advanced' : 'inner';
 
-export const getUserPoolId = (user: Partial<User>, fallbackPool: PoolId = 'core'): PoolId => {
-  if (isPoolId(user.poolId)) return user.poolId;
+export const toAdvancedPool = (_poolId: PoolId): PoolId => 'core-advanced';
+
+export const toInnerPool = (_poolId: PoolId): PoolId => 'core-inner';
+
+export const communityIdToPoolId = (_communityId: CommunityId): PoolId => 'core-inner';
+
+export const poolIdToCommunityId = (_poolId: PoolId): CommunityId => 'rooted';
+
+export const isPoolInCommunity = (_poolId: PoolId, communityId: CommunityId): boolean =>
+  communityId === 'rooted';
+
+export const getUserPoolId = (user: Partial<User>, fallbackPool: PoolId = 'core-inner'): PoolId => {
+  const directPoolId = normalizePoolId(user.poolId);
+  if (directPoolId) return directPoolId;
 
   const map = readPoolMembershipMap();
   const byId = user.id ? map[`id:${user.id}`] : undefined;

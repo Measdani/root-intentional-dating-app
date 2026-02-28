@@ -107,10 +107,7 @@ const mapIdentityVisibility = (
   user: User | undefined,
   field: 'gender-identity' | 'identity-expression'
 ): IdentityFieldVisibilityMode => {
-  const isLgbtq = user?.poolId === 'lgbtq';
-  const defaultVisibility: IdentityFieldVisibilityMode = isLgbtq
-    ? 'after-mutual-interest'
-    : 'always-visible';
+  const defaultVisibility: IdentityFieldVisibilityMode = 'always-visible';
 
   if (field === 'gender-identity') return defaultVisibility;
 

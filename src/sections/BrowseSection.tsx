@@ -5,6 +5,7 @@ import {
   communityIdToPoolId,
   getUserPoolId,
   isUserInPool,
+  poolIdToCommunityId,
 } from '@/modules';
 import { useApp } from '@/store/AppContext';
 import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle, BookOpen } from 'lucide-react';
@@ -45,10 +46,11 @@ const BrowseSection: React.FC = () => {
 
   const activePool = communityIdToPoolId(activeCommunity.id);
   const viewerPool = getUserPoolId(currentUser, activePool);
+  const viewerCommunityMatches = poolIdToCommunityId(viewerPool) === activeCommunity.id;
 
   const filteredUsers = usersWithUpdatedScores.filter(user => {
-    // Keep users scoped to the active community pool.
-    if (!isUserInPool(currentUser, activePool)) return false;
+    // Keep users scoped to the viewer's exact lane within the active community.
+    if (!viewerCommunityMatches) return false;
     if (!isUserInPool(user, viewerPool)) return false;
 
     // Exclude current user from browse list

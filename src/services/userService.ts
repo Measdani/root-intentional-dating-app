@@ -45,8 +45,8 @@ export const userService = {
       .select()
       .single()
 
-    if (error && user.poolId && isMissingPoolIdColumnError(error.message)) {
-      // Backward-compatible retry for schemas that have not added pool_id yet.
+    if (error && user.poolId && shouldRetryWithoutPoolId(error.message)) {
+      // Backward-compatible retry for schemas that do not support pool_id yet.
       const retry = await supabase
         .from('users')
         .insert(basePayload)
@@ -146,7 +146,7 @@ export const userService = {
       .update(updateData)
       .eq('id', userId)
 
-    if (error && updateData.pool_id !== undefined && isMissingPoolIdColumnError(error.message)) {
+    if (error && updateData.pool_id !== undefined && shouldRetryWithoutPoolId(error.message)) {
       delete updateData.pool_id
       const retry = await supabase
         .from('users')
@@ -202,7 +202,7 @@ function mapRowToUser(row: any): User {
     consentTimestamp: row.consent_timestamp,
     consentVersion: row.consent_version,
     cancelAtPeriodEnd: row.cancel_at_period_end,
-    poolId: row.pool_id === 'lgbtq' ? 'lgbtq' : row.pool_id === 'core' ? 'core' : undefined,
+    poolId: toPoolId(row.pool_id),
     userStatus: row.user_status,
     backgroundCheckVerified: row.background_check_verified,
     backgroundCheckStatus: row.background_check_status,
@@ -212,6 +212,15 @@ function mapRowToUser(row: any): User {
   }
 }
 
+function toPoolId(value: unknown): User['poolId'] {
+  if (value === 'core-inner' || value === 'core-advanced') return value
+  // Legacy alias support while old data still exists.
+  if (value === 'core') return 'core-inner'
+  if (value === 'lgbtq' || value === 'lgbtq-inner') return 'core-inner'
+  if (value === 'lgbtq-test' || value === 'lgbtq-advanced') return 'core-advanced'
+  return undefined
+}
+
 function isMissingPoolIdColumnError(message: string): boolean {
   const normalized = (message || '').toLowerCase()
   return normalized.includes('pool_id') && (
@@ -219,4 +228,17 @@ function isMissingPoolIdColumnError(message: string): boolean {
     normalized.includes('schema cache') ||
     normalized.includes('does not exist')
   )
+}
+
+function isUnsupportedPoolIdValueError(message: string): boolean {
+  const normalized = (message || '').toLowerCase()
+  return normalized.includes('pool') && (
+    normalized.includes('invalid input value for enum') ||
+    normalized.includes('violates check constraint') ||
+    normalized.includes('not one of the allowed values')
+  )
+}
+
+function shouldRetryWithoutPoolId(message: string): boolean {
+  return isMissingPoolIdColumnError(message) || isUnsupportedPoolIdValueError(message)
 }

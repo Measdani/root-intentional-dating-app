@@ -13,11 +13,16 @@ export { canUsersMatch } from './matching';
 export {
   communityIdToPoolId,
   getUserPoolId,
+  getPoolFamily,
+  getPoolTrack,
+  isPoolInCommunity,
   isUserInPool,
   persistUserPoolMembership,
   poolIdToCommunityId,
+  toAdvancedPool,
+  toInnerPool,
   withUserPoolId,
 } from './poolMembership';
 export { installStorageNamespace, setStorageNamespaceCommunity } from './storageNamespace';
 export type { CommunityDefinition, CommunityId, CommunityMatchingMode } from './types';
-export type { PoolId } from './poolMembership';
+export type { PoolFamily, PoolId, PoolTrack } from './poolMembership';

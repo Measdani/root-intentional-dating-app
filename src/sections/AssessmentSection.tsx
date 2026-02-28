@@ -14,7 +14,7 @@ const AssessmentSection: React.FC = () => {
     currentUser
   } = useApp();
   const { activeCommunity } = useCommunity();
-  const isLgbtqCommunity = activeCommunity.id === 'lgbtq';
+  const isLgbtqCommunity = activeCommunity.matchingMode === 'inclusive';
   const innerWorkLabel = isLgbtqCommunity ? 'LGBTQ+ Inner Work Space' : 'Inner Work Space';
 
   const [isVisible, setIsVisible] = useState(false);

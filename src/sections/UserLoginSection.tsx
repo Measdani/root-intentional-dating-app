@@ -5,10 +5,10 @@ import { useAdmin } from '@/store/AdminContext';
 import AuthPoolTabs from '@/components/AuthPoolTabs';
 import {
   communityIdToPoolId,
-  getCommunityDefinition,
   getUserPoolId,
   persistUserPoolMembership,
-  poolIdToCommunityId,
+  toAdvancedPool,
+  toInnerPool,
   useCommunity,
 } from '@/modules';
 import { userService } from '@/services/userService';
@@ -26,7 +26,7 @@ import type { AssessmentResult } from '@/types';
 const UserLoginSection: React.FC = () => {
   const { setCurrentView, setAssessmentResult } = useApp();
   const { login: adminLogin } = useAdmin();
-  const { activeCommunity, activeCommunityId, switchCommunity } = useCommunity();
+  const { activeCommunity, activeCommunityId } = useCommunity();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -75,6 +75,15 @@ const UserLoginSection: React.FC = () => {
       'intentional:lgbtq:rooted-admin-users',
       'intentional:lgbtq:rooted-admin-reports',
       'intentional:lgbtq:rooted-admin-support-messages',
+      'intentional:lgbtq-advanced:rooted-admin-data',
+      'intentional:lgbtq-advanced:rooted-admin-users',
+      'intentional:lgbtq-advanced:rooted-admin-reports',
+      'intentional:lgbtq-advanced:rooted-admin-support-messages',
+      // Legacy alias cleanup.
+      'intentional:lgbtq-test:rooted-admin-data',
+      'intentional:lgbtq-test:rooted-admin-users',
+      'intentional:lgbtq-test:rooted-admin-reports',
+      'intentional:lgbtq-test:rooted-admin-support-messages',
     ];
     cacheKeysToPurge.forEach((key) => localStorage.removeItem(key));
 
@@ -143,34 +152,63 @@ const UserLoginSection: React.FC = () => {
 
     persistUserPoolMembership(user, accountPoolId);
 
-    if (accountPoolId !== selectedPoolId) {
-      const targetCommunityId = poolIdToCommunityId(accountPoolId);
-      const targetCommunity = getCommunityDefinition(targetCommunityId);
-      switchCommunity(targetCommunityId);
+    return user;
+  };
 
-      window.dispatchEvent(
-        new CustomEvent('auth-pool-redirect-banner', {
-          detail: {
-            message: `You're signed in to ${targetCommunity.name}. We redirected you to your space.`,
-          },
-        })
-      );
+  const syncUserPoolForOutcome = async (
+    rawUser: any,
+    passedAssessment: boolean,
+    persistRemote: boolean
+  ) => {
+    const currentPoolId = getUserPoolId(rawUser, communityIdToPoolId(activeCommunityId));
+    const nextPoolId = passedAssessment ? toAdvancedPool(currentPoolId) : toInnerPool(currentPoolId);
+
+    if (nextPoolId === currentPoolId && rawUser.poolId === nextPoolId) {
+      return rawUser;
     }
 
-    return user;
+    const updatedUser = {
+      ...rawUser,
+      poolId: nextPoolId,
+    };
+    persistUserPoolMembership(updatedUser, nextPoolId);
+
+    if (persistRemote && updatedUser.id) {
+      await userService.updateUser(updatedUser.id, { poolId: nextPoolId });
+    }
+
+    return updatedUser;
+  };
+
+  const refreshSession = (user: any) => {
+    const sessionUser = persistCurrentUserSession(user);
+    window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
+    return sessionUser;
   };
 
   const routeAfterLogin = async (user: any) => {
     const canonicalTester = user?.email ? getCanonicalTestUser(user.email) : null;
-    const effectiveUser = canonicalTester || user;
+    let effectiveUser = canonicalTester || user;
+    const persistRemote = !canonicalTester;
 
-    if (isSuspended(user)) {
+    if (isSuspended(effectiveUser)) {
+      effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);
+      refreshSession(effectiveUser);
       toast.info('Your account is currently under suspension. Please review the growth resources.');
       setCurrentView('growth-mode');
       return;
     }
 
+    if (effectiveUser.userStatus === 'needs-growth') {
+      effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);
+      refreshSession(effectiveUser);
+      setCurrentView('growth-mode');
+      return;
+    }
+
     if (effectiveUser.assessmentPassed === true) {
+      effectiveUser = await syncUserPoolForOutcome(effectiveUser, true, persistRemote);
+      refreshSession(effectiveUser);
       setCurrentView('browse');
       return;
     }
@@ -222,6 +260,8 @@ const UserLoginSection: React.FC = () => {
           growthAreas: [],
         });
       }
+      effectiveUser = await syncUserPoolForOutcome(effectiveUser, resolvedPassed, persistRemote);
+      refreshSession(effectiveUser);
       setCurrentView(resolvedPassed ? 'browse' : 'growth-mode');
       return;
     }

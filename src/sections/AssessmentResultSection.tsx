@@ -1,13 +1,21 @@
 import React, { useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
-import { useCommunity } from '@/modules';
+import {
+  communityIdToPoolId,
+  getUserPoolId,
+  persistUserPoolMembership,
+  toAdvancedPool,
+  toInnerPool,
+  useCommunity,
+} from '@/modules';
 import { Check, AlertTriangle, TrendingUp, Lock } from 'lucide-react';
 import { assessmentService } from '@/services/assessmentService';
+import { userService } from '@/services/userService';
 
 const AssessmentResultSection: React.FC = () => {
   const { assessmentResult, setCurrentView, canRetakeAssessment, getNextRetakeDate } = useApp();
   const { activeCommunity } = useCommunity();
-  const isLgbtqCommunity = activeCommunity.id === 'lgbtq';
+  const isLgbtqCommunity = activeCommunity.matchingMode === 'inclusive';
 
   if (!assessmentResult) return null;
 
@@ -53,13 +61,26 @@ const AssessmentResultSection: React.FC = () => {
       try {
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
+          const rawUser = JSON.parse(savedUser);
+          const currentPoolId = getUserPoolId(rawUser, communityIdToPoolId(activeCommunity.id));
+          const nextPoolId = assessmentResult.passed
+            ? toAdvancedPool(currentPoolId)
+            : toInnerPool(currentPoolId);
           const updated = {
-            ...JSON.parse(savedUser),
+            ...rawUser,
             assessmentPassed: assessmentResult.passed,
             alignmentScore: assessmentResult.percentage,
             userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
+            poolId: nextPoolId,
           };
+          persistUserPoolMembership(updated, nextPoolId);
           localStorage.setItem('currentUser', JSON.stringify(updated));
+          await userService.updateUser(updated.id, {
+            assessmentPassed: updated.assessmentPassed,
+            alignmentScore: updated.alignmentScore,
+            userStatus: updated.userStatus,
+            poolId: nextPoolId,
+          });
           window.dispatchEvent(new CustomEvent('user-login', { detail: updated }));
           console.log('[AssessmentResult] Auto-saved result. userStatus:', updated.userStatus);
         }
@@ -69,7 +90,7 @@ const AssessmentResultSection: React.FC = () => {
     };
 
     saveResult();
-  }, [assessmentResult]);
+  }, [assessmentResult, activeCommunity.id]);
 
   const handleContinue = async () => {
     let userId: string | undefined;
@@ -104,13 +125,26 @@ const AssessmentResultSection: React.FC = () => {
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
+        const rawUser = JSON.parse(savedUser);
+        const currentPoolId = getUserPoolId(rawUser, communityIdToPoolId(activeCommunity.id));
+        const nextPoolId = assessmentResult.passed
+          ? toAdvancedPool(currentPoolId)
+          : toInnerPool(currentPoolId);
         const updated = {
-          ...JSON.parse(savedUser),
+          ...rawUser,
           assessmentPassed: assessmentResult.passed,
           alignmentScore: assessmentResult.percentage,
           userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
+          poolId: nextPoolId,
         };
+        persistUserPoolMembership(updated, nextPoolId);
         localStorage.setItem('currentUser', JSON.stringify(updated));
+        await userService.updateUser(updated.id, {
+          assessmentPassed: updated.assessmentPassed,
+          alignmentScore: updated.alignmentScore,
+          userStatus: updated.userStatus,
+          poolId: nextPoolId,
+        });
         window.dispatchEvent(new CustomEvent('user-login', { detail: updated }));
       }
     } catch (err) {

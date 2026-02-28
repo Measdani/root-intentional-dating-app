@@ -5,6 +5,7 @@ import {
   communityIdToPoolId,
   getUserPoolId,
   isUserInPool,
+  poolIdToCommunityId,
   useCommunity,
 } from '@/modules';
 import { growthResources } from '@/data/assessment';
@@ -204,8 +205,9 @@ const GrowthModeSection: React.FC = () => {
     const viewerSettings = getUserSettingsForUser(currentUser.id, currentUser);
     const activePool = communityIdToPoolId(activeCommunity.id);
     const viewerPool = getUserPoolId(currentUser, activePool);
+    const viewerCommunityMatches = poolIdToCommunityId(viewerPool) === activeCommunity.id;
 
-    if (!isUserInPool(currentUser, activePool)) return [];
+    if (!viewerCommunityMatches) return [];
 
     return users.filter(
       u => {
@@ -578,6 +580,7 @@ const GrowthModeSection: React.FC = () => {
               const sentInterests = getSentInterests();
               const activePool = communityIdToPoolId(activeCommunity.id);
               const viewerPool = getUserPoolId(currentUser, activePool);
+              const viewerCommunityMatches = poolIdToCommunityId(viewerPool) === activeCommunity.id;
 
               // Combine both received and sent interests
               const allInterests = [...receivedInterests, ...sentInterests];
@@ -588,21 +591,23 @@ const GrowthModeSection: React.FC = () => {
               ).values());
 
               // Map to user profiles and filter to growth-mode matches
-              const growthModeMatches = uniqueConversations
-                .map(interest => {
-                  // Get the other user in the conversation
-                  const otherUserId = interest.fromUserId === currentUser.id
-                    ? interest.toUserId
-                    : interest.fromUserId;
-                  return users.find(u => u.id === otherUserId);
-                })
-                .filter((u): u is User => Boolean(u))
-                .filter(
-                  (u) =>
-                    u.id !== currentUser.id &&
-                    isUserInPool(u, viewerPool) &&
-                    canUsersMatch(currentUser, u, activeCommunity.matchingMode)
-                );
+              const growthModeMatches = viewerCommunityMatches
+                ? uniqueConversations
+                    .map((interest) => {
+                      // Get the other user in the conversation
+                      const otherUserId = interest.fromUserId === currentUser.id
+                        ? interest.toUserId
+                        : interest.fromUserId;
+                      return users.find((u) => u.id === otherUserId);
+                    })
+                    .filter((u): u is User => Boolean(u))
+                    .filter(
+                      (u) =>
+                        u.id !== currentUser.id &&
+                        isUserInPool(u, viewerPool) &&
+                        canUsersMatch(currentUser, u, activeCommunity.matchingMode)
+                    )
+                : [];
 
               return growthModeMatches.length > 0 ? (
                 <div className="space-y-4">

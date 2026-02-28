@@ -1,4 +1,4 @@
-export type CommunityId = 'rooted' | 'lgbtq';
+export type CommunityId = 'rooted';
 
 export type CommunityMatchingMode = 'opposite-gender' | 'inclusive';
 
