@@ -120,12 +120,149 @@ const evaluateOutcome = (answers: TempCheckAnswer[]): TempCheckOutcome => {
   return everyoneReady && everyoneHeard && everyoneGoalAligned ? 'aligned' : 'mismatch';
 };
 
-const buildSharedVibeSummary = (sharedItems: string[]): string => {
-  const items = sharedItems.slice(0, 5);
-  if (items.length === 0) {
-    return 'Your shared vibe is still forming. Keep pinning what feels like “you two.”';
+const SHARED_VIBE_ITEM_DETAILS: Record<string, {
+  theme: 'cozy' | 'adventure' | 'culture' | 'playful' | 'foodie';
+  dateStyle: string;
+  spendTimeTip: string;
+}> = {
+  'Morning Coffee': {
+    theme: 'cozy',
+    dateStyle: 'slow-start cafe date',
+    spendTimeTip: 'start with unhurried check-ins before the day speeds up',
+  },
+  'Farmers Market': {
+    theme: 'foodie',
+    dateStyle: 'daylight market walk',
+    spendTimeTip: 'choose sensory, low-pressure spaces where you can chat while moving',
+  },
+  'Bookstore Stop': {
+    theme: 'culture',
+    dateStyle: 'bookstore + conversation date',
+    spendTimeTip: 'add reflective prompts and share what each of you is learning right now',
+  },
+  'Thrift Store': {
+    theme: 'playful',
+    dateStyle: 'playful scavenger style date',
+    spendTimeTip: 'keep things collaborative and lightly competitive',
+  },
+  'Museum Walk': {
+    theme: 'culture',
+    dateStyle: 'gallery walk with mini debriefs',
+    spendTimeTip: 'build connection through curiosity and shared interpretation',
+  },
+  'Picnic in the Park': {
+    theme: 'cozy',
+    dateStyle: 'simple outdoor reset date',
+    spendTimeTip: 'favor calm, open settings that make emotional safety easy',
+  },
+  'Street Food Crawl': {
+    theme: 'foodie',
+    dateStyle: 'multi-stop tasting date',
+    spendTimeTip: 'plan active dates with small checkpoints to keep momentum high',
+  },
+  'Live Music': {
+    theme: 'adventure',
+    dateStyle: 'energy-based event date',
+    spendTimeTip: 'mix stimulation with short moments to reconnect one-on-one',
+  },
+  'Sunset Drive': {
+    theme: 'cozy',
+    dateStyle: 'scenic decompression date',
+    spendTimeTip: 'protect room for intimate conversation and shared quiet',
+  },
+  'Game Night': {
+    theme: 'playful',
+    dateStyle: 'structured fun date',
+    spendTimeTip: 'use playful rituals to lower pressure and show personality',
+  },
+  'Cooking Together': {
+    theme: 'foodie',
+    dateStyle: 'collaborative home-style date',
+    spendTimeTip: 'choose co-creation activities that reveal teamwork patterns',
+  },
+  'Late-Night Dessert': {
+    theme: 'foodie',
+    dateStyle: 'short sweet-finish date',
+    spendTimeTip: 'end dates with a small shared ritual to build consistency',
+  },
+};
+
+const SHARED_VIBE_THEME_LABELS: Record<'cozy' | 'adventure' | 'culture' | 'playful' | 'foodie', string> = {
+  cozy: 'calm intimacy',
+  adventure: 'high-energy exploration',
+  culture: 'curiosity and depth',
+  playful: 'lightness and spontaneity',
+  foodie: 'sensory connection',
+};
+
+const evaluateSharedVibeUnlock = (
+  picksByUser: Record<string, string[]>,
+  users: [string, string]
+): boolean => users.every((userId) => (picksByUser[userId] ?? []).length >= 3);
+
+const buildSharedVibeSummary = (
+  picksByUser: Record<string, string[]>,
+  users: [string, string]
+): string => {
+  const [userA, userB] = users;
+  const aPicks = picksByUser[userA] ?? [];
+  const bPicks = picksByUser[userB] ?? [];
+  const uniquePicks = Array.from(new Set([...aPicks, ...bPicks]));
+  const sharedItems = getSharedItems(picksByUser, users);
+
+  if (uniquePicks.length === 0) {
+    return 'Your vibe read will appear once both of you start pinning cards.';
   }
-  return `Your shared vibe leans intentional + playful: ${items.join(', ')}. You both seem to value warmth, movement, and real-world moments together.`;
+
+  const themeScores: Record<string, number> = {};
+  uniquePicks.forEach((item) => {
+    const detail = SHARED_VIBE_ITEM_DETAILS[item];
+    if (!detail) return;
+    themeScores[detail.theme] = (themeScores[detail.theme] ?? 0) + 1;
+  });
+  sharedItems.forEach((item) => {
+    const detail = SHARED_VIBE_ITEM_DETAILS[item];
+    if (!detail) return;
+    themeScores[detail.theme] = (themeScores[detail.theme] ?? 0) + 1;
+  });
+
+  const rankedThemes = Object.entries(themeScores)
+    .sort((a, b) => b[1] - a[1])
+    .map(([theme]) => theme as keyof typeof SHARED_VIBE_THEME_LABELS);
+  const primaryTheme = rankedThemes[0] ?? 'cozy';
+  const secondaryTheme = rankedThemes[1];
+
+  const topDateStyles = Array.from(new Set(
+    uniquePicks
+      .map((item) => SHARED_VIBE_ITEM_DETAILS[item]?.dateStyle)
+      .filter((value): value is string => Boolean(value))
+  )).slice(0, 2);
+
+  const topTimeTips = Array.from(new Set(
+    uniquePicks
+      .map((item) => SHARED_VIBE_ITEM_DETAILS[item]?.spendTimeTip)
+      .filter((value): value is string => Boolean(value))
+  )).slice(0, 2);
+
+  const overlapSignal = sharedItems.length >= 2
+    ? `You already overlap on ${sharedItems.slice(0, 3).join(', ')}.`
+    : sharedItems.length === 1
+      ? `You align on ${sharedItems[0]}, while also bringing complementary differences.`
+      : 'Your picks are complementary, which can create a balanced dynamic when you alternate styles.';
+
+  const themeSignal = secondaryTheme
+    ? `Connection signal: ${SHARED_VIBE_THEME_LABELS[primaryTheme]} + ${SHARED_VIBE_THEME_LABELS[secondaryTheme]}.`
+    : `Connection signal: ${SHARED_VIBE_THEME_LABELS[primaryTheme]}.`;
+
+  const dateDirection = topDateStyles.length > 0
+    ? `Date direction: try ${topDateStyles.join(' or ')}.`
+    : 'Date direction: choose a low-pressure public plan with room for conversation.';
+
+  const spendTimeDirection = topTimeTips.length > 0
+    ? `How to spend time: ${topTimeTips.join(' Also, ')}.`
+    : 'How to spend time: alternate between active moments and reflective conversation.';
+
+  return `${themeSignal} ${overlapSignal} ${dateDirection} ${spendTimeDirection}`;
 };
 
 const getParticipants = (interaction: UserInteraction): [string, string] => [
@@ -256,7 +393,8 @@ export const applyMilestoneAction = (
         [action.userId]: nextPicks,
       };
       const sharedItems = getSharedItems(picksByUser, users);
-      const canUnlock = sharedItems.length >= 5;
+      const canUnlock = evaluateSharedVibeUnlock(picksByUser, users);
+      const summary = buildSharedVibeSummary(picksByUser, users);
 
       return {
         ...milestones,
@@ -265,7 +403,7 @@ export const applyMilestoneAction = (
           ...milestones.sharedVibe,
           picksByUser,
           sharedItems,
-          summary: canUnlock ? buildSharedVibeSummary(sharedItems) : milestones.sharedVibe.summary,
+          summary,
           unlockedAt: canUnlock ? (milestones.sharedVibe.unlockedAt ?? now) : milestones.sharedVibe.unlockedAt,
         },
         updatedAt: now,
@@ -590,3 +728,4 @@ export const applyMilestoneAction = (
 };
 
 export type { MilestoneAction };
+

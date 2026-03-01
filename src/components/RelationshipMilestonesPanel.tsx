@@ -57,8 +57,9 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
 
   const participants = [conversation.fromUserId, conversation.toUserId];
   const myPicks = milestones.sharedVibe.picksByUser[currentUser.id] ?? [];
+  const otherPicks = milestones.sharedVibe.picksByUser[otherUser.id] ?? [];
   const sharedItems = milestones.sharedVibe.sharedItems;
-  const canUnlockTruthDare = sharedItems.length >= 5;
+  const canUnlockTruthDare = myPicks.length >= 3 && otherPicks.length >= 3;
 
   const truthDareResponsesByUser = useMemo(() => {
     const byCurrent = milestones.truthOrDare.responses.filter((item) => item.userId === currentUser.id);
@@ -294,6 +295,9 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
       {showSharedVibe && (
         <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/70 p-4 space-y-4">
           <p className="text-sm text-[#F6FFF2]">{milestones.sharedVibe.prompt}</p>
+          <p className="text-xs text-[#A9B5AA]">
+            Pick cards that feel true to your ideal day. They do not need to match; the AI will read both styles and suggest date formats.
+          </p>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-3">
               <p className="text-xs uppercase tracking-wider text-[#A9B5AA]">Vibe Card Tray</p>
@@ -348,7 +352,12 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
                 </span>
               ))}
             </div>
-            <p className="mt-2 text-xs text-[#A9B5AA]">Unlock target: 5 shared items ({sharedItems.length}/5).</p>
+            <p className="mt-2 text-xs text-[#A9B5AA]">
+              Progress to next stage: You {myPicks.length}/3 • {otherUser.name} {otherPicks.length}/3.
+            </p>
+            {canUnlockTruthDare && (
+              <p className="mt-1 text-xs text-green-300">Both of you contributed enough signal. Truth or Dare is unlocked.</p>
+            )}
           </div>
 
           {milestones.sharedVibe.summary && (
