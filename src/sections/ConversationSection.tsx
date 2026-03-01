@@ -107,7 +107,7 @@ const ConversationSection: React.FC = () => {
   };
 
   // Get the first (initial) message
-  const initialMessage = selectedConversation.messages[0];
+  const initialMessage = selectedConversation.messages[0] ?? null;
   const messageRestrictionReason = getMessageBlockReason(currentUser.id, otherUserId);
   const visibleConciergeNudges = (selectedConversation.concierge?.nudges ?? [])
     .filter((nudge) => nudge.forUserIds.includes(currentUser.id))

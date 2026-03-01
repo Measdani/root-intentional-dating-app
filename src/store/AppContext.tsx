@@ -45,6 +45,7 @@ interface AppContextType extends AppState {
   resetAssessment: () => void;
   expressInterest: (toUserId: string, message: string) => boolean;
   respondToInterest: (fromUserId: string, message: string) => boolean;
+  startRelationshipRoom: (partnerUserId: string) => UserInteraction | null;
   markMessagesAsRead: (conversationId: string) => void;
   grantPhotoConsent: (conversationId: string) => void;
   withdrawPhotoConsent: (conversationId: string) => void;
@@ -1005,6 +1006,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   }, [currentUser.id, maybeEnrichSnapshotsWithAI, maybeCreateConciergeAutoReports]);
 
+  const startRelationshipRoom = useCallback((partnerUserId: string): UserInteraction | null => {
+    const blockReason = getMessageBlockReason(currentUser.id, partnerUserId);
+    if (blockReason) {
+      toast.info(blockReason);
+      return null;
+    }
+
+    const now = Date.now();
+    const conversationId = `conv_${[currentUser.id, partnerUserId].sort().join('_')}`;
+    let room: UserInteraction | null = null;
+
+    setInteractions(prev => {
+      const existing = [
+        ...Object.values(prev.sentInterests),
+        ...Object.values(prev.receivedInterests),
+      ].find((interaction) => interaction.conversationId === conversationId);
+
+      if (existing) {
+        room = existing;
+        return prev;
+      }
+
+      const created: UserInteraction = {
+        fromUserId: currentUser.id,
+        toUserId: partnerUserId,
+        conversationId,
+        messages: [],
+        photoConsent: {
+          fromUser: { userId: currentUser.id, hasConsented: true, consentTimestamp: now },
+          toUser: { userId: partnerUserId, hasConsented: true, consentTimestamp: now },
+        },
+        photosUnlocked: true,
+        status: 'photos_unlocked',
+        concierge: {
+          nudges: [],
+          snapshots: [],
+        },
+        milestones: createInitialMilestones(),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      room = created;
+
+      return {
+        ...prev,
+        sentInterests: {
+          ...prev.sentInterests,
+          [partnerUserId]: created,
+        },
+        receivedInterests: {
+          ...prev.receivedInterests,
+          [partnerUserId]: created,
+        },
+      };
+    });
+
+    if (room) {
+      setSelectedConversation(room);
+      return room;
+    }
+
+    return null;
+  }, [currentUser.id]);
+
   const markMessagesAsRead = useCallback((conversationId: string) => {
     setInteractions(prev => {
       const updateInteraction = (interaction: UserInteraction): UserInteraction => {
@@ -1676,6 +1742,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     resetAssessment,
     expressInterest,
     respondToInterest,
+    startRelationshipRoom,
     markMessagesAsRead,
     grantPhotoConsent,
     withdrawPhotoConsent,

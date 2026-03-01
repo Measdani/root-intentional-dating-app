@@ -36,7 +36,7 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
     `I'm really enjoying our conversation, and I feel it's important to stay safe when connecting with someone new. Would you be open to completing a background check for peace of mind before we meet?`,
   ];
 
-  if (!isOpen || !senderUser || !originalMessage) return null;
+  if (!isOpen || !senderUser) return null;
 
   const messageLength = message.length;
   const minLength = 120;
@@ -127,13 +127,14 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
               )}
             </div>
 
-            {/* Original Message */}
-            <div className="mb-6 p-4 bg-[#0B0F0C]/50 rounded-xl border border-[#1A211A]">
-              <p className="text-xs text-[#A9B5AA] mb-2 uppercase tracking-wider">Their Message</p>
-              <p className="text-[#F6FFF2] text-sm leading-relaxed">
-                {originalMessage.message}
-              </p>
-            </div>
+            {originalMessage && (
+              <div className="mb-6 p-4 bg-[#0B0F0C]/50 rounded-xl border border-[#1A211A]">
+                <p className="text-xs text-[#A9B5AA] mb-2 uppercase tracking-wider">Their Message</p>
+                <p className="text-[#F6FFF2] text-sm leading-relaxed">
+                  {originalMessage.message}
+                </p>
+              </div>
+            )}
 
             {/* Message Form */}
             <form onSubmit={handleSubmit} className="space-y-4">

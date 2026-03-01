@@ -56,7 +56,7 @@ const writeExclusiveLetters = (letters: ExclusiveLetter[]) => {
 
 const BrowseSection: React.FC = () => {
   const { activeCommunity } = useCommunity();
-  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, getReceivedInterests, getSentInterests, setSelectedConversation, isUserBlocked, isBlockedByUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
+  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, getReceivedInterests, getSentInterests, setSelectedConversation, startRelationshipRoom, isUserBlocked, isBlockedByUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [exclusiveLetters, setExclusiveLetters] = useState<ExclusiveLetter[]>([]);
@@ -153,7 +153,15 @@ const BrowseSection: React.FC = () => {
 
   const launchRelationshipGames = () => {
     if (!featuredGameConversation) {
-      setCurrentView('inbox');
+      if (!featuredGamePartner) {
+        setCurrentView('inbox');
+        return;
+      }
+      const room = startRelationshipRoom(featuredGamePartner.id);
+      if (!room) return;
+      localStorage.setItem(`consent_choice_${currentUser.id}_${room.conversationId}`, 'true');
+      localStorage.setItem(`congrats_shown_${currentUser.id}_${room.conversationId}`, 'true');
+      setCurrentView('conversation');
       return;
     }
     localStorage.setItem(`consent_choice_${currentUser.id}_${featuredGameConversation.conversationId}`, 'true');

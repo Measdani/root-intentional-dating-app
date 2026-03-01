@@ -6,7 +6,7 @@ import { ArrowLeft, MessageCircle, Check, Clock, Flag, HelpCircle, BookOpen } fr
 import ReportUserModal from '@/components/ReportUserModal';
 
 const InboxSection: React.FC = () => {
-  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, reportUser, blockUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
+  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, startRelationshipRoom, reportUser, blockUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingUser, setReportingUser] = useState<User | null>(null);
@@ -51,6 +51,9 @@ const InboxSection: React.FC = () => {
     interest.messages.some((message: any) => message.fromUserId !== currentUser.id && !message.read);
 
   const relationshipModeSnapshot = getRelationshipModeSnapshot(currentUser.id);
+  const exclusivePartner = relationshipModeSnapshot.exclusivePartnerId
+    ? users.find((user) => user.id === relationshipModeSnapshot.exclusivePartnerId) ?? null
+    : null;
   const modeStatusMessage = relationshipModeSnapshot.mode === 'break'
     ? "You're now in Break Mode. You can exit anytime from Settings."
     : relationshipModeSnapshot.mode === 'exclusive'
@@ -268,6 +271,20 @@ const InboxSection: React.FC = () => {
                 ? "When someone shows interest, they'll appear here"
                 : "Visit the browse section to express interest"}
             </p>
+            {relationshipModeSnapshot.mode === 'exclusive' && exclusivePartner && (
+              <button
+                onClick={() => {
+                  const room = startRelationshipRoom(exclusivePartner.id);
+                  if (!room) return;
+                  localStorage.setItem(`consent_choice_${currentUser.id}_${room.conversationId}`, 'true');
+                  localStorage.setItem(`congrats_shown_${currentUser.id}_${room.conversationId}`, 'true');
+                  setCurrentView('conversation');
+                }}
+                className="mt-6 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
+              >
+                Start Relationship Room with {exclusivePartner.name}
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid gap-4">
