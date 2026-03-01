@@ -1015,61 +1015,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const now = Date.now();
     const conversationId = `conv_${[currentUser.id, partnerUserId].sort().join('_')}`;
-    let room: UserInteraction | null = null;
+    const existing = [
+      ...Object.values(interactions.sentInterests),
+      ...Object.values(interactions.receivedInterests),
+    ].find((interaction) => interaction.conversationId === conversationId);
+
+    const room: UserInteraction = existing ?? {
+      fromUserId: currentUser.id,
+      toUserId: partnerUserId,
+      conversationId,
+      messages: [],
+      photoConsent: {
+        fromUser: { userId: currentUser.id, hasConsented: true, consentTimestamp: now },
+        toUser: { userId: partnerUserId, hasConsented: true, consentTimestamp: now },
+      },
+      photosUnlocked: true,
+      status: 'photos_unlocked',
+      concierge: {
+        nudges: [],
+        snapshots: [],
+      },
+      milestones: createInitialMilestones(),
+      createdAt: now,
+      updatedAt: now,
+    };
 
     setInteractions(prev => {
-      const existing = [
-        ...Object.values(prev.sentInterests),
-        ...Object.values(prev.receivedInterests),
-      ].find((interaction) => interaction.conversationId === conversationId);
+      const alreadyMappedSent = prev.sentInterests[partnerUserId]?.conversationId === conversationId;
+      const alreadyMappedReceived = prev.receivedInterests[partnerUserId]?.conversationId === conversationId;
 
-      if (existing) {
-        room = existing;
+      if (existing && alreadyMappedSent && alreadyMappedReceived) {
         return prev;
       }
-
-      const created: UserInteraction = {
-        fromUserId: currentUser.id,
-        toUserId: partnerUserId,
-        conversationId,
-        messages: [],
-        photoConsent: {
-          fromUser: { userId: currentUser.id, hasConsented: true, consentTimestamp: now },
-          toUser: { userId: partnerUserId, hasConsented: true, consentTimestamp: now },
-        },
-        photosUnlocked: true,
-        status: 'photos_unlocked',
-        concierge: {
-          nudges: [],
-          snapshots: [],
-        },
-        milestones: createInitialMilestones(),
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      room = created;
 
       return {
         ...prev,
         sentInterests: {
           ...prev.sentInterests,
-          [partnerUserId]: created,
+          [partnerUserId]: room,
         },
         receivedInterests: {
           ...prev.receivedInterests,
-          [partnerUserId]: created,
+          [partnerUserId]: room,
         },
       };
     });
 
-    if (room) {
-      setSelectedConversation(room);
-      return room;
-    }
-
-    return null;
-  }, [currentUser.id]);
+    setSelectedConversation(room);
+    return room;
+  }, [currentUser.id, interactions]);
 
   const markMessagesAsRead = useCallback((conversationId: string) => {
     setInteractions(prev => {
