@@ -35,6 +35,7 @@ const GrowthModeSection: React.FC = () => {
   const {
     assessmentResult,
     setCurrentView,
+    setSelectedUser,
     currentUser,
     users,
     interactions,
@@ -303,6 +304,18 @@ const GrowthModeSection: React.FC = () => {
     getConversation,
     modeRefreshTick,
   ]);
+
+  const handleBrowseAction = (user: User) => {
+    const existingConversation = getConversation(user.id);
+    if (existingConversation) {
+      setSelectedConversation(existingConversation);
+      setCurrentView('conversation');
+      return;
+    }
+
+    setSelectedUser(user);
+    setCurrentView('profile');
+  };
 
   // Map categories to icons
   const getCategoryIcon = (category: string) => {
@@ -586,7 +599,7 @@ const GrowthModeSection: React.FC = () => {
                 {growthModeUsers.map((user) => (
                   <div
                     key={user.id}
-                    onClick={() => setSelectedProfileUser(user)}
+                    onClick={() => handleBrowseAction(user)}
                     className="bg-[#111611] rounded-[20px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors group cursor-pointer"
                   >
                     <div className="mb-4">
@@ -612,11 +625,11 @@ const GrowthModeSection: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedProfileUser(user);
+                        handleBrowseAction(user);
                       }}
                       className="w-full py-2 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors flex items-center justify-center gap-2 group-hover:gap-3"
                     >
-                      {getConversation(user.id) ? 'Message' : 'Express Interest'}
+                      {getConversation(user.id) ? 'Continue Conversation' : 'View Profile'}
                       <Send className="w-4 h-4 transition-transform" />
                     </button>
                   </div>
