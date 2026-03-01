@@ -247,7 +247,7 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
   };
 
   const showSharedVibe = milestones.stage === 'shared-vibe';
-  const showTruthOrDare = ['truth-or-dare', 'temp-check', 'bridge', 'final-check', 'date-offer', 'resource-path'].includes(milestones.stage);
+  const showTruthOrDare = milestones.stage === 'truth-or-dare';
   const showTempCheck = ['temp-check', 'bridge', 'final-check', 'date-offer', 'resource-path'].includes(milestones.stage);
   const showBridge = ['bridge', 'final-check', 'date-offer', 'resource-path'].includes(milestones.stage);
   const showFinalCheck = ['final-check', 'date-offer', 'resource-path'].includes(milestones.stage);
