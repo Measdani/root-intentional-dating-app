@@ -263,6 +263,21 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
   const stepLabels = ['Shared Vibe', 'Truth or Dare', 'Temp Check', 'Bridge', 'Decision'];
   const currentStepIndex = stageToStepIndex[milestones.stage] ?? 0;
   const currentStepLabel = stepLabels[currentStepIndex] ?? 'Shared Vibe';
+  const stageTitleMap: Record<string, string> = {
+    'shared-vibe': 'Shared Vibe',
+    'truth-or-dare': 'Truth or Dare',
+    'temp-check': 'Temp Check',
+    'bridge': 'Bridge Activities',
+    'final-check': 'Final Check-In',
+    'date-offer': 'Date Offer',
+    'resource-path': 'Guided Resources',
+  };
+  const activeHandoff = milestones.handoff && milestones.handoff.fromStage === milestones.stage
+    ? milestones.handoff
+    : null;
+  const myHandoffChoice = activeHandoff?.choicesByUser[currentUser.id];
+  const otherHandoffChoice = activeHandoff?.choicesByUser[otherUser.id];
+  const nextStageLabel = activeHandoff ? stageTitleMap[activeHandoff.toStage] ?? activeHandoff.toStage : '';
   const getStepClassName = (stepIndex: number, isCompleted: boolean) => {
     if (stepIndex === currentStepIndex) {
       return 'border-[#D9FF3D] bg-[#D9FF3D]/12 text-[#D9FF3D] ring-1 ring-[#D9FF3D]/40';
@@ -271,6 +286,13 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
       return 'border-green-500/40 bg-green-500/10 text-green-300';
     }
     return 'border-[#1A211A] text-[#A9B5AA]';
+  };
+  const setHandoffChoice = (choice: 'converse' | 'continue') => {
+    pushAction({
+      type: 'set-handoff-choice',
+      userId: currentUser.id,
+      choice,
+    });
   };
 
   return (
@@ -291,6 +313,42 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
         <div className={`rounded-lg border px-3 py-2 ${getStepClassName(4, milestones.stage === 'date-offer')}`}>Decision</div>
       </div>
       <p className="text-[11px] uppercase tracking-wider text-[#D9FF3D]">Current milestone: {currentStepLabel}</p>
+
+      {activeHandoff && (
+        <div className="rounded-xl border border-[#D9FF3D]/40 bg-[#D9FF3D]/8 p-4 space-y-3">
+          <p className="text-sm text-[#F6FFF2]">
+            Before moving to <span className="text-[#D9FF3D]">{nextStageLabel}</span>, choose whether to keep reflecting in chat or continue now.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setHandoffChoice('converse')}
+              className={`rounded-lg border px-3 py-1.5 text-xs ${
+                myHandoffChoice === 'converse'
+                  ? 'border-[#D9FF3D] bg-[#D9FF3D]/12 text-[#D9FF3D]'
+                  : 'border-[#1A211A] text-[#A9B5AA]'
+              }`}
+            >
+              Converse
+            </button>
+            <button
+              onClick={() => setHandoffChoice('continue')}
+              className={`rounded-lg border px-3 py-1.5 text-xs ${
+                myHandoffChoice === 'continue'
+                  ? 'border-green-500/50 bg-green-500/12 text-green-300'
+                  : 'border-[#1A211A] text-[#A9B5AA]'
+              }`}
+            >
+              Continue
+            </button>
+          </div>
+          <p className="text-xs text-[#A9B5AA]">
+            Your choice: <span className="text-[#F6FFF2]">{myHandoffChoice ?? 'not selected'}</span> • {otherUser.name}: <span className="text-[#F6FFF2]">{otherHandoffChoice ?? 'not selected'}</span>
+          </p>
+          <p className="text-xs text-[#6E7A6F]">
+            The next game starts only after both of you choose <span className="text-green-300">Continue</span>.
+          </p>
+        </div>
+      )}
 
       {showSharedVibe && (
         <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/70 p-4 space-y-4">

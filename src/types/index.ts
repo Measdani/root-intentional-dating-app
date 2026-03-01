@@ -302,6 +302,15 @@ export interface FinalCheckState {
   completedAt?: number;
 }
 
+export type MilestoneHandoffChoice = 'converse' | 'continue';
+
+export interface MilestoneHandoffState {
+  fromStage: MilestoneStage;
+  toStage: MilestoneStage;
+  unlockedAt: number;
+  choicesByUser: Record<string, MilestoneHandoffChoice>;
+}
+
 export type DateOfferResponse = 'pending' | 'accepted' | 'declined';
 export type DateOfferStatus = 'not-started' | 'proposed' | 'confirmed' | 'declined';
 
@@ -333,6 +342,7 @@ export interface RelationshipMilestones {
   rhythmRisk: RhythmRiskState;
   finalCheck: FinalCheckState;
   dateOffer: DateOfferState;
+  handoff: MilestoneHandoffState | null;
   updatedAt: number;
 }
 

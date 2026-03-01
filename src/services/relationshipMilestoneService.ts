@@ -77,6 +77,7 @@ type MilestoneAction =
       safetyNotes?: string;
     }
   | { type: 'respond-date-offer'; userId: string; response: 'accepted' | 'declined' }
+  | { type: 'set-handoff-choice'; userId: string; choice: 'converse' | 'continue' }
   | { type: 'set-stage'; stage: MilestoneStage };
 
 const clampScore = (value: number): number => {
@@ -270,6 +271,34 @@ const getParticipants = (interaction: UserInteraction): [string, string] => [
   interaction.toUserId,
 ];
 
+const createTransitionHandoff = (
+  fromStage: MilestoneStage,
+  toStage: MilestoneStage,
+  now: number
+) => ({
+  fromStage,
+  toStage,
+  unlockedAt: now,
+  choicesByUser: {},
+});
+
+const queueStageTransition = (
+  milestones: RelationshipMilestones,
+  fromStage: MilestoneStage,
+  toStage: MilestoneStage,
+  now: number
+): RelationshipMilestones => {
+  const existing = milestones.handoff;
+  if (existing && existing.fromStage === fromStage && existing.toStage === toStage) {
+    return milestones;
+  }
+
+  return {
+    ...milestones,
+    handoff: createTransitionHandoff(fromStage, toStage, now),
+  };
+};
+
 const createInitialDateOfferState = () => ({
   status: 'not-started' as const,
   responsesByUser: {},
@@ -281,6 +310,7 @@ export const normalizeMilestones = (
   if (!milestones) return createInitialMilestones();
   return {
     ...milestones,
+    handoff: milestones.handoff ?? null,
     dateOffer: {
       ...createInitialDateOfferState(),
       ...milestones.dateOffer,
@@ -369,6 +399,7 @@ export const createInitialMilestones = (): RelationshipMilestones => ({
     outcome: 'pending',
   },
   dateOffer: createInitialDateOfferState(),
+  handoff: null,
   updatedAt: Date.now(),
 });
 
@@ -396,9 +427,8 @@ export const applyMilestoneAction = (
       const canUnlock = evaluateSharedVibeUnlock(picksByUser, users);
       const summary = buildSharedVibeSummary(picksByUser, users);
 
-      return {
+      const nextMilestones: RelationshipMilestones = {
         ...milestones,
-        stage: canUnlock && milestones.stage === 'shared-vibe' ? 'truth-or-dare' : milestones.stage,
         sharedVibe: {
           ...milestones.sharedVibe,
           picksByUser,
@@ -406,8 +436,17 @@ export const applyMilestoneAction = (
           summary,
           unlockedAt: canUnlock ? (milestones.sharedVibe.unlockedAt ?? now) : milestones.sharedVibe.unlockedAt,
         },
+        handoff: !canUnlock && milestones.handoff?.fromStage === 'shared-vibe'
+          ? null
+          : milestones.handoff,
         updatedAt: now,
       };
+
+      if (canUnlock && milestones.stage === 'shared-vibe') {
+        return queueStageTransition(nextMilestones, 'shared-vibe', 'truth-or-dare', now);
+      }
+
+      return nextMilestones;
     }
 
     case 'submit-truth-dare': {
@@ -440,16 +479,24 @@ export const applyMilestoneAction = (
           ));
 
       const unlocked = evaluateTruthOrDareUnlock(responses, users);
-      return {
+      const nextMilestones: RelationshipMilestones = {
         ...milestones,
-        stage: unlocked && milestones.stage === 'truth-or-dare' ? 'temp-check' : milestones.stage,
         truthOrDare: {
           ...milestones.truthOrDare,
           responses,
           unlockedAt: unlocked ? (milestones.truthOrDare.unlockedAt ?? now) : milestones.truthOrDare.unlockedAt,
         },
+        handoff: !unlocked && milestones.handoff?.fromStage === 'truth-or-dare'
+          ? null
+          : milestones.handoff,
         updatedAt: now,
       };
+
+      if (unlocked && milestones.stage === 'truth-or-dare') {
+        return queueStageTransition(nextMilestones, 'truth-or-dare', 'temp-check', now);
+      }
+
+      return nextMilestones;
     }
 
     case 'submit-temp-check': {
@@ -464,15 +511,8 @@ export const applyMilestoneAction = (
       const outcome = evaluateOutcome(answers);
       const roleAssignment = getRoleAssignment(answers);
 
-      return {
+      const nextMilestones: RelationshipMilestones = {
         ...milestones,
-        stage: outcome === 'aligned'
-          ? 'date-offer'
-          : outcome === 'mismatch'
-            ? 'bridge'
-            : milestones.stage === 'shared-vibe'
-              ? 'temp-check'
-              : milestones.stage,
         tempCheck: {
           answers,
           outcome,
@@ -483,8 +523,21 @@ export const applyMilestoneAction = (
           ...milestones.rhythmRisk,
           ...roleAssignment,
         },
+        handoff: outcome === 'pending' && milestones.handoff?.fromStage === 'temp-check'
+          ? null
+          : milestones.handoff,
         updatedAt: now,
       };
+
+      if (milestones.stage === 'temp-check' && outcome === 'aligned') {
+        return queueStageTransition(nextMilestones, 'temp-check', 'date-offer', now);
+      }
+
+      if (milestones.stage === 'temp-check' && outcome === 'mismatch') {
+        return queueStageTransition(nextMilestones, 'temp-check', 'bridge', now);
+      }
+
+      return nextMilestones;
     }
 
     case 'submit-mirror': {
@@ -607,14 +660,20 @@ export const applyMilestoneAction = (
       const hasValueSelections = users.every((userId) => Boolean(next.valueDeepDive.picksByUser[userId]?.length));
       const readyForFinal = bothBridgeSubmitted && hasMirror && hasValueSelections;
 
-      return {
+      const finalized: RelationshipMilestones = {
         ...next,
-        stage: readyForFinal && next.stage === 'bridge' ? 'final-check' : next.stage,
+        handoff: !readyForFinal && next.handoff?.fromStage === 'bridge' ? null : next.handoff,
         rhythmRisk: {
           ...next.rhythmRisk,
           safetyPlan: buildSafetyPlan(next) ?? next.rhythmRisk.safetyPlan,
         },
       };
+
+      if (readyForFinal && next.stage === 'bridge') {
+        return queueStageTransition(finalized, 'bridge', 'final-check', now);
+      }
+
+      return finalized;
     }
 
     case 'submit-final-check': {
@@ -628,20 +687,28 @@ export const applyMilestoneAction = (
       const answers = upsertAnswer(milestones.finalCheck.answers, answer);
       const outcome = evaluateOutcome(answers);
 
-      return {
+      const nextMilestones: RelationshipMilestones = {
         ...milestones,
-        stage: outcome === 'aligned'
-          ? 'date-offer'
-          : outcome === 'mismatch'
-            ? 'resource-path'
-            : 'final-check',
         finalCheck: {
           answers,
           outcome,
           completedAt: outcome !== 'pending' ? now : milestones.finalCheck.completedAt,
         },
+        handoff: outcome === 'pending' && milestones.handoff?.fromStage === 'final-check'
+          ? null
+          : milestones.handoff,
         updatedAt: now,
       };
+
+      if (milestones.stage === 'final-check' && outcome === 'aligned') {
+        return queueStageTransition(nextMilestones, 'final-check', 'date-offer', now);
+      }
+
+      if (milestones.stage === 'final-check' && outcome === 'mismatch') {
+        return queueStageTransition(nextMilestones, 'final-check', 'resource-path', now);
+      }
+
+      return nextMilestones;
     }
 
     case 'propose-date-offer': {
@@ -675,6 +742,7 @@ export const applyMilestoneAction = (
           confirmedAt: undefined,
           declinedByUserId: undefined,
         },
+        handoff: null,
         updatedAt: now,
       };
     }
@@ -711,6 +779,31 @@ export const applyMilestoneAction = (
           confirmedAt: status === 'confirmed' ? now : milestones.dateOffer.confirmedAt,
           declinedByUserId: declinedUserId,
         },
+        handoff: null,
+        updatedAt: now,
+      };
+    }
+
+    case 'set-handoff-choice': {
+      const handoff = milestones.handoff;
+      if (!handoff) return milestones;
+      if (!users.includes(action.userId)) return milestones;
+
+      const choicesByUser = {
+        ...handoff.choicesByUser,
+        [action.userId]: action.choice,
+      };
+      const everyoneContinues = users.every((userId) => choicesByUser[userId] === 'continue');
+
+      return {
+        ...milestones,
+        stage: everyoneContinues ? handoff.toStage : milestones.stage,
+        handoff: everyoneContinues
+          ? null
+          : {
+              ...handoff,
+              choicesByUser,
+            },
         updatedAt: now,
       };
     }
@@ -719,6 +812,7 @@ export const applyMilestoneAction = (
       return {
         ...milestones,
         stage: action.stage,
+        handoff: null,
         updatedAt: now,
       };
 
