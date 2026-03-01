@@ -56,7 +56,7 @@ const writeExclusiveLetters = (letters: ExclusiveLetter[]) => {
 
 const BrowseSection: React.FC = () => {
   const { activeCommunity } = useCommunity();
-  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, setSelectedConversation, isUserBlocked, isBlockedByUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
+  const { users, currentUser, setSelectedUser, setCurrentView, arePhotosUnlocked, getUnreadCount, hasExpressedInterest, getConversation, getReceivedInterests, getSentInterests, setSelectedConversation, isUserBlocked, isBlockedByUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [exclusiveLetters, setExclusiveLetters] = useState<ExclusiveLetter[]>([]);
@@ -117,6 +117,40 @@ const BrowseSection: React.FC = () => {
     () => users.find((user) => user.id === exclusivePartnerId) || null,
     [users, exclusivePartnerId]
   );
+
+  const gameEligibleConversations = useMemo(() => {
+    const allConversations = [...getSentInterests(), ...getReceivedInterests()];
+    const unique = Array.from(new Map(allConversations.map((conversation) => [conversation.conversationId, conversation])).values());
+    return unique
+      .filter((conversation) => ['both_messaged', 'awaiting_consent', 'photos_unlocked'].includes(conversation.status))
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+  }, [getReceivedInterests, getSentInterests]);
+
+  const featuredGameConversation = useMemo(() => {
+    if (exclusivePartnerId) {
+      const partnerConversation = gameEligibleConversations.find((conversation) =>
+        conversation.fromUserId === exclusivePartnerId || conversation.toUserId === exclusivePartnerId
+      );
+      if (partnerConversation) return partnerConversation;
+    }
+    return gameEligibleConversations[0] ?? null;
+  }, [exclusivePartnerId, gameEligibleConversations]);
+
+  const featuredGamePartner = useMemo(() => {
+    if (!featuredGameConversation) return null;
+    const partnerId = featuredGameConversation.fromUserId === currentUser.id
+      ? featuredGameConversation.toUserId
+      : featuredGameConversation.fromUserId;
+    return users.find((user) => user.id === partnerId) ?? null;
+  }, [featuredGameConversation, currentUser.id, users]);
+
+  const launchRelationshipGames = () => {
+    if (!featuredGameConversation) return;
+    localStorage.setItem(`consent_choice_${currentUser.id}_${featuredGameConversation.conversationId}`, 'true');
+    localStorage.setItem(`congrats_shown_${currentUser.id}_${featuredGameConversation.conversationId}`, 'true');
+    setSelectedConversation(featuredGameConversation);
+    setCurrentView('conversation');
+  };
 
   useEffect(() => {
     const loadLetters = () => setExclusiveLetters(readExclusiveLetters());
@@ -340,6 +374,22 @@ const BrowseSection: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
+        {featuredGameConversation && featuredGamePartner && (
+          <div className="mb-6 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-5">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-sky-200">Relationship Room</p>
+            <h3 className="mt-1 text-lg font-semibold text-[#F6FFF2]">Couple Games Ready with {featuredGamePartner.name}</h3>
+            <p className="mt-1 text-sm text-sky-100">
+              Launch Shared Vibe, Truth or Dare, Temp Check, and Date Offer directly from here.
+            </p>
+            <button
+              onClick={launchRelationshipGames}
+              className="mt-4 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
+            >
+              Start Couple Games
+            </button>
+          </div>
+        )}
+
         {modeStatusMessage && (
           <div className="mb-6 rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 px-4 py-3 text-sm text-[#F6FFF2]">
             {modeStatusMessage}
