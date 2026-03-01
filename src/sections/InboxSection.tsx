@@ -40,6 +40,16 @@ const InboxSection: React.FC = () => {
   const uniqueConversations = Array.from(new Map(
     allInteractions.map(i => [i.conversationId, i])
   ).values());
+  const getOtherUserId = (interest: any) =>
+    interest.fromUserId === currentUser.id ? interest.toUserId : interest.fromUserId;
+  const getLatestMessage = (interest: any) =>
+    interest.messages.reduce((latest: any, message: any) => {
+      if (!latest) return message;
+      return message.timestamp > latest.timestamp ? message : latest;
+    }, null);
+  const hasUnreadIncoming = (interest: any) =>
+    interest.messages.some((message: any) => message.fromUserId !== currentUser.id && !message.read);
+
   const relationshipModeSnapshot = getRelationshipModeSnapshot(currentUser.id);
   const modeStatusMessage = relationshipModeSnapshot.mode === 'break'
     ? "You're now in Break Mode. You can exit anytime from Settings."
@@ -58,23 +68,35 @@ const InboxSection: React.FC = () => {
 
   console.log('InboxSection - uniqueConversations:', uniqueConversations);
 
-  const sentInterests = modeFilteredConversations.filter(i => i.fromUserId === currentUser.id);
-  const receivedInterests = modeFilteredConversations.filter(i => i.toUserId === currentUser.id);
+  const receivedInterests = modeFilteredConversations.filter((interest) => {
+    const latestMessage = getLatestMessage(interest);
+    if (hasUnreadIncoming(interest)) return true;
+    return latestMessage ? latestMessage.fromUserId !== currentUser.id : interest.toUserId === currentUser.id;
+  });
+  const sentInterests = modeFilteredConversations.filter((interest) => !receivedInterests.includes(interest));
+  const hasUnreadReceivedMessage = receivedInterests.some((interest) => hasUnreadIncoming(interest));
 
   console.log('InboxSection - sentInterests (filtered):', sentInterests);
   console.log('InboxSection - receivedInterests (filtered):', receivedInterests);
 
+  // If a new unread incoming message arrives while user is on "Sent", switch them to "Received".
+  useEffect(() => {
+    if (activeTab === 'sent' && hasUnreadReceivedMessage) {
+      setActiveTab('received');
+    }
+  }, [activeTab, hasUnreadReceivedMessage]);
+
   const displayedInterests = activeTab === 'received' ? receivedInterests : sentInterests;
 
   const getStatusBadge = (status: string, interest: any) => {
-    // Check if current user is the one who sent the initial message
-    const userSentIt = interest.fromUserId === currentUser.id;
+    const latestMessage = getLatestMessage(interest);
+    const latestFromCurrentUser = latestMessage?.fromUserId === currentUser.id;
 
     switch (status) {
       case 'pending_response':
         return {
-          label: userSentIt ? 'Waiting for response' : 'Respond',
-          color: userSentIt ? 'bg-amber-600 text-white' : 'bg-blue-600 text-white',
+          label: latestFromCurrentUser ? 'Waiting for response' : 'Respond',
+          color: latestFromCurrentUser ? 'bg-amber-600 text-white' : 'bg-blue-600 text-white',
           icon: MessageCircle,
         };
       case 'both_messaged':
@@ -113,13 +135,7 @@ const InboxSection: React.FC = () => {
     return message.length > 80 ? `${message.substring(0, 80)}...` : message;
   };
 
-  const getOtherUser = (interest: any) => {
-    if (activeTab === 'received') {
-      return users.find(u => u.id === interest.fromUserId);
-    } else {
-      return users.find(u => u.id === interest.toUserId);
-    }
-  };
+  const getOtherUser = (interest: any) => users.find(u => u.id === getOtherUserId(interest));
 
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
@@ -258,16 +274,13 @@ const InboxSection: React.FC = () => {
 
               const badge = getStatusBadge(interest.status, interest);
               const BadgeIcon = badge.icon;
-              const firstMessage = interest.messages[0];
+              const latestMessage = getLatestMessage(interest);
 
               return (
                 <button
                   key={interest.conversationId}
                   onClick={() => {
-                    const userId = activeTab === 'received'
-                      ? interest.fromUserId
-                      : interest.toUserId;
-                    handleInterestClick(userId);
+                    handleInterestClick(getOtherUserId(interest));
                   }}
                   className="w-full text-left bg-[#111611] rounded-2xl border border-[#1A211A] p-6 hover:border-[#D9FF3D]/50 hover:bg-[#1A211A] transition-all"
                 >
@@ -308,7 +321,7 @@ const InboxSection: React.FC = () => {
                       </p>
 
                       <p className="text-[#F6FFF2] text-sm line-clamp-2">
-                        {firstMessage ? getMessagePreview(firstMessage.message) : 'No messages'}
+                        {latestMessage ? getMessagePreview(latestMessage.message) : 'No messages'}
                       </p>
                     </div>
 
