@@ -175,6 +175,37 @@ export interface ConversationMessage {
   read?: boolean; // Whether the message has been read by the recipient
 }
 
+export type ConciergeNudgeType = 'talk-balance' | 'off-platform-early';
+
+export interface ConciergeNudge {
+  id: string;
+  type: ConciergeNudgeType;
+  message: string;
+  createdAt: number;
+  triggeredByUserId: string;
+  triggeredByMessageId: string;
+  messageCountAtTrigger: number;
+  forUserIds: string[];
+}
+
+export interface ConciergeSnapshot {
+  id: string;
+  userId: string;
+  conversationId: string;
+  createdAt: number;
+  messageCount: number;
+  headline: string;
+  highlights: string[];
+  caution?: string;
+  source?: 'heuristic' | 'ai';
+  aiModel?: string;
+}
+
+export interface ConciergeState {
+  nudges: ConciergeNudge[];
+  snapshots: ConciergeSnapshot[];
+}
+
 export interface PhotoConsent {
   userId: string;
   hasConsented: boolean;
@@ -192,6 +223,7 @@ export interface UserInteraction {
   };
   photosUnlocked: boolean;
   status: 'pending_response' | 'both_messaged' | 'awaiting_consent' | 'photos_unlocked';
+  concierge?: ConciergeState;
   createdAt: number;
   updatedAt: number;
 }

@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Clock,
   CheckCircle,
+  ShieldAlert,
   Eye,
   X,
   ChevronLeft,
@@ -17,14 +18,18 @@ import {
 } from 'lucide-react';
 import type { Report, ReportStatus, ReportReason, ReportSeverity } from '@/types';
 
+type ReportSourceFilter = 'all' | 'member-reported' | 'concierge-system';
+const SYSTEM_CONCIERGE_REPORTER_ID = 'system-concierge';
+
 const AdminReportsSection: React.FC = () => {
   const { reports = [], reportStats, updateReportStatus } = useAdmin();
-  const { users, suspendUser, removeUser, addNotification } = useApp();
+  const { users, interactions, suspendUser, removeUser, addNotification } = useApp();
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'all'>('all');
   const [filterReason, setFilterReason] = useState<ReportReason | 'all'>('all');
   const [filterSeverity, setFilterSeverity] = useState<ReportSeverity | 'all'>('all');
+  const [filterSource, setFilterSource] = useState<ReportSourceFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -38,6 +43,8 @@ const AdminReportsSection: React.FC = () => {
       if (filterStatus !== 'all' && report.status !== filterStatus) return false;
       if (filterReason !== 'all' && report.reason !== filterReason) return false;
       if (filterSeverity !== 'all' && report.severity !== filterSeverity) return false;
+      if (filterSource === 'member-reported' && report.reporterId === SYSTEM_CONCIERGE_REPORTER_ID) return false;
+      if (filterSource === 'concierge-system' && report.reporterId !== SYSTEM_CONCIERGE_REPORTER_ID) return false;
 
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
@@ -50,7 +57,38 @@ const AdminReportsSection: React.FC = () => {
 
       return true;
     });
-  }, [reports, filterStatus, filterReason, filterSeverity, searchTerm, users]);
+  }, [reports, filterStatus, filterReason, filterSeverity, filterSource, searchTerm, users]);
+
+  const conciergeSignals = useMemo(() => {
+    const allInteractions = [
+      ...Object.values(interactions.sentInterests),
+      ...Object.values(interactions.receivedInterests),
+    ];
+    const uniqueConversations = Array.from(
+      new Map(allInteractions.map((interaction) => [interaction.conversationId, interaction])).values()
+    );
+
+    return uniqueConversations
+      .flatMap((interaction) =>
+        (interaction.concierge?.nudges ?? []).map((nudge) => {
+          const participantNames = [interaction.fromUserId, interaction.toUserId]
+            .map((userId) => users.find((user) => user.id === userId)?.name ?? 'Unknown');
+          const severity = nudge.type === 'off-platform-early' ? 'high' : 'medium';
+
+          return {
+            id: nudge.id,
+            conversationId: interaction.conversationId,
+            type: nudge.type,
+            severity,
+            message: nudge.message,
+            participants: participantNames,
+            createdAt: nudge.createdAt,
+            messageCountAtTrigger: nudge.messageCountAtTrigger,
+          };
+        })
+      )
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }, [interactions, users]);
 
   // Pagination
   const paginatedReports = useMemo(() => {
@@ -153,6 +191,60 @@ const AdminReportsSection: React.FC = () => {
           </Card>
         </div>
 
+        <Card className="bg-[#111611] border-[#1A211A] p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-display text-xl text-[#F6FFF2]">Concierge Risk Signals</h2>
+              <p className="text-sm text-[#A9B5AA] mt-1">
+                Automated room-health alerts from private relationship rooms
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-[#F6FFF2]">
+              <ShieldAlert className="w-5 h-5 text-amber-400" />
+              <span className="font-display text-2xl">{conciergeSignals.length}</span>
+            </div>
+          </div>
+
+          {conciergeSignals.length === 0 ? (
+            <p className="text-sm text-[#A9B5AA]">No concierge risk signals yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {conciergeSignals.slice(0, 10).map((signal) => (
+                <div
+                  key={signal.id}
+                  className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/70 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-[#F6FFF2] font-medium">
+                        {signal.type === 'off-platform-early'
+                          ? 'Early off-platform attempt'
+                          : 'Conversation balance warning'}
+                      </p>
+                      <p className="text-xs text-[#A9B5AA] mt-1">
+                        {signal.participants.join(' & ')} • {new Date(signal.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-wider ${
+                        signal.severity === 'high'
+                          ? 'border-red-500/40 bg-red-500/10 text-red-300'
+                          : 'border-yellow-500/40 bg-yellow-500/10 text-yellow-300'
+                      }`}
+                    >
+                      {signal.severity}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#A9B5AA] mt-2">{signal.message}</p>
+                  <p className="text-xs text-[#6E7A6F] mt-2">
+                    Conversation: {signal.conversationId} • Triggered at message #{signal.messageCountAtTrigger}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
         {/* Filter Bar */}
         <Card className="bg-[#111611] border-[#1A211A] p-6 mb-8">
           <div className="space-y-4">
@@ -170,7 +262,23 @@ const AdminReportsSection: React.FC = () => {
               />
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm text-[#A9B5AA] mb-2">Report Source</label>
+                <select
+                  value={filterSource}
+                  onChange={(e) => {
+                    setFilterSource(e.target.value as ReportSourceFilter);
+                    setCurrentPage(0);
+                  }}
+                  className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                >
+                  <option value="all">All Sources</option>
+                  <option value="member-reported">Member Reported</option>
+                  <option value="concierge-system">Concierge System</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm text-[#A9B5AA] mb-2">Status</label>
                 <select

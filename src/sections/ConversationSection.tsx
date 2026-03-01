@@ -108,6 +108,14 @@ const ConversationSection: React.FC = () => {
   // Get the first (initial) message
   const initialMessage = selectedConversation.messages[0];
   const messageRestrictionReason = getMessageBlockReason(currentUser.id, otherUserId);
+  const visibleConciergeNudges = (selectedConversation.concierge?.nudges ?? [])
+    .filter((nudge) => nudge.forUserIds.includes(currentUser.id))
+    .sort((a, b) => a.createdAt - b.createdAt);
+  const latestConciergeNudge = visibleConciergeNudges[visibleConciergeNudges.length - 1];
+  const privateSnapshots = (selectedConversation.concierge?.snapshots ?? [])
+    .filter((snapshot) => snapshot.userId === currentUser.id)
+    .sort((a, b) => a.createdAt - b.createdAt);
+  const latestPrivateSnapshot = privateSnapshots[privateSnapshots.length - 1];
 
   // Show prompt if showConsentPrompt is true AND they haven't made a choice
   // (Clicking Photo Consent resets hasUserMadeChoice to false, which reopens the prompt)
@@ -243,6 +251,48 @@ const ConversationSection: React.FC = () => {
             );
           })}
         </div>
+
+        {latestConciergeNudge && (
+          <div className="mb-6 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 py-3">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-sky-200">
+              Neutral Host Check-in
+            </p>
+            <p className="mt-1 text-sm text-sky-100">{latestConciergeNudge.message}</p>
+          </div>
+        )}
+
+        {latestPrivateSnapshot && (
+          <div className="mb-8 rounded-2xl border border-[#1A211A] bg-[#111611] p-5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-[#D9FF3D]">
+                Private Vibe-Check
+              </p>
+              {latestPrivateSnapshot.source === 'ai' && (
+                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[10px] uppercase tracking-wider text-emerald-300">
+                  AI Enhanced
+                </span>
+              )}
+            </div>
+            <p className="mt-2 text-sm text-[#F6FFF2]">{latestPrivateSnapshot.headline}</p>
+            <ul className="mt-3 space-y-2">
+              {latestPrivateSnapshot.highlights.map((highlight, index) => (
+                <li
+                  key={`${latestPrivateSnapshot.id}_${index}`}
+                  className="flex gap-2 text-sm text-[#A9B5AA]"
+                >
+                  <span className="text-[#D9FF3D]">-</span>
+                  <span>{highlight}</span>
+                </li>
+              ))}
+            </ul>
+            {latestPrivateSnapshot.caution && (
+              <p className="mt-3 text-xs text-amber-300">{latestPrivateSnapshot.caution}</p>
+            )}
+            <p className="mt-3 text-xs text-[#6E7A6F]">
+              Generated after {latestPrivateSnapshot.messageCount} messages in this room.
+            </p>
+          </div>
+        )}
 
         {messageRestrictionReason && (
           <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">

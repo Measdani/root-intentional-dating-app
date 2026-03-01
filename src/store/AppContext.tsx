@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import type { AppView, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory, AdminNotification } from '@/types';
+import type { AppView, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory, AdminNotification, ConciergeSnapshot, ConciergeNudge } from '@/types';
 import { sampleUsers, currentUser as defaultUser } from '@/data/users';
 import {
   applyRelationshipModeToUser,
@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { reportService } from '@/services/reportService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
+import { evaluateConciergeForInteraction } from '@/services/conciergeService';
+import { enrichConciergeSnapshotWithAI } from '@/services/conciergeAiService';
 
 interface AppState {
   currentView: AppView;
@@ -96,6 +98,78 @@ const upsertUserById = (existingUsers: User[], user: User): User[] => {
 
 const mergeUsersById = (existingUsers: User[], usersToMerge: User[]): User[] =>
   usersToMerge.reduce((nextUsers, user) => upsertUserById(nextUsers, user), existingUsers);
+
+const CONCIERGE_AUTO_REPORTS_KEY = 'rooted_concierge_auto_reports';
+const SYSTEM_CONCIERGE_REPORTER_ID = 'system-concierge';
+
+const buildSystemReportId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.random() * 16 | 0;
+    const value = char === 'x' ? random : ((random & 0x3) | 0x8);
+    return value.toString(16);
+  });
+};
+
+const readConciergeAutoReportRegistry = (): Record<string, string> => {
+  try {
+    const raw = localStorage.getItem(CONCIERGE_AUTO_REPORTS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+    return parsed as Record<string, string>;
+  } catch (error) {
+    console.warn('Failed to read concierge auto-report registry:', error);
+    return {};
+  }
+};
+
+const writeConciergeAutoReportRegistry = (registry: Record<string, string>) => {
+  try {
+    localStorage.setItem(CONCIERGE_AUTO_REPORTS_KEY, JSON.stringify(registry));
+  } catch (error) {
+    console.warn('Failed to persist concierge auto-report registry:', error);
+  }
+};
+
+const mergeSnapshotsIntoInteraction = (
+  interaction: UserInteraction,
+  snapshotUpdates: ConciergeSnapshot[]
+): UserInteraction => {
+  if (snapshotUpdates.length === 0) return interaction;
+
+  const updatesById = new Map(snapshotUpdates.map((snapshot) => [snapshot.id, snapshot]));
+  const existingSnapshots = interaction.concierge?.snapshots ?? [];
+  const mergedSnapshots = existingSnapshots.map((snapshot) => updatesById.get(snapshot.id) ?? snapshot);
+
+  return {
+    ...interaction,
+    concierge: {
+      nudges: interaction.concierge?.nudges ?? [],
+      snapshots: mergedSnapshots,
+    },
+    updatedAt: Date.now(),
+  };
+};
+
+const updateInteractionStateByConversationId = (
+  state: InteractionState,
+  conversationId: string,
+  updater: (interaction: UserInteraction) => UserInteraction
+): InteractionState => {
+  const updateBucket = (bucket: Record<string, UserInteraction>) =>
+    Object.entries(bucket).reduce((acc, [key, interaction]) => {
+      acc[key] = interaction.conversationId === conversationId ? updater(interaction) : interaction;
+      return acc;
+    }, {} as Record<string, UserInteraction>);
+
+  return {
+    sentInterests: updateBucket(state.sentInterests),
+    receivedInterests: updateBucket(state.receivedInterests),
+  };
+};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentView, setCurrentViewState] = useState<AppView>('landing');
@@ -576,6 +650,126 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAssessmentResult(null);
   }, []);
 
+  const applyAiConciergeSnapshots = useCallback((conversationId: string, snapshots: ConciergeSnapshot[]) => {
+    if (snapshots.length === 0) return;
+
+    setInteractions((prev) =>
+      updateInteractionStateByConversationId(prev, conversationId, (interaction) =>
+        mergeSnapshotsIntoInteraction(interaction, snapshots)
+      )
+    );
+
+    setSelectedConversation((prev) => {
+      if (!prev || prev.conversationId !== conversationId) return prev;
+      return mergeSnapshotsIntoInteraction(prev, snapshots);
+    });
+  }, []);
+
+  const maybeEnrichSnapshotsWithAI = useCallback(async (
+    interaction: UserInteraction,
+    snapshots: ConciergeSnapshot[]
+  ) => {
+    if (snapshots.length === 0) return;
+
+    const enrichedSnapshots = await Promise.all(
+      snapshots.map((snapshot) => enrichConciergeSnapshotWithAI(interaction, snapshot))
+    );
+
+    const successfulUpdates = enrichedSnapshots.filter(
+      (snapshot): snapshot is ConciergeSnapshot => Boolean(snapshot)
+    );
+
+    if (successfulUpdates.length === 0) return;
+    applyAiConciergeSnapshots(interaction.conversationId, successfulUpdates);
+  }, [applyAiConciergeSnapshots]);
+
+  const publishConciergeAutoReport = useCallback(async (
+    report: Report,
+    signature: string
+  ) => {
+    const registry = readConciergeAutoReportRegistry();
+    if (registry[signature]) return;
+
+    try {
+      const existingReports = JSON.parse(localStorage.getItem('rooted-admin-reports') || '[]');
+      const nextReports = Array.isArray(existingReports) ? [...existingReports, report] : [report];
+      localStorage.setItem('rooted-admin-reports', JSON.stringify(nextReports));
+      registry[signature] = report.id;
+      writeConciergeAutoReportRegistry(registry);
+      window.dispatchEvent(new CustomEvent('new-report', { detail: report }));
+    } catch (error) {
+      console.warn('Failed to persist concierge auto report locally:', error);
+    }
+
+    reportService.createReport(report).catch((error) => {
+      console.warn('Failed to persist concierge auto report to Supabase:', error);
+    });
+  }, []);
+
+  const maybeCreateConciergeAutoReports = useCallback(async (
+    interaction: UserInteraction,
+    newNudges: ConciergeNudge[]
+  ) => {
+    if (newNudges.length === 0) return;
+
+    const now = Date.now();
+    const reportsToPublish: Array<{ report: Report; signature: string }> = [];
+
+    newNudges
+      .filter((nudge) => nudge.type === 'off-platform-early')
+      .forEach((nudge) => {
+        const signature = `off-platform-early:${interaction.conversationId}:${nudge.triggeredByUserId}`;
+        reportsToPublish.push({
+          signature,
+          report: {
+            id: buildSystemReportId(),
+            reporterId: SYSTEM_CONCIERGE_REPORTER_ID,
+            reportedUserId: nudge.triggeredByUserId,
+            reason: 'spam',
+            details:
+              `Automated concierge safety monitor detected an early off-platform request in conversation ${interaction.conversationId}. ` +
+              `The signal was triggered at message #${nudge.messageCountAtTrigger}. Please review context for potential grooming, scam, or coercive contact behavior.`,
+            conversationId: interaction.conversationId,
+            status: 'pending',
+            severity: 'high',
+            createdAt: now,
+            updatedAt: now,
+            adminNotes: 'System-generated by Concierge Monitor: off-platform-early risk.',
+          },
+        });
+      });
+
+    const talkBalanceNudges = (interaction.concierge?.nudges ?? []).filter(
+      (nudge) => nudge.type === 'talk-balance'
+    );
+    if (talkBalanceNudges.length >= 3) {
+      const latestTalkBalance = talkBalanceNudges[talkBalanceNudges.length - 1];
+      const signature = `talk-balance-repeated:${interaction.conversationId}:3`;
+      reportsToPublish.push({
+        signature,
+        report: {
+          id: buildSystemReportId(),
+          reporterId: SYSTEM_CONCIERGE_REPORTER_ID,
+          reportedUserId: latestTalkBalance.triggeredByUserId,
+          reason: 'other',
+          details:
+            `Automated concierge monitor detected repeated conversation imbalance in conversation ${interaction.conversationId}. ` +
+            `A talk-balance signal has triggered ${talkBalanceNudges.length} times, indicating one participant may be dominating the room and reducing reciprocity.`,
+          conversationId: interaction.conversationId,
+          status: 'pending',
+          severity: 'medium',
+          createdAt: now,
+          updatedAt: now,
+          adminNotes: 'System-generated by Concierge Monitor: repeated talk-balance risk.',
+        },
+      });
+    }
+
+    for (const candidate of reportsToPublish) {
+      await publishConciergeAutoReport(candidate.report, candidate.signature);
+    }
+  }, [publishConciergeAutoReport]);
+
   // NOTE: Auto-response and auto-consent features removed
   // All messaging and consent decisions are now controlled by users only
 
@@ -619,6 +813,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
       photosUnlocked: false,
       status: 'pending_response',
+      concierge: {
+        nudges: [],
+        snapshots: [],
+      },
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -654,6 +852,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     let didSend = false;
+    let updatedConversation: UserInteraction | null = null;
+    let generatedSnapshots: ConciergeSnapshot[] = [];
+    let generatedNudges: ConciergeNudge[] = [];
     setInteractions(prev => {
       // Find the conversation with this user (could be keyed by either user ID)
       let baseInteraction = null;
@@ -711,11 +912,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const userBHasSufficient = userBMessages.some(m => m.message.length >= 120);
       const bothValid = userAHasSufficient && userBHasSufficient;
 
-      const updatedInteraction: UserInteraction = {
+      const interactionWithMessage: UserInteraction = {
         ...baseInteraction,
         messages: allMessages,
         status: bothValid ? 'both_messaged' : 'pending_response',
         updatedAt: Date.now(),
+      };
+
+      const conciergeResult = evaluateConciergeForInteraction(interactionWithMessage);
+      const existingNudges = baseInteraction.concierge?.nudges ?? [];
+      const existingSnapshots = baseInteraction.concierge?.snapshots ?? [];
+      generatedSnapshots = conciergeResult.snapshots;
+      generatedNudges = conciergeResult.nudges;
+
+      const updatedInteraction: UserInteraction = {
+        ...interactionWithMessage,
+        concierge: {
+          nudges: [...existingNudges, ...conciergeResult.nudges],
+          snapshots: [...existingSnapshots, ...conciergeResult.snapshots],
+        },
       };
 
       // Start with existing interactions
@@ -749,6 +964,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
 
       didSend = true;
+      updatedConversation = updatedInteraction;
 
       return {
         ...prev,
@@ -762,9 +978,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
 
+    if (updatedConversation) {
+      setSelectedConversation(prev => {
+        if (!prev || prev.conversationId !== updatedConversation?.conversationId) return prev;
+        return updatedConversation;
+      });
+
+      if (generatedSnapshots.length > 0) {
+        void maybeEnrichSnapshotsWithAI(updatedConversation, generatedSnapshots);
+      }
+      if (generatedNudges.length > 0) {
+        void maybeCreateConciergeAutoReports(updatedConversation, generatedNudges);
+      }
+    }
+
     toast.success('Message sent!');
     return true;
-  }, [currentUser.id]);
+  }, [currentUser.id, maybeEnrichSnapshotsWithAI, maybeCreateConciergeAutoReports]);
 
   const markMessagesAsRead = useCallback((conversationId: string) => {
     setInteractions(prev => {
