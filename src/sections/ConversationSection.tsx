@@ -5,9 +5,10 @@ import { ArrowLeft, MessageCircle, Lock, Flag, Image, Shield } from 'lucide-reac
 import PhotoConsentPrompt from '@/components/PhotoConsentPrompt';
 import ResponseModal from '@/components/ResponseModal';
 import ReportUserModal from '@/components/ReportUserModal';
+import RelationshipMilestonesPanel from '@/components/RelationshipMilestonesPanel';
 
 const ConversationSection: React.FC = () => {
-  const { selectedConversation, setCurrentView, respondToInterest, markMessagesAsRead, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked } = useApp();
+  const { selectedConversation, setCurrentView, respondToInterest, markMessagesAsRead, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked, applyMilestoneAction } = useApp();
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
@@ -116,6 +117,10 @@ const ConversationSection: React.FC = () => {
     .filter((snapshot) => snapshot.userId === currentUser.id)
     .sort((a, b) => a.createdAt - b.createdAt);
   const latestPrivateSnapshot = privateSnapshots[privateSnapshots.length - 1];
+  const canShowMilestones =
+    (selectedConversation.status === 'both_messaged' && hasUserMadeChoice) ||
+    (selectedConversation.status === 'awaiting_consent' && hasUserMadeChoice) ||
+    selectedConversation.status === 'photos_unlocked';
 
   // Show prompt if showConsentPrompt is true AND they haven't made a choice
   // (Clicking Photo Consent resets hasUserMadeChoice to false, which reopens the prompt)
@@ -351,6 +356,16 @@ const ConversationSection: React.FC = () => {
               Got it
             </button>
           </div>
+        )}
+
+        {canShowMilestones && (
+          <RelationshipMilestonesPanel
+            conversation={selectedConversation}
+            currentUser={currentUser}
+            otherUser={otherUser}
+            onApplyAction={applyMilestoneAction}
+            onOpenResources={() => setCurrentView('growth-mode')}
+          />
         )}
 
         {/* Action Button - Only show Respond if current user didn't initiate */}

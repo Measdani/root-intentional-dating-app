@@ -13,6 +13,12 @@ import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
 import { evaluateConciergeForInteraction } from '@/services/conciergeService';
 import { enrichConciergeSnapshotWithAI } from '@/services/conciergeAiService';
+import {
+  applyMilestoneAction as reduceMilestoneAction,
+  createInitialMilestones,
+  normalizeMilestones,
+  type MilestoneAction,
+} from '@/services/relationshipMilestoneService';
 
 interface AppState {
   currentView: AppView;
@@ -73,6 +79,7 @@ interface AppContextType extends AppState {
   addNotification: (type: 'warning' | 'suspension' | 'removal', title: string, message: string, userId: string) => void;
   reloadNotifications: () => void;
   reloadInteractions: () => void;
+  applyMilestoneAction: (conversationId: string, action: MilestoneAction) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -817,6 +824,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         nudges: [],
         snapshots: [],
       },
+      milestones: createInitialMilestones(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -916,6 +924,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...baseInteraction,
         messages: allMessages,
         status: bothValid ? 'both_messaged' : 'pending_response',
+        milestones: normalizeMilestones(baseInteraction.milestones),
         updatedAt: Date.now(),
       };
 
@@ -1190,6 +1199,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     });
   }, [currentUser.id]);
+
+  const applyMilestoneAction = useCallback((conversationId: string, action: MilestoneAction) => {
+    setInteractions(prev => {
+      const updateInteraction = (interaction: UserInteraction): UserInteraction => {
+        if (interaction.conversationId !== conversationId) return interaction;
+
+        return {
+          ...interaction,
+          milestones: reduceMilestoneAction(interaction, action),
+          updatedAt: Date.now(),
+        };
+      };
+
+      const updatedSent = Object.fromEntries(
+        Object.entries(prev.sentInterests).map(([k, v]) => [k, updateInteraction(v)])
+      );
+      const updatedReceived = Object.fromEntries(
+        Object.entries(prev.receivedInterests).map(([k, v]) => [k, updateInteraction(v)])
+      );
+
+      return {
+        sentInterests: updatedSent,
+        receivedInterests: updatedReceived,
+      };
+    });
+
+    setSelectedConversation(prev => {
+      if (!prev || prev.conversationId !== conversationId) return prev;
+      return {
+        ...prev,
+        milestones: reduceMilestoneAction(prev, action),
+        updatedAt: Date.now(),
+      };
+    });
+  }, []);
 
   const getConversation = useCallback((userId: string): UserInteraction | null => {
     // First check direct keys
@@ -1664,6 +1708,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification,
     reloadNotifications,
     reloadInteractions,
+    applyMilestoneAction,
   };
 
   return (

@@ -206,6 +206,136 @@ export interface ConciergeState {
   snapshots: ConciergeSnapshot[];
 }
 
+export type MilestoneStage =
+  | 'shared-vibe'
+  | 'truth-or-dare'
+  | 'temp-check'
+  | 'bridge'
+  | 'final-check'
+  | 'date-offer'
+  | 'resource-path';
+
+export type TruthDareType = 'truth' | 'dare';
+
+export interface SharedVibeState {
+  prompt: string;
+  catalog: string[];
+  picksByUser: Record<string, string[]>;
+  sharedItems: string[];
+  summary?: string;
+  unlockedAt?: number;
+}
+
+export interface TruthDarePrompt {
+  id: string;
+  type: TruthDareType;
+  level: 1 | 2 | 3;
+  text: string;
+}
+
+export interface TruthDareResponse {
+  id: string;
+  promptId: string;
+  type: TruthDareType;
+  level: 1 | 2 | 3;
+  userId: string;
+  response: string;
+  completedAt: number;
+}
+
+export interface TruthDareState {
+  prompts: TruthDarePrompt[];
+  responses: TruthDareResponse[];
+  unlockedAt?: number;
+}
+
+export interface TempCheckAnswer {
+  userId: string;
+  feelsHeard: number;
+  goalsAligned: number;
+  readiness: number;
+  submittedAt: number;
+}
+
+export type TempCheckOutcome = 'pending' | 'aligned' | 'mismatch';
+
+export interface TempCheckState {
+  answers: TempCheckAnswer[];
+  outcome: TempCheckOutcome;
+  suggestedFocus?: 'communication' | 'timing' | 'goals';
+  completedAt?: number;
+}
+
+export interface MirrorState {
+  responsesByUser: Record<string, string>;
+  revealed: boolean;
+}
+
+export interface ValueDeepDiveState {
+  options: string[];
+  picksByUser: Record<string, string[]>;
+  overlap: string[];
+}
+
+export interface RhythmRiskState {
+  cautiousUserId?: string;
+  eagerUserId?: string;
+  cautiousProfile?: {
+    idealPace: number;
+    worries: string;
+    safestEnvironment: string;
+    submittedAt: number;
+  };
+  eagerProfile?: {
+    connectionPull: string;
+    fearOfWaiting: string;
+    lowRiskMeeting: string;
+    submittedAt: number;
+  };
+  bridgeByUser: Record<string, { sweetSpot: number; compromise: string; submittedAt: number }>;
+  safetyPlan?: string;
+}
+
+export interface FinalCheckState {
+  answers: TempCheckAnswer[];
+  outcome: TempCheckOutcome;
+  completedAt?: number;
+}
+
+export type DateOfferResponse = 'pending' | 'accepted' | 'declined';
+export type DateOfferStatus = 'not-started' | 'proposed' | 'confirmed' | 'declined';
+
+export interface DateOfferProposal {
+  title: string;
+  location: string;
+  dateTime: string;
+  durationMinutes: number;
+  safetyNotes: string;
+  proposedAt: number;
+}
+
+export interface DateOfferState {
+  status: DateOfferStatus;
+  proposal?: DateOfferProposal;
+  proposedByUserId?: string;
+  responsesByUser: Record<string, DateOfferResponse>;
+  confirmedAt?: number;
+  declinedByUserId?: string;
+}
+
+export interface RelationshipMilestones {
+  stage: MilestoneStage;
+  sharedVibe: SharedVibeState;
+  truthOrDare: TruthDareState;
+  tempCheck: TempCheckState;
+  mirror: MirrorState;
+  valueDeepDive: ValueDeepDiveState;
+  rhythmRisk: RhythmRiskState;
+  finalCheck: FinalCheckState;
+  dateOffer: DateOfferState;
+  updatedAt: number;
+}
+
 export interface PhotoConsent {
   userId: string;
   hasConsented: boolean;
@@ -224,6 +354,7 @@ export interface UserInteraction {
   photosUnlocked: boolean;
   status: 'pending_response' | 'both_messaged' | 'awaiting_consent' | 'photos_unlocked';
   concierge?: ConciergeState;
+  milestones?: RelationshipMilestones;
   createdAt: number;
   updatedAt: number;
 }
