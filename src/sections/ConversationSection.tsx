@@ -117,7 +117,9 @@ const ConversationSection: React.FC = () => {
     .filter((snapshot) => snapshot.userId === currentUser.id)
     .sort((a, b) => a.createdAt - b.createdAt);
   const latestPrivateSnapshot = privateSnapshots[privateSnapshots.length - 1];
+  const isExclusiveMode = currentUser.mode === 'exclusive';
   const canShowMilestones =
+    isExclusiveMode ||
     (selectedConversation.status === 'both_messaged' && hasUserMadeChoice) ||
     (selectedConversation.status === 'awaiting_consent' && hasUserMadeChoice) ||
     selectedConversation.status === 'photos_unlocked';

@@ -118,34 +118,44 @@ const BrowseSection: React.FC = () => {
     [users, exclusivePartnerId]
   );
 
-  const gameEligibleConversations = useMemo(() => {
+  const allKnownConversations = useMemo(() => {
     const allConversations = [...getSentInterests(), ...getReceivedInterests()];
-    const unique = Array.from(new Map(allConversations.map((conversation) => [conversation.conversationId, conversation])).values());
-    return unique
-      .filter((conversation) => ['both_messaged', 'awaiting_consent', 'photos_unlocked'].includes(conversation.status))
+    return Array.from(new Map(allConversations.map((conversation) => [conversation.conversationId, conversation])).values())
       .sort((a, b) => b.updatedAt - a.updatedAt);
   }, [getReceivedInterests, getSentInterests]);
 
+  const milestoneReadyConversations = useMemo(
+    () => allKnownConversations.filter((conversation) =>
+      ['both_messaged', 'awaiting_consent', 'photos_unlocked'].includes(conversation.status)
+    ),
+    [allKnownConversations]
+  );
+
   const featuredGameConversation = useMemo(() => {
     if (exclusivePartnerId) {
-      const partnerConversation = gameEligibleConversations.find((conversation) =>
+      const partnerConversation = allKnownConversations.find((conversation) =>
         conversation.fromUserId === exclusivePartnerId || conversation.toUserId === exclusivePartnerId
       );
       if (partnerConversation) return partnerConversation;
     }
-    return gameEligibleConversations[0] ?? null;
-  }, [exclusivePartnerId, gameEligibleConversations]);
+    return milestoneReadyConversations[0] ?? null;
+  }, [exclusivePartnerId, allKnownConversations, milestoneReadyConversations]);
 
   const featuredGamePartner = useMemo(() => {
-    if (!featuredGameConversation) return null;
-    const partnerId = featuredGameConversation.fromUserId === currentUser.id
-      ? featuredGameConversation.toUserId
-      : featuredGameConversation.fromUserId;
-    return users.find((user) => user.id === partnerId) ?? null;
-  }, [featuredGameConversation, currentUser.id, users]);
+    if (featuredGameConversation) {
+      const partnerId = featuredGameConversation.fromUserId === currentUser.id
+        ? featuredGameConversation.toUserId
+        : featuredGameConversation.fromUserId;
+      return users.find((user) => user.id === partnerId) ?? null;
+    }
+    return exclusivePartner ?? null;
+  }, [featuredGameConversation, currentUser.id, users, exclusivePartner]);
 
   const launchRelationshipGames = () => {
-    if (!featuredGameConversation) return;
+    if (!featuredGameConversation) {
+      setCurrentView('inbox');
+      return;
+    }
     localStorage.setItem(`consent_choice_${currentUser.id}_${featuredGameConversation.conversationId}`, 'true');
     localStorage.setItem(`congrats_shown_${currentUser.id}_${featuredGameConversation.conversationId}`, 'true');
     setSelectedConversation(featuredGameConversation);
@@ -374,18 +384,20 @@ const BrowseSection: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
-        {featuredGameConversation && featuredGamePartner && (
+        {featuredGamePartner && (
           <div className="mb-6 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-5">
             <p className="text-[11px] font-medium uppercase tracking-wider text-sky-200">Relationship Room</p>
             <h3 className="mt-1 text-lg font-semibold text-[#F6FFF2]">Couple Games Ready with {featuredGamePartner.name}</h3>
             <p className="mt-1 text-sm text-sky-100">
-              Launch Shared Vibe, Truth or Dare, Temp Check, and Date Offer directly from here.
+              {featuredGameConversation
+                ? 'Launch Shared Vibe, Truth or Dare, Temp Check, and Date Offer directly from here.'
+                : 'Open your couple thread first, then the games will start immediately.'}
             </p>
             <button
               onClick={launchRelationshipGames}
               className="mt-4 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
             >
-              Start Couple Games
+              {featuredGameConversation ? 'Start Couple Games' : 'Open Couple Thread'}
             </button>
           </div>
         )}
