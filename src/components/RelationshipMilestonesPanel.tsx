@@ -66,6 +66,8 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
     const byOther = milestones.truthOrDare.responses.filter((item) => item.userId === otherUser.id);
     return { byCurrent, byOther };
   }, [milestones.truthOrDare.responses, currentUser.id, otherUser.id]);
+  const myTruthDareResponseCount = truthDareResponsesByUser.byCurrent.length;
+  const myTruthResponseCount = truthDareResponsesByUser.byCurrent.filter((item) => item.type === 'truth').length;
 
   const truthOrDareComplete = useMemo(() => {
     return participants.every((userId) => {
@@ -272,11 +274,32 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
     'date-offer': 'Date Offer',
     'resource-path': 'Guided Resources',
   };
-  const activeHandoff = milestones.handoff && milestones.handoff.fromStage === milestones.stage
+  const isCurrentUserReadyForHandoff = milestones.stage === 'shared-vibe'
+    ? myPicks.length >= 3
+    : milestones.stage === 'truth-or-dare'
+      ? myTruthDareResponseCount >= 2 && myTruthResponseCount >= 1
+      : true;
+  const stageHandoff = milestones.handoff && milestones.handoff.fromStage === milestones.stage
     ? milestones.handoff
     : null;
-  const myHandoffChoice = activeHandoff?.choicesByUser[currentUser.id];
-  const otherHandoffChoice = activeHandoff?.choicesByUser[otherUser.id];
+  const fallbackHandoff = !stageHandoff && isCurrentUserReadyForHandoff && milestones.stage === 'shared-vibe'
+    ? {
+        fromStage: 'shared-vibe' as const,
+        toStage: 'truth-or-dare' as const,
+        unlockedAt: milestones.updatedAt,
+        choicesByUser: {},
+      }
+    : !stageHandoff && isCurrentUserReadyForHandoff && milestones.stage === 'truth-or-dare'
+      ? {
+          fromStage: 'truth-or-dare' as const,
+          toStage: 'temp-check' as const,
+          unlockedAt: milestones.updatedAt,
+          choicesByUser: {},
+        }
+      : null;
+  const activeHandoff = isCurrentUserReadyForHandoff ? (stageHandoff ?? fallbackHandoff) : null;
+  const myHandoffChoice = stageHandoff?.choicesByUser[currentUser.id];
+  const otherHandoffChoice = stageHandoff?.choicesByUser[otherUser.id];
   const nextStageLabel = activeHandoff ? stageTitleMap[activeHandoff.toStage] ?? activeHandoff.toStage : '';
   const getStepClassName = (stepIndex: number, isCompleted: boolean) => {
     if (stepIndex === currentStepIndex) {

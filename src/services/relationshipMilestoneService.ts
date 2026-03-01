@@ -201,6 +201,16 @@ const evaluateSharedVibeUnlock = (
   users: [string, string]
 ): boolean => users.every((userId) => (picksByUser[userId] ?? []).length >= 3);
 
+const isSharedVibeCompleteForUser = (
+  picksByUser: Record<string, string[]>,
+  userId: string
+): boolean => (picksByUser[userId] ?? []).length >= 3;
+
+const hasAnySharedVibeComplete = (
+  picksByUser: Record<string, string[]>,
+  users: [string, string]
+): boolean => users.some((userId) => isSharedVibeCompleteForUser(picksByUser, userId));
+
 const buildSharedVibeSummary = (
   picksByUser: Record<string, string[]>,
   users: [string, string]
@@ -332,15 +342,66 @@ const getSharedItems = (picksByUser: Record<string, string[]>, users: [string, s
   return [...a].filter((item) => b.has(item));
 };
 
+const isTruthOrDareCompleteForUser = (
+  responses: TruthDareResponse[],
+  userId: string
+): boolean => {
+  const byUser = responses.filter((response) => response.userId === userId);
+  const truthCount = byUser.filter((response) => response.type === 'truth').length;
+  return byUser.length >= 2 && truthCount >= 1;
+};
+
+const hasAnyTruthOrDareComplete = (
+  responses: TruthDareResponse[],
+  users: [string, string]
+): boolean => users.some((userId) => isTruthOrDareCompleteForUser(responses, userId));
+
 const evaluateTruthOrDareUnlock = (
   responses: TruthDareResponse[],
   users: [string, string]
+): boolean => users.every((userId) => isTruthOrDareCompleteForUser(responses, userId));
+
+const getDefaultHandoffToStage = (stage: MilestoneStage): MilestoneStage | null => {
+  if (stage === 'shared-vibe') return 'truth-or-dare';
+  if (stage === 'truth-or-dare') return 'temp-check';
+  return null;
+};
+
+const canAdvanceFromHandoff = (
+  milestones: RelationshipMilestones,
+  fromStage: MilestoneStage,
+  users: [string, string]
 ): boolean => {
-  return users.every((userId) => {
-    const byUser = responses.filter((response) => response.userId === userId);
-    const truthCount = byUser.filter((response) => response.type === 'truth').length;
-    return byUser.length >= 2 && truthCount >= 1;
-  });
+  if (fromStage === 'shared-vibe') {
+    return evaluateSharedVibeUnlock(milestones.sharedVibe.picksByUser, users);
+  }
+  if (fromStage === 'truth-or-dare') {
+    return evaluateTruthOrDareUnlock(milestones.truthOrDare.responses, users);
+  }
+  return true;
+};
+
+const ensureHandoffForCurrentStage = (
+  milestones: RelationshipMilestones,
+  userId: string,
+  now: number
+): RelationshipMilestones => {
+  if (milestones.handoff && milestones.handoff.fromStage === milestones.stage) {
+    return milestones;
+  }
+
+  const toStage = getDefaultHandoffToStage(milestones.stage);
+  if (!toStage) return milestones;
+
+  if (milestones.stage === 'shared-vibe' && !isSharedVibeCompleteForUser(milestones.sharedVibe.picksByUser, userId)) {
+    return milestones;
+  }
+
+  if (milestones.stage === 'truth-or-dare' && !isTruthOrDareCompleteForUser(milestones.truthOrDare.responses, userId)) {
+    return milestones;
+  }
+
+  return queueStageTransition(milestones, milestones.stage, toStage, now);
 };
 
 const getRoleAssignment = (
@@ -425,6 +486,7 @@ export const applyMilestoneAction = (
       };
       const sharedItems = getSharedItems(picksByUser, users);
       const canUnlock = evaluateSharedVibeUnlock(picksByUser, users);
+      const anyUserReady = hasAnySharedVibeComplete(picksByUser, users);
       const summary = buildSharedVibeSummary(picksByUser, users);
 
       const nextMilestones: RelationshipMilestones = {
@@ -436,13 +498,13 @@ export const applyMilestoneAction = (
           summary,
           unlockedAt: canUnlock ? (milestones.sharedVibe.unlockedAt ?? now) : milestones.sharedVibe.unlockedAt,
         },
-        handoff: !canUnlock && milestones.handoff?.fromStage === 'shared-vibe'
+        handoff: !anyUserReady && milestones.handoff?.fromStage === 'shared-vibe'
           ? null
           : milestones.handoff,
         updatedAt: now,
       };
 
-      if (canUnlock && milestones.stage === 'shared-vibe') {
+      if (anyUserReady && milestones.stage === 'shared-vibe') {
         return queueStageTransition(nextMilestones, 'shared-vibe', 'truth-or-dare', now);
       }
 
@@ -479,6 +541,7 @@ export const applyMilestoneAction = (
           ));
 
       const unlocked = evaluateTruthOrDareUnlock(responses, users);
+      const anyUserReady = hasAnyTruthOrDareComplete(responses, users);
       const nextMilestones: RelationshipMilestones = {
         ...milestones,
         truthOrDare: {
@@ -486,13 +549,13 @@ export const applyMilestoneAction = (
           responses,
           unlockedAt: unlocked ? (milestones.truthOrDare.unlockedAt ?? now) : milestones.truthOrDare.unlockedAt,
         },
-        handoff: !unlocked && milestones.handoff?.fromStage === 'truth-or-dare'
+        handoff: !anyUserReady && milestones.handoff?.fromStage === 'truth-or-dare'
           ? null
           : milestones.handoff,
         updatedAt: now,
       };
 
-      if (unlocked && milestones.stage === 'truth-or-dare') {
+      if (anyUserReady && milestones.stage === 'truth-or-dare') {
         return queueStageTransition(nextMilestones, 'truth-or-dare', 'temp-check', now);
       }
 
@@ -785,20 +848,22 @@ export const applyMilestoneAction = (
     }
 
     case 'set-handoff-choice': {
-      const handoff = milestones.handoff;
-      if (!handoff) return milestones;
       if (!users.includes(action.userId)) return milestones;
+      const milestonesWithHandoff = ensureHandoffForCurrentStage(milestones, action.userId, now);
+      const handoff = milestonesWithHandoff.handoff;
+      if (!handoff || handoff.fromStage !== milestonesWithHandoff.stage) return milestonesWithHandoff;
 
       const choicesByUser = {
         ...handoff.choicesByUser,
         [action.userId]: action.choice,
       };
       const everyoneContinues = users.every((userId) => choicesByUser[userId] === 'continue');
+      const readyToAdvance = everyoneContinues && canAdvanceFromHandoff(milestonesWithHandoff, handoff.fromStage, users);
 
       return {
-        ...milestones,
-        stage: everyoneContinues ? handoff.toStage : milestones.stage,
-        handoff: everyoneContinues
+        ...milestonesWithHandoff,
+        stage: readyToAdvance ? handoff.toStage : milestonesWithHandoff.stage,
+        handoff: readyToAdvance
           ? null
           : {
               ...handoff,
