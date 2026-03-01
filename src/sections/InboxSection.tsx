@@ -65,15 +65,18 @@ const InboxSection: React.FC = () => {
           conversation.toUserId === relationshipModeSnapshot.exclusivePartnerId
       )
     : uniqueConversations;
+  const visibleConversations = modeFilteredConversations.filter((interest) =>
+    users.some((user) => user.id === getOtherUserId(interest))
+  );
 
   console.log('InboxSection - uniqueConversations:', uniqueConversations);
 
-  const receivedInterests = modeFilteredConversations.filter((interest) => {
+  const receivedInterests = visibleConversations.filter((interest) => {
     const latestMessage = getLatestMessage(interest);
     if (hasUnreadIncoming(interest)) return true;
     return latestMessage ? latestMessage.fromUserId !== currentUser.id : interest.toUserId === currentUser.id;
   });
-  const sentInterests = modeFilteredConversations.filter((interest) => !receivedInterests.includes(interest));
+  const sentInterests = visibleConversations.filter((interest) => !receivedInterests.includes(interest));
   const hasUnreadReceivedMessage = receivedInterests.some((interest) => hasUnreadIncoming(interest));
 
   console.log('InboxSection - sentInterests (filtered):', sentInterests);

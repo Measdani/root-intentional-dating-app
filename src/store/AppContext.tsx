@@ -1038,6 +1038,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...Object.values(interactions.sentInterests),
       ...Object.values(interactions.receivedInterests),
     ];
+    const knownUserIds = new Set(users.map((user) => user.id));
     const uniqueConversations = Array.from(
       new Map(allInteractions.map((interaction) => [interaction.conversationId, interaction])).values()
     );
@@ -1047,13 +1048,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ? conversation.toUserId
         : conversation.fromUserId;
 
+      if (!knownUserIds.has(otherUserId)) return false;
       if (!canUsersExchangeMessages(currentUser.id, otherUserId)) return false;
 
       return conversation.messages.some(
         (message) => message.fromUserId !== currentUser.id && !message.read
       );
     }).length;
-  }, [currentUser.id, interactions]);
+  }, [currentUser.id, interactions, users]);
 
   const saveAssessmentDate = useCallback(() => {
     try {
