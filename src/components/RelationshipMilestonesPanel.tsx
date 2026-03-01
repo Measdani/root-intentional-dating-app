@@ -250,6 +250,27 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
   const showTempCheck = ['temp-check', 'bridge', 'final-check', 'date-offer', 'resource-path'].includes(milestones.stage);
   const showBridge = ['bridge', 'final-check', 'date-offer', 'resource-path'].includes(milestones.stage);
   const showFinalCheck = ['final-check', 'date-offer', 'resource-path'].includes(milestones.stage);
+  const stageToStepIndex: Record<string, number> = {
+    'shared-vibe': 0,
+    'truth-or-dare': 1,
+    'temp-check': 2,
+    'bridge': 3,
+    'final-check': 3,
+    'date-offer': 4,
+    'resource-path': 4,
+  };
+  const stepLabels = ['Shared Vibe', 'Truth or Dare', 'Temp Check', 'Bridge', 'Decision'];
+  const currentStepIndex = stageToStepIndex[milestones.stage] ?? 0;
+  const currentStepLabel = stepLabels[currentStepIndex] ?? 'Shared Vibe';
+  const getStepClassName = (stepIndex: number, isCompleted: boolean) => {
+    if (stepIndex === currentStepIndex) {
+      return 'border-[#D9FF3D] bg-[#D9FF3D]/12 text-[#D9FF3D] ring-1 ring-[#D9FF3D]/40';
+    }
+    if (isCompleted) {
+      return 'border-green-500/40 bg-green-500/10 text-green-300';
+    }
+    return 'border-[#1A211A] text-[#A9B5AA]';
+  };
 
   return (
     <section className="mt-8 rounded-2xl border border-[#1A211A] bg-[#111611] p-6 space-y-6">
@@ -261,13 +282,14 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
         <span className="text-xs uppercase tracking-wider text-[#D9FF3D]">{milestones.stage.replace(/-/g, ' ')}</span>
       </div>
 
-      <div className="grid gap-2 text-xs text-[#A9B5AA] md:grid-cols-5">
-        <div className={`rounded-lg border px-3 py-2 ${canUnlockTruthDare ? 'border-green-500/40 text-green-300' : 'border-[#1A211A]'}`}>Shared Vibe</div>
-        <div className={`rounded-lg border px-3 py-2 ${truthOrDareComplete ? 'border-green-500/40 text-green-300' : 'border-[#1A211A]'}`}>Truth or Dare</div>
-        <div className={`rounded-lg border px-3 py-2 ${milestones.tempCheck.outcome !== 'pending' ? 'border-green-500/40 text-green-300' : 'border-[#1A211A]'}`}>Temp Check</div>
-        <div className={`rounded-lg border px-3 py-2 ${bridgeProgressComplete ? 'border-green-500/40 text-green-300' : 'border-[#1A211A]'}`}>Bridge</div>
-        <div className={`rounded-lg border px-3 py-2 ${milestones.stage === 'date-offer' ? 'border-green-500/40 text-green-300' : 'border-[#1A211A]'}`}>Decision</div>
+      <div className="grid gap-2 text-xs md:grid-cols-5">
+        <div className={`rounded-lg border px-3 py-2 ${getStepClassName(0, canUnlockTruthDare)}`}>Shared Vibe</div>
+        <div className={`rounded-lg border px-3 py-2 ${getStepClassName(1, truthOrDareComplete)}`}>Truth or Dare</div>
+        <div className={`rounded-lg border px-3 py-2 ${getStepClassName(2, milestones.tempCheck.outcome !== 'pending')}`}>Temp Check</div>
+        <div className={`rounded-lg border px-3 py-2 ${getStepClassName(3, bridgeProgressComplete)}`}>Bridge</div>
+        <div className={`rounded-lg border px-3 py-2 ${getStepClassName(4, milestones.stage === 'date-offer')}`}>Decision</div>
       </div>
+      <p className="text-[11px] uppercase tracking-wider text-[#D9FF3D]">Current milestone: {currentStepLabel}</p>
 
       {showSharedVibe && (
         <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/70 p-4 space-y-4">
