@@ -100,7 +100,9 @@ const BrowseSection: React.FC = () => {
   });
 
   const handleBrowseAction = (user: User, conversation: any) => {
-    if (conversation) {
+    const shouldOpenConversationDirectly = conversation && conversation.status !== 'pending_response';
+
+    if (shouldOpenConversationDirectly) {
       // Show conversation view for any active conversation
       setSelectedConversation(conversation);
       setCurrentView('conversation');
@@ -371,7 +373,7 @@ const BrowseSection: React.FC = () => {
                     <Eye className="w-4 h-4" />
                     {conversation
                       ? conversation.status === 'pending_response'
-                        ? (conversation.fromUserId === currentUser.id ? 'Waiting...' : 'Respond')
+                        ? 'View Profile'
                         : 'Continue Conversation'
                       : 'View Profile'}
                   </button>

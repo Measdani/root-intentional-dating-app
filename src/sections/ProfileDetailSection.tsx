@@ -306,7 +306,9 @@ const ProfileDetailSection: React.FC = () => {
                       className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      {conversation.status === 'pending_response' ? 'Waiting for response' : 'View Conversation'}
+                      {conversation.status === 'pending_response'
+                        ? (conversation.fromUserId === currentUser.id ? 'Waiting for response' : 'Respond')
+                        : 'View Conversation'}
                     </button>
                   </div>
                 )}
