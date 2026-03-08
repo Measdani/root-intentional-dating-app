@@ -7,7 +7,7 @@ interface ExpressInterestModalProps {
   isOpen: boolean;
   targetUser: User | null;
   onClose: () => void;
-  onSubmit: (message: string) => void;
+  onSubmit: (message: string) => boolean | Promise<boolean>;
 }
 
 const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
@@ -37,9 +37,10 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
+    const sent = await onSubmit(message);
     setIsSubmitting(false);
+    if (!sent) return;
     setIsSuccess(true);
-    onSubmit(message);
 
     // Show success toast
     toast.success(`Your message was sent to ${targetUser.name}!`);

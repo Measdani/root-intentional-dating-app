@@ -1162,13 +1162,13 @@ const GrowthModeSection: React.FC = () => {
               </div>
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   const existingConversation = getConversation(selectedProfileUser.id);
                   let sent = false;
 
                   // Only express interest if there's no existing conversation
                   if (!existingConversation) {
-                    sent = expressInterest(selectedProfileUser.id, messageText);
+                    sent = await expressInterest(selectedProfileUser.id, messageText);
                   } else if (messageText.trim()) {
                     // If conversation exists, just respond
                     sent = respondToInterest(selectedProfileUser.id, messageText);

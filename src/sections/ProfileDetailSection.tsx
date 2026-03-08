@@ -123,9 +123,9 @@ const ProfileDetailSection: React.FC = () => {
   const identityExpressionHiddenByVisibility =
     identityExpressionVisibility === 'after-mutual-interest' && !hasMutualInterest;
 
-  const handleExpressInterest = (message: string) => {
-    const sent = expressInterest(selectedUser.id, message);
-    if (!sent) return;
+  const handleExpressInterest = async (message: string): Promise<boolean> => {
+    const sent = await expressInterest(selectedUser.id, message);
+    if (!sent) return false;
 
     // Close modal and navigate to conversation view
     setShowModal(false);
@@ -154,6 +154,7 @@ const ProfileDetailSection: React.FC = () => {
     };
     setSelectedConversation(newConversation);
     setCurrentView('conversation');
+    return true;
   };
 
   const handleViewConversation = () => {

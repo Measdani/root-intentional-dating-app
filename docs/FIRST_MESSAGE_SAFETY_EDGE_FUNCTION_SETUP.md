@@ -14,6 +14,7 @@ File: `supabase/functions/first-message-safety/index.ts`
 - Migrations already applied:
 - `20260308_rooted_hearts_ai_ops.sql`
 - `20260308_rooted_hearts_ai_ops_rls.sql`
+- `20260308_rooted_hearts_ai_ops_app_user_mapping.sql`
 - You should call this function server-side or from trusted admin flows.
 
 ## Deploy
@@ -31,11 +32,26 @@ supabase functions serve first-message-safety --env-file .env.local
 
 ## Request body
 
+Option A: moderate an existing `rh_messages` row by ID.
+
 ```json
 {
   "message_id": "0d95f831-ffba-4aa4-8d88-0562f8bfc4d1",
   "force": false,
   "dry_run": false
+}
+```
+
+Option B: send app-level user IDs + content directly (recommended for current app flow).
+
+```json
+{
+  "sender_app_user_id": "user_173972...",
+  "recipient_app_user_id": "user_173973...",
+  "sender_email": "sender@example.com",
+  "recipient_email": "recipient@example.com",
+  "content": "Hey, I liked your profile and your focus on intentional connection.",
+  "conversation_id": "conv_user_a_user_b"
 }
 ```
 
@@ -63,6 +79,16 @@ Safe opener:
 ```json
 {
   "message_id": "<first-message-id>"
+}
+```
+
+Inline payload opener:
+```json
+{
+  "sender_app_user_id": "user_1",
+  "recipient_app_user_id": "user_2",
+  "content": "Hi, your profile stood out to me for your communication values.",
+  "conversation_id": "conv_user_1_user_2"
 }
 ```
 

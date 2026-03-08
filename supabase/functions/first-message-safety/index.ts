@@ -1,11 +1,23 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-type FirstMessageSafetyRequest = {
+type MessageIdRequest = {
   message_id: string;
   force?: boolean;
   dry_run?: boolean;
 };
+
+type InlineMessageRequest = {
+  sender_app_user_id: string;
+  recipient_app_user_id: string;
+  content: string;
+  conversation_id?: string;
+  sender_email?: string | null;
+  recipient_email?: string | null;
+  dry_run?: boolean;
+};
+
+type FirstMessageSafetyRequest = MessageIdRequest | InlineMessageRequest;
 
 type RhMessageRow = {
   id: string;
@@ -14,6 +26,10 @@ type RhMessageRow = {
   content: string;
   is_first_message: boolean;
   status: "pending_review" | "approved" | "blocked" | "flagged";
+};
+
+type RhUserRow = {
+  id: string;
 };
 
 type SafetyDecision = {
@@ -53,13 +69,44 @@ const jsonResponse = (status: number, body: Record<string, unknown>) =>
     },
   });
 
-const isValidRequest = (value: unknown): value is FirstMessageSafetyRequest => {
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+const isBooleanOrUndefined = (value: unknown): boolean =>
+  value === undefined || typeof value === "boolean";
+
+const isMessageIdRequest = (value: unknown): value is MessageIdRequest => {
   if (!value || typeof value !== "object") return false;
-  const payload = value as Partial<FirstMessageSafetyRequest>;
-  if (typeof payload.message_id !== "string" || payload.message_id.trim().length === 0) return false;
-  if (payload.force !== undefined && typeof payload.force !== "boolean") return false;
-  if (payload.dry_run !== undefined && typeof payload.dry_run !== "boolean") return false;
-  return true;
+  const payload = value as Partial<MessageIdRequest>;
+  return (
+    isNonEmptyString(payload.message_id) &&
+    isBooleanOrUndefined(payload.force) &&
+    isBooleanOrUndefined(payload.dry_run)
+  );
+};
+
+const isInlineMessageRequest = (value: unknown): value is InlineMessageRequest => {
+  if (!value || typeof value !== "object") return false;
+  const payload = value as Partial<InlineMessageRequest>;
+  const validSenderEmail = payload.sender_email === undefined || payload.sender_email === null || typeof payload.sender_email === "string";
+  const validRecipientEmail = payload.recipient_email === undefined || payload.recipient_email === null || typeof payload.recipient_email === "string";
+  const validConversationId = payload.conversation_id === undefined || typeof payload.conversation_id === "string";
+
+  return (
+    isNonEmptyString(payload.sender_app_user_id) &&
+    isNonEmptyString(payload.recipient_app_user_id) &&
+    isNonEmptyString(payload.content) &&
+    isBooleanOrUndefined(payload.dry_run) &&
+    validConversationId &&
+    validSenderEmail &&
+    validRecipientEmail
+  );
+};
+
+const normalizeOptionalEmail = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  return normalized.length > 0 ? normalized : null;
 };
 
 const LOW_EFFORT_MESSAGES = new Set([
@@ -288,6 +335,65 @@ const riskAdjustments = (
   }
 };
 
+const ensureRhUserByAppId = async (
+  adminClient: ReturnType<typeof createClient>,
+  appUserId: string,
+  email?: string | null,
+): Promise<string> => {
+  const normalizedEmail = normalizeOptionalEmail(email);
+  const { data: existing, error: existingError } = await adminClient
+    .from("rh_users")
+    .select("id")
+    .eq("app_user_id", appUserId)
+    .maybeSingle<RhUserRow>();
+
+  if (existingError) {
+    throw new Error(`Failed to lookup rh_user for app_user_id ${appUserId}: ${existingError.message}`);
+  }
+
+  if (existing?.id) {
+    if (normalizedEmail) {
+      await adminClient
+        .from("rh_users")
+        .update({ app_user_email: normalizedEmail })
+        .eq("id", existing.id);
+    }
+    return existing.id;
+  }
+
+  const insertPayload: Record<string, unknown> = {
+    status: "active",
+    mode: "alignment",
+    app_user_id: appUserId,
+    app_user_email: normalizedEmail,
+  };
+
+  const { data: inserted, error: insertError } = await adminClient
+    .from("rh_users")
+    .insert(insertPayload)
+    .select("id")
+    .single<RhUserRow>();
+
+  if (!insertError && inserted?.id) {
+    return inserted.id;
+  }
+
+  // Handle unique race: another request inserted the same app_user_id first.
+  if (insertError && insertError.code === "23505") {
+    const { data: retried, error: retryError } = await adminClient
+      .from("rh_users")
+      .select("id")
+      .eq("app_user_id", appUserId)
+      .maybeSingle<RhUserRow>();
+    if (retryError || !retried?.id) {
+      throw new Error(`Failed to recover rh_user after unique conflict for ${appUserId}: ${retryError?.message ?? "unknown error"}`);
+    }
+    return retried.id;
+  }
+
+  throw new Error(`Failed to create rh_user for app_user_id ${appUserId}: ${insertError?.message ?? "unknown error"}`);
+};
+
 serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -307,50 +413,129 @@ serve(async (request) => {
     auth: { persistSession: false },
   });
 
-  let payload: FirstMessageSafetyRequest;
+  let rawPayload: unknown;
   try {
-    const parsed = await request.json();
-    if (!isValidRequest(parsed)) {
-      return jsonResponse(400, { error: "Invalid payload. Expected { message_id, force?, dry_run? }" });
-    }
-    payload = parsed;
+    rawPayload = await request.json();
   } catch {
     return jsonResponse(400, { error: "Invalid JSON body" });
   }
 
-  const { data: message, error: messageError } = await adminClient
-    .from("rh_messages")
-    .select("id, sender_id, recipient_id, content, is_first_message, status")
-    .eq("id", payload.message_id)
-    .maybeSingle<RhMessageRow>();
-
-  if (messageError) {
-    return jsonResponse(500, {
-      error: "Failed to load message",
-      details: messageError.message,
+  const isByMessageId = isMessageIdRequest(rawPayload);
+  const isInline = isInlineMessageRequest(rawPayload);
+  if (!isByMessageId && !isInline) {
+    return jsonResponse(400, {
+      error:
+        "Invalid payload. Expected either { message_id, force?, dry_run? } " +
+        "or { sender_app_user_id, recipient_app_user_id, content, conversation_id?, sender_email?, recipient_email?, dry_run? }",
     });
+  }
+
+  let message: RhMessageRow | null = null;
+  let dryRun = false;
+  let force = false;
+  let inputSnapshot: Record<string, unknown> = {};
+
+  if (isByMessageId) {
+    const payload = rawPayload as MessageIdRequest;
+    dryRun = Boolean(payload.dry_run);
+    force = Boolean(payload.force);
+
+    const { data: loadedMessage, error: messageError } = await adminClient
+      .from("rh_messages")
+      .select("id, sender_id, recipient_id, content, is_first_message, status")
+      .eq("id", payload.message_id)
+      .maybeSingle<RhMessageRow>();
+
+    if (messageError) {
+      return jsonResponse(500, {
+        error: "Failed to load message",
+        details: messageError.message,
+      });
+    }
+
+    if (!loadedMessage) {
+      return jsonResponse(404, { error: "Message not found" });
+    }
+
+    if (!loadedMessage.is_first_message) {
+      return jsonResponse(400, { error: "Message is not marked as first message" });
+    }
+
+    if (!force && loadedMessage.status !== "pending_review") {
+      return jsonResponse(200, {
+        message: "Message already processed",
+        message_id: loadedMessage.id,
+        current_status: loadedMessage.status,
+        already_processed: true,
+      });
+    }
+
+    message = loadedMessage;
+    inputSnapshot = {
+      source: "message_id",
+      message_id: loadedMessage.id,
+      content: loadedMessage.content,
+      is_first_message: loadedMessage.is_first_message,
+    };
+  } else {
+    const payload = rawPayload as InlineMessageRequest;
+    dryRun = Boolean(payload.dry_run);
+
+    if (dryRun) {
+      const decision = evaluateFirstMessage(payload.content, true);
+      return jsonResponse(200, {
+        dry_run: true,
+        message_id: null,
+        ...decision,
+      });
+    }
+
+    const senderRhUserId = await ensureRhUserByAppId(adminClient, payload.sender_app_user_id, payload.sender_email);
+    const recipientRhUserId = await ensureRhUserByAppId(adminClient, payload.recipient_app_user_id, payload.recipient_email);
+
+    const fallbackConversationId = `conv_${[payload.sender_app_user_id, payload.recipient_app_user_id].sort().join("_")}`;
+    const threadId = (payload.conversation_id?.trim() || fallbackConversationId);
+
+    const { data: insertedMessage, error: insertMessageError } = await adminClient
+      .from("rh_messages")
+      .insert({
+        sender_id: senderRhUserId,
+        recipient_id: recipientRhUserId,
+        thread_id: threadId,
+        content: payload.content,
+        is_first_message: true,
+        status: "pending_review",
+      })
+      .select("id, sender_id, recipient_id, content, is_first_message, status")
+      .single<RhMessageRow>();
+
+    if (insertMessageError || !insertedMessage) {
+      return jsonResponse(500, {
+        error: "Failed to create message for moderation",
+        details: insertMessageError?.message ?? "unknown error",
+      });
+    }
+
+    message = insertedMessage;
+    inputSnapshot = {
+      source: "inline_message_payload",
+      sender_app_user_id: payload.sender_app_user_id,
+      recipient_app_user_id: payload.recipient_app_user_id,
+      sender_email: normalizeOptionalEmail(payload.sender_email),
+      recipient_email: normalizeOptionalEmail(payload.recipient_email),
+      conversation_id: threadId,
+      content: payload.content,
+      is_first_message: true,
+    };
   }
 
   if (!message) {
-    return jsonResponse(404, { error: "Message not found" });
-  }
-
-  if (!message.is_first_message) {
-    return jsonResponse(400, { error: "Message is not marked as first message" });
-  }
-
-  if (!payload.force && message.status !== "pending_review") {
-    return jsonResponse(200, {
-      message: "Message already processed",
-      message_id: message.id,
-      current_status: message.status,
-      already_processed: true,
-    });
+    return jsonResponse(500, { error: "Moderation pipeline did not resolve a message" });
   }
 
   const decision = evaluateFirstMessage(message.content, message.is_first_message);
 
-  if (payload.dry_run) {
+  if (dryRun) {
     return jsonResponse(200, {
       message_id: message.id,
       dry_run: true,
@@ -411,11 +596,7 @@ serve(async (request) => {
       target_id: message.id,
       actor_user_id: message.sender_id,
       related_user_id: message.recipient_id,
-      input_snapshot_json: {
-        message_id: message.id,
-        content: message.content,
-        is_first_message: message.is_first_message,
-      },
+      input_snapshot_json: inputSnapshot,
       output_snapshot_json: outputSnapshot,
       confidence: decision.confidence,
       applied_action: decision.recommended_action,

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { reportService } from '@/services/reportService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
+import { moderateFirstMessage } from '@/services/firstMessageSafetyService';
 import { evaluateConciergeForInteraction } from '@/services/conciergeService';
 import { enrichConciergeSnapshotWithAI } from '@/services/conciergeAiService';
 import {
@@ -43,7 +44,7 @@ interface AppContextType extends AppState {
   setHasJoinedList: (value: boolean) => void;
   setShowEmailModal: (value: boolean) => void;
   resetAssessment: () => void;
-  expressInterest: (toUserId: string, message: string) => boolean;
+  expressInterest: (toUserId: string, message: string) => Promise<boolean>;
   respondToInterest: (fromUserId: string, message: string) => boolean;
   startRelationshipRoom: (partnerUserId: string) => UserInteraction | null;
   markMessagesAsRead: (conversationId: string) => void;
@@ -781,7 +782,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // NOTE: Auto-response and auto-consent features removed
   // All messaging and consent decisions are now controlled by users only
 
-  const expressInterest = useCallback((toUserId: string, message: string): boolean => {
+  const expressInterest = useCallback(async (toUserId: string, message: string): Promise<boolean> => {
     console.log('expressInterest called:', { toUserId, message, currentUserId: currentUser.id });
 
     const blockReason = getNewMatchBlockReason(currentUser.id, toUserId);
@@ -798,7 +799,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Create deterministic conversationId using sorted user pair so both users share same thread
     const conversationId = `conv_${[currentUser.id, toUserId].sort().join('_')}`;
-    const messageId = `msg_${Date.now()}`;
+    const recipient = users.find((user) => user.id === toUserId);
+    const moderationResult = await moderateFirstMessage({
+      senderAppUserId: currentUser.id,
+      recipientAppUserId: toUserId,
+      senderEmail: currentUser.email,
+      recipientEmail: recipient?.email,
+      content: message,
+      conversationId,
+    });
+
+    if (!moderationResult.approved) {
+      if (moderationResult.userFeedback) {
+        toast.error(moderationResult.userFeedback);
+      } else if (moderationResult.blockedReason) {
+        toast.error(moderationResult.blockedReason);
+      } else {
+        toast.error('This message could not be sent.');
+      }
+
+      if (moderationResult.rewritePrompt) {
+        toast.info(moderationResult.rewritePrompt);
+      }
+
+      return false;
+    }
+
+    const messageId = moderationResult.messageId ?? `msg_${Date.now()}`;
 
     const initialMessage: ConversationMessage = {
       id: messageId,
@@ -847,11 +874,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     toast.success('Interest expressed! They\'ll see it in their inbox.');
+    if (moderationResult.recommendedAction === 'approve_with_nudge' && moderationResult.rewritePrompt) {
+      toast.info(moderationResult.rewritePrompt);
+    }
 
     // NOTE: Auto-response feature disabled to allow natural conversation flow
     // Users should reply manually without system auto-generating responses
     return true;
-  }, [currentUser.id, interactions.sentInterests]);
+  }, [currentUser.id, currentUser.email, interactions.sentInterests, users]);
 
   const respondToInterest = useCallback((fromUserId: string, message: string): boolean => {
     const blockReason = getMessageBlockReason(currentUser.id, fromUserId);
