@@ -19,6 +19,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitFeedback, setSubmitFeedback] = useState<string | null>(null);
 
   if (!isOpen || !targetUser) return null;
 
@@ -32,6 +33,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
     e.preventDefault();
     if (!isReady) return;
 
+    setSubmitFeedback(null);
     setIsSubmitting(true);
 
     // Simulate API call
@@ -39,7 +41,12 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
 
     const sent = await onSubmit(message);
     setIsSubmitting(false);
-    if (!sent) return;
+    if (!sent) {
+      setSubmitFeedback(
+        'This message cannot be sent as written. Please remove harmful, sexual, or pressuring wording and try again.'
+      );
+      return;
+    }
     setIsSuccess(true);
 
     // Show success toast
@@ -50,6 +57,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
       onClose();
       setMessage('');
       setIsSuccess(false);
+      setSubmitFeedback(null);
     }, 2000);
   };
 
@@ -59,6 +67,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
       onClose();
       setMessage('');
       setIsSuccess(false);
+      setSubmitFeedback(null);
     }
   };
 
@@ -135,7 +144,10 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                 )}
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value.slice(0, maxLength))}
+                  onChange={(e) => {
+                    setMessage(e.target.value.slice(0, maxLength));
+                    if (submitFeedback) setSubmitFeedback(null);
+                  }}
                   placeholder="Tell them what stood out to you and why..."
                   className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] placeholder:text-[#A9B5AA]/50 focus:outline-none focus:border-[#D9FF3D] transition-colors resize-none"
                   rows={6}
@@ -155,7 +167,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                   ) : (
                     <>
                       <div className="w-2 h-2 rounded-full bg-[#D9FF3D]" />
-                      <span className="text-[#D9FF3D]">Good to go!</span>
+                      <span className="text-[#D9FF3D]">Ready for safety review.</span>
                     </>
                   )}
                 </div>
@@ -163,6 +175,12 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                   {messageLength}/{maxLength}
                 </span>
               </div>
+
+              {submitFeedback && (
+                <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2">
+                  <p className="text-xs text-red-300">{submitFeedback}</p>
+                </div>
+              )}
 
               {/* Submit Button */}
               <button
@@ -173,7 +191,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Sending...
+                    Reviewing...
                   </>
                 ) : (
                   <>
