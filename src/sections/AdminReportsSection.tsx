@@ -3,6 +3,7 @@ import { useAdmin } from '@/store/AdminContext';
 import { useApp } from '@/store/AppContext';
 import { getUserPoolId, persistUserPoolMembership, toInnerPool } from '@/modules';
 import { userService } from '@/services/userService';
+import { SUPPORT_EMAIL } from '@/constants/support';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import {
@@ -634,8 +635,8 @@ const AdminReportsSection: React.FC = () => {
 
                     // Send suspension notification with message based on user's assessment status
                     const suspensionMessage = reportedUser.assessmentPassed
-                      ? `Following a review of recent activity reported by a member of the community, your access to the Alignment Space has been suspended. You have been moved to the Inner Work Space, where you may continue engaging with the community. Reassessment for Alignment Space eligibility will be available on ${formattedDate}. If you believe this action was made in error, please contact support.`
-                      : `Following a review of recent activity reported by a member of the community, your reassessment eligibility has been extended by 6 months. You may continue participating in the Inner Work Space during this time. Reassessment will be available on ${formattedDate}. If you believe this action was made in error, please contact support.`;
+                      ? `Following a review of recent activity reported by a member of the community, your access to the Alignment Space has been suspended. You have been moved to the Inner Work Space, where you may continue engaging with the community. Reassessment for Alignment Space eligibility will be available on ${formattedDate}. If you believe this action was made in error, contact ${SUPPORT_EMAIL}.`
+                      : `Following a review of recent activity reported by a member of the community, your reassessment eligibility has been extended by 6 months. You may continue participating in the Inner Work Space during this time. Reassessment will be available on ${formattedDate}. If you believe this action was made in error, contact ${SUPPORT_EMAIL}.`;
 
                     addNotification(
                       'suspension',
@@ -667,7 +668,7 @@ const AdminReportsSection: React.FC = () => {
                     addNotification(
                       'removal',
                       'Permanent Removal: Account Permanently Removed',
-                      'Your account has been permanently removed from our platform due to serious violations of our community guidelines. This action is irreversible. You will no longer be able to access the platform or create a new account with the same email address. For support inquiries, contact our support team.',
+                      `Your account has been permanently removed from our platform due to serious violations of our community guidelines. This action is irreversible. You will no longer be able to access the platform or create a new account with the same email address. For support inquiries, contact ${SUPPORT_EMAIL}.`,
                       selectedReport.reportedUserId
                     );
 

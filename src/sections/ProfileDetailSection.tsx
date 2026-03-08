@@ -5,6 +5,7 @@ import { MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag, BookOpen } fro
 import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
+import { SUPPORT_EMAIL } from '@/constants/support';
 import type { UserGenderIdentity, UserIdentityExpression } from '@/types';
 
 const formatGenderIdentity = (value?: UserGenderIdentity): string => {
@@ -69,7 +70,7 @@ const ProfileDetailSection: React.FC = () => {
           <div className="space-y-4 text-[#A9B5AA] mb-6">
             <p>Thank you for your report. We take all reports seriously and will review this promptly.</p>
             <p>The reported user is no longer in your search history or able to contact you.</p>
-            <p>If you need further assistance or have additional information, please reach out to support.</p>
+            <p>If you need further assistance or have additional information, contact {SUPPORT_EMAIL}.</p>
           </div>
           <button
             onClick={() => {

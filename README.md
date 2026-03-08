@@ -14,6 +14,19 @@ This project now supports a modular community architecture (shared code, isolate
   - `/?community=rooted`
   - `/?community=lgbtq`
 
+## Rooted Hearts AI Ops Docs
+
+AI moderation and support build docs for the current five-agent scope:
+
+- Canonical scope: `docs/ROOTED_HEARTS_AI_AGENT_SYSTEM_SPEC.md`
+- Prompt pack: `docs/ROOTED_HEARTS_AGENT_PROMPT_PACK.md`
+- Moderation matrix: `docs/MODERATION_POLICY_MATRIX.md`
+- API contracts: `docs/AI_AGENT_API_CONTRACTS.md`
+- Edge-case tests: `docs/EDGE_CASE_TEST_SCENARIOS.md`
+- Admin dashboard copy: `docs/ADMIN_DASHBOARD_WIREFRAME_COPY.md`
+- SQL schema migration: `supabase/migrations/20260308_rooted_hearts_ai_ops.sql`
+- First message safety function setup: `docs/FIRST_MESSAGE_SAFETY_EDGE_FUNCTION_SETUP.md`
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

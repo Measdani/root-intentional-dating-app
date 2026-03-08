@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { userService } from '@/services/userService';
 import { supportService } from '@/services/supportService';
+import { SUPPORT_EMAIL } from '@/constants/support';
 import type { SupportCategory, SupportMessage } from '@/types';
 import {
   cancelExclusiveRequest,
@@ -583,7 +584,7 @@ const UserSettingsSection: React.FC = () => {
 
     const deleted = await userService.deleteUser(currentUser.id);
     if (!deleted) {
-      toast.error('Account deletion could not be completed. Please contact support.');
+      toast.error(`Account deletion could not be completed. Contact ${SUPPORT_EMAIL}.`);
       return;
     }
 
