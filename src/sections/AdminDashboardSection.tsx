@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import {
   LineChart,
@@ -16,8 +16,46 @@ import {
 } from 'recharts';
 import { Users, TrendingUp, CheckCircle2, Award } from 'lucide-react';
 import { mockAnalytics } from '@/data/analytics';
+import {
+  runAdminCopilot,
+  type AdminCopilotSummaryResult,
+} from '@/services/adminCopilotService';
 
 const AdminDashboardSection: React.FC = () => {
+  const [copilotSummary, setCopilotSummary] = useState<AdminCopilotSummaryResult | null>(null);
+  const [copilotLoading, setCopilotLoading] = useState(true);
+  const [copilotError, setCopilotError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCopilotSummary = async () => {
+      setCopilotLoading(true);
+      setCopilotError(null);
+
+      const result = await runAdminCopilot({
+        action: 'generate_daily_summary',
+        periodType: 'daily',
+        maxItems: 8,
+      });
+
+      if (!active) return;
+
+      if (!result) {
+        setCopilotError('Admin Copilot summary is currently unavailable.');
+      } else {
+        setCopilotSummary(result);
+      }
+      setCopilotLoading(false);
+    };
+
+    void loadCopilotSummary();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const stats = [
     {
       label: 'Total Users',
@@ -81,6 +119,61 @@ const AdminDashboardSection: React.FC = () => {
           );
         })}
       </div>
+
+      <Card className="bg-[#111611] border-[#1A211A] p-6 mb-8">
+        <h3 className="text-lg font-display font-bold text-[#F6FFF2] mb-3">
+          Admin Copilot: Daily Summary
+        </h3>
+
+        {copilotLoading && (
+          <p className="text-sm text-[#A9B5AA]">Generating summary...</p>
+        )}
+
+        {!copilotLoading && copilotError && (
+          <p className="text-sm text-amber-300">{copilotError}</p>
+        )}
+
+        {!copilotLoading && !copilotError && copilotSummary && (
+          <div className="space-y-4">
+            <p className="text-sm text-[#F6FFF2] leading-relaxed">
+              {copilotSummary.summaryText}
+            </p>
+
+            {copilotSummary.patternAlerts.length > 0 && (
+              <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2">
+                <p className="text-xs uppercase tracking-wide text-amber-300 mb-1">
+                  Pattern Alerts
+                </p>
+                <p className="text-sm text-amber-100">{copilotSummary.patternAlerts[0]}</p>
+              </div>
+            )}
+
+            {copilotSummary.prioritizedReviewList.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">
+                  Top Cases To Review
+                </p>
+                <div className="space-y-2">
+                  {copilotSummary.prioritizedReviewList.slice(0, 3).map((item) => (
+                    <div
+                      key={item.case_id}
+                      className="rounded-lg border border-[#1A211A] bg-[#0B0F0C]/60 px-3 py-2"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs text-[#A9B5AA] uppercase">
+                          {item.severity}
+                        </span>
+                        <span className="text-[11px] text-[#A9B5AA]">{item.source}</span>
+                      </div>
+                      <p className="text-sm text-[#F6FFF2] line-clamp-2">{item.summary}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
