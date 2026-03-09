@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { toast } from 'sonner';
 import type { User } from '@/types';
 import { X, Check, MessageCircle, Loader2 } from 'lucide-react';
 
@@ -48,9 +47,6 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
       return;
     }
     setIsSuccess(true);
-
-    // Show success toast
-    toast.success(`Your message was sent to ${targetUser.name}!`);
 
     // Close after showing success
     setTimeout(() => {

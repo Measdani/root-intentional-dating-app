@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { toast } from 'sonner';
 import type { User, ConversationMessage } from '@/types';
 import { X, Check, MessageCircle, Loader2 } from 'lucide-react';
 
@@ -56,9 +55,6 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
     setIsSubmitting(false);
     setIsSuccess(true);
     onSubmit(message);
-
-    // Show success toast
-    toast.success(`Your response was sent to ${senderUser.name}!`);
 
     // Close after showing success
     setTimeout(() => {

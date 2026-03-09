@@ -110,8 +110,6 @@ const mergeUsersById = (existingUsers: User[], usersToMerge: User[]): User[] =>
 
 const CONCIERGE_AUTO_REPORTS_KEY = 'rooted_concierge_auto_reports';
 const SYSTEM_CONCIERGE_REPORTER_ID = 'system-concierge';
-const FIRST_MESSAGE_BLOCKED_TOAST =
-  "Message blocked. Remove sexual, harmful, or pressuring language, then try again.";
 
 const buildSystemReportId = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -789,13 +787,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const blockReason = getNewMatchBlockReason(currentUser.id, toUserId);
     if (blockReason) {
-      toast.info(blockReason);
       return false;
     }
 
     // Check if already expressed interest to this user
     if (interactions.sentInterests[toUserId]) {
-      toast.info('You already expressed interest in this person');
       return false;
     }
 
@@ -812,8 +808,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (!moderationResult.approved) {
-      toast.info(FIRST_MESSAGE_BLOCKED_TOAST);
-
       return false;
     }
 
@@ -865,11 +859,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return updated;
     });
 
-    toast.success('Interest expressed! They\'ll see it in their inbox.');
-    if (moderationResult.recommendedAction === 'approve_with_nudge' && moderationResult.rewritePrompt) {
-      toast.info(moderationResult.rewritePrompt);
-    }
-
     // NOTE: Auto-response feature disabled to allow natural conversation flow
     // Users should reply manually without system auto-generating responses
     return true;
@@ -878,7 +867,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const respondToInterest = useCallback((fromUserId: string, message: string): boolean => {
     const blockReason = getMessageBlockReason(currentUser.id, fromUserId);
     if (blockReason) {
-      toast.info(blockReason);
       return false;
     }
 
@@ -1006,7 +994,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (!didSend) {
-      toast.error('Conversation not found.');
       return false;
     }
 
@@ -1023,15 +1010,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         void maybeCreateConciergeAutoReports(updatedConversation, generatedNudges);
       }
     }
-
-    toast.success('Message sent!');
     return true;
   }, [currentUser.id, maybeEnrichSnapshotsWithAI, maybeCreateConciergeAutoReports]);
 
   const startRelationshipRoom = useCallback((partnerUserId: string): UserInteraction | null => {
     const blockReason = getMessageBlockReason(currentUser.id, partnerUserId);
     if (blockReason) {
-      toast.info(blockReason);
       return null;
     }
 
