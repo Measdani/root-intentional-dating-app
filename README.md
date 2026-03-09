@@ -26,6 +26,7 @@ AI moderation and support build docs for the current five-agent scope:
 - Admin dashboard copy: `docs/ADMIN_DASHBOARD_WIREFRAME_COPY.md`
 - SQL schema migration: `supabase/migrations/20260308_rooted_hearts_ai_ops.sql`
 - First message safety function setup: `docs/FIRST_MESSAGE_SAFETY_EDGE_FUNCTION_SETUP.md`
+- Profile quality function setup: `docs/PROFILE_QUALITY_EDGE_FUNCTION_SETUP.md`
 
 Currently, two official plugins are available:
 

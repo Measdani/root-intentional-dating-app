@@ -3,6 +3,7 @@ import { useApp } from '@/store/AppContext';
 import AuthPoolTabs from '@/components/AuthPoolTabs';
 import { communityIdToPoolId, persistUserPoolMembership, useCommunity } from '@/modules';
 import { userService } from '@/services/userService';
+import { moderateProfileQuality } from '@/services/profileQualityService';
 import { toast } from 'sonner';
 import {
   AlertCircle,
@@ -332,6 +333,16 @@ const SignUpSection: React.FC = () => {
     setStep((prev) => (prev - 1) as typeof step);
   };
 
+  const clearProfileReviewErrors = () => {
+    if (!errors.profileReview && !errors.profileSuggestions) return;
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.profileReview;
+      delete next.profileSuggestions;
+      return next;
+    });
+  };
+
   const isDuplicateEmailError = (message: string | null | undefined) => {
     const normalized = (message || '').toLowerCase();
     return (
@@ -396,10 +407,50 @@ const SignUpSection: React.FC = () => {
               ? 90 * 24 * 60 * 60 * 1000
               : 365 * 24 * 60 * 60 * 1000)
         : now + 30 * 24 * 60 * 60 * 1000; // Skip = simulate monthly
+      const newUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const trimmedGrowthFocus = growthFocus.trim();
+      const trimmedBio = bio.trim();
+      const normalizedCommunityBoundaries =
+        isLgbtqCommunity && communityBoundaries.trim()
+          ? communityBoundaries.trim()
+          : undefined;
+
+      const profileModeration = await moderateProfileQuality({
+        appUserId: newUserId,
+        appUserEmail: email,
+        bio: trimmedBio,
+        promptsJson: {
+          relationship_intent: partnershipIntent,
+          growth_focus: trimmedGrowthFocus,
+          values: selectedValues,
+          wants_children: wantsChildren,
+          open_to_partner_with_parent: openToPartnerWithParent,
+          community_boundaries: normalizedCommunityBoundaries,
+        },
+        userMode: 'alignment',
+      });
+
+      if (!profileModeration.approved) {
+        const nextErrors: Record<string, string> = {
+          profileReview:
+            profileModeration.userFeedback ||
+            'Your profile needs a few updates before it can go live.',
+        };
+        if (profileModeration.improvementNotes.length > 0) {
+          nextErrors.profileSuggestions = profileModeration.improvementNotes
+            .slice(0, 2)
+            .join(' ');
+        }
+        setStep(5);
+        setErrors(nextErrors);
+        return;
+      }
+
+      clearProfileReviewErrors();
 
       // Build the new User object
       const newUser: User = {
-        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: newUserId,
         email,
         name: name.trim(),
         age: parseInt(age),
@@ -440,12 +491,9 @@ const SignUpSection: React.FC = () => {
             | 'prefers-child-free',
         },
         values: selectedValues,
-        growthFocus: growthFocus.trim(),
-        bio: bio.trim() || undefined,
-        communityBoundaries:
-          isLgbtqCommunity && communityBoundaries.trim()
-            ? communityBoundaries.trim()
-            : undefined,
+        growthFocus: trimmedGrowthFocus,
+        bio: trimmedBio || undefined,
+        communityBoundaries: normalizedCommunityBoundaries,
         assessmentPassed: false,
         membershipTier: tier ?? 'monthly',
         membershipStatus: 'active',
@@ -1006,6 +1054,7 @@ const SignUpSection: React.FC = () => {
                             } else if (selectedValues.length < 7) {
                               setSelectedValues([...selectedValues, value]);
                             }
+                            clearProfileReviewErrors();
                           }}
                           className={`py-2 px-3 rounded-lg border text-xs text-center transition-all ${
                             selectedValues.includes(value)
@@ -1029,7 +1078,10 @@ const SignUpSection: React.FC = () => {
               <input
                 type="text"
                 value={growthFocus}
-                onChange={(e) => setGrowthFocus(e.target.value)}
+                onChange={(e) => {
+                  setGrowthFocus(e.target.value);
+                  clearProfileReviewErrors();
+                }}
                 placeholder="e.g. Building emotional resilience"
                 className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
               />
@@ -1041,7 +1093,10 @@ const SignUpSection: React.FC = () => {
               </label>
               <textarea
                 value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                onChange={(e) => {
+                  setBio(e.target.value);
+                  clearProfileReviewErrors();
+                }}
                 placeholder="Tell us a bit about yourself..."
                 rows={4}
                 className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors resize-none"
@@ -1061,7 +1116,10 @@ const SignUpSection: React.FC = () => {
                 </p>
                 <textarea
                   value={communityBoundaries}
-                  onChange={(e) => setCommunityBoundaries(e.target.value)}
+                  onChange={(e) => {
+                    setCommunityBoundaries(e.target.value);
+                    clearProfileReviewErrors();
+                  }}
                   placeholder={'e.g., "No fetishizing," "Respect pronouns," "Serious dating only," "No secrecy."'}
                   rows={3}
                   className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors resize-none"
