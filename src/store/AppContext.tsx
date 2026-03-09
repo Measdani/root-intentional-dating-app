@@ -49,7 +49,10 @@ interface AppContextType extends AppState {
     toUserId: string,
     message: string
   ) => Promise<{ sent: boolean; feedback?: string }>;
-  respondToInterest: (fromUserId: string, message: string) => boolean;
+  respondToInterest: (
+    fromUserId: string,
+    message: string
+  ) => Promise<{ sent: boolean; feedback?: string }>;
   startRelationshipRoom: (partnerUserId: string) => UserInteraction | null;
   markMessagesAsRead: (conversationId: string) => void;
   grantPhotoConsent: (conversationId: string) => void;
@@ -880,10 +883,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [currentUser.id, currentUser.email, interactions.sentInterests, users]);
 
-  const respondToInterest = useCallback((fromUserId: string, message: string): boolean => {
+  const respondToInterest = useCallback(async (
+    fromUserId: string,
+    message: string
+  ): Promise<{ sent: boolean; feedback?: string }> => {
     const blockReason = getMessageBlockReason(currentUser.id, fromUserId);
     if (blockReason) {
-      return false;
+      return { sent: false, feedback: blockReason };
+    }
+
+    const recipient = users.find((user) => user.id === fromUserId);
+    const conversationId = `conv_${[currentUser.id, fromUserId].sort().join('_')}`;
+    const moderationResult = await moderateFirstMessage({
+      senderAppUserId: currentUser.id,
+      recipientAppUserId: fromUserId,
+      senderEmail: currentUser.email,
+      recipientEmail: recipient?.email,
+      content: message,
+      conversationId,
+      isFirstMessage: false,
+    });
+
+    if (!moderationResult.approved) {
+      return {
+        sent: false,
+        feedback:
+          moderationResult.userFeedback ||
+          moderationResult.blockedReason ||
+          "This message can't be sent as written. Please remove sexual, harmful, or pressuring language and try again.",
+      };
     }
 
     let didSend = false;
@@ -928,7 +956,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       const responseMessage: ConversationMessage = {
-        id: `msg_${Date.now()}`,
+        id: moderationResult.messageId ?? `msg_${Date.now()}`,
         fromUserId: currentUser.id,  // Current user is responding
         toUserId: fromUserId,  // Response goes to the other user
         message,
@@ -1010,7 +1038,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (!didSend) {
-      return false;
+      return { sent: false, feedback: 'Unable to send message in this conversation right now.' };
     }
 
     if (updatedConversation) {
@@ -1026,8 +1054,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         void maybeCreateConciergeAutoReports(updatedConversation, generatedNudges);
       }
     }
-    return true;
-  }, [currentUser.id, maybeEnrichSnapshotsWithAI, maybeCreateConciergeAutoReports]);
+    return {
+      sent: true,
+      feedback: moderationResult.resetMessage ?? moderationResult.rewritePrompt ?? undefined,
+    };
+  }, [currentUser.id, currentUser.email, users, maybeEnrichSnapshotsWithAI, maybeCreateConciergeAutoReports]);
 
   const startRelationshipRoom = useCallback((partnerUserId: string): UserInteraction | null => {
     const blockReason = getMessageBlockReason(currentUser.id, partnerUserId);

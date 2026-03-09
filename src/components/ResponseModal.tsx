@@ -7,7 +7,7 @@ interface ResponseModalProps {
   senderUser: User | null;
   originalMessage: ConversationMessage | null;
   onClose: () => void;
-  onSubmit: (message: string) => void;
+  onSubmit: (message: string) => Promise<{ sent: boolean; feedback?: string }>;
 }
 
 const ResponseModal: React.FC<ResponseModalProps> = ({
@@ -20,6 +20,7 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitFeedback, setSubmitFeedback] = useState<string | null>(null);
 
   // Check if the selected message is the background check starter
   const isBackgroundCheckMessage = message.includes('background check');
@@ -47,20 +48,28 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
     e.preventDefault();
     if (!isReady) return;
 
+    setSubmitFeedback(null);
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const result = await onSubmit(message);
+    if (!result.sent) {
+      setIsSubmitting(false);
+      setSubmitFeedback(
+        result.feedback ??
+          "This message can't be sent as written. Please remove sexual, harmful, or pressuring language and try again."
+      );
+      return;
+    }
 
     setIsSubmitting(false);
     setIsSuccess(true);
-    onSubmit(message);
 
     // Close after showing success
     setTimeout(() => {
       onClose();
       setMessage('');
       setIsSuccess(false);
+      setSubmitFeedback(null);
     }, 2000);
   };
 
@@ -69,6 +78,7 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
       onClose();
       setMessage('');
       setIsSuccess(false);
+      setSubmitFeedback(null);
     }
   };
 
@@ -173,12 +183,23 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
 
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value.slice(0, maxLength))}
+                  onChange={(e) => {
+                    setMessage(e.target.value.slice(0, maxLength));
+                    if (submitFeedback) {
+                      setSubmitFeedback(null);
+                    }
+                  }}
                   placeholder="What would you like to say in response..."
                   className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] placeholder:text-[#A9B5AA]/50 focus:outline-none focus:border-[#D9FF3D] transition-colors resize-none"
                   rows={6}
                 />
               </div>
+
+              {submitFeedback && (
+                <div className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                  {submitFeedback}
+                </div>
+              )}
 
               {/* Character Count */}
               <div className="flex justify-between items-center text-xs">

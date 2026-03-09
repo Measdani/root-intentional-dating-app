@@ -11,6 +11,7 @@ type InlineMessageRequest = {
   sender_app_user_id: string;
   recipient_app_user_id: string;
   content: string;
+  is_first_message?: boolean;
   conversation_id?: string;
   sender_email?: string | null;
   recipient_email?: string | null;
@@ -147,12 +148,14 @@ const isInlineMessageRequest = (value: unknown): value is InlineMessageRequest =
   const payload = value as Partial<InlineMessageRequest>;
   const validSenderEmail = payload.sender_email === undefined || payload.sender_email === null || typeof payload.sender_email === "string";
   const validRecipientEmail = payload.recipient_email === undefined || payload.recipient_email === null || typeof payload.recipient_email === "string";
+  const validIsFirstMessage = payload.is_first_message === undefined || typeof payload.is_first_message === "boolean";
   const validConversationId = payload.conversation_id === undefined || typeof payload.conversation_id === "string";
 
   return (
     isNonEmptyString(payload.sender_app_user_id) &&
     isNonEmptyString(payload.recipient_app_user_id) &&
     isNonEmptyString(payload.content) &&
+    validIsFirstMessage &&
     isBooleanOrUndefined(payload.dry_run) &&
     validConversationId &&
     validSenderEmail &&
@@ -582,6 +585,7 @@ const buildAccountabilityDecision = (
   baseDecision: SafetyDecision,
   priorEvents: ParsedEnforcementEvent[],
   nowMs: number,
+  isFirstMessage: boolean,
 ): AccountabilityResult => {
   const behaviorReplay = replayBehaviorScore(priorEvents, nowMs);
   const blockedEvents24hBefore = countViolationsWithinWindow(
@@ -595,8 +599,12 @@ const buildAccountabilityDecision = (
     48 * HOUR_MS,
   );
   const activeLock = getActiveLock(priorEvents, nowMs);
+  const lockAppliesToMessage =
+    activeLock !== null &&
+    (activeLock.lockScope === "all_messages" ||
+      (activeLock.lockScope === "first_message" && isFirstMessage));
 
-  if (activeLock) {
+  if (lockAppliesToMessage && activeLock) {
     return {
       decision: {
         labels: ["temporary_send_lock"],
@@ -912,7 +920,7 @@ serve(async (request) => {
     return jsonResponse(400, {
       error:
         "Invalid payload. Expected either { message_id, force?, dry_run? } " +
-        "or { sender_app_user_id, recipient_app_user_id, content, conversation_id?, sender_email?, recipient_email?, dry_run? }",
+        "or { sender_app_user_id, recipient_app_user_id, content, is_first_message?, conversation_id?, sender_email?, recipient_email?, dry_run? }",
     });
   }
 
@@ -966,9 +974,10 @@ serve(async (request) => {
   } else {
     const payload = rawPayload as InlineMessageRequest;
     dryRun = Boolean(payload.dry_run);
+    const inlineIsFirstMessage = payload.is_first_message !== false;
 
     if (dryRun) {
-      const decision = evaluateFirstMessage(payload.content, true);
+      const decision = evaluateFirstMessage(payload.content, inlineIsFirstMessage);
       return jsonResponse(200, {
         dry_run: true,
         message_id: null,
@@ -989,7 +998,7 @@ serve(async (request) => {
         recipient_id: recipientRhUserId,
         thread_id: threadId,
         content: payload.content,
-        is_first_message: true,
+        is_first_message: inlineIsFirstMessage,
         status: "pending_review",
       })
       .select("id, sender_id, recipient_id, content, is_first_message, status")
@@ -1011,7 +1020,7 @@ serve(async (request) => {
       recipient_email: normalizeOptionalEmail(payload.recipient_email),
       conversation_id: threadId,
       content: payload.content,
-      is_first_message: true,
+      is_first_message: inlineIsFirstMessage,
     };
   }
 
@@ -1039,6 +1048,7 @@ serve(async (request) => {
     baseDecision,
     priorEnforcementEvents,
     nowMs,
+    message.is_first_message,
   );
   const finalDecision = accountability.decision;
 

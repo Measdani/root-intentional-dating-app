@@ -19,7 +19,9 @@ import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
-import type { User } from '@/types';
+import { getGrowthModeCoachGuidance, type GrowthModeCoachResult } from '@/services/growthModeCoachService';
+import { SUPPORT_EMAIL } from '@/constants/support';
+import type { User, AssessmentResult } from '@/types';
 
 type ResourceProgressMap = Record<
   string,
@@ -29,6 +31,35 @@ type ResourceProgressMap = Record<
     updatedAt: number;
   }
 >;
+
+const LOW_SCORE_REASON_CODE_MAP: Record<string, string> = {
+  'emotional-regulation': 'low_emotional_regulation',
+  accountability: 'low_accountability',
+  autonomy: 'low_autonomy',
+  boundaries: 'low_boundaries',
+  'conflict-repair': 'low_conflict_repair',
+  'integrity-check': 'low_integrity_alignment',
+};
+
+const buildGrowthReasonCodes = (result: AssessmentResult | null): string[] => {
+  if (!result) return [];
+
+  const codes = new Set<string>();
+  Object.entries(result.categoryScores || {}).forEach(([category, score]) => {
+    if (typeof score === 'number' && Number.isFinite(score) && score < 70) {
+      const mapped = LOW_SCORE_REASON_CODE_MAP[category] ?? `low_${category.replace(/[^a-z0-9]+/gi, '_').toLowerCase()}`;
+      codes.add(mapped);
+    }
+  });
+
+  (result.growthAreas || []).forEach((area) => {
+    if (!area || typeof area !== 'string') return;
+    const normalized = area.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    if (normalized) codes.add(normalized);
+  });
+
+  return Array.from(codes);
+};
 
 const GrowthModeSection: React.FC = () => {
   const { activeCommunity } = useCommunity();
@@ -54,14 +85,18 @@ const GrowthModeSection: React.FC = () => {
     markNotificationAsRead,
     reloadNotifications,
     reloadInteractions,
+    getNextRetakeDate,
   } = useApp();
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources' | 'blog'>('browse');
   const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [messageText, setMessageText] = useState('');
+  const [messageFeedback, setMessageFeedback] = useState<string | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [modeRefreshTick, setModeRefreshTick] = useState(0);
+  const [coachGuidance, setCoachGuidance] = useState<GrowthModeCoachResult | null>(null);
+  const [coachLoading, setCoachLoading] = useState(false);
 
   useEffect(() => {
     const handleModeUpdated = () => setModeRefreshTick((previous) => previous + 1);
@@ -148,6 +183,20 @@ const GrowthModeSection: React.FC = () => {
     });
   }, [modeResourceAccessActive, resources]);
 
+  const moduleProgressSummary = useMemo(() => {
+    const progressRows = Object.values(resourceProgress);
+    const startedPaths = progressRows.filter((entry) => entry.viewedModuleIds.length > 0).length;
+    const completedPaths = progressRows.filter(
+      (entry) => entry.totalModules > 0 && entry.viewedModuleIds.length >= entry.totalModules
+    ).length;
+
+    return {
+      total_paths: combinedModeResources.length,
+      started_paths: startedPaths,
+      completed_paths: completedPaths,
+    };
+  }, [resourceProgress, combinedModeResources.length]);
+
   // Load fresh interactions on component mount and when entering browse/inbox tabs
   useEffect(() => {
     reloadInteractions();
@@ -229,6 +278,71 @@ const GrowthModeSection: React.FC = () => {
       console.warn('Failed to save growth resource progress:', error);
     }
   }, [progressStorageKey, resourceProgress]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCoachGuidance = async () => {
+      const cacheKey = `rooted_growth_coach_cache_${currentUser.id}`;
+      const lastRunKey = `rooted_growth_coach_last_run_${currentUser.id}`;
+      const lastRunRaw = localStorage.getItem(lastRunKey);
+      const lastRun = lastRunRaw ? Number(lastRunRaw) : 0;
+      const throttleWindowMs = 6 * 60 * 60 * 1000;
+
+      if (Number.isFinite(lastRun) && lastRun > 0 && Date.now() - lastRun < throttleWindowMs) {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached) as GrowthModeCoachResult;
+            if (active) setCoachGuidance(parsed);
+            return;
+          } catch (error) {
+            console.warn('Failed to parse cached growth coach guidance:', error);
+          }
+        }
+      }
+
+      setCoachLoading(true);
+
+      const reassessmentDate = getNextRetakeDate();
+      const result = await getGrowthModeCoachGuidance({
+        appUserId: currentUser.id,
+        appUserEmail: currentUser.email,
+        triggerSource: 'enters_growth_mode',
+        assessmentSummary: assessmentResult
+          ? `Assessment: ${assessmentResult.percentage}% score, ${assessmentResult.passed ? 'alignment-ready' : 'growth-mode'}.`
+          : undefined,
+        reasonCodes: buildGrowthReasonCodes(assessmentResult),
+        moduleProgress: moduleProgressSummary,
+        cooldownReassessmentDate: reassessmentDate ? reassessmentDate.toISOString() : null,
+      });
+
+      if (!active) return;
+      setCoachLoading(false);
+
+      if (!result) return;
+
+      setCoachGuidance(result);
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(result));
+        localStorage.setItem(lastRunKey, String(Date.now()));
+      } catch (error) {
+        console.warn('Failed to cache growth coach guidance:', error);
+      }
+    };
+
+    void loadCoachGuidance();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    currentUser.id,
+    currentUser.email,
+    assessmentResult,
+    moduleProgressSummary,
+    getNextRetakeDate,
+  ]);
 
   // Calculate unread message count for growth mode inbox
   const unreadMessageCount = useMemo(() => {
@@ -510,6 +624,67 @@ const GrowthModeSection: React.FC = () => {
             </div>
           </div>
         ))}
+
+        {(coachLoading || coachGuidance) && (
+          <div className="mb-8 rounded-2xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-4 h-4 text-[#D9FF3D]" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[#D9FF3D]">
+                Growth Coach
+              </h2>
+            </div>
+
+            {coachLoading && (
+              <p className="text-sm text-[#A9B5AA]">Preparing your next growth steps...</p>
+            )}
+
+            {!coachLoading && coachGuidance && (
+              <div className="space-y-4">
+                <p className="text-sm text-[#F6FFF2] leading-relaxed">
+                  {coachGuidance.explanationCopy}
+                </p>
+
+                {coachGuidance.recommendedModules.length > 0 && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">
+                      Recommended Modules
+                    </p>
+                    <ul className="space-y-1">
+                      {coachGuidance.recommendedModules.slice(0, 2).map((module) => (
+                        <li key={module} className="text-sm text-[#F6FFF2]">
+                          • {module}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
+                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">Reflection Prompt</p>
+                    <p className="text-sm text-[#F6FFF2]">{coachGuidance.reflectionPrompt}</p>
+                  </div>
+                  <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
+                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">Journaling Prompt</p>
+                    <p className="text-sm text-[#F6FFF2]">{coachGuidance.journalingPrompt}</p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-[#A9B5AA]">{coachGuidance.accountabilityNudge}</p>
+
+                {coachGuidance.reassessmentNotice && (
+                  <p className="text-sm text-[#D9FF3D]">{coachGuidance.reassessmentNotice}</p>
+                )}
+
+                {coachGuidance.escalateToSupport && (
+                  <p className="text-sm text-amber-300">
+                    This question needs human support review. Contact {coachGuidance.supportEmail || SUPPORT_EMAIL}.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tab Navigation */}
         <div className="mb-10 flex gap-4 border-b border-[#1A211A]">
@@ -1072,14 +1247,20 @@ const GrowthModeSection: React.FC = () => {
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-[#0B0F0C]/80 backdrop-blur-sm"
-            onClick={() => setSelectedProfileUser(null)}
+            onClick={() => {
+              setSelectedProfileUser(null);
+              setMessageFeedback(null);
+            }}
           />
 
           {/* Profile Card */}
           <div className="relative bg-[#111611] rounded-[28px] border border-[#1A211A] p-8 w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in">
             {/* Close Button */}
             <button
-              onClick={() => setSelectedProfileUser(null)}
+              onClick={() => {
+                setSelectedProfileUser(null);
+                setMessageFeedback(null);
+              }}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#1A211A] flex items-center justify-center text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
             >
               <X className="w-4 h-4" />
@@ -1143,7 +1324,12 @@ const GrowthModeSection: React.FC = () => {
                 </div>
                 <textarea
                   value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
+                  onChange={(e) => {
+                    setMessageText(e.target.value);
+                    if (messageFeedback) {
+                      setMessageFeedback(null);
+                    }
+                  }}
                   placeholder="Share a bit about yourself or why you're interested..."
                   className="w-full bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-3 text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none resize-none h-24"
                 />
@@ -1161,22 +1347,37 @@ const GrowthModeSection: React.FC = () => {
                 )}
               </div>
 
+              {messageFeedback && (
+                <div className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                  {messageFeedback}
+                </div>
+              )}
+
               <button
                 onClick={async () => {
                   const existingConversation = getConversation(selectedProfileUser.id);
                   let sent = false;
+                  setMessageFeedback(null);
 
                   // Only express interest if there's no existing conversation
                   if (!existingConversation) {
                     const result = await expressInterest(selectedProfileUser.id, messageText);
                     sent = result.sent;
+                    if (!sent && result.feedback) {
+                      setMessageFeedback(result.feedback);
+                    }
                   } else if (messageText.trim()) {
                     // If conversation exists, just respond
-                    sent = respondToInterest(selectedProfileUser.id, messageText);
+                    const result = await respondToInterest(selectedProfileUser.id, messageText);
+                    sent = result.sent;
+                    if (!sent && result.feedback) {
+                      setMessageFeedback(result.feedback);
+                    }
                   }
                   if (!sent) return;
 
                   // Close the modal and show background check if needed
+                  setMessageFeedback(null);
                   setMessageText('');
 
                   if (currentUser.assessmentPassed && !currentUser.backgroundCheckVerified) {

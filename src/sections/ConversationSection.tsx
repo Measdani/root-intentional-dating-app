@@ -90,11 +90,12 @@ const ConversationSection: React.FC = () => {
     );
   }
 
-  const handleResponseSubmit = (message: string) => {
-    const sent = respondToInterest(otherUserId, message);
-    if (sent) {
+  const handleResponseSubmit = async (message: string): Promise<{ sent: boolean; feedback?: string }> => {
+    const result = await respondToInterest(otherUserId, message);
+    if (result.sent) {
       setShowResponseModal(false);
     }
+    return result;
   };
 
   const handleConsentClick = () => {

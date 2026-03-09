@@ -36,6 +36,7 @@ export interface ModerateFirstMessageInput {
   recipientEmail?: string;
   content: string;
   conversationId: string;
+  isFirstMessage?: boolean;
 }
 
 export interface ModerateFirstMessageResult {
@@ -109,6 +110,7 @@ export const moderateFirstMessage = async (
         sender_email: input.senderEmail ?? null,
         recipient_email: input.recipientEmail ?? null,
         content: input.content,
+        is_first_message: input.isFirstMessage ?? true,
         conversation_id: input.conversationId,
       },
     });
