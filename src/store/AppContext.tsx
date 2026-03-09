@@ -810,14 +810,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (!moderationResult.approved) {
-      if (moderationResult.userFeedback) {
-        toast.error(moderationResult.userFeedback);
-      } else if (moderationResult.blockedReason) {
-        toast.error(moderationResult.blockedReason);
-      } else {
-        toast.error('This message could not be sent.');
-      }
-
       if (moderationResult.rewritePrompt) {
         toast.info(moderationResult.rewritePrompt);
       }

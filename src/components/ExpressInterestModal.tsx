@@ -43,7 +43,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
     setIsSubmitting(false);
     if (!sent) {
       setSubmitFeedback(
-        'This message cannot be sent as written. Please remove harmful, sexual, or pressuring wording and try again.'
+        "This message can't be sent as written.\nPlease remove sexual, harmful, or pressuring language and try again."
       );
       return;
     }
@@ -178,7 +178,7 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
 
               {submitFeedback && (
                 <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2">
-                  <p className="text-xs text-red-300">{submitFeedback}</p>
+                  <p className="text-xs text-red-300 whitespace-pre-line">{submitFeedback}</p>
                 </div>
               )}
 
