@@ -110,6 +110,8 @@ const mergeUsersById = (existingUsers: User[], usersToMerge: User[]): User[] =>
 
 const CONCIERGE_AUTO_REPORTS_KEY = 'rooted_concierge_auto_reports';
 const SYSTEM_CONCIERGE_REPORTER_ID = 'system-concierge';
+const FIRST_MESSAGE_BLOCKED_TOAST =
+  "Message blocked. Remove sexual, harmful, or pressuring language, then try again.";
 
 const buildSystemReportId = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -810,9 +812,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (!moderationResult.approved) {
-      if (moderationResult.rewritePrompt) {
-        toast.info(moderationResult.rewritePrompt);
-      }
+      toast.info(FIRST_MESSAGE_BLOCKED_TOAST);
 
       return false;
     }
