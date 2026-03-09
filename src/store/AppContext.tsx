@@ -9,6 +9,7 @@ import {
 } from '@/modules';
 import { toast } from 'sonner';
 import { reportService } from '@/services/reportService';
+import { triageReportIntake } from '@/services/reportIntakeService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
 import { moderateFirstMessage } from '@/services/firstMessageSafetyService';
@@ -1518,8 +1519,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.warn('Supabase report write failed (localStorage fallback active):', err)
     })
 
+    const targetType: 'message' | 'profile' | 'behavior' =
+      reason === 'fake-profile'
+        ? 'profile'
+        : conversationId
+          ? 'message'
+          : 'behavior';
+    const reportedUserEmail = users.find((candidate) => candidate.id === reportedUserId)?.email;
+
+    triageReportIntake({
+      reporterAppUserId: currentUser.id,
+      reportedAppUserId: reportedUserId,
+      reporterEmail: currentUser.email,
+      reportedEmail: reportedUserEmail,
+      reasonSelected: reason,
+      freeText: details,
+      targetType,
+      targetId: conversationId ?? null,
+    }).catch((error) => {
+      console.warn('Report-intake triage failed (report still stored locally):', error);
+    });
+
     return reportId;
-  }, [currentUser.id, calculateSeverity]);
+  }, [currentUser.id, currentUser.email, users, calculateSeverity]);
 
   // Block a user
   const blockUser = useCallback((userId: string) => {
