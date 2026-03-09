@@ -6,7 +6,12 @@ interface ExpressInterestModalProps {
   isOpen: boolean;
   targetUser: User | null;
   onClose: () => void;
-  onSubmit: (message: string) => boolean | Promise<boolean>;
+  onSubmit: (
+    message: string
+  ) =>
+    | boolean
+    | { sent: boolean; feedback?: string }
+    | Promise<boolean | { sent: boolean; feedback?: string }>;
 }
 
 const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
@@ -38,11 +43,16 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const sent = await onSubmit(message);
+    const submitResult = await onSubmit(message);
+    const sent =
+      typeof submitResult === 'boolean' ? submitResult : submitResult.sent;
+    const feedback =
+      typeof submitResult === 'boolean' ? undefined : submitResult.feedback;
     setIsSubmitting(false);
     if (!sent) {
       setSubmitFeedback(
-        "This message can't be sent as written.\nPlease remove sexual, harmful, or pressuring language and try again."
+        feedback ||
+          "This message can't be sent as written.\nPlease remove sexual, harmful, or pressuring language and try again."
       );
       return;
     }

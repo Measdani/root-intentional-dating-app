@@ -45,7 +45,10 @@ interface AppContextType extends AppState {
   setHasJoinedList: (value: boolean) => void;
   setShowEmailModal: (value: boolean) => void;
   resetAssessment: () => void;
-  expressInterest: (toUserId: string, message: string) => Promise<boolean>;
+  expressInterest: (
+    toUserId: string,
+    message: string
+  ) => Promise<{ sent: boolean; feedback?: string }>;
   respondToInterest: (fromUserId: string, message: string) => boolean;
   startRelationshipRoom: (partnerUserId: string) => UserInteraction | null;
   markMessagesAsRead: (conversationId: string) => void;
@@ -783,17 +786,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // NOTE: Auto-response and auto-consent features removed
   // All messaging and consent decisions are now controlled by users only
 
-  const expressInterest = useCallback(async (toUserId: string, message: string): Promise<boolean> => {
+  const expressInterest = useCallback(async (
+    toUserId: string,
+    message: string
+  ): Promise<{ sent: boolean; feedback?: string }> => {
     console.log('expressInterest called:', { toUserId, message, currentUserId: currentUser.id });
 
     const blockReason = getNewMatchBlockReason(currentUser.id, toUserId);
     if (blockReason) {
-      return false;
+      return { sent: false, feedback: blockReason };
     }
 
     // Check if already expressed interest to this user
     if (interactions.sentInterests[toUserId]) {
-      return false;
+      return { sent: false, feedback: 'You already expressed interest in this person.' };
     }
 
     // Create deterministic conversationId using sorted user pair so both users share same thread
@@ -809,7 +815,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (!moderationResult.approved) {
-      return false;
+      return {
+        sent: false,
+        feedback:
+          moderationResult.userFeedback ||
+          moderationResult.blockedReason ||
+          "This message can't be sent as written. Please remove sexual, harmful, or pressuring language and try again.",
+      };
     }
 
     const messageId = moderationResult.messageId ?? `msg_${Date.now()}`;
@@ -862,7 +874,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // NOTE: Auto-response feature disabled to allow natural conversation flow
     // Users should reply manually without system auto-generating responses
-    return true;
+    return {
+      sent: true,
+      feedback: moderationResult.resetMessage ?? moderationResult.rewritePrompt ?? undefined,
+    };
   }, [currentUser.id, currentUser.email, interactions.sentInterests, users]);
 
   const respondToInterest = useCallback((fromUserId: string, message: string): boolean => {

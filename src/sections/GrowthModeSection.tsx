@@ -1168,7 +1168,8 @@ const GrowthModeSection: React.FC = () => {
 
                   // Only express interest if there's no existing conversation
                   if (!existingConversation) {
-                    sent = await expressInterest(selectedProfileUser.id, messageText);
+                    const result = await expressInterest(selectedProfileUser.id, messageText);
+                    sent = result.sent;
                   } else if (messageText.trim()) {
                     // If conversation exists, just respond
                     sent = respondToInterest(selectedProfileUser.id, messageText);

@@ -6,7 +6,8 @@ type FirstMessageSafetyAction =
   | 'approve_with_nudge'
   | 'block_and_rewrite'
   | 'block_and_warn'
-  | 'escalate_to_review';
+  | 'escalate_to_review'
+  | 'temporary_send_lock';
 
 interface FirstMessageSafetyResponse {
   message_id?: string;
@@ -20,6 +21,12 @@ interface FirstMessageSafetyResponse {
   rewrite_prompt?: string | null;
   user_feedback?: string | null;
   escalate?: boolean;
+  accountability_level?: number;
+  lock_scope?: 'first_message' | 'all_messages' | null;
+  lock_until?: string | null;
+  behavior_score?: number;
+  behavior_points_added?: number;
+  reset_message?: string | null;
 }
 
 export interface ModerateFirstMessageInput {
@@ -44,6 +51,12 @@ export interface ModerateFirstMessageResult {
   rewritePrompt: string | null;
   userFeedback: string | null;
   escalate: boolean;
+  accountabilityLevel: number;
+  lockScope: 'first_message' | 'all_messages' | null;
+  lockUntil: string | null;
+  behaviorScore: number;
+  behaviorPointsAdded: number;
+  resetMessage: string | null;
 }
 
 const FALLBACK_FAILURE_RESULT: ModerateFirstMessageResult = {
@@ -56,6 +69,12 @@ const FALLBACK_FAILURE_RESULT: ModerateFirstMessageResult = {
   rewritePrompt: null,
   userFeedback: `We could not verify this message right now. Please try again shortly or contact ${SUPPORT_EMAIL}.`,
   escalate: true,
+  accountabilityLevel: 0,
+  lockScope: null,
+  lockUntil: null,
+  behaviorScore: 0,
+  behaviorPointsAdded: 0,
+  resetMessage: null,
 };
 
 const toAction = (value: unknown): FirstMessageSafetyAction => {
@@ -64,7 +83,8 @@ const toAction = (value: unknown): FirstMessageSafetyAction => {
     value === 'approve_with_nudge' ||
     value === 'block_and_rewrite' ||
     value === 'block_and_warn' ||
-    value === 'escalate_to_review'
+    value === 'escalate_to_review' ||
+    value === 'temporary_send_lock'
   ) {
     return value;
   }
@@ -119,6 +139,22 @@ export const moderateFirstMessage = async (
       rewritePrompt: typeof parsed.rewrite_prompt === 'string' ? parsed.rewrite_prompt : null,
       userFeedback: typeof parsed.user_feedback === 'string' ? parsed.user_feedback : null,
       escalate: Boolean(parsed.escalate),
+      accountabilityLevel:
+        typeof parsed.accountability_level === 'number'
+          ? parsed.accountability_level
+          : 0,
+      lockScope:
+        parsed.lock_scope === 'first_message' || parsed.lock_scope === 'all_messages'
+          ? parsed.lock_scope
+          : null,
+      lockUntil: typeof parsed.lock_until === 'string' ? parsed.lock_until : null,
+      behaviorScore:
+        typeof parsed.behavior_score === 'number' ? parsed.behavior_score : 0,
+      behaviorPointsAdded:
+        typeof parsed.behavior_points_added === 'number'
+          ? parsed.behavior_points_added
+          : 0,
+      resetMessage: typeof parsed.reset_message === 'string' ? parsed.reset_message : null,
     };
   } catch (error) {
     console.warn('First-message safety moderation unavailable:', error);
