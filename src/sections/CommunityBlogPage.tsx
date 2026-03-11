@@ -50,6 +50,12 @@ const CommunityBlogPage: React.FC = () => {
     loadBlogs();
   }, []);
 
+  useEffect(() => {
+    if (selectedBlog) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, [selectedBlog?.id]);
+
   const filteredBlogs = blogs.filter((blog) => {
     // Only show public blogs (not module-only)
     if (isModuleOnly(blog)) return false;
