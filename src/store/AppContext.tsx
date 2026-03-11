@@ -187,6 +187,92 @@ const updateInteractionStateByConversationId = (
   };
 };
 
+const EMPTY_INTERACTIONS: InteractionState = {
+  sentInterests: {},
+  receivedInterests: {},
+};
+
+const buildDefaultPhotoConsent = (fromUserId: string, toUserId: string): UserInteraction['photoConsent'] => ({
+  fromUser: {
+    userId: fromUserId,
+    hasConsented: false,
+  },
+  toUser: {
+    userId: toUserId,
+    hasConsented: false,
+  },
+});
+
+const normalizeStoredInteraction = (interaction: UserInteraction): UserInteraction => {
+  const fallbackPhotoConsent = buildDefaultPhotoConsent(interaction.fromUserId, interaction.toUserId);
+
+  return {
+    ...interaction,
+    messages: Array.isArray(interaction.messages) ? interaction.messages : [],
+    photoConsent: interaction.photoConsent
+      ? {
+          fromUser: interaction.photoConsent.fromUser ?? fallbackPhotoConsent.fromUser,
+          toUser: interaction.photoConsent.toUser ?? fallbackPhotoConsent.toUser,
+        }
+      : fallbackPhotoConsent,
+    concierge: {
+      nudges: interaction.concierge?.nudges ?? [],
+      snapshots: interaction.concierge?.snapshots ?? [],
+    },
+    milestones: normalizeMilestones(interaction.milestones),
+    createdAt: Number.isFinite(interaction.createdAt) ? interaction.createdAt : Date.now(),
+    updatedAt: Number.isFinite(interaction.updatedAt) ? interaction.updatedAt : Date.now(),
+  };
+};
+
+const normalizeStoredInteractionBucket = (bucket: unknown): Record<string, UserInteraction> => {
+  if (!bucket || typeof bucket !== 'object') return {};
+
+  return Object.entries(bucket as Record<string, unknown>).reduce((acc, [key, value]) => {
+    if (!value || typeof value !== 'object') return acc;
+
+    const interaction = value as Partial<UserInteraction>;
+    if (
+      typeof interaction.fromUserId !== 'string' ||
+      typeof interaction.toUserId !== 'string' ||
+      typeof interaction.conversationId !== 'string'
+    ) {
+      return acc;
+    }
+
+    acc[key] = normalizeStoredInteraction(interaction as UserInteraction);
+    return acc;
+  }, {} as Record<string, UserInteraction>);
+};
+
+const parseStoredInteractionState = (raw: string | null): InteractionState => {
+  if (!raw) return EMPTY_INTERACTIONS;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<InteractionState>;
+    return {
+      sentInterests: normalizeStoredInteractionBucket(parsed.sentInterests),
+      receivedInterests: normalizeStoredInteractionBucket(parsed.receivedInterests),
+    };
+  } catch (error) {
+    console.error('Failed to parse interactions from localStorage:', error);
+    return EMPTY_INTERACTIONS;
+  }
+};
+
+const findConversationById = (
+  state: InteractionState,
+  conversationId: string
+): UserInteraction | null => {
+  const matches = [
+    ...Object.values(state.sentInterests),
+    ...Object.values(state.receivedInterests),
+  ].filter((interaction) => interaction.conversationId === conversationId);
+
+  if (matches.length === 0) return null;
+  return matches.sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentView, setCurrentViewState] = useState<AppView>('landing');
   const [previousView, setPreviousView] = useState<AppView>('landing');
@@ -393,17 +479,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
   const suspensionProcessedRef = useRef<string | null>(null);
+  const interactionsHydratedRef = useRef(false);
 
   // Load interactions from localStorage on mount
   // Uses shared storage so all users can see each other's messages (for testing)
   useEffect(() => {
     try {
       const saved = localStorage.getItem('rooted_shared_interactions');
-      if (saved) {
-        setInteractions(JSON.parse(saved));
-      }
+      setInteractions(parseStoredInteractionState(saved));
+      interactionsHydratedRef.current = true;
     } catch (error) {
       console.error('Failed to load interactions:', error);
+      interactionsHydratedRef.current = true;
     }
 
     // Load blocked users
@@ -424,20 +511,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Save interactions to shared localStorage so all users can see messages
   useEffect(() => {
-    console.log('Save interactions useEffect triggered with:', interactions);
+    if (!interactionsHydratedRef.current) return;
     try {
-      console.log('Stringifying interactions...');
-      const json = JSON.stringify(interactions);
-      console.log('Successfully stringified. JSON length:', json.length);
-      console.log('Calling localStorage.setItem...');
-      localStorage.setItem('rooted_shared_interactions', json);
-      console.log('✅ Interactions saved successfully to localStorage');
-      console.log('Saved JSON:', json);
+      localStorage.setItem('rooted_shared_interactions', JSON.stringify(interactions));
     } catch (error) {
-      console.error('❌ Failed to save interactions:', error);
-      console.error('Error type:', error instanceof Error ? error.name : typeof error);
-      console.error('Error message:', error instanceof Error ? error.message : String(error));
-      console.error('Interactions object:', interactions);
+      console.error('Failed to save interactions:', error);
     }
   }, [interactions]);
 
@@ -511,13 +589,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Manually reload interactions from localStorage
   const reloadInteractions = useCallback(() => {
     try {
-      console.log('🔄 Reloading interactions from localStorage...');
       const saved = localStorage.getItem('rooted_shared_interactions');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('✅ Interactions reloaded:', parsed);
-        setInteractions(parsed);
-      }
+      setInteractions(parseStoredInteractionState(saved));
+      interactionsHydratedRef.current = true;
     } catch (error) {
       console.error('Failed to reload interactions:', error);
     }
@@ -527,21 +601,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // StorageEvent doesn't fire in same tab, so we need to manually reload
   useEffect(() => {
     try {
-      console.log('useEffect triggered: reloading interactions for user', currentUser.id);
       const saved = localStorage.getItem('rooted_shared_interactions');
-      console.log('Retrieved from localStorage:', saved);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('Parsed interactions:', parsed);
-        setInteractions(parsed);
-        console.log('✅ Interactions reloaded for user', currentUser.id);
-      } else {
-        console.log('No interactions found in localStorage for user', currentUser.id);
-      }
+      setInteractions(parseStoredInteractionState(saved));
+      interactionsHydratedRef.current = true;
     } catch (error) {
       console.error('Failed to reload interactions on user change:', error);
     }
   }, [currentUser.id]);
+
+  // Keep selected conversation aligned to the canonical interaction state.
+  useEffect(() => {
+    setSelectedConversation((prev) => {
+      if (!prev) return prev;
+
+      const refreshedConversation = findConversationById(interactions, prev.conversationId);
+      return refreshedConversation ?? prev;
+    });
+  }, [interactions]);
 
   // Check for expired suspensions and transition to needs-growth status
   useEffect(() => {
@@ -1073,25 +1149,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...Object.values(interactions.receivedInterests),
     ].find((interaction) => interaction.conversationId === conversationId);
 
-    const room: UserInteraction = existing ?? {
-      fromUserId: currentUser.id,
-      toUserId: partnerUserId,
-      conversationId,
-      messages: [],
-      photoConsent: {
-        fromUser: { userId: currentUser.id, hasConsented: true, consentTimestamp: now },
-        toUser: { userId: partnerUserId, hasConsented: true, consentTimestamp: now },
-      },
-      photosUnlocked: true,
-      status: 'photos_unlocked',
-      concierge: {
-        nudges: [],
-        snapshots: [],
-      },
-      milestones: createInitialMilestones(),
-      createdAt: now,
-      updatedAt: now,
-    };
+    const room: UserInteraction = existing
+      ? normalizeStoredInteraction(existing)
+      : {
+          fromUserId: currentUser.id,
+          toUserId: partnerUserId,
+          conversationId,
+          messages: [],
+          photoConsent: {
+            fromUser: { userId: currentUser.id, hasConsented: true, consentTimestamp: now },
+            toUser: { userId: partnerUserId, hasConsented: true, consentTimestamp: now },
+          },
+          photosUnlocked: true,
+          status: 'photos_unlocked',
+          concierge: {
+            nudges: [],
+            snapshots: [],
+          },
+          milestones: createInitialMilestones(),
+          createdAt: now,
+          updatedAt: now,
+        };
 
     setInteractions(prev => {
       const alreadyMappedSent = prev.sentInterests[partnerUserId]?.conversationId === conversationId;
