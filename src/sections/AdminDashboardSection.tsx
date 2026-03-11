@@ -175,6 +175,81 @@ const AdminDashboardSection: React.FC = () => {
         )}
       </Card>
 
+      {!copilotLoading && !copilotError && copilotSummary && (
+        <Card className="bg-[#111611] border-[#1A211A] p-6 mb-8">
+          <h3 className="text-lg font-display font-bold text-[#F6FFF2] mb-4">
+            Growth Mode Insights
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+            <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C]/60 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-[#A9B5AA] mb-1">In Growth Mode</p>
+              <p className="text-xl font-display text-[#F6FFF2]">
+                {copilotSummary.growthModeInsights.growth_mode_users}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C]/60 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-[#A9B5AA] mb-1">Newly Placed</p>
+              <p className="text-xl font-display text-[#F6FFF2]">
+                {copilotSummary.growthModeInsights.newly_placed_in_growth}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C]/60 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-[#A9B5AA] mb-1">Coached This Window</p>
+              <p className="text-xl font-display text-[#F6FFF2]">
+                {copilotSummary.growthModeInsights.coached_users_in_window}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C]/60 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-[#A9B5AA] mb-1">Low Engagement</p>
+              <p className="text-xl font-display text-amber-300">
+                {copilotSummary.growthModeInsights.low_engagement_users}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C]/60 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-[#A9B5AA] mb-1">Reassessment Notices</p>
+              <p className="text-xl font-display text-[#F6FFF2]">
+                {copilotSummary.growthModeInsights.reassessment_notices_sent}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C]/60 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">Top Coaching Themes</p>
+              {copilotSummary.growthModeInsights.top_themes.length > 0 ? (
+                <div className="space-y-1">
+                  {copilotSummary.growthModeInsights.top_themes.map((item) => (
+                    <div key={item.theme} className="flex items-center justify-between text-sm">
+                      <span className="text-[#F6FFF2]">{item.theme}</span>
+                      <span className="text-[#A9B5AA]">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#A9B5AA]">No themes recorded for this period yet.</p>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C]/60 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">Top Recommended Modules</p>
+              {copilotSummary.growthModeInsights.top_modules.length > 0 ? (
+                <div className="space-y-1">
+                  {copilotSummary.growthModeInsights.top_modules.map((item) => (
+                    <div key={item.module} className="flex items-center justify-between text-sm">
+                      <span className="text-[#F6FFF2]">{item.module}</span>
+                      <span className="text-[#A9B5AA]">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#A9B5AA]">No module recommendations recorded for this period yet.</p>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Growth Chart */}

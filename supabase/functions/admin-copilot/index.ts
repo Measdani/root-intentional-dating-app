@@ -48,6 +48,16 @@ type CopilotMetrics = {
   top_block_reasons: { reason: string; count: number }[];
 };
 
+type GrowthModeInsights = {
+  growth_mode_users: number;
+  newly_placed_in_growth: number;
+  coached_users_in_window: number;
+  low_engagement_users: number;
+  reassessment_notices_sent: number;
+  top_themes: Array<{ theme: string; count: number }>;
+  top_modules: Array<{ module: string; count: number }>;
+};
+
 const AGENT_NAME = "admin_copilot";
 const RULE_VERSION = "ac-rules-2026-03-09";
 const MODEL_VERSION = "deterministic-rule-engine-v1";
@@ -140,11 +150,28 @@ const normalizeReasonLabel = (label: string): string => {
   }
 };
 
+const normalizeThemeLabel = (theme: string): string =>
+  theme
+    .trim()
+    .replaceAll("_", " ")
+    .replace(/\s+/g, " ");
+
+const extractRecommendedModules = (value: unknown): string[] => {
+  const content = asRecord(value);
+  const modules = content.recommended_modules;
+  if (!Array.isArray(modules)) return [];
+  return modules
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+};
+
 const buildSummaryText = (
   periodLabel: "24 hours" | "7 days",
   metrics: CopilotMetrics,
   prioritizedReviewList: PrioritizedCase[],
   patternAlerts: string[],
+  growthModeInsights: GrowthModeInsights,
 ): string => {
   const reasonPreview =
     metrics.top_block_reasons.length > 0
@@ -161,12 +188,16 @@ const buildSummaryText = (
 
   const patternPreview =
     patternAlerts.length > 0 ? ` Pattern alert: ${patternAlerts[0]}` : "";
+  const growthPreview =
+    growthModeInsights.growth_mode_users > 0
+      ? ` Growth Mode currently has ${growthModeInsights.growth_mode_users} users, with ${growthModeInsights.low_engagement_users} flagged for low engagement.`
+      : "";
 
   return (
     `In the last ${periodLabel}, ${metrics.blocked_first_messages} first messages were blocked, mostly for ${reasonPreview}. ` +
     `${metrics.profiles_needing_edits} profiles were sent back for edits. ` +
     `${metrics.urgent_reports} reports were marked urgent out of ${metrics.new_reports} new reports. ` +
-    `${priorityPreview}.${patternPreview}`
+    `${priorityPreview}.${patternPreview}${growthPreview}`
   ).trim();
 };
 
@@ -213,6 +244,7 @@ serve(async (request) => {
   const windowMs = periodType === "weekly" ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
   const fromIso = new Date(now.getTime() - windowMs).toISOString();
   const scamWindowIso = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
+  const engagementFromIso = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
@@ -427,11 +459,128 @@ serve(async (request) => {
     top_block_reasons: topBlockReasons,
   };
 
+  const [growthUsersRes, growthWindowCoachingRes, growthRecentCoachingRes] =
+    await Promise.all([
+      adminClient
+        .from("rh_users")
+        .select("id")
+        .eq("mode", "growth")
+        .limit(5000),
+      adminClient
+        .from("rh_coaching_recommendations")
+        .select("user_id, theme, recommendation_type, trigger_source, content_json")
+        .gte("delivered_at", fromIso)
+        .limit(3000),
+      adminClient
+        .from("rh_coaching_recommendations")
+        .select("user_id")
+        .gte("delivered_at", engagementFromIso)
+        .limit(5000),
+    ]);
+
+  if (
+    growthUsersRes.error ||
+    growthWindowCoachingRes.error ||
+    growthRecentCoachingRes.error
+  ) {
+    return jsonResponse(500, {
+      error: "Failed to load growth-mode insights",
+      details:
+        growthUsersRes.error?.message ||
+        growthWindowCoachingRes.error?.message ||
+        growthRecentCoachingRes.error?.message ||
+        "unknown error",
+    });
+  }
+
+  const growthUserIds = new Set(
+    (growthUsersRes.data ?? [])
+      .map((row) => (row as { id?: string }).id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0),
+  );
+
+  const coachedUsersInWindow = new Set<string>();
+  const newlyPlacedUsers = new Set<string>();
+  let reassessmentNoticesSent = 0;
+  const themeCounter = new Map<string, number>();
+  const moduleCounter = new Map<string, number>();
+
+  for (const row of growthWindowCoachingRes.data ?? []) {
+    const coaching = row as {
+      user_id?: string;
+      theme?: string;
+      recommendation_type?: string;
+      trigger_source?: string;
+      content_json?: unknown;
+    };
+
+    if (typeof coaching.user_id === "string") {
+      coachedUsersInWindow.add(coaching.user_id);
+      if (coaching.trigger_source === "enters_growth_mode") {
+        newlyPlacedUsers.add(coaching.user_id);
+      }
+    }
+
+    if (coaching.recommendation_type === "cooldown") {
+      reassessmentNoticesSent += 1;
+    }
+
+    if (typeof coaching.theme === "string" && coaching.theme.trim().length > 0) {
+      const themeKey = coaching.theme.trim().toLowerCase();
+      themeCounter.set(themeKey, (themeCounter.get(themeKey) ?? 0) + 1);
+    }
+
+    for (const moduleName of extractRecommendedModules(coaching.content_json)) {
+      moduleCounter.set(moduleName, (moduleCounter.get(moduleName) ?? 0) + 1);
+    }
+  }
+
+  const recentlyEngagedGrowthUsers = new Set(
+    (growthRecentCoachingRes.data ?? [])
+      .map((row) => (row as { user_id?: string }).user_id)
+      .filter(
+        (userId): userId is string =>
+          typeof userId === "string" && userId.length > 0 && growthUserIds.has(userId),
+      ),
+  );
+
+  const lowEngagementUsers = Math.max(
+    growthUserIds.size - recentlyEngagedGrowthUsers.size,
+    0,
+  );
+
+  const topThemes = Array.from(themeCounter.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([theme, count]) => ({
+      theme: normalizeThemeLabel(theme),
+      count,
+    }));
+
+  const topModules = Array.from(moduleCounter.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([module, count]) => ({
+      module,
+      count,
+    }));
+
+  const growthModeInsights: GrowthModeInsights = {
+    growth_mode_users: growthUserIds.size,
+    newly_placed_in_growth: newlyPlacedUsers.size,
+    coached_users_in_window: coachedUsersInWindow.size,
+    low_engagement_users: lowEngagementUsers,
+    reassessment_notices_sent: reassessmentNoticesSent,
+    top_themes: topThemes,
+    top_modules: topModules,
+  };
+
   const summaryText = buildSummaryText(
     periodType === "weekly" ? "7 days" : "24 hours",
     metrics,
     prioritizedReviewList,
     patternAlerts,
+    growthModeInsights,
   );
 
   const responsePayload = {
@@ -439,6 +588,7 @@ serve(async (request) => {
     period_type: periodType,
     summary_text: summaryText,
     metrics_json: metrics,
+    growth_mode_insights: growthModeInsights,
     prioritized_review_list: prioritizedReviewList,
     repeat_offender_digest: repeatOffenderDigest,
     low_confidence_clusters: lowConfidenceClusters,
@@ -463,6 +613,9 @@ serve(async (request) => {
         summary_text: summaryText,
         metrics_json: {
           ...metrics,
+          growth_mode_users: growthModeInsights.growth_mode_users,
+          growth_low_engagement_users: growthModeInsights.low_engagement_users,
+          growth_newly_placed: growthModeInsights.newly_placed_in_growth,
           prioritized_review_count: prioritizedReviewList.length,
           repeat_offender_count: repeatOffenderDigest.length,
           low_confidence_cluster_count: lowConfidenceClusters.length,
