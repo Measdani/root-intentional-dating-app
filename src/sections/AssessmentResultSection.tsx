@@ -8,12 +8,10 @@ import {
   toInnerPool,
   useCommunity,
 } from '@/modules';
-import { Check, AlertTriangle, TrendingUp, Lock } from 'lucide-react';
+import { Check, TrendingUp, Lock } from 'lucide-react';
 import { assessmentService } from '@/services/assessmentService';
 import { userService } from '@/services/userService';
 import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
-
-const ALIGNMENT_THRESHOLD_PERCENT = 85;
 
 const AssessmentResultSection: React.FC = () => {
   const { assessmentResult, setCurrentView, canRetakeAssessment, getNextRetakeDate } = useApp();
@@ -22,16 +20,14 @@ const AssessmentResultSection: React.FC = () => {
 
   if (!assessmentResult) return null;
 
-  // Auto-save assessment result immediately when component mounts
   useEffect(() => {
     const saveResult = async () => {
       let userId: string | undefined;
       console.log('[AssessmentResult] Component mounted, auto-saving result...', {
         passed: assessmentResult.passed,
-        percentage: assessmentResult.percentage
+        percentage: assessmentResult.percentage,
       });
 
-      // Save to database first
       try {
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
@@ -44,7 +40,6 @@ const AssessmentResultSection: React.FC = () => {
         console.error('[AssessmentResult] Failed to save to database:', err);
       }
 
-      // Save assessment result to persistent storage (survives logout/login)
       try {
         const persistentResult = {
           ...assessmentResult,
@@ -60,7 +55,6 @@ const AssessmentResultSection: React.FC = () => {
         console.error('[AssessmentResult] Failed to save assessmentResult:', err);
       }
 
-      // Write assessmentPassed + score back to currentUser in localStorage
       try {
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
@@ -96,12 +90,11 @@ const AssessmentResultSection: React.FC = () => {
       }
     };
 
-    saveResult();
+    void saveResult();
   }, [assessmentResult, activeCommunity.id]);
 
   const handleContinue = async () => {
     let userId: string | undefined;
-    // Save to database first
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
@@ -113,7 +106,6 @@ const AssessmentResultSection: React.FC = () => {
       console.error('Failed to save assessment result to database:', err);
     }
 
-    // Save assessment result to persistent storage (survives logout/login)
     try {
       const persistentResult = {
         ...assessmentResult,
@@ -128,7 +120,6 @@ const AssessmentResultSection: React.FC = () => {
       console.error('Failed to save assessment result:', err);
     }
 
-    // Write assessmentPassed + score back to currentUser in localStorage
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
@@ -162,7 +153,6 @@ const AssessmentResultSection: React.FC = () => {
       console.error('Failed to update assessmentPassed:', err);
     }
 
-    // Route based on assessment result
     if (assessmentResult.passed) {
       setCurrentView('browse');
     } else {
@@ -178,41 +168,16 @@ const AssessmentResultSection: React.FC = () => {
   const secondaryStyleMeta = assessmentResult.secondaryStyle
     ? ASSESSMENT_STYLE_META[assessmentResult.secondaryStyle]
     : null;
+  const environmentLabel = assessmentResult.passed ? 'Alignment Space' : 'Inner Work';
 
-  const strengths = [
-    'You showed honesty in your responses, which is the foundation for growth.',
-    'You completed a reflective process that many avoid.',
-    'You now have clarity on where to focus for healthier partnership.'
-  ];
-
-  const developmentAreas = assessmentResult.growthAreas.length > 0
-    ? assessmentResult.growthAreas
-    : [
-      'Emotional regulation during conflict',
-      'Communication clarity and repair skills',
-      'Boundary awareness and consistency'
-    ];
-  const normalizedIntegrityFlags = assessmentResult.integrityFlags.map((flag) => {
-    if (flag === 'Multiple concerning responses detected') {
-      return 'Your responses indicate meaningful opportunities for deeper skill development.';
-    }
-    if (flag === 'Significant growth areas identified') {
-      return 'Strengthening these areas will improve relationship stability and connection quality.';
-    }
-    return flag;
+  const formatRetakeDate = (date: Date) => date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   });
-
-  const formatRetakeDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
 
   return (
     <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center p-6">
-      {/* Background */}
       <div className="fixed inset-0">
         <img
           src="https://images.unsplash.com/photo-1516214104703-d870798883c5?w=1920&q=80"
@@ -223,9 +188,8 @@ const AssessmentResultSection: React.FC = () => {
         <div className="absolute inset-0 bg-[#0B0F0C]/70" />
       </div>
 
-      <div className="relative z-10 w-full max-w-2xl">
+      <div className="relative z-10 w-full max-w-3xl">
         <div className="bg-[#111611]/90 backdrop-blur-sm rounded-[32px] border border-[#1A211A] p-8 md:p-12">
-          {/* Header */}
           <div className="text-center mb-10">
             <div
               className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
@@ -239,44 +203,31 @@ const AssessmentResultSection: React.FC = () => {
               )}
             </div>
             <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-3">
-              {assessmentResult.passed
-                ? isLgbtqCommunity
-                  ? 'Welcome to LGBTQ+ Alignment Space'
-                  : 'Welcome to Alignment Space'
-                : isLgbtqCommunity
-                  ? 'LGBTQ+ Inner Work Space'
-                  : 'Inner Work Space'}
+              The Root of Your Connection
             </h2>
-            <p className="text-[#A9B5AA] text-lg">
-              {assessmentResult.passed
-                ? isLgbtqCommunity
-                  ? 'You demonstrate emotional maturity, integrity, and intentionality - the foundation of this LGBTQ+ community space.'
-                  : 'You demonstrate emotional maturity, integrity, and intentionality - the foundation this community is built on.'
-                : isLgbtqCommunity
-                  ? 'This is not rejection. It is preparation for stronger, safer connection.'
-                  : 'This is not rejection. It is preparation.'}
+            <p className="text-[#A9B5AA] text-base mb-2">
+              Understanding how we show up in relationships is one of the most powerful steps toward building the connection we truly want.
+            </p>
+            <p className="text-[#A9B5AA] text-base">
+              Thank you for taking the time to complete the assessment.
             </p>
           </div>
 
-          {assessmentResult.passed ? (
-            <div className="mb-10 text-center p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-              <p className="font-mono-label text-[#A9B5AA] mb-2">Assessment Score</p>
-              <p className="text-5xl font-display text-[#D9FF3D]">{assessmentResult.totalScore}/120</p>
-              <p className="text-xs text-[#A9B5AA] mt-2">
-                {assessmentResult.percentage}% readiness score
-              </p>
-            </div>
-          ) : (
-            <div className="mb-10 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-              <p className="text-[#D9FF3D] font-semibold mb-2">Growth Mode: Skill Development Phase</p>
-              <p className="text-sm text-[#A9B5AA] leading-relaxed mb-3">
-                {isLgbtqCommunity
-                  ? 'Based on your assessment responses, Growth Mode has been activated to support intentional skill development before re-entry into the LGBTQ+ alignment pool.'
-                  : 'Based on your assessment responses, Growth Mode has been activated to support intentional skill development before re-entry into the alignment pool.'}
-              </p>
-              <p className="text-xs text-[#A9B5AA] mb-3">
-                Current score: {assessmentResult.totalScore}/120 ({assessmentResult.percentage}%). You need {ALIGNMENT_THRESHOLD_PERCENT}%+ for Alignment Space.
-              </p>
+          <div className="mb-8 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+            <p className="text-[#A9B5AA] text-sm leading-relaxed">
+              Your responses help us understand how you approach communication, emotional regulation, and connection in relationships. Based on your answers, we&apos;ve identified both your dating environment and your relationship style.
+            </p>
+          </div>
+
+          <div className="mb-8 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+            <h3 className="text-[#D9FF3D] font-medium mb-2">Your Dating Environment</h3>
+            <p className="text-[#F6FFF2] text-lg mb-2">
+              You are entering {environmentLabel}.
+            </p>
+            <p className="text-sm text-[#A9B5AA] leading-relaxed mb-3">
+              This space is designed to support healthy connection while continuing personal growth. Wherever you begin, the goal of Rooted Hearts is the same - helping people build relationships grounded in honesty, respect, and emotional awareness.
+            </p>
+            {!assessmentResult.passed && (
               <div className="flex items-center gap-2 text-sm text-[#F6FFF2]">
                 <Lock className="w-4 h-4 text-[#A9B5AA]" />
                 <span>
@@ -285,31 +236,34 @@ const AssessmentResultSection: React.FC = () => {
                     : `Retake available: ${nextRetakeDate ? formatRetakeDate(nextRetakeDate) : 'later'}`}
                 </span>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+              <p className="text-[#A9B5AA] text-sm mb-2">Your Dating Style</p>
+              <p className="text-sm text-[#A9B5AA] mb-4">
+                Most people express a blend of relationship styles, but one or two typically stand out.
+              </p>
               <p className="text-xs text-[#A9B5AA] mb-2">Primary Style</p>
               {primaryStyleMeta ? (
                 <>
                   <p className="text-[#F6FFF2] font-medium">
-                    {primaryStyleMeta.emoji} {primaryStyleMeta.label}
+                    {primaryStyleMeta.emoji} {primaryStyleMeta.label} - {primaryStyleMeta.subtitle}
                   </p>
-                  <p className="text-sm text-[#A9B5AA]">{primaryStyleMeta.subtitle}</p>
                 </>
               ) : (
                 <p className="text-sm text-[#A9B5AA]">Not enough style data yet.</p>
               )}
             </div>
+
             <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
               <p className="text-xs text-[#A9B5AA] mb-2">Secondary Style</p>
               {secondaryStyleMeta ? (
                 <>
                   <p className="text-[#F6FFF2] font-medium">
-                    {secondaryStyleMeta.emoji} {secondaryStyleMeta.label}
+                    {secondaryStyleMeta.emoji} {secondaryStyleMeta.label} - {secondaryStyleMeta.subtitle}
                   </p>
-                  <p className="text-sm text-[#A9B5AA]">{secondaryStyleMeta.subtitle}</p>
                 </>
               ) : (
                 <p className="text-sm text-[#A9B5AA]">Not enough style data yet.</p>
@@ -317,79 +271,36 @@ const AssessmentResultSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Category Scores */}
-          {assessmentResult.passed && (
-            <div className="mb-10">
-              <h3 className="font-mono-label text-[#A9B5AA] mb-4">Relationship Readiness Profile</h3>
-              <div className="space-y-3">
-                {Object.entries(assessmentResult.categoryScores).map(([category, score]) => (
-                  <div key={category} className="flex items-center gap-4">
-                    <span className="text-[#F6FFF2] text-sm capitalize flex-1">
-                      {category.replace(/-/g, ' ')}
-                    </span>
-                    <div className="flex-1 max-w-[200px]">
-                      <div className="h-2 bg-[#1A211A] rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-1000 ${
-                            score >= 70 ? 'bg-[#D9FF3D]' : 'bg-amber-400'
-                          }`}
-                          style={{ width: `${score}%` }}
-                        />
-                      </div>
-                    </div>
-                    <span className="text-[#F6FFF2] text-sm w-12 text-right">{score}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <p className="text-sm text-[#A9B5AA] mb-4">
+            Understanding your style can help you communicate more clearly, navigate conflict more effectively, and build deeper connection with others.
+          </p>
 
-          {assessmentResult.passed && (
-            <div className="mb-10 p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-              <h3 className="text-[#D9FF3D] font-medium mb-2">Areas to Continue Strengthening</h3>
-              <p className="text-sm text-[#A9B5AA]">Accountability (Growth Focus)</p>
-            </div>
-          )}
+          <div className="mb-8 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+            <h3 className="text-[#D9FF3D] font-medium mb-3">What You Have Access To</h3>
+            <p className="text-sm text-[#A9B5AA] mb-3">
+              Inside your space you will have access to several tools designed to support both connection and personal growth:
+            </p>
+            <ul className="space-y-2 text-sm text-[#A9B5AA] list-disc pl-5">
+              <li>Alignment and Inner Work relationship resources</li>
+              <li>A private journal area for reflection and personal insight</li>
+              <li>The dating pool, where you can meet others approaching relationships intentionally</li>
+              <li>A Break Area if you ever feel burnt out and want to focus on personal growth</li>
+              <li>A Private 1-on-1 space where you and a partner of your choosing can slow things down and have a private "date before the date," allowing you to talk and see how you align before meeting in person</li>
+            </ul>
+          </div>
 
-          {/* Integrity Flags */}
-          {normalizedIntegrityFlags.length > 0 && (
-            <div className="mb-10 p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
-                <div>
-                  <h4 className="text-amber-500 font-medium mb-1">Growth Insights</h4>
-                  <ul className="space-y-1">
-                    {normalizedIntegrityFlags.map((flag, idx) => (
-                      <li key={idx} className="text-[#A9B5AA] text-sm">{flag}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="mb-10 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+            <h3 className="text-[#D9FF3D] font-medium mb-3">A Personal Note</h3>
+            <p className="text-sm text-[#A9B5AA] leading-relaxed mb-3">
+              I built this platform because I wanted to give others the tools I wish I had.
+            </p>
+            <p className="text-sm text-[#A9B5AA] leading-relaxed mb-3">
+              My hope is that you find the connection your heart is longing for, and that along the way you discover more about yourself as well.
+            </p>
+            <p className="text-sm text-[#F6FFF2] leading-relaxed">Grow, learn, and intertwine in love.</p>
+            <p className="text-sm text-[#A9B5AA] mt-3">- Founder, Meashia Daniels</p>
+          </div>
 
-          {!assessmentResult.passed && (
-            <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-                <h3 className="text-[#D9FF3D] font-medium mb-3">Your Strengths</h3>
-                <ul className="space-y-2">
-                  {strengths.map((strength, idx) => (
-                    <li key={idx} className="text-sm text-[#A9B5AA]">{strength}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-                <h3 className="text-amber-500 font-medium mb-3">Growth Focus Areas</h3>
-                <ul className="space-y-2">
-                  {developmentAreas.map((area, idx) => (
-                    <li key={idx} className="text-sm text-[#A9B5AA] capitalize">{area}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={handleContinue}
@@ -403,14 +314,6 @@ const AssessmentResultSection: React.FC = () => {
                   ? 'Enter LGBTQ+ Inner Work Space'
                   : 'Enter Inner Work Space'}
             </button>
-            {!assessmentResult.passed && (
-              <button
-                onClick={() => setCurrentView('community-blog')}
-                className="px-6 py-3 rounded-lg border border-[#D9FF3D] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition-all duration-200 font-medium"
-              >
-                Explore Our Relationship Philosophy
-              </button>
-            )}
           </div>
         </div>
       </div>
