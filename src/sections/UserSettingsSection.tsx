@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { toast } from 'sonner';
 import {
@@ -50,6 +50,24 @@ type SettingsSupportIssueType =
   | 'technical-issue'
   | 'feature-request'
   | 'other';
+
+type DeactivationReason =
+  | 'found-someone'
+  | 'need-break'
+  | 'not-finding-connections'
+  | 'personal-reasons'
+  | 'platform-issue'
+  | 'other';
+
+type DeactivationStep =
+  | 'reason'
+  | 'break-suggestion'
+  | 'found-love'
+  | 'found-love-confirmation'
+  | 'issue-on-platform'
+  | 'billing-notice'
+  | 'final-confirmation'
+  | 'exit-message';
 
 const SETTINGS_SUPPORT_ISSUE_OPTIONS: {
   value: SettingsSupportIssueType;
@@ -103,6 +121,24 @@ const SUPPORT_CATEGORY_LABELS: Record<SupportCategory, string> = {
   other: 'Other',
 };
 
+const DEACTIVATION_REASON_OPTIONS: { value: DeactivationReason; label: string }[] = [
+  { value: 'found-someone', label: 'I found someone' },
+  { value: 'need-break', label: 'I need a break from dating' },
+  { value: 'not-finding-connections', label: "I'm not finding the connections I'm looking for" },
+  { value: 'personal-reasons', label: "I'm leaving for personal reasons" },
+  { value: 'platform-issue', label: 'I experienced an issue on the platform' },
+  { value: 'other', label: 'Other' },
+];
+
+const DEACTIVATION_REASON_LABELS: Record<DeactivationReason, string> = {
+  'found-someone': 'I found someone',
+  'need-break': 'I need a break from dating',
+  'not-finding-connections': "I'm not finding the connections I'm looking for",
+  'personal-reasons': "I'm leaving for personal reasons",
+  'platform-issue': 'I experienced an issue on the platform',
+  other: 'Other',
+};
+
 const UserSettingsSection: React.FC = () => {
   const {
     currentUser,
@@ -131,6 +167,22 @@ const UserSettingsSection: React.FC = () => {
   const [modeRefreshTick, setModeRefreshTick] = useState(0);
   const [exclusiveTargetId, setExclusiveTargetId] = useState('');
   const [showBreakModeConfirm, setShowBreakModeConfirm] = useState(false);
+  const [showDeactivateFlow, setShowDeactivateFlow] = useState(false);
+  const [deactivationStep, setDeactivationStep] = useState<DeactivationStep>('reason');
+  const [deactivationReason, setDeactivationReason] = useState<DeactivationReason | null>(null);
+  const [foundLoveYourName, setFoundLoveYourName] = useState('');
+  const [foundLovePartnerName, setFoundLovePartnerName] = useState('');
+  const [foundLoveEmail, setFoundLoveEmail] = useState('');
+  const [foundLoveStory, setFoundLoveStory] = useState('');
+  const [foundLovePhotoName, setFoundLovePhotoName] = useState('');
+  const [foundLoveSharePermission, setFoundLoveSharePermission] = useState(false);
+  const [foundLoveGiveawayOptIn, setFoundLoveGiveawayOptIn] = useState(false);
+  const [foundLoveSubmitted, setFoundLoveSubmitted] = useState(false);
+  const [isSubmittingFoundLove, setIsSubmittingFoundLove] = useState(false);
+  const [isSubmittingIssueReport, setIsSubmittingIssueReport] = useState(false);
+  const [issueReportSubmitted, setIssueReportSubmitted] = useState(false);
+  const [isDeactivatingAccount, setIsDeactivatingAccount] = useState(false);
+  const supportSectionRef = useRef<HTMLElement | null>(null);
   const isLgbtqUser = false;
 
   useEffect(() => {
@@ -247,6 +299,9 @@ const UserSettingsSection: React.FC = () => {
         : relationshipModeSnapshot.remainingCooldownMs > 0
           ? `Re-entry cooldown is active for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`
           : 'Active mode is available for normal browsing and matching.';
+  const finalBillingDateLabel = currentUser.billingPeriodEnd
+    ? formatDate(new Date(currentUser.billingPeriodEnd))
+    : 'No billing date on file';
 
   const formatDateTime = (timestamp?: number | null) => {
     if (!timestamp || !Number.isFinite(timestamp)) return 'N/A';
@@ -562,21 +617,192 @@ const UserSettingsSection: React.FC = () => {
     toast.success('Your data export has been downloaded.');
   };
 
-  const handleDeactivateAccount = async () => {
-    if (!settings) return;
-    if (!window.confirm('Deactivate your account? This will hide your profile until you sign in again.')) return;
+  const resetDeactivationFlow = () => {
+    setShowDeactivateFlow(false);
+    setDeactivationStep('reason');
+    setDeactivationReason(null);
+    setFoundLoveYourName('');
+    setFoundLovePartnerName('');
+    setFoundLoveEmail('');
+    setFoundLoveStory('');
+    setFoundLovePhotoName('');
+    setFoundLoveSharePermission(false);
+    setFoundLoveGiveawayOptIn(false);
+    setFoundLoveSubmitted(false);
+    setIsSubmittingFoundLove(false);
+    setIsSubmittingIssueReport(false);
+    setIssueReportSubmitted(false);
+    setIsDeactivatingAccount(false);
+  };
 
-    const nextSettings: UserSettings = {
-      ...settings,
-      visibility: { ...settings.visibility, profileVisibility: 'paused' },
-    };
-    persistSettings(nextSettings);
+  const openDeactivationFlow = () => {
+    resetDeactivationFlow();
+    setShowDeactivateFlow(true);
+  };
 
-    await userService.updateUser(currentUser.id, { membershipStatus: 'inactive' });
+  const closeDeactivationFlow = () => {
+    if (isSubmittingIssueReport || isDeactivatingAccount) return;
+    resetDeactivationFlow();
+  };
+
+  const handleContinueFromDeactivationReason = () => {
+    if (!deactivationReason) {
+      toast.error('Please choose one reason before continuing.');
+      return;
+    }
+
+    if (deactivationReason === 'need-break') {
+      setDeactivationStep('break-suggestion');
+      return;
+    }
+
+    if (deactivationReason === 'found-someone') {
+      setDeactivationStep('found-love');
+      return;
+    }
+
+    if (deactivationReason === 'platform-issue') {
+      setDeactivationStep('issue-on-platform');
+      return;
+    }
+
+    setDeactivationStep('billing-notice');
+  };
+
+  const handleGoToBreakRoomFromDeactivation = () => {
+    const result = enterBreakMode(currentUser.id);
+    if (!result.ok) {
+      toast.info(result.reason);
+      return;
+    }
+
+    syncCurrentUserModeToSession();
+    closeDeactivationFlow();
+    setCurrentView('clarity-room');
+    toast.success("You're now in Break Mode. Welcome to the Break Room.");
+  };
+
+  const handleSubmitIssueReportFromDeactivation = async () => {
+    if (isSubmittingIssueReport || issueReportSubmitted) return;
+
+    setIsSubmittingIssueReport(true);
+    try {
+      const supportId = await submitSupportRequest(
+        'technical',
+        '[Deactivation] Issue experienced on platform',
+        `User selected "I experienced an issue on the platform" during account deactivation.\nReason captured at: ${new Date().toISOString()}\nUser ID: ${currentUser.id}`
+      );
+      setIssueReportSubmitted(true);
+      setSupportReferenceId(supportId);
+      void loadRecentSupportTickets();
+      toast.success('Issue report submitted. Thank you for reporting this.');
+      setDeactivationStep('billing-notice');
+    } catch (error) {
+      console.error('Failed to submit deactivation issue report:', error);
+      toast.error('Unable to submit report right now. You can continue with deactivation.');
+    } finally {
+      setIsSubmittingIssueReport(false);
+    }
+  };
+
+  const handleGoBackFromBillingNotice = () => {
+    if (deactivationReason === 'need-break') {
+      setDeactivationStep('break-suggestion');
+      return;
+    }
+
+    if (deactivationReason === 'found-someone') {
+      setDeactivationStep(foundLoveSubmitted ? 'found-love-confirmation' : 'found-love');
+      return;
+    }
+
+    if (deactivationReason === 'platform-issue') {
+      setDeactivationStep('issue-on-platform');
+      return;
+    }
+
+    setDeactivationStep('reason');
+  };
+
+  const handleSubmitFoundLoveSubmission = async () => {
+    if (deactivationReason !== 'found-someone' || isSubmittingFoundLove) return;
+
+    const trimmedEmail = foundLoveEmail.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (foundLoveGiveawayOptIn && trimmedEmail.length === 0) {
+      toast.error('Email is required if you choose giveaway entry.');
+      return;
+    }
+
+    if (trimmedEmail.length > 0 && !emailPattern.test(trimmedEmail)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+
+    setIsSubmittingFoundLove(true);
+    const details = [
+      'Date Night On Us submission from deactivation flow.',
+      `Your name: ${foundLoveYourName.trim() || 'Not provided'}`,
+      `Partner name: ${foundLovePartnerName.trim() || 'Not provided'}`,
+      `Email: ${trimmedEmail || 'Not provided'}`,
+      `How they met: ${foundLoveStory.trim() || 'Not provided'}`,
+      `Photo attached in browser: ${foundLovePhotoName || 'No'}`,
+      `Permission to share story with first names only: ${foundLoveSharePermission ? 'Yes' : 'No'}`,
+      `Giveaway opt-in: ${foundLoveGiveawayOptIn ? 'Yes' : 'No'}`,
+      `Submitted at: ${new Date().toISOString()}`,
+      `User ID: ${currentUser.id}`,
+    ].join('\n');
+
+    try {
+      await submitSupportRequest('other', '[Date Night On Us] Story submission', details);
+      void loadRecentSupportTickets();
+      setFoundLoveSubmitted(true);
+      setDeactivationStep('found-love-confirmation');
+      toast.success('Thank you for sharing your story.');
+    } catch (error) {
+      console.error('Failed to submit Date Night On Us submission:', error);
+      toast.error('Unable to submit right now. Please try again.');
+    } finally {
+      setIsSubmittingFoundLove(false);
+    }
+  };
+
+  const handleFinalizeDeactivation = async () => {
+    if (!settings || !deactivationReason || isDeactivatingAccount) return;
+
+    setIsDeactivatingAccount(true);
+    try {
+      try {
+        await submitSupportRequest(
+          'account',
+          '[Deactivation] Member feedback',
+          `Reason: ${DEACTIVATION_REASON_LABELS[deactivationReason]}\nSubmitted at: ${new Date().toISOString()}\nUser ID: ${currentUser.id}`
+        );
+      } catch (error) {
+        console.warn('Failed to log deactivation reason:', error);
+      }
+
+      const nextSettings: UserSettings = {
+        ...settings,
+        visibility: { ...settings.visibility, profileVisibility: 'paused' },
+      };
+      persistSettings(nextSettings);
+      await userService.updateUser(currentUser.id, { membershipStatus: 'inactive' });
+      setDeactivationStep('exit-message');
+      toast.success('Account deactivated.');
+    } catch (error) {
+      console.error('Failed to deactivate account:', error);
+      toast.error(`We couldn't deactivate your account right now. Contact ${SUPPORT_EMAIL}.`);
+    } finally {
+      setIsDeactivatingAccount(false);
+    }
+  };
+
+  const handleFinishDeactivationExit = () => {
     localStorage.removeItem('currentUser');
     window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
+    resetDeactivationFlow();
     setCurrentView('landing');
-    toast.success('Account deactivated.');
   };
 
   const handleDeleteAccount = async () => {
@@ -804,10 +1030,15 @@ const UserSettingsSection: React.FC = () => {
               <Download className="w-4 h-4" />
               Download My Data
             </button>
-            <button onClick={handleDeactivateAccount} className="btn-outline flex items-center gap-2">
-              <UserX className="w-4 h-4" />
-              Deactivate Account
-            </button>
+            <div className="flex flex-col gap-1">
+              <button onClick={openDeactivationFlow} className="btn-outline flex items-center gap-2">
+                <UserX className="w-4 h-4" />
+                Deactivate My Account
+              </button>
+              <p className="text-xs text-[#A9B5AA] max-w-sm">
+                If you&apos;re leaving, we&apos;d appreciate knowing why so we can improve the platform.
+              </p>
+            </div>
             <button onClick={handleDeleteAccount} className="btn-outline text-red-300 border-red-500/40 hover:bg-red-500/10 flex items-center gap-2">
               <Trash2 className="w-4 h-4" />
               Delete Account
@@ -1099,7 +1330,7 @@ const UserSettingsSection: React.FC = () => {
           </button>
         </section>
 
-        <section className="bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5">
+        <section ref={supportSectionRef} className="bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5">
           <h2 className="font-display text-xl">Alignment Preferences</h2>
 
           <div>
@@ -1700,6 +1931,340 @@ const UserSettingsSection: React.FC = () => {
           </div>
         </section>
       </main>
+
+      {showDeactivateFlow && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5 max-h-[92vh] overflow-y-auto">
+            {deactivationStep === 'reason' && (
+              <>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Deactivate My Account</h3>
+                <p className="text-sm text-[#A9B5AA]">
+                  If you&apos;re leaving, we&apos;d appreciate knowing why so we can improve the platform.
+                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-[#F6FFF2]">Why are you leaving?</p>
+                  <div className="space-y-2">
+                    {DEACTIVATION_REASON_OPTIONS.map((option) => (
+                      <label
+                        key={option.value}
+                        className="flex items-center gap-3 rounded-lg border border-[#1A211A] bg-[#0B0F0C] px-3 py-2 cursor-pointer"
+                      >
+                        <input
+                          type="radio"
+                          name="deactivation-reason"
+                          value={option.value}
+                          checked={deactivationReason === option.value}
+                          onChange={() => setDeactivationReason(option.value)}
+                          className="h-4 w-4 accent-[#D9FF3D]"
+                        />
+                        <span className="text-sm text-[#F6FFF2]">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    onClick={closeDeactivationFlow}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleContinueFromDeactivationReason}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20 transition-colors"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deactivationStep === 'break-suggestion' && (
+              <>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Take a Break Instead</h3>
+                <p className="text-sm text-[#A9B5AA]">
+                  Sometimes stepping away for a while is helpful.
+                </p>
+                <p className="text-sm text-[#A9B5AA]">
+                  You can pause your profile and spend time in the Break Room, where you can reflect and reset
+                  without leaving the platform.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    onClick={handleGoToBreakRoomFromDeactivation}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20 transition-colors"
+                  >
+                    Go to Break Room
+                  </button>
+                  <button
+                    onClick={() => setDeactivationStep('billing-notice')}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+                  >
+                    Continue with Deactivation
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deactivationStep === 'found-love' && (
+              <>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Date Night On Us ❤️</h3>
+                <p className="text-sm text-[#F6FFF2]">Celebrate Your Connection</p>
+                <p className="text-sm text-[#A9B5AA]">
+                  If you met someone special through Rooted Hearts, we'd love to hear your story.
+                </p>
+                <p className="text-sm text-[#A9B5AA]">
+                  From time to time, we randomly select couples to receive a Date Night On Us as a small celebration of
+                  meaningful connections.
+                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-[#F6FFF2]">Tell Us About Your Connection (Optional)</p>
+
+                  <div className="space-y-1">
+                    <label className="text-sm text-[#A9B5AA]">Your Name</label>
+                    <input
+                      type="text"
+                      value={foundLoveYourName}
+                      onChange={(e) => setFoundLoveYourName(e.target.value)}
+                      className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm text-[#A9B5AA]">Your Partner's Name</label>
+                    <input
+                      type="text"
+                      value={foundLovePartnerName}
+                      onChange={(e) => setFoundLovePartnerName(e.target.value)}
+                      className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm text-[#A9B5AA]">Email Address (Required if selected)</label>
+                    <input
+                      type="email"
+                      value={foundLoveEmail}
+                      onChange={(e) => setFoundLoveEmail(e.target.value)}
+                      className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
+                    />
+                    <p className="text-xs text-[#A9B5AA]">
+                      We will only use this email to contact you if your story is selected.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm text-[#A9B5AA]">How Did You Meet?</label>
+                    <textarea
+                      value={foundLoveStory}
+                      onChange={(e) => setFoundLoveStory(e.target.value)}
+                      placeholder="Tell us how you connected on Rooted Hearts and what made the moment special."
+                      rows={4}
+                      className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm text-[#A9B5AA] block">Optional Photo</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => setFoundLovePhotoName(event.target.files?.[0]?.name || '')}
+                      className="w-full text-sm text-[#A9B5AA] file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border file:border-[#1A211A] file:bg-[#0B0F0C] file:text-[#F6FFF2]"
+                    />
+                    <p className="text-xs text-[#A9B5AA]">Photos may be shared if your story is featured.</p>
+                    {foundLovePhotoName && (
+                      <p className="text-xs text-[#A9B5AA]">Selected photo: {foundLovePhotoName}</p>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-[#F6FFF2]">Permissions</p>
+                  <label className="flex items-start gap-3 rounded-lg border border-[#1A211A] bg-[#0B0F0C] px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={foundLoveSharePermission}
+                      onChange={(e) => setFoundLoveSharePermission(e.target.checked)}
+                      className="h-4 w-4 mt-0.5 accent-[#D9FF3D]"
+                    />
+                    <span className="text-sm text-[#F6FFF2]">
+                      I give Rooted Hearts permission to share our story (first names only).
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 rounded-lg border border-[#1A211A] bg-[#0B0F0C] px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={foundLoveGiveawayOptIn}
+                      onChange={(e) => setFoundLoveGiveawayOptIn(e.target.checked)}
+                      className="h-4 w-4 mt-0.5 accent-[#D9FF3D]"
+                    />
+                    <span className="text-sm text-[#F6FFF2]">Enter us for the Date Night On Us Giveaway</span>
+                  </label>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    onClick={() => setDeactivationStep('reason')}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleSubmitFoundLoveSubmission}
+                    disabled={isSubmittingFoundLove}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isSubmittingFoundLove ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : 'Submit Our Story'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deactivationStep === 'found-love-confirmation' && (
+              <>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Thank You ❤️</h3>
+                <p className="text-sm text-[#A9B5AA]">
+                  We're honored to have been part of your journey.
+                </p>
+                <p className="text-sm text-[#A9B5AA]">
+                  If your submission is randomly selected, we will reach out using the email you provided.
+                </p>
+                <p className="text-sm text-[#A9B5AA]">
+                  You can also keep an eye on our social media pages - your story may be featured to inspire others on
+                  their journey to meaningful connection.
+                </p>
+                <button
+                  onClick={() => setDeactivationStep('billing-notice')}
+                  className="w-full px-4 py-2 rounded-lg border border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20 transition-colors"
+                >
+                  Continue to Account Deactivation
+                </button>
+                <p className="text-xs text-[#A9B5AA]">
+                  Entries are selected at random. Submission does not guarantee selection.
+                </p>
+              </>
+            )}
+
+            {deactivationStep === 'issue-on-platform' && (
+              <>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">We&apos;re sorry you experienced an issue.</h3>
+                <p className="text-sm text-[#A9B5AA]">
+                  You can submit a report now, or continue with account deactivation.
+                </p>
+                {issueReportSubmitted && (
+                  <p className="text-sm text-[#D9FF3D]">
+                    Report submitted. Thank you for helping us improve the platform.
+                  </p>
+                )}
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    onClick={handleSubmitIssueReportFromDeactivation}
+                    disabled={isSubmittingIssueReport || issueReportSubmitted}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isSubmittingIssueReport ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Submitting Report...
+                      </>
+                    ) : issueReportSubmitted ? 'Report Submitted' : 'Submit Report'}
+                  </button>
+                  <button
+                    onClick={() => setDeactivationStep('billing-notice')}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+                  >
+                    Continue to Deactivation
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    closeDeactivationFlow();
+                    setSupportIssueType('technical-issue');
+                    supportSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  className="text-xs text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+                >
+                  Open support form instead
+                </button>
+              </>
+            )}
+
+            {deactivationStep === 'billing-notice' && (
+              <>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Important Billing Information</h3>
+                <p className="text-sm text-[#A9B5AA]">
+                  Your subscription will remain active until <span className="text-[#F6FFF2]">{finalBillingDateLabel}</span>.
+                </p>
+                <p className="text-sm text-[#A9B5AA]">After that date, you will not be charged again.</p>
+                <p className="text-sm text-[#F6FFF2]">Your final billing date: {finalBillingDateLabel}</p>
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    onClick={handleGoBackFromBillingNotice}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={() => setDeactivationStep('final-confirmation')}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20 transition-colors"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deactivationStep === 'final-confirmation' && (
+              <>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Are you sure you want to deactivate?</h3>
+                <p className="text-sm text-[#A9B5AA]">
+                  Your profile will be hidden and your account will no longer appear in the dating pool.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    onClick={closeDeactivationFlow}
+                    className="flex-1 px-4 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleFinalizeDeactivation}
+                    disabled={isDeactivatingAccount}
+                    className="flex-1 px-4 py-2 rounded-lg border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isDeactivatingAccount ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Deactivating...
+                      </>
+                    ) : 'Deactivate My Account'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deactivationStep === 'exit-message' && (
+              <>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Thank you for being part of Rooted Hearts.</h3>
+                <p className="text-sm text-[#A9B5AA]">
+                  We wish you meaningful connections and happiness wherever your journey leads.
+                </p>
+                <button
+                  onClick={handleFinishDeactivationExit}
+                  className="text-xs text-[#A9B5AA] hover:text-[#D9FF3D] underline underline-offset-4 transition-colors"
+                >
+                  Return anytime by signing back in.
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {lockModalDate && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">

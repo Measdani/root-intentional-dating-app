@@ -1,8 +1,38 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { useCommunity } from '@/modules';
-import { assessmentQuestions, followUpQuestions, calculateAssessmentResult } from '@/data/assessment';
+import { assessmentQuestions as defaultAssessmentQuestions, followUpQuestions, calculateAssessmentResult } from '@/data/assessment';
+import type { AssessmentQuestion } from '@/types';
 import { ChevronRight, AlertCircle } from 'lucide-react';
+
+const ADMIN_DATA_STORAGE_KEY = 'rooted-admin-data';
+
+const loadAssessmentQuestions = (): AssessmentQuestion[] => {
+  try {
+    const raw = localStorage.getItem(ADMIN_DATA_STORAGE_KEY);
+    if (!raw) return defaultAssessmentQuestions;
+
+    const parsed = JSON.parse(raw);
+    const candidate = parsed?.assessmentQuestions;
+    if (!Array.isArray(candidate) || candidate.length === 0) {
+      return defaultAssessmentQuestions;
+    }
+
+    const hasValidShape = candidate.every(
+      (question: any) =>
+        question &&
+        typeof question.id === 'string' &&
+        typeof question.question === 'string' &&
+        typeof question.category === 'string' &&
+        Array.isArray(question.options) &&
+        question.options.length > 0
+    );
+
+    return hasValidShape ? (candidate as AssessmentQuestion[]) : defaultAssessmentQuestions;
+  } catch {
+    return defaultAssessmentQuestions;
+  }
+};
 
 const AssessmentSection: React.FC = () => {
   const {
@@ -27,7 +57,32 @@ const AssessmentSection: React.FC = () => {
   const [answerTimestamps, setAnswerTimestamps] = useState<Array<{ questionId: string; timestamp: number; score: number }>>([]);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [understoodAssessment, setUnderstoodAssessment] = useState(false);
+  const [assessmentQuestions, setAssessmentQuestions] = useState<AssessmentQuestion[]>(() =>
+    loadAssessmentQuestions()
+  );
   const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const refreshAssessmentQuestions = () => {
+      setAssessmentQuestions(loadAssessmentQuestions());
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== ADMIN_DATA_STORAGE_KEY) return;
+      refreshAssessmentQuestions();
+    };
+
+    refreshAssessmentQuestions();
+    window.addEventListener('admin-assessment-questions-updated', refreshAssessmentQuestions as EventListener);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener(
+        'admin-assessment-questions-updated',
+        refreshAssessmentQuestions as EventListener
+      );
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
 
   // Track if assessment was abandoned (user left mid-assessment)
   useEffect(() => {

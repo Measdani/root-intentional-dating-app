@@ -5,6 +5,7 @@ import { mockAdminUsers, mockAdminCredentials } from '@/data/admins';
 import { reportService } from '@/services/reportService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
+import { assessmentQuestions as defaultAssessmentQuestions } from '@/data/assessment';
 
 interface AdminContextType {
   session: AdminSession;
@@ -49,6 +50,11 @@ interface AdminContextType {
   deleteUser: (userId: string) => void;
   updateUser: (userId: string, data: Partial<UserWithAdminData>) => void;
   setSelectedUser: (user: UserWithAdminData | null) => void;
+
+  // Assessment question methods
+  addAssessmentQuestion: (question: AssessmentQuestion) => void;
+  updateAssessmentQuestion: (questionId: string, data: Partial<AssessmentQuestion>) => void;
+  removeAssessmentQuestion: (questionId: string) => void;
 
   // Report methods
   getReports: () => Report[];
@@ -104,7 +110,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [users, setUsers] = useState<UserWithAdminData[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>(mockAdminUsers);
-  const [assessmentQuestions, setAssessmentQuestions] = useState<AssessmentQuestion[]>([]);
+  const [assessmentQuestions, setAssessmentQuestions] = useState<AssessmentQuestion[]>(
+    () => defaultAssessmentQuestions
+  );
   const [growthResources, setGrowthResources] = useState<GrowthResource[]>([]);
   const [membershipTiers, setMembershipTiers] = useState<MembershipTier[]>([]);
   const [analytics] = useState<AnalyticsSnapshot>({
@@ -153,7 +161,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         const parsed = JSON.parse(savedData);
         setUsers(parsed.users || []);
-        setAssessmentQuestions(parsed.assessmentQuestions || []);
+        setAssessmentQuestions(
+          Array.isArray(parsed.assessmentQuestions) && parsed.assessmentQuestions.length > 0
+            ? parsed.assessmentQuestions
+            : defaultAssessmentQuestions
+        );
         setGrowthResources(parsed.growthResources || []);
         setMembershipTiers(parsed.membershipTiers || []);
       } catch {
@@ -321,6 +333,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     safeSetLocalStorage(DATA_STORAGE_KEY, JSON.stringify(data));
   }, [users, assessmentQuestions, growthResources, membershipTiers]);
 
+  useEffect(() => {
+    saveData();
+  }, [saveData]);
+
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
@@ -406,6 +422,41 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     },
     [saveData]
   );
+
+  const addAssessmentQuestion = useCallback((question: AssessmentQuestion) => {
+    setAssessmentQuestions((prev) => {
+      const next = [...prev, question];
+      window.dispatchEvent(
+        new CustomEvent('admin-assessment-questions-updated', { detail: next })
+      );
+      return next;
+    });
+  }, []);
+
+  const updateAssessmentQuestion = useCallback(
+    (questionId: string, data: Partial<AssessmentQuestion>) => {
+      setAssessmentQuestions((prev) => {
+        const next = prev.map((question) =>
+          question.id === questionId ? { ...question, ...data } : question
+        );
+        window.dispatchEvent(
+          new CustomEvent('admin-assessment-questions-updated', { detail: next })
+        );
+        return next;
+      });
+    },
+    []
+  );
+
+  const removeAssessmentQuestion = useCallback((questionId: string) => {
+    setAssessmentQuestions((prev) => {
+      const next = prev.filter((question) => question.id !== questionId);
+      window.dispatchEvent(
+        new CustomEvent('admin-assessment-questions-updated', { detail: next })
+      );
+      return next;
+    });
+  }, []);
 
   // Report management methods
   const getReports = useCallback((): Report[] => {
@@ -565,6 +616,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     deleteUser,
     updateUser,
     setSelectedUser,
+    addAssessmentQuestion,
+    updateAssessmentQuestion,
+    removeAssessmentQuestion,
     setCurrentAdminView,
     setFilters,
     setError,

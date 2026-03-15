@@ -395,17 +395,17 @@ const BrowseSection: React.FC = () => {
         {featuredGamePartner && (
           <div className="mb-6 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-5">
             <p className="text-[11px] font-medium uppercase tracking-wider text-sky-200">Relationship Room</p>
-            <h3 className="mt-1 text-lg font-semibold text-[#F6FFF2]">Couple Games Ready with {featuredGamePartner.name}</h3>
+            <h3 className="mt-1 text-lg font-semibold text-[#F6FFF2]">Couple Milestones Ready with {featuredGamePartner.name}</h3>
             <p className="mt-1 text-sm text-sky-100">
               {featuredGameConversation
                 ? 'Launch Shared Vibe, Truth or Dare, Temp Check, and Date Offer directly from here.'
-                : 'Open your couple thread first, then the games will start immediately.'}
+                : 'Open your couple thread first, then milestones will start immediately.'}
             </p>
             <button
               onClick={launchRelationshipGames}
               className="mt-4 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
             >
-              {featuredGameConversation ? 'Start Couple Games' : 'Open Couple Thread'}
+              {featuredGameConversation ? 'Start Couple Milestones' : 'Open Couple Thread'}
             </button>
           </div>
         )}
