@@ -273,6 +273,75 @@ const findConversationById = (
   return matches.sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
 };
 
+const PROFILE_NO_LONGER_AVAILABLE_MESSAGE = 'This user profile is no longer available.';
+
+const appendProfileUnavailableMessageForMatches = (
+  state: InteractionState,
+  affectedUserId: string
+): InteractionState => {
+  const allInteractions = [
+    ...Object.values(state.sentInterests),
+    ...Object.values(state.receivedInterests),
+  ];
+
+  const impactedConversationIds = Array.from(
+    new Set(
+      allInteractions
+        .filter(
+          (interaction) =>
+            interaction.fromUserId === affectedUserId || interaction.toUserId === affectedUserId
+        )
+        .map((interaction) => interaction.conversationId)
+    )
+  );
+
+  if (impactedConversationIds.length === 0) return state;
+
+  let nextState = state;
+  const baseTimestamp = Date.now();
+
+  impactedConversationIds.forEach((conversationId, index) => {
+    const timestamp = baseTimestamp + index;
+
+    nextState = updateInteractionStateByConversationId(nextState, conversationId, (interaction) => {
+      const otherUserId = interaction.fromUserId === affectedUserId
+        ? interaction.toUserId
+        : interaction.toUserId === affectedUserId
+          ? interaction.fromUserId
+          : null;
+
+      if (!otherUserId) return interaction;
+
+      const alreadyNotified = interaction.messages.some(
+        (message) =>
+          message.fromUserId === affectedUserId &&
+          message.toUserId === otherUserId &&
+          message.message === PROFILE_NO_LONGER_AVAILABLE_MESSAGE
+      );
+
+      if (alreadyNotified) return interaction;
+
+      const profileUnavailableMessage: ConversationMessage = {
+        id: `profile_unavailable_${conversationId}_${timestamp}`,
+        fromUserId: affectedUserId,
+        toUserId: otherUserId,
+        message: PROFILE_NO_LONGER_AVAILABLE_MESSAGE,
+        timestamp,
+        messageType: 'response',
+        read: false,
+      };
+
+      return {
+        ...interaction,
+        messages: [...interaction.messages, profileUnavailableMessage],
+        updatedAt: timestamp,
+      };
+    });
+  });
+
+  return nextState;
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentView, setCurrentViewState] = useState<AppView>('landing');
   const [previousView, setPreviousView] = useState<AppView>('landing');
@@ -1714,6 +1783,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     suspensions[userId] = { suspensionEndDate, userStatus: 'suspended' };
     localStorage.setItem('rooted_suspensions', JSON.stringify(suspensions));
 
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === userId
+          ? applyRelationshipModeToUser({
+              ...user,
+              userStatus: 'suspended',
+              suspensionEndDate,
+            })
+          : user
+      )
+    );
+
+    setInteractions((prev) => appendProfileUnavailableMessageForMatches(prev, userId));
+
     // Update currentUser if they're the suspended user
     if (currentUser.id === userId) {
       const updatedUser = applyRelationshipModeToUser({
@@ -1748,6 +1831,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Remove a user permanently from the platform (irreversible)
   const removeUser = useCallback((userId: string) => {
+    const suspensions = JSON.parse(localStorage.getItem('rooted_suspensions') || '{}');
+    if (suspensions[userId]) {
+      delete suspensions[userId];
+      localStorage.setItem('rooted_suspensions', JSON.stringify(suspensions));
+    }
+
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === userId
+          ? applyRelationshipModeToUser({
+              ...user,
+              userStatus: 'removed',
+              suspensionEndDate: undefined,
+            })
+          : user
+      )
+    );
+
+    setInteractions((prev) => appendProfileUnavailableMessageForMatches(prev, userId));
+
     // Log out the user if they're the one being removed
     if (currentUser.id === userId) {
       localStorage.removeItem('currentUser');
