@@ -23,6 +23,11 @@ import { testUsers } from '@/data/testUsers';
 import { mockAdminCredentials } from '@/data/admins';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import type { AssessmentResult } from '@/types';
+import {
+  buildEmptyStyleScores,
+  isAssessmentCoreStyle,
+  normalizeStyleScores,
+} from '@/services/assessmentStyleService';
 
 const UserLoginSection: React.FC = () => {
   const { setCurrentView, setAssessmentResult } = useApp();
@@ -113,12 +118,17 @@ const UserLoginSection: React.FC = () => {
 
     const percentage = typeof raw.percentage === 'number' ? raw.percentage : 0;
     return {
-      totalScore: typeof raw.totalScore === 'number' ? raw.totalScore : Math.round(percentage),
+      totalScore: typeof raw.totalScore === 'number'
+        ? raw.totalScore
+        : Math.round((percentage / 100) * 120),
       percentage,
-      passed: Boolean(raw.passed),
+      passed: typeof raw.passed === 'boolean' ? raw.passed : percentage >= 85,
       categoryScores: raw.categoryScores && typeof raw.categoryScores === 'object' ? raw.categoryScores : {},
       integrityFlags: Array.isArray(raw.integrityFlags) ? raw.integrityFlags : [],
       growthAreas: Array.isArray(raw.growthAreas) ? raw.growthAreas : [],
+      styleScores: normalizeStyleScores(raw.styleScores),
+      primaryStyle: isAssessmentCoreStyle(raw.primaryStyle) ? raw.primaryStyle : undefined,
+      secondaryStyle: isAssessmentCoreStyle(raw.secondaryStyle) ? raw.secondaryStyle : undefined,
     };
   };
 
@@ -254,12 +264,19 @@ const UserLoginSection: React.FC = () => {
       } else {
         const fallbackPercentage = Number(effectiveUser.assessmentScore ?? effectiveUser.alignmentScore ?? 0);
         setAssessmentResult({
-          totalScore: Math.round(fallbackPercentage),
+          totalScore: Math.round((fallbackPercentage / 100) * 120),
           percentage: fallbackPercentage,
           passed: resolvedPassed,
           categoryScores: {},
           integrityFlags: [],
           growthAreas: [],
+          styleScores: buildEmptyStyleScores(),
+          primaryStyle: isAssessmentCoreStyle(effectiveUser.primaryStyle)
+            ? effectiveUser.primaryStyle
+            : undefined,
+          secondaryStyle: isAssessmentCoreStyle(effectiveUser.secondaryStyle)
+            ? effectiveUser.secondaryStyle
+            : undefined,
         });
       }
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, resolvedPassed, persistRemote);

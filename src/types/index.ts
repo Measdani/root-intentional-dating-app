@@ -44,6 +44,8 @@ export interface User {
   relationshipVision?: string;
   communicationStyle?: string;
   alignmentScore?: number;
+  primaryStyle?: AssessmentCoreStyle;
+  secondaryStyle?: AssessmentCoreStyle;
   photoUrl?: string;
   bio?: string;
   communityBoundaries?: string;
@@ -65,6 +67,23 @@ export interface User {
   mode?: RelationshipMode;
 }
 
+export type AssessmentOptionStyle =
+  | 'oak'
+  | 'fern'
+  | 'wildflower'
+  | 'willow'
+  | 'gardener'
+  | 'red_flag';
+
+export type AssessmentCoreStyle = Exclude<AssessmentOptionStyle, 'red_flag'>;
+
+export interface AssessmentAnswer {
+  questionId: string;
+  score: number;
+  redFlag?: boolean;
+  style?: AssessmentOptionStyle;
+}
+
 export interface AssessmentQuestion {
   id: string;
   category: 'emotional-regulation' | 'accountability' | 'autonomy' | 'boundaries' | 'conflict-repair' | 'integrity-check';
@@ -73,6 +92,7 @@ export interface AssessmentQuestion {
     text: string;
     score: number;
     redFlag?: boolean;
+    style?: AssessmentOptionStyle;
   }[];
   adaptiveTrigger?: {
     condition: 'low-score' | 'inconsistent' | 'suspicious-pattern';
@@ -87,6 +107,9 @@ export interface AssessmentResult {
   categoryScores: Record<string, number>;
   integrityFlags: string[];
   growthAreas: string[];
+  styleScores: Record<AssessmentCoreStyle, number>;
+  primaryStyle?: AssessmentCoreStyle;
+  secondaryStyle?: AssessmentCoreStyle;
 }
 
 export interface GrowthResourceModule {

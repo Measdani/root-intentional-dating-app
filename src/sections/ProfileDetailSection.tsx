@@ -7,6 +7,7 @@ import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
 import { SUPPORT_EMAIL } from '@/constants/support';
 import type { UserGenderIdentity, UserIdentityExpression } from '@/types';
+import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
 
 const formatGenderIdentity = (value?: UserGenderIdentity): string => {
   switch (value) {
@@ -122,6 +123,12 @@ const ProfileDetailSection: React.FC = () => {
     genderIdentityVisibility === 'after-mutual-interest' && !hasMutualInterest;
   const identityExpressionHiddenByVisibility =
     identityExpressionVisibility === 'after-mutual-interest' && !hasMutualInterest;
+  const primaryStyleMeta = selectedUser.primaryStyle
+    ? ASSESSMENT_STYLE_META[selectedUser.primaryStyle]
+    : null;
+  const secondaryStyleMeta = selectedUser.secondaryStyle
+    ? ASSESSMENT_STYLE_META[selectedUser.secondaryStyle]
+    : null;
 
   const handleExpressInterest = async (
     message: string
@@ -392,6 +399,38 @@ const ProfileDetailSection: React.FC = () => {
                       <p className="text-[#F6FFF2] capitalize">
                         {selectedUser.familyAlignment.openToPartnerWithParent.replace(/-/g, ' ')}
                       </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#1A211A]/50 rounded-2xl p-6 mb-6">
+                  <h3 className="font-mono-label text-[#A9B5AA] mb-4">Dating Style</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-[#A9B5AA] mb-1">Primary Style</p>
+                      {primaryStyleMeta ? (
+                        <>
+                          <p className="text-[#F6FFF2] font-medium">
+                            {primaryStyleMeta.emoji} {primaryStyleMeta.label}
+                          </p>
+                          <p className="text-[#A9B5AA] text-sm">{primaryStyleMeta.subtitle}</p>
+                        </>
+                      ) : (
+                        <p className="text-[#A9B5AA] text-sm">Not available yet.</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#A9B5AA] mb-1">Secondary Style</p>
+                      {secondaryStyleMeta ? (
+                        <>
+                          <p className="text-[#F6FFF2] font-medium">
+                            {secondaryStyleMeta.emoji} {secondaryStyleMeta.label}
+                          </p>
+                          <p className="text-[#A9B5AA] text-sm">{secondaryStyleMeta.subtitle}</p>
+                        </>
+                      ) : (
+                        <p className="text-[#A9B5AA] text-sm">Not available yet.</p>
+                      )}
                     </div>
                   </div>
                 </div>

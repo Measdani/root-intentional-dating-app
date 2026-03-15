@@ -11,6 +11,9 @@ import {
 import { Check, AlertTriangle, TrendingUp, Lock } from 'lucide-react';
 import { assessmentService } from '@/services/assessmentService';
 import { userService } from '@/services/userService';
+import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
+
+const ALIGNMENT_THRESHOLD_PERCENT = 85;
 
 const AssessmentResultSection: React.FC = () => {
   const { assessmentResult, setCurrentView, canRetakeAssessment, getNextRetakeDate } = useApp();
@@ -70,6 +73,8 @@ const AssessmentResultSection: React.FC = () => {
             ...rawUser,
             assessmentPassed: assessmentResult.passed,
             alignmentScore: assessmentResult.percentage,
+            primaryStyle: assessmentResult.primaryStyle,
+            secondaryStyle: assessmentResult.secondaryStyle,
             userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
             poolId: nextPoolId,
           };
@@ -78,6 +83,8 @@ const AssessmentResultSection: React.FC = () => {
           await userService.updateUser(updated.id, {
             assessmentPassed: updated.assessmentPassed,
             alignmentScore: updated.alignmentScore,
+            primaryStyle: updated.primaryStyle,
+            secondaryStyle: updated.secondaryStyle,
             userStatus: updated.userStatus,
             poolId: nextPoolId,
           });
@@ -134,6 +141,8 @@ const AssessmentResultSection: React.FC = () => {
           ...rawUser,
           assessmentPassed: assessmentResult.passed,
           alignmentScore: assessmentResult.percentage,
+          primaryStyle: assessmentResult.primaryStyle,
+          secondaryStyle: assessmentResult.secondaryStyle,
           userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
           poolId: nextPoolId,
         };
@@ -142,6 +151,8 @@ const AssessmentResultSection: React.FC = () => {
         await userService.updateUser(updated.id, {
           assessmentPassed: updated.assessmentPassed,
           alignmentScore: updated.alignmentScore,
+          primaryStyle: updated.primaryStyle,
+          secondaryStyle: updated.secondaryStyle,
           userStatus: updated.userStatus,
           poolId: nextPoolId,
         });
@@ -161,6 +172,12 @@ const AssessmentResultSection: React.FC = () => {
 
   const canRetake = useMemo(() => canRetakeAssessment(), [canRetakeAssessment]);
   const nextRetakeDate = useMemo(() => getNextRetakeDate(), [getNextRetakeDate]);
+  const primaryStyleMeta = assessmentResult.primaryStyle
+    ? ASSESSMENT_STYLE_META[assessmentResult.primaryStyle]
+    : null;
+  const secondaryStyleMeta = assessmentResult.secondaryStyle
+    ? ASSESSMENT_STYLE_META[assessmentResult.secondaryStyle]
+    : null;
 
   const strengths = [
     'You showed honesty in your responses, which is the foundation for growth.',
@@ -243,8 +260,11 @@ const AssessmentResultSection: React.FC = () => {
 
           {assessmentResult.passed ? (
             <div className="mb-10 text-center p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-              <p className="font-mono-label text-[#A9B5AA] mb-2">Alignment Score</p>
-              <p className="text-5xl font-display text-[#D9FF3D]">{assessmentResult.percentage}%</p>
+              <p className="font-mono-label text-[#A9B5AA] mb-2">Assessment Score</p>
+              <p className="text-5xl font-display text-[#D9FF3D]">{assessmentResult.totalScore}/120</p>
+              <p className="text-xs text-[#A9B5AA] mt-2">
+                {assessmentResult.percentage}% readiness score
+              </p>
             </div>
           ) : (
             <div className="mb-10 p-5 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
@@ -253,6 +273,9 @@ const AssessmentResultSection: React.FC = () => {
                 {isLgbtqCommunity
                   ? 'Based on your assessment responses, Growth Mode has been activated to support intentional skill development before re-entry into the LGBTQ+ alignment pool.'
                   : 'Based on your assessment responses, Growth Mode has been activated to support intentional skill development before re-entry into the alignment pool.'}
+              </p>
+              <p className="text-xs text-[#A9B5AA] mb-3">
+                Current score: {assessmentResult.totalScore}/120 ({assessmentResult.percentage}%). You need {ALIGNMENT_THRESHOLD_PERCENT}%+ for Alignment Space.
               </p>
               <div className="flex items-center gap-2 text-sm text-[#F6FFF2]">
                 <Lock className="w-4 h-4 text-[#A9B5AA]" />
@@ -264,6 +287,35 @@ const AssessmentResultSection: React.FC = () => {
               </div>
             </div>
           )}
+
+          <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+              <p className="text-xs text-[#A9B5AA] mb-2">Primary Style</p>
+              {primaryStyleMeta ? (
+                <>
+                  <p className="text-[#F6FFF2] font-medium">
+                    {primaryStyleMeta.emoji} {primaryStyleMeta.label}
+                  </p>
+                  <p className="text-sm text-[#A9B5AA]">{primaryStyleMeta.subtitle}</p>
+                </>
+              ) : (
+                <p className="text-sm text-[#A9B5AA]">Not enough style data yet.</p>
+              )}
+            </div>
+            <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+              <p className="text-xs text-[#A9B5AA] mb-2">Secondary Style</p>
+              {secondaryStyleMeta ? (
+                <>
+                  <p className="text-[#F6FFF2] font-medium">
+                    {secondaryStyleMeta.emoji} {secondaryStyleMeta.label}
+                  </p>
+                  <p className="text-sm text-[#A9B5AA]">{secondaryStyleMeta.subtitle}</p>
+                </>
+              ) : (
+                <p className="text-sm text-[#A9B5AA]">Not enough style data yet.</p>
+              )}
+            </div>
+          </div>
 
           {/* Category Scores */}
           {assessmentResult.passed && (

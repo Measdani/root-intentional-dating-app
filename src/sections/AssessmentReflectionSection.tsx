@@ -67,6 +67,8 @@ const AssessmentReflectionSection: React.FC = () => {
           ...rawUser,
           assessmentPassed: assessmentResult.passed,
           alignmentScore: assessmentResult.percentage,
+          primaryStyle: assessmentResult.primaryStyle,
+          secondaryStyle: assessmentResult.secondaryStyle,
           userStatus: assessmentResult.passed ? 'active' : 'needs-growth',
           poolId: nextPoolId,
         };
@@ -75,6 +77,8 @@ const AssessmentReflectionSection: React.FC = () => {
         void userService.updateUser(updated.id, {
           assessmentPassed: updated.assessmentPassed,
           alignmentScore: updated.alignmentScore,
+          primaryStyle: updated.primaryStyle,
+          secondaryStyle: updated.secondaryStyle,
           userStatus: updated.userStatus,
           poolId: updated.poolId,
         });

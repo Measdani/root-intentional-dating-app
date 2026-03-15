@@ -6,6 +6,7 @@ import { reportService } from '@/services/reportService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
 import { assessmentQuestions as defaultAssessmentQuestions } from '@/data/assessment';
+import { normalizeAssessmentQuestionsWithStyles } from '@/services/assessmentStyleService';
 
 interface AdminContextType {
   session: AdminSession;
@@ -161,11 +162,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         const parsed = JSON.parse(savedData);
         setUsers(parsed.users || []);
-        setAssessmentQuestions(
+        const storedAssessmentQuestions =
           Array.isArray(parsed.assessmentQuestions) && parsed.assessmentQuestions.length > 0
             ? parsed.assessmentQuestions
-            : defaultAssessmentQuestions
-        );
+            : defaultAssessmentQuestions;
+        setAssessmentQuestions(normalizeAssessmentQuestionsWithStyles(storedAssessmentQuestions));
         setGrowthResources(parsed.growthResources || []);
         setMembershipTiers(parsed.membershipTiers || []);
       } catch {
@@ -425,7 +426,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addAssessmentQuestion = useCallback((question: AssessmentQuestion) => {
     setAssessmentQuestions((prev) => {
-      const next = [...prev, question];
+      const next = normalizeAssessmentQuestionsWithStyles([...prev, question]);
       window.dispatchEvent(
         new CustomEvent('admin-assessment-questions-updated', { detail: next })
       );
@@ -436,9 +437,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateAssessmentQuestion = useCallback(
     (questionId: string, data: Partial<AssessmentQuestion>) => {
       setAssessmentQuestions((prev) => {
-        const next = prev.map((question) =>
+        const next = normalizeAssessmentQuestionsWithStyles(prev.map((question) =>
           question.id === questionId ? { ...question, ...data } : question
-        );
+        ));
         window.dispatchEvent(
           new CustomEvent('admin-assessment-questions-updated', { detail: next })
         );

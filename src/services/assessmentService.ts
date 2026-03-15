@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase'
 import type { AssessmentResult } from '@/types'
+import {
+  isAssessmentCoreStyle,
+  normalizeStyleScores,
+} from '@/services/assessmentStyleService'
 
 export const assessmentService = {
   async saveAssessmentResult(
@@ -76,12 +80,19 @@ export const assessmentService = {
 }
 
 function mapRowToAssessmentResult(row: any): AssessmentResult {
+  const percentage = Number(row.percentage ?? 0)
+
   return {
-    passed: row.passed,
-    percentage: row.percentage,
-    totalScore: Math.round((row.percentage / 100) * 100), // Derive from percentage
+    passed: typeof row.passed === 'boolean' ? row.passed : percentage >= 85,
+    percentage,
+    totalScore: Number.isFinite(row.total_score)
+      ? Number(row.total_score)
+      : Math.round((percentage / 100) * 120),
     categoryScores: {}, // Not stored in database, provide empty object
     integrityFlags: row.integrity_flags || [],
     growthAreas: row.growth_areas || [],
+    styleScores: normalizeStyleScores(row.style_scores),
+    primaryStyle: isAssessmentCoreStyle(row.primary_style) ? row.primary_style : undefined,
+    secondaryStyle: isAssessmentCoreStyle(row.secondary_style) ? row.secondary_style : undefined,
   }
 }

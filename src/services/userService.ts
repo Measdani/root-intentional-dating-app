@@ -41,15 +41,26 @@ export const userService = {
       .insert({
         ...basePayload,
         ...(user.poolId ? { pool_id: user.poolId } : {}),
+        ...(user.primaryStyle ? { primary_style: user.primaryStyle } : {}),
+        ...(user.secondaryStyle ? { secondary_style: user.secondaryStyle } : {}),
       })
       .select()
       .single()
 
-    if (error && user.poolId && shouldRetryWithoutPoolId(error.message)) {
-      // Backward-compatible retry for schemas that do not support pool_id yet.
+    if (
+      error &&
+      (user.poolId || user.primaryStyle || user.secondaryStyle) &&
+      (shouldRetryWithoutPoolId(error.message) || shouldRetryWithoutStyleColumns(error.message))
+    ) {
+      // Backward-compatible retry for schemas that do not support pool/style columns yet.
+      const fallbackPayload = { ...basePayload } as Record<string, unknown>
+      if (shouldRetryWithoutStyleColumns(error.message)) {
+        delete fallbackPayload.primary_style
+        delete fallbackPayload.secondary_style
+      }
       const retry = await supabase
         .from('users')
-        .insert(basePayload)
+        .insert(fallbackPayload)
         .select()
         .single()
       error = retry.error
@@ -121,6 +132,8 @@ export const userService = {
     if (updates.growthFocus !== undefined) updateData.growth_focus = updates.growthFocus
     if (updates.relationshipVision !== undefined) updateData.relationship_vision = updates.relationshipVision
     if (updates.communicationStyle !== undefined) updateData.communication_style = updates.communicationStyle
+    if (updates.primaryStyle !== undefined) updateData.primary_style = updates.primaryStyle
+    if (updates.secondaryStyle !== undefined) updateData.secondary_style = updates.secondaryStyle
     if (updates.photoUrl !== undefined) updateData.photo_url = updates.photoUrl
     if (updates.bio !== undefined) updateData.bio = updates.bio
     if (updates.assessmentPassed !== undefined) updateData.assessment_passed = updates.assessmentPassed
@@ -146,8 +159,20 @@ export const userService = {
       .update(updateData)
       .eq('id', userId)
 
-    if (error && updateData.pool_id !== undefined && shouldRetryWithoutPoolId(error.message)) {
-      delete updateData.pool_id
+    if (
+      error &&
+      (
+        (updateData.pool_id !== undefined && shouldRetryWithoutPoolId(error.message)) ||
+        (hasStyleColumns(updateData) && shouldRetryWithoutStyleColumns(error.message))
+      )
+    ) {
+      if (shouldRetryWithoutPoolId(error.message)) {
+        delete updateData.pool_id
+      }
+      if (shouldRetryWithoutStyleColumns(error.message)) {
+        delete updateData.primary_style
+        delete updateData.secondary_style
+      }
       const retry = await supabase
         .from('users')
         .update(updateData)
@@ -192,6 +217,8 @@ function mapRowToUser(row: any): User {
     growthFocus: row.growth_focus,
     relationshipVision: row.relationship_vision,
     communicationStyle: row.communication_style,
+    primaryStyle: row.primary_style,
+    secondaryStyle: row.secondary_style,
     photoUrl: row.photo_url,
     bio: row.bio,
     assessmentPassed: row.assessment_passed,
@@ -241,4 +268,21 @@ function isUnsupportedPoolIdValueError(message: string): boolean {
 
 function shouldRetryWithoutPoolId(message: string): boolean {
   return isMissingPoolIdColumnError(message) || isUnsupportedPoolIdValueError(message)
+}
+
+function hasStyleColumns(payload: Record<string, unknown>): boolean {
+  return payload.primary_style !== undefined || payload.secondary_style !== undefined
+}
+
+function shouldRetryWithoutStyleColumns(message: string): boolean {
+  const normalized = (message || '').toLowerCase()
+  const hasStyleColumnReference =
+    normalized.includes('primary_style') || normalized.includes('secondary_style')
+  if (!hasStyleColumnReference) return false
+
+  return (
+    normalized.includes('column') ||
+    normalized.includes('schema cache') ||
+    normalized.includes('does not exist')
+  )
 }

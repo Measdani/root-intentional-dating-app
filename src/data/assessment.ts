@@ -1,15 +1,22 @@
-import type { AssessmentQuestion, GrowthResource, MembershipTier } from '@/types';
+import type { AssessmentAnswer, AssessmentQuestion, GrowthResource, MembershipTier } from '@/types';
+import {
+  ASSESSMENT_CORE_STYLES,
+  buildEmptyStyleScores,
+  isAssessmentCoreStyle,
+  normalizeAssessmentQuestionsWithStyles,
+} from '@/services/assessmentStyleService';
 
-export const assessmentQuestions: AssessmentQuestion[] = [
+const baseAssessmentQuestions: AssessmentQuestion[] = [
   {
     id: 'q1',
     category: 'emotional-regulation',
     question: 'When you feel overwhelmed by emotion, what is your typical response?',
     options: [
-      { text: 'I pause, name the feeling, and choose when to respond', score: 10 },
-      { text: 'I need time alone to process before engaging', score: 8 },
-      { text: 'I sometimes react first, then apologize later', score: 5 },
-      { text: 'I often say things I regret in the moment', score: 2, redFlag: true },
+      { text: 'I pause, name the feeling, and choose when to respond', score: 10, style: 'oak' },
+      { text: 'I try to stay calm and consider how my emotions may affect the other person', score: 9, style: 'willow' },
+      { text: 'I need time alone to process before engaging', score: 8, style: 'fern' },
+      { text: 'I try to understand what is happening beneath the emotion so it can be worked through constructively', score: 9, style: 'gardener' },
+      { text: 'I reconnect to something positive and return to the conversation when emotions settle', score: 7, style: 'wildflower' },
     ],
   },
   {
@@ -17,10 +24,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'accountability',
     question: 'When you make a mistake that hurts someone, what do you do?',
     options: [
-      { text: 'I acknowledge it fully, apologize sincerely, and change my behavior', score: 10 },
-      { text: 'I apologize but sometimes struggle to change', score: 7 },
-      { text: 'I explain my intentions to help them understand', score: 4 },
-      { text: 'I usually feel defensive and need time before I can apologize', score: 2, redFlag: true },
+      { text: 'I acknowledge it fully, apologize sincerely, and change my behavior', score: 10, style: 'oak' },
+      { text: 'I apologize and try to make sure the other person feels heard and cared for', score: 9, style: 'willow' },
+      { text: 'I reflect deeply on what happened so I can respond more thoughtfully', score: 8, style: 'fern' },
+      { text: 'I want to understand the root of the harm and work together to repair it', score: 10, style: 'gardener' },
+      { text: 'I apologize sincerely and try to bring warmth and reconnection back to the relationship', score: 8, style: 'wildflower' },
     ],
   },
   {
@@ -28,10 +36,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'autonomy',
     question: 'How would you describe your relationship with yourself?',
     options: [
-      { text: 'I enjoy my own company and have a strong sense of who I am', score: 10 },
-      { text: 'I am generally comfortable alone but still growing', score: 8 },
-      { text: 'I prefer being with others but can manage alone time', score: 5 },
-      { text: 'I feel incomplete without a partner and struggle when alone', score: 1, redFlag: true },
+      { text: 'I know who I am and stand firmly in my values', score: 10, style: 'oak' },
+      { text: 'I have a caring relationship with myself and try to give myself grace as I grow', score: 9, style: 'willow' },
+      { text: 'I know myself well and value time alone to reflect and reset', score: 10, style: 'fern' },
+      { text: 'I see myself as always growing and becoming more whole over time', score: 9, style: 'gardener' },
+      { text: 'I enjoy my independence and love sharing life and meaningful experiences with others', score: 8, style: 'wildflower' },
     ],
   },
   {
@@ -39,10 +48,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'boundaries',
     question: 'How do you typically handle it when someone crosses your boundaries?',
     options: [
-      { text: 'I communicate it clearly and calmly at the appropriate time', score: 10 },
-      { text: 'I usually say something, though sometimes I wait too long', score: 7 },
-      { text: 'I hint at it or hope they notice my discomfort', score: 4 },
-      { text: 'I often let it go to avoid conflict', score: 2, redFlag: true },
+      { text: 'I communicate it clearly and calmly at the appropriate time', score: 10, style: 'oak' },
+      { text: 'I try to express it in a way that protects both honesty and harmony', score: 8, style: 'willow' },
+      { text: 'I step back to process first, then return to communicate my boundary', score: 8, style: 'fern' },
+      { text: 'I address it directly and try to understand how to prevent it from happening again together', score: 9, style: 'gardener' },
+      { text: 'I address it honestly but try to keep the conversation constructive and connected', score: 8, style: 'wildflower' },
     ],
   },
   {
@@ -50,10 +60,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'conflict-repair',
     question: 'After a disagreement, what matters most to you?',
     options: [
-      { text: 'Understanding each other and repairing the connection', score: 10 },
-      { text: 'Finding a compromise we can both accept', score: 8 },
-      { text: 'Being heard and having my perspective validated', score: 5 },
-      { text: 'Proving my point and being right', score: 1, redFlag: true },
+      { text: 'That the issue is addressed honestly and clearly', score: 9, style: 'oak' },
+      { text: 'That both people feel heard and emotionally safe again', score: 9, style: 'willow' },
+      { text: 'That there is enough space to reflect before moving forward', score: 8, style: 'fern' },
+      { text: 'Understanding each other and repairing the connection', score: 10, style: 'gardener' },
+      { text: 'Restoring warmth, closeness, and positive energy between us', score: 8, style: 'wildflower' },
     ],
   },
   {
@@ -61,10 +72,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'integrity-check',
     question: 'How do you feel about partners who have children from previous relationships?',
     options: [
-      { text: 'I am open to it and would embrace the responsibility', score: 10 },
-      { text: 'I am open but would need to learn and adapt', score: 8 },
-      { text: 'It depends on the situation and the other parent', score: 6 },
-      { text: 'I prefer not to date people with children', score: 5 },
+      { text: 'I am open to it if our values, responsibilities, and expectations are clear', score: 9, style: 'oak' },
+      { text: 'I am open to it and would want to approach the situation with care and empathy', score: 9, style: 'willow' },
+      { text: 'I am open to it, but I would need time to understand the dynamic and what it requires', score: 8, style: 'fern' },
+      { text: 'I am open to it and willing to grow into the responsibility together', score: 10, style: 'gardener' },
+      { text: 'I am open to it and like the idea of building a blended life with warmth and intention', score: 8, style: 'wildflower' },
     ],
   },
   {
@@ -72,10 +84,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'emotional-regulation',
     question: 'When your partner is upset with you, how do you typically feel?',
     options: [
-      { text: 'Curious about their experience and willing to understand', score: 10 },
-      { text: 'Concerned and eager to make things right', score: 8 },
-      { text: 'Anxious and worried about the relationship', score: 5 },
-      { text: 'Attacked and defensive', score: 2, redFlag: true },
+      { text: 'Focused on understanding the issue clearly so it can be addressed', score: 9, style: 'oak' },
+      { text: 'Concerned about their feelings and wanting to respond with care', score: 9, style: 'willow' },
+      { text: 'I need a moment to process my emotions before I respond well', score: 8, style: 'fern' },
+      { text: 'Curious about their experience and willing to work through it together', score: 10, style: 'gardener' },
+      { text: 'I want to understand them and find a way for us to reconnect', score: 8, style: 'wildflower' },
     ],
   },
   {
@@ -83,10 +96,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'accountability',
     question: 'How often do you reflect on your patterns in relationships?',
     options: [
-      { text: 'Regularly - I journal or talk through patterns with trusted people', score: 10 },
-      { text: 'Sometimes - especially after something goes wrong', score: 7 },
-      { text: 'Occasionally - when someone points something out', score: 4 },
-      { text: 'Rarely - I prefer to focus on the present', score: 2, redFlag: true },
+      { text: 'Regularly - I believe self-awareness helps me show up with integrity', score: 9, style: 'oak' },
+      { text: 'Often - especially when I notice tension or emotional disconnection', score: 8, style: 'willow' },
+      { text: 'Regularly - I need time to think through my patterns deeply', score: 10, style: 'fern' },
+      { text: 'Often - reflection helps me grow and build healthier relationships', score: 9, style: 'gardener' },
+      { text: 'Often - and I also try to create better experiences moving forward', score: 8, style: 'wildflower' },
     ],
   },
   {
@@ -94,10 +108,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'autonomy',
     question: 'What is your primary motivation for seeking a relationship right now?',
     options: [
-      { text: 'I want to share my already-full life with someone', score: 10 },
-      { text: 'I am ready for partnership and have done personal work', score: 9 },
-      { text: 'I want companionship and connection', score: 6 },
-      { text: 'I feel like I should be in a relationship by now', score: 2, redFlag: true },
+      { text: 'I want a relationship built on honesty, stability, and shared values', score: 10, style: 'oak' },
+      { text: 'I want emotional connection, peace, and mutual care', score: 9, style: 'willow' },
+      { text: 'I want a meaningful connection that respects emotional depth and individuality', score: 9, style: 'fern' },
+      { text: 'I want a partnership where both people can grow and build together', score: 10, style: 'gardener' },
+      { text: 'I want to share life, joy, and meaningful experiences with someone', score: 9, style: 'wildflower' },
     ],
   },
   {
@@ -105,10 +120,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'boundaries',
     question: 'How do you respond when a partner needs space?',
     options: [
-      { text: 'I respect it and use the time for my own interests', score: 10 },
-      { text: 'I understand but sometimes feel anxious', score: 7 },
-      { text: 'I try to understand why and when they will be back', score: 4 },
-      { text: 'I feel rejected and worry they are losing interest', score: 2, redFlag: true },
+      { text: 'I respect it and appreciate clear communication about what they need', score: 9, style: 'oak' },
+      { text: 'I respect it and try to remain understanding and emotionally steady', score: 9, style: 'willow' },
+      { text: 'I respect it and use the time for my own reflection and grounding', score: 10, style: 'fern' },
+      { text: 'I respect it and trust we can return to the conversation with more clarity', score: 9, style: 'gardener' },
+      { text: 'I respect their space and look forward to reconnecting when they are ready', score: 8, style: 'wildflower' },
     ],
   },
   {
@@ -116,10 +132,11 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'conflict-repair',
     question: 'In your past relationships, how did conflicts typically end?',
     options: [
-      { text: 'With mutual understanding and a plan for the future', score: 10 },
-      { text: 'With apologies from both sides', score: 7 },
-      { text: 'With one person giving in to keep the peace', score: 4 },
-      { text: 'With unresolved tension that came up again later', score: 2, redFlag: true },
+      { text: 'With honest conversations and a clearer understanding of what needed to change', score: 9, style: 'oak' },
+      { text: 'With emotional reassurance and an effort to restore peace', score: 8, style: 'willow' },
+      { text: 'With time to reflect and return to the issue more calmly', score: 8, style: 'fern' },
+      { text: 'With mutual understanding and a plan for how to move forward together', score: 10, style: 'gardener' },
+      { text: 'With reconnection and an effort to bring warmth back into the relationship', score: 8, style: 'wildflower' },
     ],
   },
   {
@@ -127,16 +144,20 @@ export const assessmentQuestions: AssessmentQuestion[] = [
     category: 'integrity-check',
     question: 'If you discovered you were not ready for this platform after joining, what would you do?',
     options: [
-      { text: 'Be honest with myself and step back to focus on growth', score: 10 },
-      { text: 'Talk to my matches about where I am', score: 7 },
-      { text: 'Try to make it work anyway', score: 3 },
-      { text: 'Hide my uncertainty and continue', score: 0, redFlag: true },
+      { text: 'Be honest with myself and step back until I am ready', score: 10, style: 'oak' },
+      { text: 'Communicate gently and respectfully about where I am emotionally', score: 8, style: 'willow' },
+      { text: 'Take time away to reflect and focus on personal growth', score: 9, style: 'fern' },
+      { text: 'Step back, do the work, and return when I can participate in a healthier way', score: 10, style: 'gardener' },
+      { text: 'Be honest about where I am while staying hopeful and open to growth later', score: 8, style: 'wildflower' },
     ],
   },
 ];
 
+export const assessmentQuestions: AssessmentQuestion[] =
+  normalizeAssessmentQuestionsWithStyles(baseAssessmentQuestions);
+
 // Follow-up questions for integrity detection
-export const followUpQuestions: AssessmentQuestion[] = [
+const baseFollowUpQuestions: AssessmentQuestion[] = [
   {
     id: 'f1',
     category: 'integrity-check',
@@ -160,6 +181,9 @@ export const followUpQuestions: AssessmentQuestion[] = [
     ],
   },
 ];
+
+export const followUpQuestions: AssessmentQuestion[] =
+  normalizeAssessmentQuestionsWithStyles(baseFollowUpQuestions);
 
 export const growthResources: GrowthResource[] = [
   {
@@ -408,38 +432,57 @@ export const membershipTiers: MembershipTier[] = [
   },
 ];
 
-export const calculateAssessmentResult = (answers: { questionId: string; score: number; redFlag?: boolean }[]) => {
+export const calculateAssessmentResult = (
+  answers: AssessmentAnswer[],
+  questionBank: AssessmentQuestion[] = assessmentQuestions
+) => {
+  const alignmentThreshold = 85;
   const totalScore = answers.reduce((sum, a) => sum + a.score, 0);
   const maxPossible = answers.length * 10;
   const percentage = Math.round((totalScore / maxPossible) * 100);
-  
+
   const redFlags = answers.filter(a => a.redFlag).length;
   const integrityFlags: string[] = [];
-  
+
   if (redFlags >= 3) {
     integrityFlags.push('Your responses indicate meaningful opportunities for deeper skill development.');
   }
-  if (percentage < 60) {
+  if (percentage < alignmentThreshold) {
     integrityFlags.push('Strengthening these areas will improve relationship stability and connection quality.');
   }
-  
+
+  const styleScores = buildEmptyStyleScores();
+
   // Calculate category scores
   const categoryScores: Record<string, number> = {};
   const categoryCounts: Record<string, number> = {};
-  
+
+  const allQuestions = [...questionBank, ...followUpQuestions];
   answers.forEach(a => {
-    const question = assessmentQuestions.find(q => q.id === a.questionId);
+    if (isAssessmentCoreStyle(a.style)) {
+      styleScores[a.style] += a.score;
+    }
+
+    const question = allQuestions.find(q => q.id === a.questionId);
     if (question) {
       categoryScores[question.category] = (categoryScores[question.category] || 0) + a.score;
       categoryCounts[question.category] = (categoryCounts[question.category] || 0) + 1;
     }
   });
-  
+
   // Normalize category scores
   Object.keys(categoryScores).forEach(cat => {
     categoryScores[cat] = Math.round((categoryScores[cat] / (categoryCounts[cat] * 10)) * 100);
   });
-  
+
+  const rankedStyles = [...ASSESSMENT_CORE_STYLES].sort((a, b) => {
+    const scoreDiff = styleScores[b] - styleScores[a];
+    if (scoreDiff !== 0) return scoreDiff;
+    return ASSESSMENT_CORE_STYLES.indexOf(a) - ASSESSMENT_CORE_STYLES.indexOf(b);
+  });
+  const primaryStyle = styleScores[rankedStyles[0]] > 0 ? rankedStyles[0] : undefined;
+  const secondaryStyle = styleScores[rankedStyles[1]] > 0 ? rankedStyles[1] : undefined;
+
   // Identify growth areas
   const growthAreas: string[] = [];
   if (categoryScores['emotional-regulation'] < 70) growthAreas.push('Emotional Regulation');
@@ -447,13 +490,17 @@ export const calculateAssessmentResult = (answers: { questionId: string; score: 
   if (categoryScores['autonomy'] < 70) growthAreas.push('Autonomy & Wholeness');
   if (categoryScores['boundaries'] < 70) growthAreas.push('Boundaries');
   if (categoryScores['conflict-repair'] < 70) growthAreas.push('Conflict & Repair');
-  
+
   return {
     totalScore,
     percentage,
-    passed: percentage >= 78 && redFlags < 3,
+    passed: percentage >= alignmentThreshold,
     categoryScores,
     integrityFlags,
     growthAreas,
+    styleScores,
+    primaryStyle,
+    secondaryStyle,
   };
 };
+

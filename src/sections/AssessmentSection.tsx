@@ -4,18 +4,19 @@ import { useCommunity } from '@/modules';
 import { assessmentQuestions as defaultAssessmentQuestions, followUpQuestions, calculateAssessmentResult } from '@/data/assessment';
 import type { AssessmentQuestion } from '@/types';
 import { ChevronRight, AlertCircle } from 'lucide-react';
+import { normalizeAssessmentQuestionsWithStyles, resolveAssessmentOptionStyle } from '@/services/assessmentStyleService';
 
 const ADMIN_DATA_STORAGE_KEY = 'rooted-admin-data';
 
 const loadAssessmentQuestions = (): AssessmentQuestion[] => {
   try {
     const raw = localStorage.getItem(ADMIN_DATA_STORAGE_KEY);
-    if (!raw) return defaultAssessmentQuestions;
+    if (!raw) return normalizeAssessmentQuestionsWithStyles(defaultAssessmentQuestions);
 
     const parsed = JSON.parse(raw);
     const candidate = parsed?.assessmentQuestions;
     if (!Array.isArray(candidate) || candidate.length === 0) {
-      return defaultAssessmentQuestions;
+      return normalizeAssessmentQuestionsWithStyles(defaultAssessmentQuestions);
     }
 
     const hasValidShape = candidate.every(
@@ -28,9 +29,11 @@ const loadAssessmentQuestions = (): AssessmentQuestion[] => {
         question.options.length > 0
     );
 
-    return hasValidShape ? (candidate as AssessmentQuestion[]) : defaultAssessmentQuestions;
+    return hasValidShape
+      ? normalizeAssessmentQuestionsWithStyles(candidate as AssessmentQuestion[])
+      : normalizeAssessmentQuestionsWithStyles(defaultAssessmentQuestions);
   } catch {
-    return defaultAssessmentQuestions;
+    return normalizeAssessmentQuestionsWithStyles(defaultAssessmentQuestions);
   }
 };
 
@@ -153,11 +156,12 @@ const AssessmentSection: React.FC = () => {
   const currentQuestion = currentQuestions[currentQuestionIndex];
   const progress = ((assessmentAnswers.length) / (assessmentQuestions.length + 2)) * 100;
 
-  const handleAnswer = (score: number, redFlag?: boolean) => {
+  const handleAnswer = (score: number, redFlag?: boolean, style?: AssessmentQuestion['options'][number]['style']) => {
     if (isTransitioning) return;
 
     setIsTransitioning(true);
-    addAssessmentAnswer(currentQuestion.id, score, redFlag);
+    const resolvedStyle = style || resolveAssessmentOptionStyle(score, redFlag);
+    addAssessmentAnswer(currentQuestion.id, score, redFlag, resolvedStyle);
 
     // Track answer timestamp
     const timestamp = Date.now();
@@ -183,7 +187,10 @@ const AssessmentSection: React.FC = () => {
         // Complete assessment - log data
         const completionTime = Date.now();
         const totalTimeTaken = assessmentStartTime ? completionTime - assessmentStartTime : 0;
-        const finalAnswers = [...assessmentAnswers, { questionId: currentQuestion.id, score, redFlag }];
+        const finalAnswers = [
+          ...assessmentAnswers,
+          { questionId: currentQuestion.id, score, redFlag, style: resolvedStyle },
+        ];
 
         // Log assessment metadata
         const assessmentLog = {
@@ -200,7 +207,7 @@ const AssessmentSection: React.FC = () => {
         localStorage.setItem('assessmentLog', JSON.stringify(assessmentLog));
         console.log('Assessment completed:', assessmentLog);
 
-        const result = calculateAssessmentResult(finalAnswers);
+        const result = calculateAssessmentResult(finalAnswers, assessmentQuestions);
         setAssessmentResult(result);
         saveAssessmentDate();
         // Always show the result screen first so users can review strengths,
@@ -324,76 +331,85 @@ const AssessmentSection: React.FC = () => {
               isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}
           >
-            <h1 className="font-display text-[clamp(40px,7vw,56px)] text-[#F6FFF2] mb-12 text-center">
-              {isLgbtqCommunity ? 'Before You Begin Your LGBTQ+ Assessment' : 'Before You Begin Your Assessment'}
+            <h1 className="font-display text-[clamp(40px,7vw,56px)] text-[#F6FFF2] mb-8 text-center">
+              Before You Begin
             </h1>
-
             <div className="space-y-6">
-              {/* Time Requirements */}
-              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6">
+              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6 space-y-4">
                 <p className="text-[#A9B5AA] text-base leading-relaxed">
-                  Please set aside approximately <span className="text-[#D9FF3D] font-semibold">15–30 minutes</span> to complete your assessment.
+                  This short assessment helps us understand how you approach communication, conflict, and
+                  connection in relationships.
                 </p>
-              </div>
-
-              {/* No Pausing Warning */}
-              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#D9FF3D]/30 rounded-lg p-6">
                 <p className="text-[#A9B5AA] text-base leading-relaxed">
-                  <span className="text-[#D9FF3D] font-semibold">Once started, the assessment cannot be paused or exited.</span> If you leave before completion, you will automatically be placed in <span className="text-[#D9FF3D]">{innerWorkLabel}</span> and must wait <span className="text-[#D9FF3D] font-semibold">6 months</span> before you can retake the assessment.
+                  Your responses will determine whether you enter Alignment Space, where you'll have tools and
+                  resources to support a healthy relationship as you date and grow, or the {innerWorkLabel},
+                  where you can strengthen important relationship skills while continuing to meet others who are also
+                  focused on personal growth.
                 </p>
-              </div>
-
-              {/* Preparation */}
-              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6">
                 <p className="text-[#A9B5AA] text-base leading-relaxed">
-                  To avoid unintended placement, please ensure you have enough <span className="text-[#F6FFF2]">uninterrupted time</span> before beginning.
+                  The assessment takes about 10-15 minutes to complete, and we recommend finishing it in one sitting.
                 </p>
               </div>
-
-              {/* Honesty Section */}
-              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6">
-                <h3 className="text-[#F6FFF2] font-semibold mb-4 text-lg">A Note on Honesty</h3>
-                <ul className="text-[#A9B5AA] space-y-3 leading-relaxed">
-                  <li className="flex gap-3">
-                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
-                    <span><span className="text-[#F6FFF2] font-semibold">There is no perfect score.</span></span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
-                    <span><span className="text-[#F6FFF2] font-semibold">There are no trick questions.</span></span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
-                    <span>Do not use outside resources, coaching prompts, or search engines while answering.</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
-                    <span>The purpose of this assessment is not to perform well — it is to understand where you truly are.</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Answer From Experience */}
-              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6">
-                <h3 className="text-[#F6FFF2] font-semibold mb-4 text-lg">Answer From Your Truth</h3>
-                <ul className="text-[#A9B5AA] space-y-3 leading-relaxed mb-4">
-                  <li className="flex gap-3">
-                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
-                    <span>Answer from your <span className="text-[#F6FFF2] font-semibold">lived experience.</span></span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
-                    <span>Answer from your <span className="text-[#F6FFF2] font-semibold">current patterns.</span></span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-[#D9FF3D] font-bold flex-shrink-0">•</span>
-                    <span>Answer <span className="text-[#F6FFF2] font-semibold">honestly.</span></span>
-                  </li>
-                </ul>
-                <p className="text-[#A9B5AA] leading-relaxed mb-3">
-                  The more authentic your responses, the more accurately we can meet you where you are — and help you grow into where you want to be.
+              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6 space-y-4">
+                <h3 className="text-[#F6FFF2] font-semibold text-lg">Discover Your Dating Style</h3>
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  As part of the assessment, you'll also discover your current dating style. Most people show a blend
+                  of styles, but one or two may stand out more strongly.
                 </p>
-                <p className="text-[#D9FF3D] font-semibold">This process is about alignment, not judgment.</p>
+                <p className="text-[#A9B5AA] text-base leading-relaxed">You may resonate with:</p>
+                <div className="space-y-3">
+                  <p className="text-[#A9B5AA] leading-relaxed">
+                    <span className="text-[#F6FFF2] font-semibold">Oak - The Courage Dater</span><br />
+                    Direct, honest, and grounded in strong values.
+                  </p>
+                  <p className="text-[#A9B5AA] leading-relaxed">
+                    <span className="text-[#F6FFF2] font-semibold">Willow - The Harmonizer</span><br />
+                    Empathetic, emotionally aware, and focused on understanding others.
+                  </p>
+                  <p className="text-[#A9B5AA] leading-relaxed">
+                    <span className="text-[#F6FFF2] font-semibold">Fern - The Reflective Dater</span><br />
+                    Thoughtful, introspective, and comfortable taking space to process emotions.
+                  </p>
+                  <p className="text-[#A9B5AA] leading-relaxed">
+                    <span className="text-[#F6FFF2] font-semibold">Gardener - The Growth Partner</span><br />
+                    Collaborative, curious, and committed to growing through challenges together.
+                  </p>
+                  <p className="text-[#A9B5AA] leading-relaxed">
+                    <span className="text-[#F6FFF2] font-semibold">Wildflower - The Adventure Dater</span><br />
+                    Optimistic, playful, and energized by shared experiences and connection.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-[#111611]/80 backdrop-blur-sm border border-[#1A211A] rounded-lg p-6 space-y-4">
+                <h3 className="text-[#F6FFF2] font-semibold text-lg">A Quick Note</h3>
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  This assessment isn't about perfect answers.
+                </p>
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  It's an opportunity to reflect on where you are today, recognize areas you may want to strengthen,
+                  and learn the dating style you currently bring into relationships.
+                </p>
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  That reflection helps you move closer to the kind of dating life and connection you truly want.
+                </p>
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  Healthy relationships require emotional tools many of us were never taught.
+                </p>
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  This assessment helps ensure that everyone entering the dating pool is approaching connection with
+                  care, accountability, and respect.
+                </p>
+                <p className="text-[#A9B5AA] text-base leading-relaxed">
+                  We also want you to feel confident that the people you meet here want meaningful connection just as
+                  much as you do.
+                </p>
+                <p className="text-[#A9B5AA] text-base leading-relaxed">That's why this step matters.</p>
+                <p className="text-[#F6FFF2] font-semibold leading-relaxed">
+                  Everyone here has taken the time to reflect and show up intentionally.
+                </p>
+                <p className="text-[#D9FF3D] font-semibold leading-relaxed">
+                  No wasted time - just people who are serious about building something real.
+                </p>
               </div>
             </div>
 
@@ -407,7 +423,7 @@ const AssessmentSection: React.FC = () => {
                 className="w-5 h-5 cursor-pointer accent-[#D9FF3D] flex-shrink-0"
               />
               <label htmlFor="understand-assessment" className="text-[#F6FFF2] cursor-pointer flex-1">
-                I understand the assessment requirements and commitment
+                I understand this assessment and I am ready to begin intentionally.
               </label>
             </div>
 
@@ -454,7 +470,7 @@ const AssessmentSection: React.FC = () => {
               {currentQuestion?.options.map((option, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleAnswer(option.score, option.redFlag)}
+                  onClick={() => handleAnswer(option.score, option.redFlag, option.style)}
                   disabled={isTransitioning}
                   className={`w-full text-left p-4 rounded-xl border border-[#1A211A] bg-[#111611]/80
                     hover:border-[#D9FF3D]/50 hover:bg-[#1A211A] transition-all duration-300

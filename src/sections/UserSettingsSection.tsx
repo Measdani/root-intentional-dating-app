@@ -39,6 +39,7 @@ import {
   type CoreSettingKey,
   type UserSettings,
 } from '@/services/userSettingsService';
+import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
 
 const LOCK_COPY_TITLE = 'Intentional Stability Policy';
 const SUPPORT_MESSAGES_STORAGE_KEY = 'rooted-admin-support-messages';
@@ -280,6 +281,12 @@ const UserSettingsSection: React.FC = () => {
   const retakeStatusCopy = currentUser.assessmentPassed === true
     ? 'Assessment completed in Alignment Space.'
     : (canRetakeAssessment() ? 'Eligible for reassessment now.' : 'Retake is currently locked.');
+  const primaryStyleMeta = currentUser.primaryStyle
+    ? ASSESSMENT_STYLE_META[currentUser.primaryStyle]
+    : null;
+  const secondaryStyleMeta = currentUser.secondaryStyle
+    ? ASSESSMENT_STYLE_META[currentUser.secondaryStyle]
+    : null;
   const hasPrioritySupport =
     currentUser.membershipTier === 'quarterly' || currentUser.membershipTier === 'annual';
   const supportSubjectMaxLength = 100;
@@ -999,6 +1006,35 @@ const UserSettingsSection: React.FC = () => {
             </button>
           </div>
           <p className="text-xs text-[#A9B5AA]">{retakeStatusCopy}</p>
+
+          <div className="grid md:grid-cols-2 gap-3 p-4 bg-[#0B0F0C] border border-[#1A211A] rounded-xl">
+            <div>
+              <p className="text-xs text-[#A9B5AA] mb-1">Primary Style</p>
+              {primaryStyleMeta ? (
+                <>
+                  <p className="text-sm text-[#F6FFF2]">
+                    {primaryStyleMeta.emoji} {primaryStyleMeta.label}
+                  </p>
+                  <p className="text-xs text-[#A9B5AA]">{primaryStyleMeta.subtitle}</p>
+                </>
+              ) : (
+                <p className="text-xs text-[#A9B5AA]">Complete assessment to unlock your style.</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-[#A9B5AA] mb-1">Secondary Style</p>
+              {secondaryStyleMeta ? (
+                <>
+                  <p className="text-sm text-[#F6FFF2]">
+                    {secondaryStyleMeta.emoji} {secondaryStyleMeta.label}
+                  </p>
+                  <p className="text-xs text-[#A9B5AA]">{secondaryStyleMeta.subtitle}</p>
+                </>
+              ) : (
+                <p className="text-xs text-[#A9B5AA]">Complete assessment to unlock your style.</p>
+              )}
+            </div>
+          </div>
 
           <div className="grid md:grid-cols-3 gap-3">
             <input

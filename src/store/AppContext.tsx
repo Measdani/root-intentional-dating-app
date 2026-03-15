@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import type { AppView, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory, AdminNotification, ConciergeSnapshot, ConciergeNudge } from '@/types';
+import type { AppView, AssessmentAnswer, AssessmentOptionStyle, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory, AdminNotification, ConciergeSnapshot, ConciergeNudge } from '@/types';
 import { sampleUsers, currentUser as defaultUser } from '@/data/users';
 import {
   applyRelationshipModeToUser,
@@ -25,7 +25,7 @@ import {
 interface AppState {
   currentView: AppView;
   previousView: AppView;
-  assessmentAnswers: { questionId: string; score: number; redFlag?: boolean }[];
+  assessmentAnswers: AssessmentAnswer[];
   assessmentResult: AssessmentResult | null;
   selectedUser: User | null;
   selectedConversation: UserInteraction | null;
@@ -39,7 +39,12 @@ interface AppState {
 
 interface AppContextType extends AppState {
   setCurrentView: (view: AppView) => void;
-  addAssessmentAnswer: (questionId: string, score: number, redFlag?: boolean) => void;
+  addAssessmentAnswer: (
+    questionId: string,
+    score: number,
+    redFlag?: boolean,
+    style?: AssessmentOptionStyle
+  ) => void;
   setAssessmentResult: (result: AssessmentResult) => void;
   setSelectedUser: (user: User | null) => void;
   setHasJoinedList: (value: boolean) => void;
@@ -345,7 +350,7 @@ const appendProfileUnavailableMessageForMatches = (
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentView, setCurrentViewState] = useState<AppView>('landing');
   const [previousView, setPreviousView] = useState<AppView>('landing');
-  const [assessmentAnswers, setAssessmentAnswers] = useState<{ questionId: string; score: number; redFlag?: boolean }[]>([]);
+  const [assessmentAnswers, setAssessmentAnswers] = useState<AssessmentAnswer[]>([]);
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<UserInteraction | null>(null);
@@ -447,9 +452,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const savedResult = localStorage.getItem('assessmentResult');
               if (savedResult) {
                 const result = JSON.parse(savedResult);
-                parsedUser.assessmentPassed = result.passed;
+                const passed =
+                  typeof result.passed === 'boolean'
+                    ? result.passed
+                    : Number(result.percentage ?? 0) >= 85;
+                parsedUser.assessmentPassed = passed;
                 parsedUser.alignmentScore = result.percentage;
-                parsedUser.userStatus = result.passed ? 'active' : 'needs-growth';
+                if (typeof result.primaryStyle === 'string') {
+                  parsedUser.primaryStyle = result.primaryStyle;
+                }
+                if (typeof result.secondaryStyle === 'string') {
+                  parsedUser.secondaryStyle = result.secondaryStyle;
+                }
+                parsedUser.userStatus = passed ? 'active' : 'needs-growth';
               }
             } catch (err) {
               console.error('Failed to restore assessment result:', err);
@@ -802,8 +817,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentViewState(view);
   }, [currentView]);
 
-  const addAssessmentAnswer = useCallback((questionId: string, score: number, redFlag?: boolean) => {
-    setAssessmentAnswers(prev => [...prev, { questionId, score, redFlag }]);
+  const addAssessmentAnswer = useCallback((
+    questionId: string,
+    score: number,
+    redFlag?: boolean,
+    style?: AssessmentOptionStyle
+  ) => {
+    setAssessmentAnswers(prev => [...prev, { questionId, score, redFlag, style }]);
   }, []);
 
   const resetAssessment = useCallback(() => {

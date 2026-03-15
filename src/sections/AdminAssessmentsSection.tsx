@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, Edit2, Plus, Save, X } from 'lucide-react';
 import { useAdmin } from '@/store/AdminContext';
 import type { AssessmentQuestion } from '@/types';
+import { resolveAssessmentOptionStyle } from '@/services/assessmentStyleService';
 
 const QUESTION_CATEGORIES: AssessmentQuestion['category'][] = [
   'emotional-regulation',
@@ -21,10 +22,11 @@ const createDefaultQuestion = (): AssessmentQuestion => ({
   category: 'emotional-regulation',
   question: 'New assessment question',
   options: [
-    { text: 'Option 1', score: 10 },
-    { text: 'Option 2', score: 7 },
-    { text: 'Option 3', score: 4 },
-    { text: 'Option 4', score: 1, redFlag: true },
+    { text: 'Oak answer', score: 10, style: 'oak' },
+    { text: 'Willow answer', score: 9, style: 'willow' },
+    { text: 'Fern answer', score: 8, style: 'fern' },
+    { text: 'Gardener answer', score: 9, style: 'gardener' },
+    { text: 'Wildflower answer', score: 7, style: 'wildflower' },
   ],
 });
 
@@ -38,8 +40,8 @@ const AdminAssessmentsSection: React.FC = () => {
 
   const [passThreshold, setPassThreshold] = useState(() => {
     const saved = localStorage.getItem('rooted-assessment-pass-threshold');
-    const parsed = saved ? Number(saved) : 78;
-    return Number.isFinite(parsed) ? parsed : 78;
+    const parsed = saved ? Number(saved) : 85;
+    return Number.isFinite(parsed) ? parsed : 85;
   });
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [draftQuestion, setDraftQuestion] = useState<AssessmentQuestion | null>(null);
@@ -116,8 +118,20 @@ const AdminAssessmentsSection: React.FC = () => {
       const nextOptions = previous.options.map((option, optionIndex) => {
         if (optionIndex !== index) return option;
         if (key === 'text') return { ...option, text: String(value) };
-        if (key === 'score') return { ...option, score: Number(value) };
-        return { ...option, redFlag: Boolean(value) };
+        if (key === 'score') {
+          const nextScore = Number(value);
+          return {
+            ...option,
+            score: nextScore,
+            style: resolveAssessmentOptionStyle(nextScore, option.redFlag),
+          };
+        }
+        const nextRedFlag = Boolean(value);
+        return {
+          ...option,
+          redFlag: nextRedFlag,
+          style: resolveAssessmentOptionStyle(option.score, nextRedFlag),
+        };
       });
       return { ...previous, options: nextOptions };
     });
@@ -128,7 +142,10 @@ const AdminAssessmentsSection: React.FC = () => {
       if (!previous) return previous;
       return {
         ...previous,
-        options: [...previous.options, { text: '', score: 0 }],
+        options: [
+          ...previous.options,
+          { text: '', score: 0, style: resolveAssessmentOptionStyle(0, false) },
+        ],
       };
     });
   };
@@ -271,7 +288,7 @@ const AdminAssessmentsSection: React.FC = () => {
                                 <p className="text-sm text-[#F6FFF2]">{option.text}</p>
                               </div>
                               <span className="text-xs text-[#A9B5AA]">
-                                {option.score}/10 {option.redFlag ? 'flag' : ''}
+                                {option.score}/10 {option.style || resolveAssessmentOptionStyle(option.score, option.redFlag)}
                               </span>
                             </div>
                           ) : (
