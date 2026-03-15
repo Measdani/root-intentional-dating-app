@@ -58,6 +58,12 @@ const IDENTITY_EXPRESSION_OPTIONS: { value: UserIdentityExpression; label: strin
   { value: 'prefer-not-to-say', label: 'Prefer not to say' },
 ];
 
+const GEORGIA_CITY_PATTERN = /^\s*[^,]+,\s*(ga|georgia)\s*$/i;
+const GEORGIA_ONLY_CITY_ERROR =
+  'Rooted Hearts is currently open only to Georgia residents. Enter your city as "City, GA".';
+
+const isGeorgiaCity = (value: string): boolean => GEORGIA_CITY_PATTERN.test(value.trim());
+
 const OPEN_TO_DATING_OPTIONS: { value: UserGenderIdentity; label: string }[] = [
   { value: 'male', label: 'Man' },
   { value: 'female', label: 'Woman' },
@@ -191,7 +197,7 @@ const SignUpSection: React.FC = () => {
         },
         { heading: 'Our Two Connection Environments', content: 'At Rooted Hearts, we are not just matching profiles.\n\nWe are building an ecosystem designed to help you win in love.\n\nThat means meeting people who are aligned not only in attraction — but in emotional readiness, life stage, and relational capacity.\n\nFor that reason, we operate with two intentional connection environments:\n\n🌿 Inner Work Space\n\nThe Inner Work Space is designed for individuals who are:\n• Strengthening emotional regulation\n• Building accountability and communication skills\n• Navigating life transitions\n• Working through past relationship patterns\n• Developing foundational relationship stability\n\nThis is not a waiting room.\n\nIt is a structured growth environment where development is supported and respected.\n\nMembers here connect with others who are also committed to becoming healthier, more self-aware partners.\n\nGrowth & Graduation\n\nAfter six months in the Inner Work Space, members may retake the assessment.\n\nBy actively using the resource section and improving in areas that need development, you may graduate into the Alignment Space.\n\nInner Work is not permanent placement. It is a pathway.\n\nWe believe growth is possible when effort is applied intentionally.\n\n🔷 Alignment Space\n\nThe Alignment Space is designed for individuals who demonstrate:\n• Emotional stability\n• Consistent accountability\n• Healthy conflict repair\n• Clear boundaries\n• Partnership readiness\n\nThis environment offers broader matchmaking access for those prepared to build a stable, long-term partnership.\n\nAlignment Space is about connecting with others who are ready to operate from maturity rather than reaction.\n\nWhy We Separate These Spaces\n\nWe want you to feel the value in the people you communicate with.\n\nWhen individuals are at very different emotional stages, it can lead to:\n• Misalignment\n• Resentment\n• Emotional fatigue\n• Avoidable harm\n\nBy creating Inner Work and Alignment environments, we:\n• Protect emotional integrity\n• Encourage readiness\n• Reduce unnecessary conflict\n• Increase the likelihood of long-term relationship success\n\nThis structure is not about ranking.\n\nIt is about honoring where you are — and providing a pathway forward.\n\nBoth spaces are intentional.\nBoth are valuable.\nBoth are designed to support your journey toward healthy love.' },
         { heading: 'No Refunds Based on Placement', content: 'Rooted Hearts is intentionally structured.\n\nAssessment placement is not an afterthought — it is the foundation of how this platform operates.\n\nYour assessment determines which connection environment best aligns with your current relational readiness. That structure is what protects the integrity of the community and helps ensure members are meeting others at a compatible stage.\n\nBecause placement is determined immediately upon completion of the assessment, refunds cannot be processed based on environment assignment.\n\nThis policy exists to maintain seriousness, fairness, and alignment. It ensures that individuals joining the platform understand and respect the intentional structure we have built.\n\nWe are not here to punish or exclude.\n\nWe are here to align.\n\nYour membership grants access to:\n\n• The structured assessment\n• A protected connection environment\n• Growth resources\n• Messaging and communication tools\n• A community built around intentional partnership\n\nIf you choose to cancel your membership, you may do so at any time. Cancellation will stop future billing, and access will remain active through the end of your current billing period.\n\nPlease understand that this platform was created with significant research, intention, and dedication. Our goal is not to waste your time or take your money — it is to create an ecosystem that genuinely supports healthy love.\n\nBy joining, you acknowledge and accept this structure.' },
-        { heading: 'Assumptions & Platform Realities', content: 'Rooted Hearts is an intentional relationship ecosystem, not a guarantee of romantic outcome.\n\nBy joining, you acknowledge and agree to the following:\n\n1. No Guaranteed Matches\n\nWe do not guarantee:\n\n• Romantic success\n• Compatibility with specific individuals\n• Engagement levels from other members\n• Long-term relationship outcomes\n\nWe provide structure, tools, and alignment — not guarantees.\n\n2. Assessment Placement Is Structural, Not Personal\n\nAssessment results reflect readiness indicators, not worth, value, or character.\n\nPlacement into Inner Work Space or Alignment Space is based on platform standards and does not imply superiority or deficiency.\n\n3. Personal Responsibility Still Applies\n\nWhile Rooted Hearts provides structure and safety tools:\n\n• You are responsible for your personal decisions\n• You are responsible for meeting safety precautions\n• You are responsible for how you communicate\n• You are responsible for your emotional participation\n\nThe platform does not replace personal discernment.\n\n4. Growth Requires Effort\n\nAccess to resources does not automatically create growth.\n\nInner Work Space is an opportunity — not a passive experience. Advancement requires intentional effort and reassessment.\n\n5. Platform Focus & Eligibility\n\nRooted Hearts is designed exclusively for adult men and women seeking opposite-sex partnerships. Rooted Hearts is currently available to residents of the United States. By continuing, you confirm you meet this eligibility requirement.\n\nAccounts misrepresenting eligibility may be removed.\n\n6. Community Integrity\n\nMembers who repeatedly violate community standards may:\n\n• Receive warnings\n• Be placed into a structured review period\n• Be removed from the platform\n\nMembership fees are not refundable due to policy violations.' },
+        { heading: 'Assumptions & Platform Realities', content: 'Rooted Hearts is an intentional relationship ecosystem, not a guarantee of romantic outcome.\n\nBy joining, you acknowledge and agree to the following:\n\n1. No Guaranteed Matches\n\nWe do not guarantee:\n\n• Romantic success\n• Compatibility with specific individuals\n• Engagement levels from other members\n• Long-term relationship outcomes\n\nWe provide structure, tools, and alignment — not guarantees.\n\n2. Assessment Placement Is Structural, Not Personal\n\nAssessment results reflect readiness indicators, not worth, value, or character.\n\nPlacement into Inner Work Space or Alignment Space is based on platform standards and does not imply superiority or deficiency.\n\n3. Personal Responsibility Still Applies\n\nWhile Rooted Hearts provides structure and safety tools:\n\n• You are responsible for your personal decisions\n• You are responsible for meeting safety precautions\n• You are responsible for how you communicate\n• You are responsible for your emotional participation\n\nThe platform does not replace personal discernment.\n\n4. Growth Requires Effort\n\nAccess to resources does not automatically create growth.\n\nInner Work Space is an opportunity — not a passive experience. Advancement requires intentional effort and reassessment.\n\n5. Platform Focus & Eligibility\n\nRooted Hearts is designed exclusively for adult men and women seeking opposite-sex partnerships. Rooted Hearts is currently available only to residents of Georgia. By continuing, you confirm you meet this eligibility requirement.\n\nAccounts misrepresenting eligibility may be removed.\n\n6. Community Integrity\n\nMembers who repeatedly violate community standards may:\n\n• Receive warnings\n• Be placed into a structured review period\n• Be removed from the platform\n\nMembership fees are not refundable due to policy violations.' },
       ]
     },
     membershipBilling: {
@@ -262,10 +268,10 @@ const SignUpSection: React.FC = () => {
         const trimmedCity = city.trim();
         if (!trimmedCity) {
           errs.city = 'City is required';
-        } else if (trimmedCity.length < 3) {
-          errs.city = 'Please enter a valid city name (e.g. Portland, OR)';
-        } else if (/^[A-Z]{2}$/.test(trimmedCity)) {
-          errs.city = 'Please enter a city name, not a state abbreviation';
+        } else if (trimmedCity.length < 3 || /^[A-Z]{2}$/.test(trimmedCity)) {
+          errs.city = GEORGIA_ONLY_CITY_ERROR;
+        } else if (!isGeorgiaCity(trimmedCity)) {
+          errs.city = GEORGIA_ONLY_CITY_ERROR;
         }
         if (!gender) {
           errs.gender = isLgbtqCommunity
@@ -408,6 +414,13 @@ const SignUpSection: React.FC = () => {
               : 365 * 24 * 60 * 60 * 1000)
         : now + 30 * 24 * 60 * 60 * 1000; // Skip = simulate monthly
       const newUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const trimmedCity = city.trim();
+      if (!isGeorgiaCity(trimmedCity)) {
+        setStep(2);
+        setErrors({ city: GEORGIA_ONLY_CITY_ERROR });
+        toast.error('Launch is currently Georgia-only.');
+        return;
+      }
       const trimmedGrowthFocus = growthFocus.trim();
       const trimmedBio = bio.trim();
       const normalizedCommunityBoundaries =
@@ -454,7 +467,7 @@ const SignUpSection: React.FC = () => {
         email,
         name: name.trim(),
         age: parseInt(age),
-        city: city.trim(),
+        city: trimmedCity,
         gender: gender as UserGenderIdentity,
         genderIdentity: gender as UserGenderIdentity,
         genderIdentityCustom: gender === 'self-describe' ? genderIdentityCustom.trim() : undefined,
@@ -683,13 +696,13 @@ const SignUpSection: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
-                City
+                City (Georgia only)
               </label>
               <input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="e.g. Portland, OR"
+                placeholder="e.g. Atlanta, GA"
                 className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
               />
             </div>
