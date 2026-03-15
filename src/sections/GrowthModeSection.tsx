@@ -630,12 +630,12 @@ const GrowthModeSection: React.FC = () => {
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 text-[#D9FF3D]" />
               <h2 className="text-sm font-semibold uppercase tracking-wide text-[#D9FF3D]">
-                Growth Coach
+                Willow, Your Inner Work Coach
               </h2>
             </div>
 
             {coachLoading && (
-              <p className="text-sm text-[#A9B5AA]">Preparing your next growth steps...</p>
+              <p className="text-sm text-[#A9B5AA]">Willow is preparing your next growth steps...</p>
             )}
 
             {!coachLoading && coachGuidance && (
@@ -678,7 +678,7 @@ const GrowthModeSection: React.FC = () => {
 
                 {coachGuidance.escalateToSupport && (
                   <p className="text-sm text-amber-300">
-                    This question needs human support review. Contact {coachGuidance.supportEmail || SUPPORT_EMAIL}.
+                    Willow flagged this for human support review. Contact {coachGuidance.supportEmail || SUPPORT_EMAIL}.
                   </p>
                 )}
               </div>

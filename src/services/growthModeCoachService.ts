@@ -8,6 +8,13 @@ export type GrowthCoachAction =
   | 'send_reassessment_notice'
   | 'escalate_user_question_to_support';
 
+export interface GrowthCoachFocusArea {
+  code: string;
+  title: string;
+  whyItMatters: string;
+  wingmanAction: string;
+}
+
 export interface GrowthModeCoachInput {
   appUserId: string;
   appUserEmail?: string;
@@ -32,6 +39,9 @@ export interface GrowthModeCoachResult {
   recommendedAction: GrowthCoachAction;
   theme: string;
   explanationCopy: string;
+  wingmanMessage: string;
+  focusAreas: GrowthCoachFocusArea[];
+  nextStepChecklist: string[];
   recommendedModules: string[];
   journalingPrompt: string;
   reflectionPrompt: string;
@@ -48,6 +58,14 @@ type GrowthModeCoachResponse = {
   recommended_action?: GrowthCoachAction;
   theme?: string;
   explanation_copy?: string;
+  wingman_message?: string;
+  focus_areas?: Array<{
+    code?: string;
+    title?: string;
+    why_it_matters?: string;
+    wingman_action?: string;
+  }>;
+  next_step_checklist?: string[];
   recommended_modules?: string[];
   journaling_prompt?: string;
   reflection_prompt?: string;
@@ -70,6 +88,38 @@ const toStringArray = (value: unknown): string[] =>
   Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === 'string')
     : [];
+
+const toFocusAreas = (value: unknown): GrowthCoachFocusArea[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') return null;
+      const parsed = entry as {
+        code?: unknown;
+        title?: unknown;
+        why_it_matters?: unknown;
+        wingman_action?: unknown;
+      };
+
+      if (
+        typeof parsed.code !== 'string' ||
+        typeof parsed.title !== 'string' ||
+        typeof parsed.why_it_matters !== 'string' ||
+        typeof parsed.wingman_action !== 'string'
+      ) {
+        return null;
+      }
+
+      return {
+        code: parsed.code,
+        title: parsed.title,
+        whyItMatters: parsed.why_it_matters,
+        wingmanAction: parsed.wingman_action,
+      };
+    })
+    .filter((entry): entry is GrowthCoachFocusArea => entry !== null);
+};
 
 export const getGrowthModeCoachGuidance = async (
   input: GrowthModeCoachInput
@@ -115,6 +165,12 @@ export const getGrowthModeCoachGuidance = async (
       recommendedAction: parsed.recommended_action,
       theme: parsed.theme,
       explanationCopy: parsed.explanation_copy,
+      wingmanMessage:
+        typeof parsed.wingman_message === 'string' && parsed.wingman_message.trim().length > 0
+          ? parsed.wingman_message
+          : parsed.explanation_copy,
+      focusAreas: toFocusAreas(parsed.focus_areas),
+      nextStepChecklist: toStringArray(parsed.next_step_checklist),
       recommendedModules: toStringArray(parsed.recommended_modules),
       journalingPrompt: parsed.journaling_prompt,
       reflectionPrompt: parsed.reflection_prompt,

@@ -35,6 +35,7 @@ const AGENT_NAME = "growth_mode_coach";
 const RULE_VERSION = "gmc-rules-2026-03-09";
 const MODEL_VERSION = "deterministic-rule-engine-v1";
 const SUPPORT_EMAIL = "support@rootedhearts.net";
+const COACH_NAME = "Willow";
 
 const REASON_CODE_THEME_MAP: Array<{
   pattern: RegExp;
@@ -239,8 +240,8 @@ const buildCoachOutput = (payload: GrowthCoachRequest) => {
   const priorThemes = normalizeStringArray(payload.prior_recommendation_themes);
   const theme = chooseTheme(reasonCodes, priorThemes);
   const recommendedModules = THEME_MODULE_MAP[theme] ?? ["Building Wholeness"];
-  const reflectionPrompt = THEME_REFLECTION_PROMPT_MAP[theme];
-  const journalingPrompt = THEME_JOURNAL_PROMPT_MAP[theme];
+  const reflectionPromptBase = THEME_REFLECTION_PROMPT_MAP[theme];
+  const journalingPromptBase = THEME_JOURNAL_PROMPT_MAP[theme];
   const triggerSource = payload.trigger_source ?? "enters_growth_mode";
   const reassessmentDays = computeDaysUntilReassessment(payload.cooldown_reassessment_date);
 
@@ -264,17 +265,26 @@ const buildCoachOutput = (payload: GrowthCoachRequest) => {
     recommendedAction = "recommend_module_path";
   }
 
+  const mentorOpening =
+    `I'm ${COACH_NAME}, your Inner Work coach. Thank you for the bravery it takes to choose The Work.`;
+
   const explanationCopy =
     recommendedAction === "escalate_user_question_to_support"
-      ? `Thanks for reaching out. Your question needs human support review. Please contact ${SUPPORT_EMAIL} and our team will help you directly.`
-      : "You are not being written off. You are being given a place to strengthen the parts of connection that matter most. Growth Mode is designed to help you build healthier patterns, stronger awareness, and better relationship readiness over time.";
+      ? `${mentorOpening} Your question needs human support review, and you do not have to carry this alone. Please contact ${SUPPORT_EMAIL} and our team will help you directly.`
+      : `${mentorOpening} Think of this season as planting strong seeds and tending deep roots. With steady practice, those roots become the canopy of the relationship life you want.`;
+
+  const reflectionPrompt =
+    `${reflectionPromptBase} As you answer, notice which roots need care in this season.`;
+
+  const journalingPrompt =
+    `${journalingPromptBase} Let this be one seed you intentionally plant today.`;
 
   const accountabilityNudge =
-    "Small, consistent shifts matter more than perfect moments. Focus on one communication habit and practice it daily this week.";
+    `${COACH_NAME} reminder: one small seed, repeated daily, grows stronger roots than one perfect day. Choose one habit and practice it with patience this week.`;
 
   const reassessmentNotice =
     reassessmentDays !== null && reassessmentDays >= 0
-      ? `Your reassessment window opens in ${reassessmentDays} day${reassessmentDays === 1 ? "" : "s"}. Keep building consistent habits until then.`
+      ? `Your reassessment window opens in ${reassessmentDays} day${reassessmentDays === 1 ? "" : "s"}. Stay with the season you are in and keep tending your roots until that window opens.`
       : null;
 
   return {
