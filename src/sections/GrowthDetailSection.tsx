@@ -2,7 +2,7 @@
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { ArrowLeft, BookOpen, CheckCircle, Clock, Sparkles } from 'lucide-react';
-import type { BlogArticle, AssessmentCoreStyle } from '@/types';
+import type { BlogArticle, AssessmentCoreStyle, GrowthResourceModule } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { resourceService } from '@/services/resourceService';
 import { ASSESSMENT_STYLE_META, ASSESSMENT_CORE_STYLES } from '@/services/assessmentStyleService';
@@ -14,6 +14,42 @@ interface ModuleContent {
   keyPoints: string[];
   exercise: string[];
 }
+
+const resolveModuleId = (resourceId: string, module: GrowthResourceModule, index: number): string =>
+  typeof module.id === 'string' && module.id.trim().length > 0
+    ? module.id
+    : `${resourceId}-module-${index + 1}`;
+
+const textToList = (value: string | undefined, fallback: string): string[] => {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return [fallback];
+
+  const newlineOrBulletParts = trimmed
+    .split(/\r?\n|•/g)
+    .map((part) => part.trim().replace(/^[-*]\s*/, ''))
+    .filter(Boolean);
+  if (newlineOrBulletParts.length > 1) return newlineOrBulletParts;
+
+  const sentenceParts = trimmed
+    .split(/[.!?]\s+/g)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (sentenceParts.length > 1) return sentenceParts;
+
+  return [trimmed];
+};
+
+const buildFallbackModuleContent = (module: GrowthResourceModule): ModuleContent => ({
+  title: module.title || 'Module',
+  keyPoints: textToList(
+    module.description,
+    'Review this module and identify the key concept you want to carry into your relationships.'
+  ),
+  exercise: textToList(
+    module.exercise,
+    'Write one practical action you will apply this week based on this module.'
+  ),
+});
 
 type PathReflectionRecord = {
   reflection: string;
@@ -542,8 +578,13 @@ const GrowthDetailSection: React.FC = () => {
     },
   };
 
-  const resource = selectedResourceId ? resources.find(r => r.id === selectedResourceId) : null;
-  const content = selectedModuleId ? moduleContent[selectedModuleId] : null;
+  const resource = selectedResourceId ? resources.find((entry) => entry.id === selectedResourceId) : null;
+  const selectedModule = resource && selectedModuleId && Array.isArray(resource.modules)
+    ? resource.modules.find((module, index) => resolveModuleId(resource.id, module, index) === selectedModuleId) ?? null
+    : null;
+  const content = selectedModuleId
+    ? (moduleContent[selectedModuleId] ?? (selectedModule ? buildFallbackModuleContent(selectedModule) : null))
+    : null;
 
   useEffect(() => {
     if (resources.length === 0) return;
@@ -556,11 +597,7 @@ const GrowthDetailSection: React.FC = () => {
       if (targetResource) {
         setSelectedResourceId(targetResource.id);
         const firstModule = Array.isArray(targetResource.modules) ? targetResource.modules[0] : null;
-        const firstModuleId = firstModule
-          ? (typeof firstModule.id === 'string' && firstModule.id.trim().length > 0
-              ? firstModule.id
-              : `${targetResource.id}-module-1`)
-          : null;
+        const firstModuleId = firstModule ? resolveModuleId(targetResource.id, firstModule, 0) : null;
         setSelectedModuleId(firstModuleId);
       }
       return;
@@ -578,6 +615,20 @@ const GrowthDetailSection: React.FC = () => {
 
     setSelectedResourceId(resources[0]?.id ?? null);
   }, [prefillResourceKey, resources, selectedResourceId, startResourceKey]);
+
+  useEffect(() => {
+    if (!resource || !selectedModuleId || !Array.isArray(resource.modules) || resource.modules.length === 0) {
+      return;
+    }
+
+    const hasMatchingModule = resource.modules.some((module, index) =>
+      resolveModuleId(resource.id, module, index) === selectedModuleId
+    );
+
+    if (!hasMatchingModule) {
+      setSelectedModuleId(resolveModuleId(resource.id, resource.modules[0], 0));
+    }
+  }, [resource, selectedModuleId]);
 
   useEffect(() => {
     if (!selectedResourceId || !selectedModuleId) return;
@@ -819,8 +870,8 @@ const GrowthDetailSection: React.FC = () => {
             <div className="grid gap-4">
               {resource?.modules?.map((mod, idx) => (
                 <div
-                  key={mod.id}
-                  onClick={() => setSelectedModuleId(mod.id)}
+                  key={resolveModuleId(resource.id, mod, idx)}
+                  onClick={() => setSelectedModuleId(resolveModuleId(resource.id, mod, idx))}
                   className="bg-[#111611] border border-[#1A211A] rounded-lg p-6 cursor-pointer hover:border-[#D9FF3D] transition group"
                 >
                   <div className="flex items-start gap-4">
@@ -880,26 +931,11 @@ const GrowthDetailSection: React.FC = () => {
               </div>
             </div>
 
-            {/* Advanced Resources */}
-            <div className="bg-gradient-to-r from-[#D9FF3D]/20 to-transparent border border-[#D9FF3D]/30 rounded-lg p-8">
-              <h3 className="text-2xl font-bold mb-3 text-[#D9FF3D]">Take Your Growth Further</h3>
-              <p className="text-gray-300 mb-6">
-                Ready to deepen your practice? Our premium resources provide advanced techniques, personalized coaching, and accountability partnerships.
-              </p>
-              <button
-                onClick={() => setCurrentView('paid-growth-mode')}
-                className="py-3 px-6 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-bold hover:scale-[1.02] transition-transform"
-              >
-                Explore Advanced Resources â†’
-              </button>
-            </div>
-
             {/* Module Resources */}
             {(() => {
-              const currentModule = resource?.modules?.find(m => m.id === selectedModuleId);
-              const moduleBlogIds = currentModule?.blogIds || [];
+              const moduleBlogIds = selectedModule?.blogIds || [];
               console.log('[GrowthDetailSection] Module render:', {
-                moduleId: currentModule?.id,
+                moduleId: selectedModule?.id,
                 blogIds: moduleBlogIds,
                 blogsArrayLength: blogs.length,
                 blogsLoaded: blogs.length > 0
@@ -957,11 +993,14 @@ const GrowthDetailSection: React.FC = () => {
             {/* Navigation to Next Module */}
             {resource?.modules && selectedModuleId && (
               (() => {
-                const currentIdx = resource.modules?.findIndex((m) => m.id === selectedModuleId);
-                const hasPrev = currentIdx !== undefined && currentIdx > 0;
-                const hasNext = currentIdx !== undefined && currentIdx < (resource.modules?.length ?? 0) - 1;
-                const isLastModule = Boolean(currentIdx !== undefined && currentIdx >= 0 && !hasNext);
-                const currentModule = currentIdx !== undefined && currentIdx >= 0 ? resource.modules[currentIdx] : null;
+                const currentIdx = resource.modules.findIndex((module, index) =>
+                  resolveModuleId(resource.id, module, index) === selectedModuleId
+                );
+                const hasResolvedIndex = currentIdx >= 0;
+                const hasPrev = hasResolvedIndex && currentIdx > 0;
+                const hasNext = hasResolvedIndex && currentIdx < (resource.modules?.length ?? 0) - 1;
+                const isLastModule = hasResolvedIndex && !hasNext;
+                const currentModule = hasResolvedIndex ? resource.modules[currentIdx] : selectedModule;
                 const topicText = [
                   resource.title,
                   resource.category,
@@ -982,7 +1021,9 @@ const GrowthDetailSection: React.FC = () => {
                         <button
                           onClick={() => {
                             const prevModule = resource.modules?.[currentIdx - 1];
-                            if (prevModule) setSelectedModuleId(prevModule.id);
+                            if (prevModule) {
+                              setSelectedModuleId(resolveModuleId(resource.id, prevModule, currentIdx - 1));
+                            }
                           }}
                           className="flex-1 py-3 px-4 bg-[#1A211A] text-white rounded-lg hover:bg-[#252C25] transition"
                         >
@@ -993,7 +1034,9 @@ const GrowthDetailSection: React.FC = () => {
                         <button
                           onClick={() => {
                             const nextModule = resource.modules?.[currentIdx + 1];
-                            if (nextModule) setSelectedModuleId(nextModule.id);
+                            if (nextModule) {
+                              setSelectedModuleId(resolveModuleId(resource.id, nextModule, currentIdx + 1));
+                            }
                           }}
                           className="flex-1 py-3 px-4 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg hover:bg-white transition font-bold"
                         >
