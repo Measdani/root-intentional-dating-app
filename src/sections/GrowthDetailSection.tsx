@@ -2,16 +2,155 @@
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { ArrowLeft, BookOpen, CheckCircle, Clock, Sparkles } from 'lucide-react';
-import type { BlogArticle } from '@/types';
+import type { BlogArticle, AssessmentCoreStyle } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { resourceService } from '@/services/resourceService';
+import { ASSESSMENT_STYLE_META, ASSESSMENT_CORE_STYLES } from '@/services/assessmentStyleService';
 import ModuleBlogModal from '@/components/ModuleBlogModal';
+import { toast } from 'sonner';
 
 interface ModuleContent {
   title: string;
   keyPoints: string[];
   exercise: string[];
 }
+
+type PathReflectionRecord = {
+  reflection: string;
+  approvedAt: number;
+  moduleId?: string;
+  resourceStyle?: AssessmentCoreStyle;
+};
+
+const PATH_REFLECTION_PROMPT =
+  'What is one insight or behavior from this lesson that you would like to pay attention to in your relationships?';
+
+const FOREST_SHORT_FEEDBACK =
+  'Take a moment to reflect before moving forward.\n\nTry expanding your response slightly so it connects to the reflection prompt.';
+
+const FOREST_UNRELATED_FEEDBACK =
+  'Take a moment to reflect before moving forward.\n\nTry adjusting your response so it connects more clearly to the reflection prompt. A sentence or two about your own thoughts or experiences is perfect.';
+
+const tokenizeWords = (value: string): string[] =>
+  value
+    .toLowerCase()
+    .match(/[a-z']+/g)
+    ?.filter((word) => word.length > 1) ?? [];
+
+const inferResourceStyle = (resourceTitle?: string): AssessmentCoreStyle | null => {
+  if (!resourceTitle) return null;
+  const normalized = resourceTitle.toLowerCase();
+  if (normalized.includes('oak')) return 'oak';
+  if (normalized.includes('willow')) return 'willow';
+  if (normalized.includes('fern')) return 'fern';
+  if (normalized.includes('gardener')) return 'gardener';
+  if (normalized.includes('wildflower')) return 'wildflower';
+  return null;
+};
+
+const isLikelySpamOrNonsense = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  if (!/[a-z]/i.test(trimmed)) return true;
+
+  const compact = trimmed.toLowerCase().replace(/\s+/g, '');
+  if (/^(asdf|qwerty|loremipsum|test)+$/.test(compact)) return true;
+  if (/^([a-z0-9])\1{5,}$/.test(compact)) return true;
+
+  const letters = (trimmed.match(/[a-z]/gi) || []).length;
+  if (letters / Math.max(trimmed.length, 1) < 0.45) return true;
+
+  const words = tokenizeWords(trimmed);
+  if (words.length >= 4) {
+    const uniqueRatio = new Set(words).size / words.length;
+    if (uniqueRatio < 0.35) return true;
+  }
+
+  return false;
+};
+
+const hasLooseTopicConnection = (reflection: string, topicText: string): boolean => {
+  const reflectionWords = new Set(tokenizeWords(reflection));
+  if (reflectionWords.size === 0) return false;
+
+  const relationshipKeywords = new Set([
+    'listen',
+    'listening',
+    'communicate',
+    'communication',
+    'boundary',
+    'boundaries',
+    'conflict',
+    'repair',
+    'emotion',
+    'emotions',
+    'emotional',
+    'respond',
+    'response',
+    'partner',
+    'partners',
+    'relationship',
+    'relationships',
+    'growth',
+    'trust',
+    'respect',
+    'honesty',
+    'accountability',
+    'pause',
+    'reflect',
+    'reflection',
+  ]);
+
+  for (const word of reflectionWords) {
+    if (relationshipKeywords.has(word)) return true;
+  }
+
+  const stopWords = new Set([
+    'with',
+    'that',
+    'this',
+    'from',
+    'when',
+    'what',
+    'have',
+    'your',
+    'into',
+    'about',
+    'before',
+    'after',
+    'their',
+    'there',
+    'would',
+    'could',
+  ]);
+  const topicKeywords = new Set(
+    tokenizeWords(topicText).filter((word) => word.length >= 4 && !stopWords.has(word))
+  );
+
+  for (const word of reflectionWords) {
+    if (topicKeywords.has(word)) return true;
+  }
+
+  return false;
+};
+
+const runForestReflectionCheck = (
+  reflection: string,
+  topicText: string
+): { passed: boolean; feedback?: string } => {
+  const trimmed = reflection.trim();
+  const words = tokenizeWords(trimmed);
+
+  if (trimmed.length < 20 || words.length < 4 || isLikelySpamOrNonsense(trimmed)) {
+    return { passed: false, feedback: FOREST_SHORT_FEEDBACK };
+  }
+
+  if (!hasLooseTopicConnection(trimmed, topicText)) {
+    return { passed: false, feedback: FOREST_UNRELATED_FEEDBACK };
+  }
+
+  return { passed: true };
+};
 
 const GrowthDetailSection: React.FC = () => {
   const { setCurrentView, currentUser } = useApp();
@@ -21,8 +160,13 @@ const GrowthDetailSection: React.FC = () => {
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [resources, setResources] = useState(growthResources);
   const progressStorageKey = `rooted_growth_module_progress_${currentUser.id}`;
+  const reflectionStorageKey = `rooted_growth_path_reflections_${currentUser.id}`;
   const prefillResourceKey = 'rooted_growth_detail_prefill_resource_id';
   const startResourceKey = 'rooted_growth_detail_start_resource_id';
+  const [pathReflections, setPathReflections] = useState<Record<string, PathReflectionRecord>>({});
+  const [completionReflection, setCompletionReflection] = useState('');
+  const [reflectionFeedback, setReflectionFeedback] = useState<string | null>(null);
+  const [reflectionChecking, setReflectionChecking] = useState(false);
 
   // Load resources AND blogs on mount
   useEffect(() => {
@@ -408,27 +552,31 @@ const GrowthDetailSection: React.FC = () => {
     if (startResourceId) {
       localStorage.removeItem(startResourceKey);
       const matchedResource = resources.find((entry) => entry.id === startResourceId);
-      if (matchedResource) {
-        setSelectedResourceId(matchedResource.id);
-        const firstModule = Array.isArray(matchedResource.modules) ? matchedResource.modules[0] : null;
-        if (firstModule) {
-          const firstModuleId = typeof firstModule.id === 'string' && firstModule.id.trim().length > 0
-            ? firstModule.id
-            : `${matchedResource.id}-module-1`;
-          setSelectedModuleId(firstModuleId);
-        }
+      const targetResource = matchedResource ?? resources[0] ?? null;
+      if (targetResource) {
+        setSelectedResourceId(targetResource.id);
+        const firstModule = Array.isArray(targetResource.modules) ? targetResource.modules[0] : null;
+        const firstModuleId = firstModule
+          ? (typeof firstModule.id === 'string' && firstModule.id.trim().length > 0
+              ? firstModule.id
+              : `${targetResource.id}-module-1`)
+          : null;
+        setSelectedModuleId(firstModuleId);
       }
       return;
     }
 
-    if (selectedResourceId) return;
+    if (selectedResourceId && resources.some((entry) => entry.id === selectedResourceId)) return;
     const prefilledResourceId = localStorage.getItem(prefillResourceKey);
-    if (!prefilledResourceId) return;
-
-    localStorage.removeItem(prefillResourceKey);
-    if (resources.some((entry) => entry.id === prefilledResourceId)) {
-      setSelectedResourceId(prefilledResourceId);
+    if (prefilledResourceId) {
+      localStorage.removeItem(prefillResourceKey);
+      if (resources.some((entry) => entry.id === prefilledResourceId)) {
+        setSelectedResourceId(prefilledResourceId);
+        return;
+      }
     }
+
+    setSelectedResourceId(resources[0]?.id ?? null);
   }, [prefillResourceKey, resources, selectedResourceId, startResourceKey]);
 
   useEffect(() => {
@@ -472,6 +620,125 @@ const GrowthDetailSection: React.FC = () => {
     }
   }, [selectedResourceId, selectedModuleId, resources, progressStorageKey]);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(reflectionStorageKey);
+      if (!saved) {
+        setPathReflections({});
+        return;
+      }
+      const parsed = JSON.parse(saved);
+      if (!parsed || typeof parsed !== 'object') {
+        setPathReflections({});
+        return;
+      }
+      setPathReflections(parsed as Record<string, PathReflectionRecord>);
+    } catch (error) {
+      console.warn('Failed to load path reflections:', error);
+      setPathReflections({});
+    }
+  }, [reflectionStorageKey]);
+
+  useEffect(() => {
+    setCompletionReflection('');
+    setReflectionFeedback(null);
+    setReflectionChecking(false);
+  }, [selectedResourceId, selectedModuleId]);
+
+  const persistPathReflections = (nextMap: Record<string, PathReflectionRecord>) => {
+    setPathReflections(nextMap);
+    try {
+      localStorage.setItem(reflectionStorageKey, JSON.stringify(nextMap));
+    } catch (error) {
+      console.warn('Failed to persist path reflections:', error);
+    }
+  };
+
+  const persistEarnedStyleBadge = (style: AssessmentCoreStyle) => {
+    const normalizeBadgeList = (value: unknown): AssessmentCoreStyle[] => {
+      if (!Array.isArray(value)) return [style];
+      const unique = new Set<AssessmentCoreStyle>();
+      value.forEach((entry) => {
+        if (typeof entry === 'string' && ASSESSMENT_CORE_STYLES.includes(entry as AssessmentCoreStyle)) {
+          unique.add(entry as AssessmentCoreStyle);
+        }
+      });
+      unique.add(style);
+      return Array.from(unique);
+    };
+
+    try {
+      const savedCurrent = localStorage.getItem('currentUser');
+      if (savedCurrent) {
+        const parsedCurrent = JSON.parse(savedCurrent);
+        parsedCurrent.growthStyleBadges = normalizeBadgeList(parsedCurrent.growthStyleBadges);
+        localStorage.setItem('currentUser', JSON.stringify(parsedCurrent));
+        window.dispatchEvent(new CustomEvent('user-login', { detail: parsedCurrent }));
+      }
+    } catch (error) {
+      console.warn('Failed to persist current user badge:', error);
+    }
+
+    try {
+      const savedUsers = localStorage.getItem('rooted-admin-users');
+      if (!savedUsers) return;
+      const parsedUsers = JSON.parse(savedUsers);
+      if (!Array.isArray(parsedUsers)) return;
+      const nextUsers = parsedUsers.map((user) => {
+        if (!user || typeof user !== 'object' || user.id !== currentUser.id) return user;
+        return {
+          ...user,
+          growthStyleBadges: normalizeBadgeList((user as { growthStyleBadges?: unknown }).growthStyleBadges),
+        };
+      });
+      localStorage.setItem('rooted-admin-users', JSON.stringify(nextUsers));
+      window.dispatchEvent(new Event('storage'));
+    } catch (error) {
+      console.warn('Failed to persist badge to user directory:', error);
+    }
+  };
+
+  const handleSubmitPathReflection = (
+    resourceId: string,
+    resourceTitle: string,
+    topicText: string,
+    moduleId: string | null
+  ) => {
+    setReflectionChecking(true);
+
+    const check = runForestReflectionCheck(completionReflection, topicText);
+    if (!check.passed) {
+      setReflectionFeedback(check.feedback || FOREST_SHORT_FEEDBACK);
+      setReflectionChecking(false);
+      return;
+    }
+
+    const style = inferResourceStyle(resourceTitle);
+    const nextEntry: PathReflectionRecord = {
+      reflection: completionReflection.trim(),
+      approvedAt: Date.now(),
+      moduleId: moduleId || undefined,
+      resourceStyle: style || undefined,
+    };
+    const nextMap = {
+      ...pathReflections,
+      [resourceId]: nextEntry,
+    };
+    persistPathReflections(nextMap);
+
+    if (style) {
+      persistEarnedStyleBadge(style);
+      const meta = ASSESSMENT_STYLE_META[style];
+      toast.success(`Forest approved your reflection. ${meta.label} badge unlocked.`);
+    } else {
+      toast.success('Forest approved your reflection. Path badge unlocked.');
+    }
+
+    setReflectionFeedback(null);
+    setCompletionReflection('');
+    setReflectionChecking(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#0F140F] text-white">
       {/* Header */}
@@ -482,8 +749,6 @@ const GrowthDetailSection: React.FC = () => {
               onClick={() => {
                 if (selectedModuleId) {
                   setSelectedModuleId(null);
-                } else if (selectedResourceId) {
-                  setSelectedResourceId(null);
                 } else {
                   setCurrentView('growth-mode');
                 }
@@ -517,39 +782,8 @@ const GrowthDetailSection: React.FC = () => {
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {!selectedResourceId ? (
-          // Resource List
-          <div className="grid gap-6">
-            <h2 className="text-3xl font-bold mb-4">Choose a Growth Path</h2>
-            {resources.map((resource) => (
-              <div
-                key={resource.id}
-                onClick={() => setSelectedResourceId(resource.id)}
-                className="bg-[#111611] border border-[#1A211A] rounded-lg p-6 cursor-pointer hover:border-[#D9FF3D] transition group"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-2 group-hover:text-[#D9FF3D] transition">
-                      {resource.title}
-                    </h3>
-                    <p className="text-gray-400 mb-4">{resource.description}</p>
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <span className="text-xs bg-[#D9FF3D]/10 text-[#D9FF3D] px-3 py-1 rounded-full flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {resource.estimatedTime}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {resource.modules?.length} modules
-                      </span>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <div className="w-12 h-12 bg-[#D9FF3D]/10 rounded-full flex items-center justify-center">
-                      <BookOpen className="w-6 h-6 text-[#D9FF3D]" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="rounded-lg border border-[#1A211A] bg-[#111611] p-6">
+            <p className="text-sm text-[#A9B5AA]">Loading selected growth path...</p>
           </div>
         ) : !selectedModuleId ? (
           // Module List for Selected Resource
@@ -722,14 +956,28 @@ const GrowthDetailSection: React.FC = () => {
 
             {/* Navigation to Next Module */}
             {resource?.modules && selectedModuleId && (
-              <div className="flex gap-4 pt-8">
-                {(() => {
-                  const currentIdx = resource.modules?.findIndex((m) => m.id === selectedModuleId);
-                  const hasPrev = currentIdx !== undefined && currentIdx > 0;
-                  const hasNext = currentIdx !== undefined && currentIdx < (resource.modules?.length ?? 0) - 1;
+              (() => {
+                const currentIdx = resource.modules?.findIndex((m) => m.id === selectedModuleId);
+                const hasPrev = currentIdx !== undefined && currentIdx > 0;
+                const hasNext = currentIdx !== undefined && currentIdx < (resource.modules?.length ?? 0) - 1;
+                const isLastModule = Boolean(currentIdx !== undefined && currentIdx >= 0 && !hasNext);
+                const currentModule = currentIdx !== undefined && currentIdx >= 0 ? resource.modules[currentIdx] : null;
+                const topicText = [
+                  resource.title,
+                  resource.category,
+                  currentModule?.title,
+                  currentModule?.description,
+                ]
+                  .filter(Boolean)
+                  .join(' ');
+                const completedReflection = selectedResourceId ? pathReflections[selectedResourceId] : undefined;
+                const completedStyleMeta = completedReflection?.resourceStyle
+                  ? ASSESSMENT_STYLE_META[completedReflection.resourceStyle]
+                  : null;
 
-                  return (
-                    <>
+                return (
+                  <div className="pt-8 space-y-6">
+                    <div className="flex gap-4">
                       {hasPrev && (
                         <button
                           onClick={() => {
@@ -738,7 +986,7 @@ const GrowthDetailSection: React.FC = () => {
                           }}
                           className="flex-1 py-3 px-4 bg-[#1A211A] text-white rounded-lg hover:bg-[#252C25] transition"
                         >
-                          â† Previous Module
+                          Previous Module
                         </button>
                       )}
                       {hasNext && (
@@ -749,13 +997,55 @@ const GrowthDetailSection: React.FC = () => {
                           }}
                           className="flex-1 py-3 px-4 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg hover:bg-white transition font-bold"
                         >
-                          Next Module â†’
+                          Next Module
                         </button>
                       )}
-                    </>
-                  );
-                })()}
-              </div>
+                    </div>
+
+                    {isLastModule && !completedReflection && selectedResourceId && (
+                      <div className="rounded-xl border border-[#D9FF3D]/30 bg-[#111611] p-6 space-y-4">
+                        <div>
+                          <h3 className="text-2xl font-bold text-[#F6FFF2]">Pause & Reflect</h3>
+                          <p className="text-sm text-[#A9B5AA] mt-2">{PATH_REFLECTION_PROMPT}</p>
+                        </div>
+                        <textarea
+                          value={completionReflection}
+                          onChange={(event) => setCompletionReflection(event.target.value)}
+                          placeholder="Type your reflection here..."
+                          rows={4}
+                          className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                        />
+                        {reflectionFeedback && (
+                          <p className="text-sm text-amber-300 whitespace-pre-line">{reflectionFeedback}</p>
+                        )}
+                        <button
+                          onClick={() =>
+                            handleSubmitPathReflection(
+                              selectedResourceId,
+                              resource.title,
+                              topicText,
+                              selectedModuleId
+                            )
+                          }
+                          disabled={reflectionChecking}
+                          className="px-5 py-2.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-semibold hover:brightness-95 transition disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                          {reflectionChecking ? 'Forest is reviewing...' : 'Submit Reflection & Unlock Badge'}
+                        </button>
+                      </div>
+                    )}
+
+                    {isLastModule && completedReflection && (
+                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-6">
+                        <p className="text-sm text-emerald-200">
+                          Forest approved your reflection.
+                          {completedStyleMeta ? ` ${completedStyleMeta.emoji} ${completedStyleMeta.label} badge unlocked.` : ' Badge unlocked.'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
             )}
           </div>
         )}

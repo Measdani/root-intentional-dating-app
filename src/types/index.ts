@@ -65,6 +65,7 @@ export interface User {
   cancelAtPeriodEnd?: boolean; // Whether subscription cancels at period end
   poolId?: 'core-inner' | 'core-advanced'; // Which lane this account belongs to
   mode?: RelationshipMode;
+  growthStyleBadges?: AssessmentCoreStyle[];
 }
 
 export type AssessmentOptionStyle =

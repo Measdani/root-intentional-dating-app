@@ -129,6 +129,10 @@ const ProfileDetailSection: React.FC = () => {
   const secondaryStyleMeta = selectedUser.secondaryStyle
     ? ASSESSMENT_STYLE_META[selectedUser.secondaryStyle]
     : null;
+  const growthStyleBadges = (selectedUser.growthStyleBadges || []).filter(
+    (style): style is keyof typeof ASSESSMENT_STYLE_META =>
+      typeof style === 'string' && style in ASSESSMENT_STYLE_META
+  );
 
   const handleExpressInterest = async (
     message: string
@@ -430,6 +434,26 @@ const ProfileDetailSection: React.FC = () => {
                         </>
                       ) : (
                         <p className="text-[#A9B5AA] text-sm">Not available yet.</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#A9B5AA] mb-1">Path Badges</p>
+                      {growthStyleBadges.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {growthStyleBadges.map((style) => {
+                            const badgeMeta = ASSESSMENT_STYLE_META[style];
+                            return (
+                              <span
+                                key={`path-badge-${style}`}
+                                className="px-2.5 py-1 rounded-full border border-[#2A312A] bg-[#0B0F0C] text-[#F6FFF2] text-xs"
+                              >
+                                {badgeMeta.emoji} {badgeMeta.label} Badge
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-[#A9B5AA] text-sm">No path badges earned yet.</p>
                       )}
                     </div>
                   </div>
