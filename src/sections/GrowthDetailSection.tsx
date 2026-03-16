@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { ArrowLeft, BookOpen, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, BookOpen, CheckCircle, Clock, Sparkles } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { resourceService } from '@/services/resourceService';
@@ -21,6 +21,8 @@ const GrowthDetailSection: React.FC = () => {
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [resources, setResources] = useState(growthResources);
   const progressStorageKey = `rooted_growth_module_progress_${currentUser.id}`;
+  const prefillResourceKey = 'rooted_growth_detail_prefill_resource_id';
+  const startResourceKey = 'rooted_growth_detail_start_resource_id';
 
   // Load resources AND blogs on mount
   useEffect(() => {
@@ -89,14 +91,14 @@ const GrowthDetailSection: React.FC = () => {
     'g1-m1': {
       title: 'Understanding Your Emotions',
       keyPoints: [
-        'Emotions are not character flaws—they\'re data. Every feeling carries information about your values, boundaries, and needs.',
+        'Emotions are not character flawsâ€”they\'re data. Every feeling carries information about your values, boundaries, and needs.',
         'The goal isn\'t to eliminate emotions but to understand and choose your response to them.',
         'Many people were taught to suppress or deny emotions. In healthy relationships, you need to develop the capacity to feel, name, and communicate.',
         'The emotional regulation spectrum ranges from complete suppression to complete expression. Healthy regulation lives in the middle.',
         'Emotions serve a purpose: fear protects you, anger signals boundaries, sadness honors loss, joy celebrates meaning.',
       ],
       exercise: [
-        'Emotion Inventory: Over the next 3 days, write down each emotion you experience. Don\'t judge it—just name it specifically.',
+        'Emotion Inventory: Over the next 3 days, write down each emotion you experience. Don\'t judge itâ€”just name it specifically.',
         'Look for patterns: What situations trigger what emotions? What do these emotions have in common?',
         'Write a reflection: What would it feel like to accept rather than fight these emotions?',
       ],
@@ -127,7 +129,7 @@ const GrowthDetailSection: React.FC = () => {
       ],
       exercise: [
         'Try the 5-4-3-2-1 technique when you\'re calm. Notice how it feels.',
-        'Next time you feel anxious, use it. Time yourself—how long until you feel grounded?',
+        'Next time you feel anxious, use it. Time yourselfâ€”how long until you feel grounded?',
         'Combine techniques: Use box breathing + 5-4-3-2-1 together. What works best for you?',
       ],
     },
@@ -153,7 +155,7 @@ const GrowthDetailSection: React.FC = () => {
         'Accountability is: "I did this. It had this impact on you. I didn\'t intend harm, but intent doesn\'t erase impact."',
         'The three components: See your impact, own your part, commit to change.',
         'Without accountability, patterns repeat. With it, relationships deepen.',
-        'Accountability requires humility—the willingness to be wrong and grow from it.',
+        'Accountability requires humilityâ€”the willingness to be wrong and grow from it.',
       ],
       exercise: [
         'Reflect: Identify one way your behavior has impacted someone you care about.',
@@ -198,12 +200,12 @@ const GrowthDetailSection: React.FC = () => {
         'Circle back: "I said I\'d do X and I didn\'t. That matters. Here\'s my new plan."',
         'If you see a pattern: "I notice I do this thing repeatedly. I\'m working on it. I don\'t expect you to be okay with it, but I want you to know I see it."',
         'Build a "repair culture" where both of you can say "I got this wrong" without shame.',
-        'The goal isn\'t perfection—it\'s genuine effort and consistent improvement.',
+        'The goal isn\'t perfectionâ€”it\'s genuine effort and consistent improvement.',
       ],
       exercise: [
         'Identify one commitment you\'ve made that you didn\'t follow through on.',
         'Have the conversation: "I didn\'t follow through on X. Here\'s what got in the way, and here\'s my new plan."',
-        'Track your commitment: Check in weekly—are you following through?',
+        'Track your commitment: Check in weeklyâ€”are you following through?',
       ],
     },
     'g3-m1': {
@@ -213,7 +215,7 @@ const GrowthDetailSection: React.FC = () => {
         'Wholeness is interdependence: being complete in yourself while choosing deep connection.',
         'Many use relationships to fill internal voids: loneliness, lack of purpose, low self-worth.',
         'The paradox: Partners are MORE attracted to you when you\'re not desperate for them to complete you.',
-        'A strong sense of self is not selfish—it\'s the foundation for healthy partnership.',
+        'A strong sense of self is not selfishâ€”it\'s the foundation for healthy partnership.',
       ],
       exercise: [
         'Assess: On a scale of 1-10, how complete do you feel without a partner?',
@@ -240,11 +242,11 @@ const GrowthDetailSection: React.FC = () => {
     'g3-m3': {
       title: 'Building Your Self',
       keyPoints: [
-        'Spend intentional time alone—not scrolling, but being with yourself.',
+        'Spend intentional time aloneâ€”not scrolling, but being with yourself.',
         'Identify 3 non-negotiable practices that make you feel like yourself.',
         'Invest in relationships outside romance. Friendships create a healthy container for romantic love.',
         'Have goals and dreams that exist independently of partnership.',
-        'The question: "What do I want my life to look like?"—answer it for yourself, not your future partner.',
+        'The question: "What do I want my life to look like?"â€”answer it for yourself, not your future partner.',
       ],
       exercise: [
         'Solo time: Schedule 2 hours this week with just yourself. No phone, no distractions.',
@@ -264,7 +266,7 @@ const GrowthDetailSection: React.FC = () => {
       ],
       exercise: [
         'In your next conversation with your partner, share one of your goals or dreams that exists independently.',
-        'Disagree on something intentionally—notice if it feels threatening or enriching.',
+        'Disagree on something intentionallyâ€”notice if it feels threatening or enriching.',
         'Ask your partner: "What do you notice about me when I\'m connected to my own purpose?"',
       ],
     },
@@ -335,9 +337,9 @@ const GrowthDetailSection: React.FC = () => {
       title: 'Why Conflict Matters',
       keyPoints: [
         'Couples who never fight often have low emotional intimacy. They\'re avoiding, not connecting.',
-        'Conflict itself isn\'t the problem—how you handle it is.',
+        'Conflict itself isn\'t the problemâ€”how you handle it is.',
         'Conflict reveals what matters. When you disagree, you learn your partner\'s values.',
-        'The couples who stay together aren\'t those who avoid conflict—they\'re those who repair after it.',
+        'The couples who stay together aren\'t those who avoid conflictâ€”they\'re those who repair after it.',
         'Unresolved conflict corrodes intimacy. Resolved conflict deepens it.',
       ],
       exercise: [
@@ -398,6 +400,36 @@ const GrowthDetailSection: React.FC = () => {
 
   const resource = selectedResourceId ? resources.find(r => r.id === selectedResourceId) : null;
   const content = selectedModuleId ? moduleContent[selectedModuleId] : null;
+
+  useEffect(() => {
+    if (resources.length === 0) return;
+
+    const startResourceId = localStorage.getItem(startResourceKey);
+    if (startResourceId) {
+      localStorage.removeItem(startResourceKey);
+      const matchedResource = resources.find((entry) => entry.id === startResourceId);
+      if (matchedResource) {
+        setSelectedResourceId(matchedResource.id);
+        const firstModule = Array.isArray(matchedResource.modules) ? matchedResource.modules[0] : null;
+        if (firstModule) {
+          const firstModuleId = typeof firstModule.id === 'string' && firstModule.id.trim().length > 0
+            ? firstModule.id
+            : `${matchedResource.id}-module-1`;
+          setSelectedModuleId(firstModuleId);
+        }
+      }
+      return;
+    }
+
+    if (selectedResourceId) return;
+    const prefilledResourceId = localStorage.getItem(prefillResourceKey);
+    if (!prefilledResourceId) return;
+
+    localStorage.removeItem(prefillResourceKey);
+    if (resources.some((entry) => entry.id === prefilledResourceId)) {
+      setSelectedResourceId(prefilledResourceId);
+    }
+  }, [prefillResourceKey, resources, selectedResourceId, startResourceKey]);
 
   useEffect(() => {
     if (!selectedResourceId || !selectedModuleId) return;
@@ -462,6 +494,23 @@ const GrowthDetailSection: React.FC = () => {
             </button>
             <h1 className="text-2xl font-bold">Growth Mastery</h1>
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentView('clarity-room')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] hover:border-[#2A312A] transition"
+            >
+              <BookOpen className="w-4 h-4" />
+              Journal
+            </button>
+            <button
+              onClick={() => setCurrentView('growth-mode')}
+              className="w-10 h-10 rounded-lg border border-[#1A211A] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition flex items-center justify-center"
+              title="Forest"
+              aria-label="Open Forest"
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -512,6 +561,25 @@ const GrowthDetailSection: React.FC = () => {
                 <Clock className="w-4 h-4" />
                 {resource?.estimatedTime} • {resource?.modules?.length} modules
               </p>
+              {resource?.learningOutcomes && resource.learningOutcomes.length > 0 && (
+                <div className="mt-4 rounded-lg border border-[#1A211A] bg-[#111611] p-4">
+                  <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">Strengths</p>
+                  <ul className="space-y-2">
+                    {resource.learningOutcomes.map((outcome, index) => (
+                      <li key={`${resource.id}-strength-${index}`} className="flex items-start gap-2 text-sm text-[#F6FFF2]">
+                        <CheckCircle className="w-4 h-4 mt-0.5 text-[#D9FF3D] flex-shrink-0" />
+                        <span>{outcome}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {resource?.areasToBeMindfulOf && (
+                <div className="mt-4 rounded-lg border border-[#1A211A] bg-[#111611] p-4">
+                  <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">Areas to Be Mindful Of</p>
+                  <p className="text-sm text-[#F6FFF2] whitespace-pre-wrap">{resource.areasToBeMindfulOf}</p>
+                </div>
+              )}
             </div>
 
             <div className="grid gap-4">
@@ -532,7 +600,7 @@ const GrowthDetailSection: React.FC = () => {
                       <p className="text-gray-400">{mod.description}</p>
                     </div>
                     <div className="ml-4 flex-shrink-0">
-                      <div className="text-[#D9FF3D] group-hover:translate-x-1 transition">→</div>
+                      <div className="text-[#D9FF3D] group-hover:translate-x-1 transition">â†’</div>
                     </div>
                   </div>
                 </div>
@@ -588,7 +656,7 @@ const GrowthDetailSection: React.FC = () => {
                 onClick={() => setCurrentView('paid-growth-mode')}
                 className="py-3 px-6 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-bold hover:scale-[1.02] transition-transform"
               >
-                Explore Advanced Resources →
+                Explore Advanced Resources â†’
               </button>
             </div>
 
@@ -628,7 +696,7 @@ const GrowthDetailSection: React.FC = () => {
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
                               <h4 className="font-bold text-white mb-1 group-hover:text-[#D9FF3D] transition">
-                                📄 {blog.title}
+                                ðŸ“„ {blog.title}
                               </h4>
                               {(blog.content || blog.excerpt) && (
                                 <p className="text-sm text-gray-400">
@@ -642,7 +710,7 @@ const GrowthDetailSection: React.FC = () => {
                                 </p>
                               )}
                             </div>
-                            <span className="text-[#D9FF3D] opacity-0 group-hover:opacity-100 transition">→</span>
+                            <span className="text-[#D9FF3D] opacity-0 group-hover:opacity-100 transition">â†’</span>
                           </div>
                         </button>
                       ))}
@@ -670,7 +738,7 @@ const GrowthDetailSection: React.FC = () => {
                           }}
                           className="flex-1 py-3 px-4 bg-[#1A211A] text-white rounded-lg hover:bg-[#252C25] transition"
                         >
-                          ← Previous Module
+                          â† Previous Module
                         </button>
                       )}
                       {hasNext && (
@@ -681,7 +749,7 @@ const GrowthDetailSection: React.FC = () => {
                           }}
                           className="flex-1 py-3 px-4 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg hover:bg-white transition font-bold"
                         >
-                          Next Module →
+                          Next Module â†’
                         </button>
                       )}
                     </>
@@ -705,3 +773,5 @@ const GrowthDetailSection: React.FC = () => {
 };
 
 export default GrowthDetailSection;
+
+

@@ -123,6 +123,7 @@ const AdminContentSection: React.FC = () => {
       estimatedTime: '',
       difficulty: 'beginner',
       learningOutcomes: [],
+      areasToBeMindfulOf: '',
       modules: [],
     });
     setSelectedResource(null);
@@ -270,6 +271,12 @@ const AdminContentSection: React.FC = () => {
                         </ul>
                       </div>
                     )}
+                    {resource.areasToBeMindfulOf && (
+                      <div>
+                        <h4 className="font-medium text-[#F6FFF2] mb-2">Areas to Be Mindful Of</h4>
+                        <p className="text-sm text-[#A9B5AA] whitespace-pre-wrap">{resource.areasToBeMindfulOf}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
@@ -335,6 +342,12 @@ const AdminContentSection: React.FC = () => {
                             </li>
                           ))}
                         </ul>
+                      </div>
+                    )}
+                    {resource.areasToBeMindfulOf && (
+                      <div>
+                        <h4 className="font-medium text-[#F6FFF2] mb-2">Areas to Be Mindful Of</h4>
+                        <p className="text-sm text-[#A9B5AA] whitespace-pre-wrap">{resource.areasToBeMindfulOf}</p>
                       </div>
                     )}
                   </div>
@@ -573,6 +586,17 @@ const AdminContentSection: React.FC = () => {
                     Add
                   </button>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Areas to Be Mindful Of</label>
+                <textarea
+                  value={formData.areasToBeMindfulOf || ''}
+                  onChange={(e) => setFormData({ ...formData, areasToBeMindfulOf: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                  rows={3}
+                  placeholder="Add guidance, cautions, or reminders for this path..."
+                />
               </div>
 
               {/* Modules */}

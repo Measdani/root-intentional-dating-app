@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import {
   canUsersExchangeMessages,
@@ -15,7 +15,6 @@ import {
 import { growthResources, paidGrowthResources } from '@/data/assessment';
 import { toast } from 'sonner';
 import { BookOpen, Clock, CheckCircle, Sparkles, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
-import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
@@ -87,7 +86,6 @@ const GrowthModeSection: React.FC = () => {
     reloadInteractions,
     getNextRetakeDate,
   } = useApp();
-  const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources' | 'blog'>('browse');
   const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
@@ -99,6 +97,7 @@ const GrowthModeSection: React.FC = () => {
   const [coachLoading, setCoachLoading] = useState(false);
   const [isCoachMinimized, setIsCoachMinimized] = useState(false);
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
+  const [showSelectedResourceLearnMore, setShowSelectedResourceLearnMore] = useState(false);
 
   useEffect(() => {
     const handleModeUpdated = () => setModeRefreshTick((previous) => previous + 1);
@@ -138,7 +137,7 @@ const GrowthModeSection: React.FC = () => {
 
   // Log state changes
   useEffect(() => {
-    console.log('🔄 showReportModal state changed to:', showReportModal);
+    console.log('ðŸ”„ showReportModal state changed to:', showReportModal);
   }, [showReportModal]);
   const [resources, setResources] = useState(() => {
     const saved = localStorage.getItem('growth-resources');
@@ -202,6 +201,7 @@ const GrowthModeSection: React.FC = () => {
   useEffect(() => {
     if (combinedModeResources.length === 0) {
       setSelectedResourceId(null);
+      setShowSelectedResourceLearnMore(false);
       return;
     }
 
@@ -212,8 +212,13 @@ const GrowthModeSection: React.FC = () => {
     if (!hasSelected) {
       const firstResource = combinedModeResources[0];
       setSelectedResourceId(typeof firstResource?.id === 'string' ? firstResource.id : null);
+      setShowSelectedResourceLearnMore(false);
     }
   }, [combinedModeResources, selectedResourceId]);
+
+  useEffect(() => {
+    setShowSelectedResourceLearnMore(false);
+  }, [selectedResourceId]);
 
   // Load fresh interactions on component mount and when entering browse/inbox tabs
   useEffect(() => {
@@ -500,41 +505,6 @@ const GrowthModeSection: React.FC = () => {
     return Math.max(0, Math.min(100, percentage));
   };
 
-  const handleModuleViewed = (resourceId: string, moduleId: string, totalModules: number) => {
-    if (!resourceId || !moduleId) return;
-
-    setResourceProgress((previous) => {
-      const current = previous[resourceId] || {
-        viewedModuleIds: [],
-        totalModules: 0,
-        updatedAt: Date.now(),
-      };
-
-      const viewedSet = new Set<string>(current.viewedModuleIds);
-      const beforeSize = viewedSet.size;
-      viewedSet.add(moduleId);
-
-      const nextTotalModules = Math.max(
-        current.totalModules || 0,
-        Number.isFinite(totalModules) ? totalModules : 0,
-        viewedSet.size
-      );
-
-      if (beforeSize === viewedSet.size && nextTotalModules === current.totalModules) {
-        return previous;
-      }
-
-      return {
-        ...previous,
-        [resourceId]: {
-          viewedModuleIds: Array.from(viewedSet),
-          totalModules: nextTotalModules,
-          updatedAt: Date.now(),
-        },
-      };
-    });
-  };
-
   const selectedResource = useMemo(
     () => combinedModeResources.find((resource: any) => resource.id === selectedResourceId) ?? null,
     [combinedModeResources, selectedResourceId]
@@ -631,7 +601,7 @@ const GrowthModeSection: React.FC = () => {
                         <ul className="space-y-1">
                           {coachGuidance.recommendedModules.slice(0, 2).map((module) => (
                             <li key={module} className="text-sm text-[#F6FFF2]">
-                              • {module}
+                              - {module}
                             </li>
                           ))}
                         </ul>
@@ -923,26 +893,24 @@ const GrowthModeSection: React.FC = () => {
           <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-3">
             Strengthening the Roots of Connection
           </h2>
-          <p className="text-[#D9FF3D] text-base font-medium mb-6">
-            Welcome to Your Resource Space
-          </p>
-          <div className="max-w-3xl mx-auto space-y-4 text-[#A9B5AA] leading-relaxed">
-            <p>
-              This is your space to explore the tools that help create the healthy relationship you want.
-            </p>
-            <p>
-              When you completed the assessment, it identified a primary and secondary area that may help strengthen the way you approach communication, connection, and growth in relationships.
-            </p>
-            <p>
-              These suggested paths are simply starting points. Feel free to explore all of the resources available as you continue learning and growing.
-            </p>
-            <p>
-              Your journal space is also here to support you along the way - a place to reflect, capture insights, and track your progress as you move through the lessons.
-            </p>
-            <p>
-              Healthy relationships are built through awareness, intention, and growth, and this space is designed to support you in that journey.
-            </p>
+          <div className="inline-flex items-center gap-2 text-[#D9FF3D] text-base font-medium mb-6">
+            <Sparkles className="w-4 h-4" />
+            <span>Welcome to Your Resource Space</span>
           </div>
+          <ul className="max-w-3xl mx-auto space-y-3 text-[#A9B5AA] leading-relaxed text-left">
+            <li className="flex items-start gap-2">
+              <span className="text-[#D9FF3D] mt-1">-</span>
+              <span>&quot;This is your dedicated space to grow the healthy relationship you deserve.&quot;</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-[#D9FF3D] mt-1">-</span>
+              <span>&quot;Based on your assessment, we&apos;ve identified your primary and secondary Growth Milestones to help guide your journey.&quot;</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-[#D9FF3D] mt-1">-</span>
+              <span>&quot;Use your Journal Space below to reflect on your progress and capture new insights.&quot;</span>
+            </li>
+          </ul>
         </div>
 
         {/* Growth Resources */}
@@ -1020,7 +988,33 @@ const GrowthModeSection: React.FC = () => {
                           </div>
                           <div>
                             <h4 className="text-xl font-semibold text-[#F6FFF2]">{selectedResource.title}</h4>
-                            <p className="text-sm text-[#A9B5AA] mt-1">{selectedResource.description}</p>
+                            {!showSelectedResourceLearnMore ? (
+                              <p className="text-sm text-[#A9B5AA] mt-1">{selectedResource.description}</p>
+                            ) : (
+                              <div className="mt-2 space-y-3">
+                                {Array.isArray(selectedResource.learningOutcomes) && selectedResource.learningOutcomes.length > 0 && (
+                                  <div>
+                                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1.5">Strengths</p>
+                                    <ul className="space-y-1.5">
+                                      {selectedResource.learningOutcomes.map((outcome: string, index: number) => (
+                                        <li key={`${selectedResource.id}-strength-${index}`} className="text-sm text-[#F6FFF2]">
+                                          - {outcome}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {selectedResource.areasToBeMindfulOf && (
+                                  <div>
+                                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1.5">Areas to Be Mindful Of</p>
+                                    <p className="text-sm text-[#F6FFF2] whitespace-pre-wrap">{selectedResource.areasToBeMindfulOf}</p>
+                                  </div>
+                                )}
+                                {(!selectedResource.learningOutcomes || selectedResource.learningOutcomes.length === 0) && !selectedResource.areasToBeMindfulOf && (
+                                  <p className="text-sm text-[#A9B5AA]">No additional path details added yet.</p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <span className="px-2.5 py-1 rounded-full text-xs border border-[#2A312A] text-[#A9B5AA]">
@@ -1067,13 +1061,16 @@ const GrowthModeSection: React.FC = () => {
 
                       <div className="flex flex-wrap gap-3 pt-1">
                         <button
-                          onClick={() => setSelectedResourceForModal(selectedResource)}
+                          onClick={() => {
+                            localStorage.setItem('rooted_growth_detail_start_resource_id', selectedResource.id);
+                            setCurrentView('growth-detail');
+                          }}
                           className="px-4 py-2 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:brightness-95 transition"
                         >
-                          Open Path
+                          Start
                         </button>
                         <button
-                          onClick={() => setCurrentView('growth-detail')}
+                          onClick={() => setShowSelectedResourceLearnMore(true)}
                           className="px-4 py-2 rounded-lg border border-[#1A211A] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition"
                         >
                           Learn More
@@ -1153,20 +1150,11 @@ const GrowthModeSection: React.FC = () => {
         <div className="mt-12 text-center">
           <p className="text-[#A9B5AA]/60 text-sm max-w-md mx-auto">
             "The work you do now will be the foundation of the relationship you want later.
-            This is not a delay—it is an investment."
+            This is not a delayâ€”it is an investment."
           </p>
         </div>
       </main>
 
-      {/* Modules Carousel Modal */}
-      <ModulesCarouselModal
-        isOpen={!!selectedResourceForModal}
-        resourceId={selectedResourceForModal?.id}
-        resourceTitle={selectedResourceForModal?.title || ''}
-        modules={selectedResourceForModal?.modules || []}
-        onClose={() => setSelectedResourceForModal(null)}
-        onModuleViewed={handleModuleViewed}
-      />
 
       {/* Background Check Modal */}
       <BackgroundCheckModal
@@ -1190,13 +1178,13 @@ const GrowthModeSection: React.FC = () => {
         onClose={() => setShowReportModal(false)}
         onSubmit={async (reason, details, shouldBlock) => {
           try {
-            console.log('📝 Submitting report for user:', selectedProfileUser.id, 'reason:', reason);
+            console.log('ðŸ“ Submitting report for user:', selectedProfileUser.id, 'reason:', reason);
             await reportUser(selectedProfileUser.id, reason, details);
             if (shouldBlock) {
-              console.log('🚫 Blocking user:', selectedProfileUser.id);
+              console.log('ðŸš« Blocking user:', selectedProfileUser.id);
               blockUser(selectedProfileUser.id);
             }
-            console.log('✅ Report submitted successfully');
+            console.log('âœ… Report submitted successfully');
             toast.success('Report submitted successfully. Admin team will review.');
             setShowReportModal(false);
             setSelectedProfileUser(null);
@@ -1365,7 +1353,7 @@ const GrowthModeSection: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  console.log('📋 Report User button clicked. Opening modal for user:', selectedProfileUser?.id);
+                  console.log('ðŸ“‹ Report User button clicked. Opening modal for user:', selectedProfileUser?.id);
                   setShowReportModal(true);
                 }}
                 className="w-full py-3 bg-[#1A211A] text-[#A9B5AA] rounded-lg font-medium hover:text-[#F6FFF2] transition-colors"
@@ -1381,4 +1369,5 @@ const GrowthModeSection: React.FC = () => {
 };
 
 export default GrowthModeSection;
+
 

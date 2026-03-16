@@ -125,6 +125,7 @@ export interface GrowthResource {
   category: string;
   estimatedTime: string;
   learningOutcomes?: string[];
+  areasToBeMindfulOf?: string;
   modules?: GrowthResourceModule[];
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   createdAt?: number;
