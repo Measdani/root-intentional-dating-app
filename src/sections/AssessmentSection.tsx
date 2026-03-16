@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { useCommunity } from '@/modules';
-import { assessmentQuestions as defaultAssessmentQuestions, followUpQuestions, calculateAssessmentResult } from '@/data/assessment';
+import { assessmentQuestions as defaultAssessmentQuestions, calculateAssessmentResult } from '@/data/assessment';
 import type { AssessmentQuestion } from '@/types';
-import { ChevronRight, AlertCircle } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { normalizeAssessmentQuestionsWithStyles, resolveAssessmentOptionStyle } from '@/services/assessmentStyleService';
 
 const ADMIN_DATA_STORAGE_KEY = 'rooted-admin-data';
@@ -52,7 +52,6 @@ const AssessmentSection: React.FC = () => {
 
   const [isVisible, setIsVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [showFollowUp, setShowFollowUp] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showAssessmentStatement, setShowAssessmentStatement] = useState(true);
   const [showQuestions, setShowQuestions] = useState(false);
@@ -152,36 +151,24 @@ const AssessmentSection: React.FC = () => {
     }
   }, [currentUser.assessmentPassed, currentUser.userStatus, setCurrentView]);
 
-  const currentQuestions = showFollowUp ? followUpQuestions : assessmentQuestions;
+  const currentQuestions = assessmentQuestions;
   const currentQuestion = currentQuestions[currentQuestionIndex];
-  const progress = ((assessmentAnswers.length) / (assessmentQuestions.length + 2)) * 100;
+  const progress = ((assessmentAnswers.length) / assessmentQuestions.length) * 100;
 
-  const handleAnswer = (score: number, redFlag?: boolean, style?: AssessmentQuestion['options'][number]['style']) => {
+  const handleAnswer = (score: number, style?: AssessmentQuestion['options'][number]['style']) => {
     if (isTransitioning) return;
 
     setIsTransitioning(true);
-    const resolvedStyle = style || resolveAssessmentOptionStyle(score, redFlag);
-    addAssessmentAnswer(currentQuestion.id, score, redFlag, resolvedStyle);
+    const resolvedStyle = style || resolveAssessmentOptionStyle(score);
+    addAssessmentAnswer(currentQuestion.id, score, resolvedStyle);
 
     // Track answer timestamp
     const timestamp = Date.now();
     setAnswerTimestamps(prev => [...prev, { questionId: currentQuestion.id, timestamp, score }]);
 
-    // Check for integrity triggers
-    if (!showFollowUp && redFlag && assessmentAnswers.filter(a => a.redFlag).length >= 2) {
-      setShowFollowUp(true);
-      setCurrentQuestionIndex(0);
-      setIsTransitioning(false);
-      return;
-    }
-
     setTimeout(() => {
       if (currentQuestionIndex < currentQuestions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
-        setIsTransitioning(false);
-      } else if (!showFollowUp && assessmentAnswers.filter(a => a.redFlag).length >= 2) {
-        setShowFollowUp(true);
-        setCurrentQuestionIndex(0);
         setIsTransitioning(false);
       } else {
         // Complete assessment - log data
@@ -189,7 +176,7 @@ const AssessmentSection: React.FC = () => {
         const totalTimeTaken = assessmentStartTime ? completionTime - assessmentStartTime : 0;
         const finalAnswers = [
           ...assessmentAnswers,
-          { questionId: currentQuestion.id, score, redFlag, style: resolvedStyle },
+          { questionId: currentQuestion.id, score, style: resolvedStyle },
         ];
 
         // Log assessment metadata
@@ -199,7 +186,6 @@ const AssessmentSection: React.FC = () => {
           totalTimeTakenSeconds: Math.round(totalTimeTaken / 1000),
           answerPatterns: answerTimestamps,
           questionCount: finalAnswers.length,
-          redFlagCount: finalAnswers.filter(a => a.redFlag).length,
           suspiciousSpeed: totalTimeTaken < 15000 && finalAnswers.length > 5 // Less than 15 seconds for 5+ questions
         };
 
@@ -455,13 +441,6 @@ const AssessmentSection: React.FC = () => {
               />
             </div>
 
-            {showFollowUp && (
-              <div className="flex items-center justify-center gap-2 text-[#D9FF3D] text-sm mb-6">
-                <AlertCircle className="w-4 h-4" />
-                <span>Additional questions</span>
-              </div>
-            )}
-
             <h3 className="text-[#F6FFF2] text-xl md:text-2xl font-medium mb-8 leading-snug">
               {currentQuestion?.question}
             </h3>
@@ -470,7 +449,7 @@ const AssessmentSection: React.FC = () => {
               {currentQuestion?.options.map((option, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleAnswer(option.score, option.redFlag, option.style)}
+                  onClick={() => handleAnswer(option.score, option.style)}
                   disabled={isTransitioning}
                   className={`w-full text-left p-4 rounded-xl border border-[#1A211A] bg-[#111611]/80
                     hover:border-[#D9FF3D]/50 hover:bg-[#1A211A] transition-all duration-300
@@ -483,7 +462,7 @@ const AssessmentSection: React.FC = () => {
             </div>
 
             <p className="text-[#A9B5AA] text-sm mt-8 text-center">
-              Question {assessmentAnswers.length + 1} of {assessmentQuestions.length + (showFollowUp ? followUpQuestions.length : 0)}
+              Question {assessmentAnswers.length + 1} of {assessmentQuestions.length}
             </p>
           </div>
         )}

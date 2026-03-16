@@ -70,15 +70,13 @@ export const normalizeStyleScores = (
 };
 
 export const resolveAssessmentOptionStyle = (
-  score: number,
-  redFlag?: boolean
+  score: number
 ): AssessmentOptionStyle => {
-  if (redFlag) return 'red_flag';
   if (score >= 10) return 'oak';
   if (score === 9) return 'willow';
   if (score === 8) return 'fern';
   if (score === 7) return 'wildflower';
-  if (score <= 2) return 'red_flag';
+  if (score <= 2) return 'willow';
   return 'gardener';
 };
 
@@ -89,6 +87,6 @@ export const normalizeAssessmentQuestionsWithStyles = (
     ...question,
     options: question.options.map((option) => ({
       ...option,
-      style: option.style || resolveAssessmentOptionStyle(option.score, option.redFlag),
+      style: option.style || resolveAssessmentOptionStyle(option.score),
     })),
   }));

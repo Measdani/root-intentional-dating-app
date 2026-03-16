@@ -72,15 +72,13 @@ export type AssessmentOptionStyle =
   | 'fern'
   | 'wildflower'
   | 'willow'
-  | 'gardener'
-  | 'red_flag';
+  | 'gardener';
 
-export type AssessmentCoreStyle = Exclude<AssessmentOptionStyle, 'red_flag'>;
+export type AssessmentCoreStyle = AssessmentOptionStyle;
 
 export interface AssessmentAnswer {
   questionId: string;
   score: number;
-  redFlag?: boolean;
   style?: AssessmentOptionStyle;
 }
 
@@ -91,7 +89,6 @@ export interface AssessmentQuestion {
   options: {
     text: string;
     score: number;
-    redFlag?: boolean;
     style?: AssessmentOptionStyle;
   }[];
   adaptiveTrigger?: {

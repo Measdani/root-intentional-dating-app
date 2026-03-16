@@ -42,7 +42,6 @@ interface AppContextType extends AppState {
   addAssessmentAnswer: (
     questionId: string,
     score: number,
-    redFlag?: boolean,
     style?: AssessmentOptionStyle
   ) => void;
   setAssessmentResult: (result: AssessmentResult) => void;
@@ -820,10 +819,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addAssessmentAnswer = useCallback((
     questionId: string,
     score: number,
-    redFlag?: boolean,
     style?: AssessmentOptionStyle
   ) => {
-    setAssessmentAnswers(prev => [...prev, { questionId, score, redFlag, style }]);
+    setAssessmentAnswers(prev => [...prev, { questionId, score, style }]);
   }, []);
 
   const resetAssessment = useCallback(() => {

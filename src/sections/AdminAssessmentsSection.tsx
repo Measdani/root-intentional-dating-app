@@ -110,7 +110,7 @@ const AdminAssessmentsSection: React.FC = () => {
 
   const updateDraftOption = (
     index: number,
-    key: 'text' | 'score' | 'redFlag',
+    key: 'text' | 'score',
     value: string | number | boolean
   ) => {
     setDraftQuestion((previous) => {
@@ -118,19 +118,11 @@ const AdminAssessmentsSection: React.FC = () => {
       const nextOptions = previous.options.map((option, optionIndex) => {
         if (optionIndex !== index) return option;
         if (key === 'text') return { ...option, text: String(value) };
-        if (key === 'score') {
-          const nextScore = Number(value);
-          return {
-            ...option,
-            score: nextScore,
-            style: resolveAssessmentOptionStyle(nextScore, option.redFlag),
-          };
-        }
-        const nextRedFlag = Boolean(value);
+        const nextScore = Number(value);
         return {
           ...option,
-          redFlag: nextRedFlag,
-          style: resolveAssessmentOptionStyle(option.score, nextRedFlag),
+          score: nextScore,
+          style: resolveAssessmentOptionStyle(nextScore),
         };
       });
       return { ...previous, options: nextOptions };
@@ -144,7 +136,7 @@ const AdminAssessmentsSection: React.FC = () => {
         ...previous,
         options: [
           ...previous.options,
-          { text: '', score: 0, style: resolveAssessmentOptionStyle(0, false) },
+          { text: '', score: 0, style: resolveAssessmentOptionStyle(0) },
         ],
       };
     });
@@ -288,11 +280,11 @@ const AdminAssessmentsSection: React.FC = () => {
                                 <p className="text-sm text-[#F6FFF2]">{option.text}</p>
                               </div>
                               <span className="text-xs text-[#A9B5AA]">
-                                {option.score}/10 {option.style || resolveAssessmentOptionStyle(option.score, option.redFlag)}
+                                {option.score}/10 {option.style || resolveAssessmentOptionStyle(option.score)}
                               </span>
                             </div>
                           ) : (
-                            <div className="grid md:grid-cols-[1fr_80px_100px_40px] gap-2 items-center">
+                            <div className="grid md:grid-cols-[1fr_80px_40px] gap-2 items-center">
                               <input
                                 type="text"
                                 value={option.text}
@@ -311,17 +303,6 @@ const AdminAssessmentsSection: React.FC = () => {
                                 }
                                 className="px-3 py-2 bg-[#111611] border border-[#1A211A] rounded text-[#F6FFF2]"
                               />
-                              <label className="flex items-center gap-2 text-xs text-[#A9B5AA]">
-                                <input
-                                  type="checkbox"
-                                  checked={Boolean(option.redFlag)}
-                                  onChange={(event) =>
-                                    updateDraftOption(optionIndex, 'redFlag', event.target.checked)
-                                  }
-                                  className="accent-[#D9FF3D]"
-                                />
-                                Red flag
-                              </label>
                               <button
                                 onClick={() => handleRemoveOption(optionIndex)}
                                 className="text-red-400 hover:text-red-300"
@@ -383,10 +364,10 @@ const AdminAssessmentsSection: React.FC = () => {
               <p className="text-2xl font-bold text-[#F6FFF2]">{questions.length}</p>
             </Card>
             <Card className="bg-[#111611] border-[#1A211A] p-4">
-              <p className="text-xs text-[#A9B5AA]">Red Flag Options</p>
+              <p className="text-xs text-[#A9B5AA]">Total Options</p>
               <p className="text-2xl font-bold text-[#D9FF3D]">
                 {questions.reduce(
-                  (count, question) => count + question.options.filter((option) => option.redFlag).length,
+                  (count, question) => count + question.options.length,
                   0
                 )}
               </p>

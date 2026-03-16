@@ -156,35 +156,6 @@ const baseAssessmentQuestions: AssessmentQuestion[] = [
 export const assessmentQuestions: AssessmentQuestion[] =
   normalizeAssessmentQuestionsWithStyles(baseAssessmentQuestions);
 
-// Follow-up questions for integrity detection
-const baseFollowUpQuestions: AssessmentQuestion[] = [
-  {
-    id: 'f1',
-    category: 'integrity-check',
-    question: 'You indicated you prefer being with others. Can you share more about how you handle extended alone time?',
-    options: [
-      { text: 'I have developed practices to enjoy solitude', score: 8 },
-      { text: 'I manage but it is genuinely difficult for me', score: 4 },
-      { text: 'I usually reach out to friends or family', score: 5 },
-      { text: 'I avoid being alone for extended periods', score: 1, redFlag: true },
-    ],
-  },
-  {
-    id: 'f2',
-    category: 'integrity-check',
-    question: 'You mentioned feeling attacked when your partner is upset. What steps have you taken to work on this?',
-    options: [
-      { text: 'I have worked with a therapist on this pattern', score: 10 },
-      { text: 'I am aware of it and actively practice pausing', score: 7 },
-      { text: 'I try to remind myself it is not personal', score: 4 },
-      { text: 'I have not really worked on it', score: 1, redFlag: true },
-    ],
-  },
-];
-
-export const followUpQuestions: AssessmentQuestion[] =
-  normalizeAssessmentQuestionsWithStyles(baseFollowUpQuestions);
-
 export const growthResources: GrowthResource[] = [
   {
     id: 'g1',
@@ -440,13 +411,7 @@ export const calculateAssessmentResult = (
   const totalScore = answers.reduce((sum, a) => sum + a.score, 0);
   const maxPossible = answers.length * 10;
   const percentage = Math.round((totalScore / maxPossible) * 100);
-
-  const redFlags = answers.filter(a => a.redFlag).length;
   const integrityFlags: string[] = [];
-
-  if (redFlags >= 3) {
-    integrityFlags.push('Your responses indicate meaningful opportunities for deeper skill development.');
-  }
   if (percentage < alignmentThreshold) {
     integrityFlags.push('Strengthening these areas will improve relationship stability and connection quality.');
   }
@@ -457,13 +422,12 @@ export const calculateAssessmentResult = (
   const categoryScores: Record<string, number> = {};
   const categoryCounts: Record<string, number> = {};
 
-  const allQuestions = [...questionBank, ...followUpQuestions];
-  answers.forEach(a => {
+  answers.forEach((a) => {
     if (isAssessmentCoreStyle(a.style)) {
       styleScores[a.style] += a.score;
     }
 
-    const question = allQuestions.find(q => q.id === a.questionId);
+    const question = questionBank.find((q) => q.id === a.questionId);
     if (question) {
       categoryScores[question.category] = (categoryScores[question.category] || 0) + a.score;
       categoryCounts[question.category] = (categoryCounts[question.category] || 0) + 1;
