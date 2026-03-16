@@ -1166,9 +1166,6 @@ const GrowthModeSection: React.FC = () => {
                   const totalModules = Array.isArray(selectedResource.modules)
                     ? selectedResource.modules.length
                     : 0;
-                  const previewModules = Array.isArray(selectedResource.modules)
-                    ? selectedResource.modules.slice(0, 4)
-                    : [];
 
                   return (
                     <div className="space-y-5">
@@ -1212,46 +1209,39 @@ const GrowthModeSection: React.FC = () => {
                             )}
                           </div>
                         </div>
-                        <span className="px-2.5 py-1 rounded-full text-xs border border-[#2A312A] text-[#A9B5AA]">
-                          {selectedResource.category}
-                        </span>
+                        {!showSelectedResourceLearnMore && (
+                          <span className="px-2.5 py-1 rounded-full text-xs border border-[#2A312A] text-[#A9B5AA]">
+                            {selectedResource.category}
+                          </span>
+                        )}
                       </div>
 
-                      <div>
-                        <div className="h-2 bg-[#0B0F0C] rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              status === 'completed' ? 'bg-[#D9FF3D]' :
-                              status === 'in-progress' ? 'bg-amber-500' :
-                              'bg-[#A9B5AA]'
-                            }`}
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                        <p className="text-xs text-[#A9B5AA] mt-2">
-                          {isCompleted ? 'Completed' : progress > 0 ? `${progress}% complete` : 'Not started'}
-                        </p>
-                      </div>
+                      {!showSelectedResourceLearnMore && (
+                        <>
+                          <div>
+                            <div className="h-2 bg-[#0B0F0C] rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  status === 'completed' ? 'bg-[#D9FF3D]' :
+                                  status === 'in-progress' ? 'bg-amber-500' :
+                                  'bg-[#A9B5AA]'
+                                }`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-[#A9B5AA] mt-2">
+                              {isCompleted ? 'Completed' : progress > 0 ? `${progress}% complete` : 'Not started'}
+                            </p>
+                          </div>
 
-                      <div className="grid sm:grid-cols-2 gap-3 text-xs text-[#A9B5AA]">
-                        <p className="flex items-center gap-2">
-                          <Clock className="w-3.5 h-3.5" />
-                          Estimated time: {selectedResource.estimatedTime}
-                        </p>
-                        <p>{totalModules} modules in this path</p>
-                      </div>
-
-                      {previewModules.length > 0 && (
-                        <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/50 p-4">
-                          <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">Module Preview</p>
-                          <ul className="space-y-1.5">
-                            {previewModules.map((module: any, index: number) => (
-                              <li key={module.id ?? `${selectedResource.id}-module-${index}`} className="text-sm text-[#F6FFF2]">
-                                {index + 1}. {module.title}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                          <div className="grid sm:grid-cols-2 gap-3 text-xs text-[#A9B5AA]">
+                            <p className="flex items-center gap-2">
+                              <Clock className="w-3.5 h-3.5" />
+                              Estimated time: {selectedResource.estimatedTime}
+                            </p>
+                            <p>{totalModules} modules in this path</p>
+                          </div>
+                        </>
                       )}
 
                       <div className="flex flex-wrap gap-3 pt-1">
@@ -1265,10 +1255,10 @@ const GrowthModeSection: React.FC = () => {
                           Start
                         </button>
                         <button
-                          onClick={() => setShowSelectedResourceLearnMore(true)}
+                          onClick={() => setShowSelectedResourceLearnMore((previous) => !previous)}
                           className="px-4 py-2 rounded-lg border border-[#1A211A] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition"
                         >
-                          Learn More
+                          {showSelectedResourceLearnMore ? 'Show Less' : 'Learn More'}
                         </button>
                       </div>
                     </div>
@@ -1413,10 +1403,7 @@ const GrowthModeSection: React.FC = () => {
 
             <div className="mt-5 rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
               <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Compatibility Insight</p>
-              <p className="mt-2 text-lg font-semibold text-[#F6FFF2]">
-                {ASSESSMENT_STYLE_META[compatibilityYourStyle].label} + {ASSESSMENT_STYLE_META[compatibilityPartnerStyle].label}
-              </p>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[#A9B5AA]">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-[#A9B5AA]">
                 <span>
                   {ASSESSMENT_STYLE_META[compatibilityYourStyle].emoji} {ASSESSMENT_STYLE_META[compatibilityYourStyle].label}
                 </span>
