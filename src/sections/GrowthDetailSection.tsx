@@ -77,8 +77,32 @@ type ModuleResourceCompletionMap = Record<string, Record<string, true>>;
 const buildModuleResourceCompletionKey = (resourceId: string, moduleId: string): string =>
   `${resourceId}::${moduleId}`;
 
-const isCommunicationSkillsModule = (title?: string): boolean =>
-  typeof title === 'string' && title.trim().toLowerCase().includes('communication skills');
+const isCommunicationSkillsModuleText = (value?: string): boolean =>
+  typeof value === 'string' && value.trim().toLowerCase().includes('communication skills');
+
+const isClearVoiceModule = (
+  module: GrowthResourceModule | null | undefined,
+  allBlogs: BlogArticle[]
+): boolean => {
+  if (!module) return false;
+  if (isCommunicationSkillsModuleText(module.title) || isCommunicationSkillsModuleText(module.description)) {
+    return true;
+  }
+
+  const linkedBlogIds = Array.isArray(module.blogIds)
+    ? module.blogIds.filter((id): id is string => typeof id === 'string')
+    : [];
+
+  return linkedBlogIds.some((blogId) => {
+    const blog = allBlogs.find((entry) => entry.id === blogId);
+    if (!blog) return false;
+    return (
+      isCommunicationSkillsModuleText(blog.title) ||
+      isCommunicationSkillsModuleText(blog.excerpt) ||
+      isCommunicationSkillsModuleText(blog.content)
+    );
+  });
+};
 
 const PATH_REFLECTION_PROMPT =
   'What is one insight or behavior from this lesson that you would like to pay attention to in your relationships?';
@@ -784,6 +808,11 @@ const GrowthDetailSection: React.FC = () => {
     setReflectionChecking(false);
   }, [selectedResourceId, selectedModuleId]);
 
+  useEffect(() => {
+    if (!selectedModuleId) return;
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [selectedModuleId]);
+
   const persistPathReflections = (nextMap: Record<string, PathReflectionRecord>) => {
     setPathReflections(nextMap);
     try {
@@ -991,7 +1020,7 @@ const GrowthDetailSection: React.FC = () => {
                   const moduleResourcesCompleted =
                     moduleBlogIds.length > 0 && moduleBlogIds.every((blogId) => !!completedMap[blogId]);
                   const showClearVoiceBadge =
-                    isCommunicationSkillsModule(mod.title) && moduleResourcesCompleted;
+                    isClearVoiceModule(mod, blogs) && moduleResourcesCompleted;
 
                   return (
                     <div
@@ -1172,7 +1201,7 @@ const GrowthDetailSection: React.FC = () => {
                 const showClearVoiceCompletionMessage =
                   hasModuleResources &&
                   resourcesCompletedForCurrentModule &&
-                  isCommunicationSkillsModule(currentModule?.title);
+                  isClearVoiceModule(currentModule, blogs);
                 const topicText = [
                   resource.title,
                   resource.category,
@@ -1224,15 +1253,15 @@ const GrowthDetailSection: React.FC = () => {
                       </p>
                     )}
                     {showClearVoiceCompletionMessage && (
-                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
-                        <p className="text-sm font-semibold text-emerald-200 mb-2">
+                      <div className="text-sm text-emerald-200 space-y-1">
+                        <p className="font-semibold">
                           Clear Voice Badge Earned
                         </p>
-                        <p className="text-sm text-emerald-100">
+                        <p className="text-emerald-100">
                           You completed the Communication Skills module and practiced balancing honesty,
                           empathy, and healthy boundaries in conversation.
                         </p>
-                        <p className="text-sm text-emerald-100 mt-2">
+                        <p className="text-emerald-100">
                           Keep practicing these skills in your daily interactions — the more you use
                           them, the more natural they become.
                         </p>
