@@ -11,6 +11,105 @@ import type { GrowthResource, BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
 import { resourceService } from '@/services/resourceService';
 
+type ModuleInputBehaviorOption = {
+  id: string;
+  option: string;
+  response: string;
+};
+
+type ModuleInputFormState = {
+  title: string;
+  moduleOnly: boolean;
+  selfAwareness: string;
+  skillBuilding: string;
+  behaviorPracticeQuestion: string;
+  behaviorPracticeOptions: ModuleInputBehaviorOption[];
+  dating: string;
+  healthyTip: string;
+  healthyConversationStarters: string;
+  author: string;
+  readTime: string;
+  published: boolean;
+};
+
+const MODULE_INPUT_CATEGORY = 'Module Input';
+const MODULE_INPUT_CONTENT_START = '[[MODULE_INPUT_JSON]]';
+const MODULE_INPUT_CONTENT_END = '[[/MODULE_INPUT_JSON]]';
+
+const createBehaviorPracticeOption = (): ModuleInputBehaviorOption => ({
+  id: `behavior-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  option: '',
+  response: '',
+});
+
+const createEmptyModuleInputForm = (): ModuleInputFormState => ({
+  title: '',
+  moduleOnly: true,
+  selfAwareness: '',
+  skillBuilding: '',
+  behaviorPracticeQuestion: '',
+  behaviorPracticeOptions: [createBehaviorPracticeOption()],
+  dating: '',
+  healthyTip: '',
+  healthyConversationStarters: '',
+  author: '',
+  readTime: '5 min',
+  published: false,
+});
+
+const buildModuleInputPayload = (form: ModuleInputFormState) => {
+  const behaviorPracticeOptions = form.behaviorPracticeOptions
+    .map((entry) => ({
+      option: entry.option.trim(),
+      response: entry.response.trim(),
+    }))
+    .filter((entry) => entry.option.length > 0 && entry.response.length > 0);
+
+  const payload = {
+    version: 1,
+    selfAwareness: form.selfAwareness.trim(),
+    skillBuilding: form.skillBuilding.trim(),
+    behaviorPractice: {
+      question: form.behaviorPracticeQuestion.trim(),
+      options: behaviorPracticeOptions,
+    },
+    dating: form.dating.trim(),
+    healthyTip: form.healthyTip.trim(),
+    healthyConversationStarters: form.healthyConversationStarters.trim(),
+  };
+
+  const behaviorSection = behaviorPracticeOptions.length
+    ? [
+        `Behavior Practice Question:\n${payload.behaviorPractice.question || 'Not provided'}`,
+        ...behaviorPracticeOptions.map(
+          (entry, idx) =>
+            `Option ${idx + 1}: ${entry.option}\nResponse:\n${entry.response}`
+        ),
+      ].join('\n\n')
+    : `Behavior Practice Question:\n${payload.behaviorPractice.question || 'Not provided'}`;
+
+  const sections = [
+    `Self-Awareness\n${payload.selfAwareness || 'Not provided.'}`,
+    `Skill Building\n${payload.skillBuilding || 'Not provided.'}`,
+    behaviorSection,
+    `Dating\n${payload.dating || 'Not provided.'}`,
+    `Healthy Tip\n${payload.healthyTip || 'Not provided.'}`,
+    `Healthy Conversation Starters\n${payload.healthyConversationStarters || 'Not provided.'}`,
+  ];
+
+  const content = `${sections.join('\n\n')}\n\n${MODULE_INPUT_CONTENT_START}\n${JSON.stringify(payload)}\n${MODULE_INPUT_CONTENT_END}`;
+  const excerptSeed =
+    payload.selfAwareness ||
+    payload.skillBuilding ||
+    payload.dating ||
+    payload.healthyTip ||
+    payload.healthyConversationStarters ||
+    'Module Input article';
+  const excerpt = excerptSeed.length > 160 ? `${excerptSeed.slice(0, 157)}...` : excerptSeed;
+
+  return { content, excerpt, behaviorPracticeOptions };
+};
+
 const AdminContentSection: React.FC = () => {
   const [resources, setResources] = useState<GrowthResource[]>(() => {
     const saved = localStorage.getItem('growth-resources');
@@ -34,6 +133,11 @@ const AdminContentSection: React.FC = () => {
   const [showBlogForm, setShowBlogForm] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [blogFormData, setBlogFormData] = useState<Partial<BlogArticle>>({});
+  const [showModuleInputForm, setShowModuleInputForm] = useState(false);
+  const [moduleInputFormData, setModuleInputFormData] = useState<ModuleInputFormState>(() =>
+    createEmptyModuleInputForm()
+  );
+  const [selectedBehaviorPreviewId, setSelectedBehaviorPreviewId] = useState<string>('');
 
   // Save resources to localStorage whenever they change
   React.useEffect(() => {
@@ -114,6 +218,131 @@ const AdminContentSection: React.FC = () => {
 
     return Object.entries(grouped).sort((a, b) => a[0].localeCompare(b[0]));
   }, [blogs]);
+
+  const selectedBehaviorPreviewOption = React.useMemo(
+    () =>
+      moduleInputFormData.behaviorPracticeOptions.find(
+        (entry) => entry.id === selectedBehaviorPreviewId
+      ) || moduleInputFormData.behaviorPracticeOptions[0] || null,
+    [moduleInputFormData.behaviorPracticeOptions, selectedBehaviorPreviewId]
+  );
+
+  React.useEffect(() => {
+    if (!moduleInputFormData.behaviorPracticeOptions.length) {
+      setSelectedBehaviorPreviewId('');
+      return;
+    }
+
+    const stillValid = moduleInputFormData.behaviorPracticeOptions.some(
+      (entry) => entry.id === selectedBehaviorPreviewId
+    );
+
+    if (!stillValid) {
+      setSelectedBehaviorPreviewId(moduleInputFormData.behaviorPracticeOptions[0].id);
+    }
+  }, [moduleInputFormData.behaviorPracticeOptions, selectedBehaviorPreviewId]);
+
+  const resetModuleInputForm = () => {
+    setModuleInputFormData(createEmptyModuleInputForm());
+    setSelectedBehaviorPreviewId('');
+  };
+
+  const openModuleInputForm = () => {
+    resetModuleInputForm();
+    setShowModuleInputForm(true);
+  };
+
+  const updateBehaviorPracticeOption = (
+    optionId: string,
+    field: 'option' | 'response',
+    value: string
+  ) => {
+    setModuleInputFormData((previous) => ({
+      ...previous,
+      behaviorPracticeOptions: previous.behaviorPracticeOptions.map((entry) =>
+        entry.id === optionId ? { ...entry, [field]: value } : entry
+      ),
+    }));
+  };
+
+  const addBehaviorPracticeOption = () => {
+    const next = createBehaviorPracticeOption();
+    setModuleInputFormData((previous) => ({
+      ...previous,
+      behaviorPracticeOptions: [...previous.behaviorPracticeOptions, next],
+    }));
+    setSelectedBehaviorPreviewId(next.id);
+  };
+
+  const removeBehaviorPracticeOption = (optionId: string) => {
+    setModuleInputFormData((previous) => {
+      const remaining = previous.behaviorPracticeOptions.filter((entry) => entry.id !== optionId);
+      if (remaining.length === 0) {
+        return { ...previous, behaviorPracticeOptions: [createBehaviorPracticeOption()] };
+      }
+      return { ...previous, behaviorPracticeOptions: remaining };
+    });
+  };
+
+  const closeModuleInputForm = () => {
+    setShowModuleInputForm(false);
+    resetModuleInputForm();
+  };
+
+  const handleCreateModuleInput = async () => {
+    const title = moduleInputFormData.title.trim();
+    const question = moduleInputFormData.behaviorPracticeQuestion.trim();
+    const hasSelfAwareness = moduleInputFormData.selfAwareness.trim().length > 0;
+    const hasSkillBuilding = moduleInputFormData.skillBuilding.trim().length > 0;
+    const { content, excerpt, behaviorPracticeOptions } = buildModuleInputPayload(moduleInputFormData);
+
+    if (!title) {
+      toast.error('Please add a title for this module input.');
+      return;
+    }
+    if (!hasSelfAwareness) {
+      toast.error('Please complete the Self-Awareness section.');
+      return;
+    }
+    if (!hasSkillBuilding) {
+      toast.error('Please complete the Skill Building section.');
+      return;
+    }
+    if (!question) {
+      toast.error('Please add a Behavior Practice question.');
+      return;
+    }
+    if (!behaviorPracticeOptions.length) {
+      toast.error('Please add at least one Behavior Practice option and response.');
+      return;
+    }
+
+    const now = Date.now();
+    const newBlog: BlogArticle = {
+      id: `blog${now}`,
+      title,
+      content,
+      category: MODULE_INPUT_CATEGORY,
+      excerpt,
+      author: moduleInputFormData.author.trim() || undefined,
+      readTime: moduleInputFormData.readTime.trim() || undefined,
+      published: moduleInputFormData.published,
+      moduleOnly: moduleInputFormData.moduleOnly,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const result = await blogService.createBlog(newBlog);
+    setBlogs((previous) => [newBlog, ...previous]);
+
+    if (result.error) {
+      toast.warning(`Module input saved locally (database error: ${result.error})`);
+    } else {
+      toast.success('Module input created and saved to database.');
+    }
+
+    closeModuleInputForm();
+  };
 
   const handleAddNew = () => {
     setFormData({
@@ -398,17 +627,20 @@ const AdminContentSection: React.FC = () => {
         <TabsContent value="blogs" className="space-y-4">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Community Blog Articles ({blogs.length})</h3>
-            <Button onClick={() => {
-              setBlogFormData({
-                title: '',
-                content: '',
-                category: '',
-                excerpt: '',
-                published: false,
-              });
-              setSelectedBlog(null);
-              setShowBlogForm(true);
-            }} className="bg-[#D9FF3D] text-[#0B0F0C] hover:bg-[#C4E622]"><Plus className="w-4 h-4 mr-2" />New Article</Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => {
+                setBlogFormData({
+                  title: '',
+                  content: '',
+                  category: '',
+                  excerpt: '',
+                  published: false,
+                });
+                setSelectedBlog(null);
+                setShowBlogForm(true);
+              }} className="bg-[#D9FF3D] text-[#0B0F0C] hover:bg-[#C4E622]"><Plus className="w-4 h-4 mr-2" />New Article</Button>
+              <Button onClick={openModuleInputForm} className="bg-[#1A211A] border border-[#2A312A] text-[#D9FF3D] hover:bg-[#252C25]"><Plus className="w-4 h-4 mr-2" />Module Input</Button>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -940,6 +1172,265 @@ const AdminContentSection: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setShowBlogForm(false)}
+                  className="flex-1 py-3 bg-[#1A211A] text-[#A9B5AA] rounded-xl font-medium hover:text-[#F6FFF2] transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Module Input Form Modal */}
+      {showModuleInputForm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-[#0B0F0C]/80 backdrop-blur-sm"
+            onClick={closeModuleInputForm}
+          />
+          <Card className="relative bg-[#111611] border-[#1A211A] p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={closeModuleInputForm}
+              className="absolute top-4 right-4 p-2 rounded-full bg-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2]"
+              aria-label="Close module input form"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h2 className="font-display text-2xl text-[#F6FFF2] mb-6">Create New Module Insert</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Title *</label>
+                <input
+                  type="text"
+                  value={moduleInputFormData.title}
+                  onChange={(e) =>
+                    setModuleInputFormData({ ...moduleInputFormData, title: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                  placeholder="Module title"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl">
+                <input
+                  type="checkbox"
+                  checked={moduleInputFormData.moduleOnly}
+                  onChange={(e) =>
+                    setModuleInputFormData({ ...moduleInputFormData, moduleOnly: e.target.checked })
+                  }
+                  className="w-4 h-4"
+                />
+                <label className="text-sm text-[#F6FFF2]">
+                  <span className="font-medium">Module-Only Article</span>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Self-Awareness *</label>
+                <textarea
+                  value={moduleInputFormData.selfAwareness}
+                  onChange={(e) =>
+                    setModuleInputFormData({
+                      ...moduleInputFormData,
+                      selfAwareness: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                  rows={3}
+                  placeholder="Add your self-awareness guidance"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Skill Building *</label>
+                <textarea
+                  value={moduleInputFormData.skillBuilding}
+                  onChange={(e) =>
+                    setModuleInputFormData({
+                      ...moduleInputFormData,
+                      skillBuilding: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                  rows={3}
+                  placeholder="Add skill-building guidance"
+                />
+              </div>
+
+              <div className="space-y-3 rounded-xl border border-[#1A211A] p-4 bg-[#0B0F0C]">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#F6FFF2]">Behavior Practice</h3>
+                <div>
+                  <label className="block text-xs font-medium text-[#A9B5AA] mb-1.5">Question *</label>
+                  <textarea
+                    value={moduleInputFormData.behaviorPracticeQuestion}
+                    onChange={(e) =>
+                      setModuleInputFormData({
+                        ...moduleInputFormData,
+                        behaviorPracticeQuestion: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-[#111611] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                    rows={2}
+                    placeholder="Add the behavior practice question"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  {moduleInputFormData.behaviorPracticeOptions.map((entry, idx) => (
+                    <div key={entry.id} className="rounded-lg border border-[#1A211A] p-3 bg-[#111611] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Option {idx + 1}</p>
+                        {moduleInputFormData.behaviorPracticeOptions.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeBehaviorPracticeOption(entry.id)}
+                            className="text-xs text-red-300 hover:text-red-200"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={entry.option}
+                        onChange={(e) => updateBehaviorPracticeOption(entry.id, 'option', e.target.value)}
+                        className="w-full px-3 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                        placeholder="Multiple-choice option"
+                      />
+                      <textarea
+                        value={entry.response}
+                        onChange={(e) => updateBehaviorPracticeOption(entry.id, 'response', e.target.value)}
+                        className="w-full px-3 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                        rows={2}
+                        placeholder="Response shown when this option is selected"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={addBehaviorPracticeOption}
+                  className="px-3 py-2 rounded-lg border border-[#2A312A] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 text-sm"
+                >
+                  + Add Option
+                </button>
+
+                <div className="space-y-2 rounded-lg border border-[#1A211A] bg-[#111611] p-3">
+                  <label className="block text-xs uppercase tracking-wide text-[#A9B5AA]">
+                    Response Preview
+                  </label>
+                  <select
+                    value={selectedBehaviorPreviewOption?.id || ''}
+                    onChange={(e) => setSelectedBehaviorPreviewId(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                  >
+                    {moduleInputFormData.behaviorPracticeOptions.map((entry, idx) => (
+                      <option key={`preview-option-${entry.id}`} value={entry.id}>
+                        {entry.option.trim() || `Option ${idx + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C] p-3 text-sm text-[#F6FFF2] min-h-[64px] whitespace-pre-wrap">
+                    {selectedBehaviorPreviewOption?.response?.trim() ||
+                      'Select an option above to preview its response.'}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Dating</label>
+                <textarea
+                  value={moduleInputFormData.dating}
+                  onChange={(e) =>
+                    setModuleInputFormData({ ...moduleInputFormData, dating: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                  rows={2}
+                  placeholder="Add dating guidance"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Healthy Tip</label>
+                <textarea
+                  value={moduleInputFormData.healthyTip}
+                  onChange={(e) =>
+                    setModuleInputFormData({ ...moduleInputFormData, healthyTip: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                  rows={2}
+                  placeholder="Add a healthy tip"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Healthy Conversation Starters</label>
+                <textarea
+                  value={moduleInputFormData.healthyConversationStarters}
+                  onChange={(e) =>
+                    setModuleInputFormData({
+                      ...moduleInputFormData,
+                      healthyConversationStarters: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                  rows={3}
+                  placeholder="Add healthy conversation starters"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Author</label>
+                  <input
+                    type="text"
+                    value={moduleInputFormData.author}
+                    onChange={(e) =>
+                      setModuleInputFormData({ ...moduleInputFormData, author: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                    placeholder="Author name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Read Time</label>
+                  <input
+                    type="text"
+                    value={moduleInputFormData.readTime}
+                    onChange={(e) =>
+                      setModuleInputFormData({ ...moduleInputFormData, readTime: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                    placeholder="e.g., 5 min"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl">
+                <input
+                  type="checkbox"
+                  checked={moduleInputFormData.published}
+                  onChange={(e) =>
+                    setModuleInputFormData({ ...moduleInputFormData, published: e.target.checked })
+                  }
+                  className="w-4 h-4"
+                />
+                <label className="text-sm text-[#F6FFF2]">Publish module input</label>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-[#1A211A]">
+                <button
+                  onClick={handleCreateModuleInput}
+                  className="flex-1 py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform"
+                >
+                  Create
+                </button>
+                <button
+                  onClick={closeModuleInputForm}
                   className="flex-1 py-3 bg-[#1A211A] text-[#A9B5AA] rounded-xl font-medium hover:text-[#F6FFF2] transition-colors"
                 >
                   Cancel

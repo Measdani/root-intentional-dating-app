@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { X, ArrowLeft, Clock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 
@@ -9,6 +9,64 @@ interface ModuleBlogModalProps {
   onBack?: () => void;
 }
 
+type ModuleInputBehaviorOption = {
+  option: string;
+  response: string;
+};
+
+type ModuleInputData = {
+  version?: number;
+  selfAwareness?: string;
+  skillBuilding?: string;
+  behaviorPractice?: {
+    question?: string;
+    options?: ModuleInputBehaviorOption[];
+  };
+  dating?: string;
+  healthyTip?: string;
+  healthyConversationStarters?: string;
+};
+
+const MODULE_INPUT_CONTENT_START = '[[MODULE_INPUT_JSON]]';
+const MODULE_INPUT_CONTENT_END = '[[/MODULE_INPUT_JSON]]';
+
+const parseModuleInputContent = (
+  content: string
+): { cleanedContent: string; moduleInputData: ModuleInputData | null } => {
+  const startIdx = content.indexOf(MODULE_INPUT_CONTENT_START);
+  const endIdx = content.indexOf(MODULE_INPUT_CONTENT_END);
+
+  if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+    return { cleanedContent: content, moduleInputData: null };
+  }
+
+  const jsonRaw = content
+    .slice(startIdx + MODULE_INPUT_CONTENT_START.length, endIdx)
+    .trim();
+
+  try {
+    const parsed = JSON.parse(jsonRaw);
+    if (!parsed || typeof parsed !== 'object') {
+      return { cleanedContent: content, moduleInputData: null };
+    }
+
+    const cleanedContent = [
+      content.slice(0, startIdx).trim(),
+      content.slice(endIdx + MODULE_INPUT_CONTENT_END.length).trim(),
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+    return { cleanedContent, moduleInputData: parsed as ModuleInputData };
+  } catch (error) {
+    console.warn('Failed to parse module input metadata:', error);
+    return { cleanedContent: content, moduleInputData: null };
+  }
+};
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0;
+
 const ModuleBlogModal: React.FC<ModuleBlogModalProps> = ({
   blog,
   isOpen,
@@ -16,6 +74,41 @@ const ModuleBlogModal: React.FC<ModuleBlogModalProps> = ({
   onBack,
 }) => {
   if (!isOpen || !blog) return null;
+
+  const { cleanedContent, moduleInputData } = useMemo(
+    () => parseModuleInputContent(blog.content || ''),
+    [blog.content]
+  );
+
+  const behaviorOptions = useMemo(() => {
+    if (!moduleInputData?.behaviorPractice?.options) return [];
+    return moduleInputData.behaviorPractice.options.filter(
+      (entry): entry is ModuleInputBehaviorOption =>
+        !!entry && isNonEmptyString(entry.option) && isNonEmptyString(entry.response)
+    );
+  }, [moduleInputData]);
+
+  const [selectedBehaviorOption, setSelectedBehaviorOption] = useState<string>('');
+
+  useEffect(() => {
+    if (!behaviorOptions.length) {
+      setSelectedBehaviorOption('');
+      return;
+    }
+
+    const hasCurrent = behaviorOptions.some((entry) => entry.option === selectedBehaviorOption);
+    if (!hasCurrent) {
+      setSelectedBehaviorOption(behaviorOptions[0].option);
+    }
+  }, [behaviorOptions, selectedBehaviorOption, blog.id]);
+
+  const selectedBehaviorResponse =
+    behaviorOptions.find((entry) => entry.option === selectedBehaviorOption)?.response || '';
+
+  const contentParagraphs = (cleanedContent || '')
+    .split('\n\n')
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
@@ -48,13 +141,97 @@ const ModuleBlogModal: React.FC<ModuleBlogModalProps> = ({
 
         {/* Content */}
         <div className="p-8">
-          <div className="prose prose-invert max-w-none text-gray-300">
-            {blog.content.split('\n\n').map((paragraph, idx) => (
-              <p key={idx} className="mb-4 leading-relaxed">
-                {paragraph}
-              </p>
-            ))}
-          </div>
+          {moduleInputData ? (
+            <div className="space-y-6">
+              {contentParagraphs.length > 0 && (
+                <div className="prose prose-invert max-w-none text-gray-300">
+                  {contentParagraphs.map((paragraph, idx) => (
+                    <p key={`content-${idx}`} className="mb-4 leading-relaxed">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              {isNonEmptyString(moduleInputData.selfAwareness) && (
+                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Self-Awareness</h3>
+                  <p className="text-[#F6FFF2] whitespace-pre-wrap">{moduleInputData.selfAwareness}</p>
+                </div>
+              )}
+
+              {isNonEmptyString(moduleInputData.skillBuilding) && (
+                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Skill Building</h3>
+                  <p className="text-[#F6FFF2] whitespace-pre-wrap">{moduleInputData.skillBuilding}</p>
+                </div>
+              )}
+
+              {(isNonEmptyString(moduleInputData.behaviorPractice?.question) || behaviorOptions.length > 0) && (
+                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4 space-y-3">
+                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA]">Behavior Practice</h3>
+                  {isNonEmptyString(moduleInputData.behaviorPractice?.question) && (
+                    <p className="text-[#F6FFF2] font-medium whitespace-pre-wrap">
+                      {moduleInputData.behaviorPractice?.question}
+                    </p>
+                  )}
+                  {behaviorOptions.length > 0 && (
+                    <>
+                      <select
+                        value={selectedBehaviorOption}
+                        onChange={(event) => setSelectedBehaviorOption(event.target.value)}
+                        className="w-full px-3 py-2 bg-[#111611] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
+                      >
+                        {behaviorOptions.map((entry, idx) => (
+                          <option key={`behavior-option-${idx}`} value={entry.option}>
+                            {entry.option}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="rounded-lg border border-[#1A211A] bg-[#111611] p-3 text-[#F6FFF2] whitespace-pre-wrap min-h-[80px]">
+                        {selectedBehaviorResponse}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {isNonEmptyString(moduleInputData.dating) && (
+                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Dating</h3>
+                  <p className="text-[#F6FFF2] whitespace-pre-wrap">{moduleInputData.dating}</p>
+                </div>
+              )}
+
+              {isNonEmptyString(moduleInputData.healthyTip) && (
+                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Healthy Tip</h3>
+                  <p className="text-[#F6FFF2] whitespace-pre-wrap">{moduleInputData.healthyTip}</p>
+                </div>
+              )}
+
+              {isNonEmptyString(moduleInputData.healthyConversationStarters) && (
+                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Healthy Conversation Starters</h3>
+                  <p className="text-[#F6FFF2] whitespace-pre-wrap">
+                    {moduleInputData.healthyConversationStarters}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="prose prose-invert max-w-none text-gray-300">
+              {(blog.content || '')
+                .split('\n\n')
+                .map((paragraph) => paragraph.trim())
+                .filter(Boolean)
+                .map((paragraph, idx) => (
+                  <p key={idx} className="mb-4 leading-relaxed">
+                    {paragraph}
+                  </p>
+                ))}
+            </div>
+          )}
         </div>
 
         {/* Footer with Navigation */}
