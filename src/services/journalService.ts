@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 export interface JournalEntry {
   id: string;
   user_id: string;
-  section_key: 'boundaries' | 'needs' | 'non-negotiables' | 'triggers' | 'connections';
+  section_key: 'notes' | 'boundaries' | 'needs' | 'non-negotiables' | 'triggers' | 'connections';
   related_user_id?: string;
   title?: string;
   content: string;

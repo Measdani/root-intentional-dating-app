@@ -5,6 +5,10 @@ import { journalService } from '@/services/journalService';
 import { X, Edit2, Trash2, Plus } from 'lucide-react';
 
 const SECTIONS = {
+  notes: {
+    title: 'Notes:',
+    description: 'Quick notes, reminders, and insights you want to keep close.',
+  },
   boundaries: {
     title: 'Boundaries',
     description: 'What you will and will not accept. Clarity here protects your peace.',
@@ -187,13 +191,13 @@ const ClarityRoomSection: React.FC = () => {
                 ))}
               </div>
 
-              {/* New Reflection Button */}
+              {/* New Entry Button */}
               <button
                 onClick={() => handleNewReflection(sectionKey as keyof typeof SECTIONS)}
                 className="w-full py-3 px-4 border border-[#D9FF3D] text-[#D9FF3D] rounded-lg hover:bg-[#D9FF3D]/10 transition flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                New Reflection
+                {sectionKey === 'notes' ? '+ New Note' : 'New Reflection'}
               </button>
             </div>
           ))}
