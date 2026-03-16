@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { ArrowLeft, BookOpen, CheckCircle, Clock, Sparkles } from 'lucide-react';
@@ -18,14 +18,18 @@ interface ModuleContent {
 const resolveModuleId = (resourceId: string, module: GrowthResourceModule, index: number): string =>
   typeof module.id === 'string' && module.id.trim().length > 0
     ? module.id
-    : `${resourceId}-module-${index + 1}`;
+    : `${resourceId}-module-${
+        Number.isFinite(module.orderIndex) && module.orderIndex > 0
+          ? module.orderIndex
+          : index + 1
+      }`;
 
 const textToList = (value: string | undefined, fallback: string): string[] => {
   const trimmed = (value || '').trim();
   if (!trimmed) return [fallback];
 
   const newlineOrBulletParts = trimmed
-    .split(/\r?\n|•/g)
+    .split(/\r?\n|�/g)
     .map((part) => part.trim().replace(/^[-*]\s*/, ''))
     .filter(Boolean);
   if (newlineOrBulletParts.length > 1) return newlineOrBulletParts;
@@ -37,6 +41,16 @@ const textToList = (value: string | undefined, fallback: string): string[] => {
   if (sentenceParts.length > 1) return sentenceParts;
 
   return [trimmed];
+};
+
+const getOrderedModules = (modules: GrowthResourceModule[] | undefined): GrowthResourceModule[] => {
+  if (!Array.isArray(modules)) return [];
+  return [...modules].sort((a, b) => {
+    const aOrder = Number.isFinite(a.orderIndex) && a.orderIndex > 0 ? a.orderIndex : Number.MAX_SAFE_INTEGER;
+    const bOrder = Number.isFinite(b.orderIndex) && b.orderIndex > 0 ? b.orderIndex : Number.MAX_SAFE_INTEGER;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (a.title || '').localeCompare(b.title || '');
+  });
 };
 
 const buildFallbackModuleContent = (module: GrowthResourceModule): ModuleContent => ({
@@ -271,14 +285,14 @@ const GrowthDetailSection: React.FC = () => {
     'g1-m1': {
       title: 'Understanding Your Emotions',
       keyPoints: [
-        'Emotions are not character flawsâ€”they\'re data. Every feeling carries information about your values, boundaries, and needs.',
+        'Emotions are not character flaws—they\'re data. Every feeling carries information about your values, boundaries, and needs.',
         'The goal isn\'t to eliminate emotions but to understand and choose your response to them.',
         'Many people were taught to suppress or deny emotions. In healthy relationships, you need to develop the capacity to feel, name, and communicate.',
         'The emotional regulation spectrum ranges from complete suppression to complete expression. Healthy regulation lives in the middle.',
         'Emotions serve a purpose: fear protects you, anger signals boundaries, sadness honors loss, joy celebrates meaning.',
       ],
       exercise: [
-        'Emotion Inventory: Over the next 3 days, write down each emotion you experience. Don\'t judge itâ€”just name it specifically.',
+        'Emotion Inventory: Over the next 3 days, write down each emotion you experience. Don\'t judge it—just name it specifically.',
         'Look for patterns: What situations trigger what emotions? What do these emotions have in common?',
         'Write a reflection: What would it feel like to accept rather than fight these emotions?',
       ],
@@ -309,7 +323,7 @@ const GrowthDetailSection: React.FC = () => {
       ],
       exercise: [
         'Try the 5-4-3-2-1 technique when you\'re calm. Notice how it feels.',
-        'Next time you feel anxious, use it. Time yourselfâ€”how long until you feel grounded?',
+        'Next time you feel anxious, use it. Time yourself—how long until you feel grounded?',
         'Combine techniques: Use box breathing + 5-4-3-2-1 together. What works best for you?',
       ],
     },
@@ -335,7 +349,7 @@ const GrowthDetailSection: React.FC = () => {
         'Accountability is: "I did this. It had this impact on you. I didn\'t intend harm, but intent doesn\'t erase impact."',
         'The three components: See your impact, own your part, commit to change.',
         'Without accountability, patterns repeat. With it, relationships deepen.',
-        'Accountability requires humilityâ€”the willingness to be wrong and grow from it.',
+        'Accountability requires humility—the willingness to be wrong and grow from it.',
       ],
       exercise: [
         'Reflect: Identify one way your behavior has impacted someone you care about.',
@@ -380,12 +394,12 @@ const GrowthDetailSection: React.FC = () => {
         'Circle back: "I said I\'d do X and I didn\'t. That matters. Here\'s my new plan."',
         'If you see a pattern: "I notice I do this thing repeatedly. I\'m working on it. I don\'t expect you to be okay with it, but I want you to know I see it."',
         'Build a "repair culture" where both of you can say "I got this wrong" without shame.',
-        'The goal isn\'t perfectionâ€”it\'s genuine effort and consistent improvement.',
+        'The goal isn\'t perfection—it\'s genuine effort and consistent improvement.',
       ],
       exercise: [
         'Identify one commitment you\'ve made that you didn\'t follow through on.',
         'Have the conversation: "I didn\'t follow through on X. Here\'s what got in the way, and here\'s my new plan."',
-        'Track your commitment: Check in weeklyâ€”are you following through?',
+        'Track your commitment: Check in weekly—are you following through?',
       ],
     },
     'g3-m1': {
@@ -395,7 +409,7 @@ const GrowthDetailSection: React.FC = () => {
         'Wholeness is interdependence: being complete in yourself while choosing deep connection.',
         'Many use relationships to fill internal voids: loneliness, lack of purpose, low self-worth.',
         'The paradox: Partners are MORE attracted to you when you\'re not desperate for them to complete you.',
-        'A strong sense of self is not selfishâ€”it\'s the foundation for healthy partnership.',
+        'A strong sense of self is not selfish—it\'s the foundation for healthy partnership.',
       ],
       exercise: [
         'Assess: On a scale of 1-10, how complete do you feel without a partner?',
@@ -422,11 +436,11 @@ const GrowthDetailSection: React.FC = () => {
     'g3-m3': {
       title: 'Building Your Self',
       keyPoints: [
-        'Spend intentional time aloneâ€”not scrolling, but being with yourself.',
+        'Spend intentional time alone—not scrolling, but being with yourself.',
         'Identify 3 non-negotiable practices that make you feel like yourself.',
         'Invest in relationships outside romance. Friendships create a healthy container for romantic love.',
         'Have goals and dreams that exist independently of partnership.',
-        'The question: "What do I want my life to look like?"â€”answer it for yourself, not your future partner.',
+        'The question: "What do I want my life to look like?"—answer it for yourself, not your future partner.',
       ],
       exercise: [
         'Solo time: Schedule 2 hours this week with just yourself. No phone, no distractions.',
@@ -446,7 +460,7 @@ const GrowthDetailSection: React.FC = () => {
       ],
       exercise: [
         'In your next conversation with your partner, share one of your goals or dreams that exists independently.',
-        'Disagree on something intentionallyâ€”notice if it feels threatening or enriching.',
+        'Disagree on something intentionally—notice if it feels threatening or enriching.',
         'Ask your partner: "What do you notice about me when I\'m connected to my own purpose?"',
       ],
     },
@@ -517,9 +531,9 @@ const GrowthDetailSection: React.FC = () => {
       title: 'Why Conflict Matters',
       keyPoints: [
         'Couples who never fight often have low emotional intimacy. They\'re avoiding, not connecting.',
-        'Conflict itself isn\'t the problemâ€”how you handle it is.',
+        'Conflict itself isn\'t the problem—how you handle it is.',
         'Conflict reveals what matters. When you disagree, you learn your partner\'s values.',
-        'The couples who stay together aren\'t those who avoid conflictâ€”they\'re those who repair after it.',
+        'The couples who stay together aren\'t those who avoid conflict—they\'re those who repair after it.',
         'Unresolved conflict corrodes intimacy. Resolved conflict deepens it.',
       ],
       exercise: [
@@ -579,8 +593,12 @@ const GrowthDetailSection: React.FC = () => {
   };
 
   const resource = selectedResourceId ? resources.find((entry) => entry.id === selectedResourceId) : null;
-  const selectedModule = resource && selectedModuleId && Array.isArray(resource.modules)
-    ? resource.modules.find((module, index) => resolveModuleId(resource.id, module, index) === selectedModuleId) ?? null
+  const orderedResourceModules = useMemo(
+    () => (resource ? getOrderedModules(resource.modules) : []),
+    [resource]
+  );
+  const selectedModule = resource && selectedModuleId
+    ? orderedResourceModules.find((module, index) => resolveModuleId(resource.id, module, index) === selectedModuleId) ?? null
     : null;
   const content = selectedModuleId
     ? (moduleContent[selectedModuleId] ?? (selectedModule ? buildFallbackModuleContent(selectedModule) : null))
@@ -596,9 +614,40 @@ const GrowthDetailSection: React.FC = () => {
       const targetResource = matchedResource ?? resources[0] ?? null;
       if (targetResource) {
         setSelectedResourceId(targetResource.id);
-        const firstModule = Array.isArray(targetResource.modules) ? targetResource.modules[0] : null;
-        const firstModuleId = firstModule ? resolveModuleId(targetResource.id, firstModule, 0) : null;
-        setSelectedModuleId(firstModuleId);
+        const orderedModules = getOrderedModules(targetResource.modules);
+        const moduleIds = orderedModules.map((module, index) =>
+          resolveModuleId(targetResource.id, module, index)
+        );
+        let targetModuleId = moduleIds[0] ?? null;
+
+        try {
+          const savedProgressRaw = localStorage.getItem(progressStorageKey);
+          const savedProgress = savedProgressRaw ? JSON.parse(savedProgressRaw) : {};
+          const resourceProgress = savedProgress?.[targetResource.id];
+          const viewedModuleIds = Array.isArray(resourceProgress?.viewedModuleIds)
+            ? resourceProgress.viewedModuleIds.filter((id: unknown): id is string => typeof id === 'string')
+            : [];
+          const lastViewedModuleId =
+            typeof resourceProgress?.lastViewedModuleId === 'string'
+              ? resourceProgress.lastViewedModuleId
+              : null;
+          const hasStarted = viewedModuleIds.length > 0 || !!lastViewedModuleId;
+
+          if (hasStarted) {
+            if (lastViewedModuleId && moduleIds.includes(lastViewedModuleId)) {
+              targetModuleId = lastViewedModuleId;
+            } else {
+              const lastValidViewed = viewedModuleIds.filter((id: string) => moduleIds.includes(id)).at(-1) ?? null;
+              if (lastValidViewed) {
+                targetModuleId = lastValidViewed;
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to resolve module resume state:', error);
+        }
+
+        setSelectedModuleId(targetModuleId);
       }
       return;
     }
@@ -614,19 +663,18 @@ const GrowthDetailSection: React.FC = () => {
     }
 
     setSelectedResourceId(resources[0]?.id ?? null);
-  }, [prefillResourceKey, resources, selectedResourceId, startResourceKey]);
+  }, [prefillResourceKey, progressStorageKey, resources, selectedResourceId, startResourceKey]);
 
   useEffect(() => {
     if (!resource || !selectedModuleId || !Array.isArray(resource.modules) || resource.modules.length === 0) {
       return;
     }
 
-    const hasMatchingModule = resource.modules.some((module, index) =>
-      resolveModuleId(resource.id, module, index) === selectedModuleId
-    );
+    const orderedModules = getOrderedModules(resource.modules);
+    const hasMatchingModule = orderedModules.some((module, index) => resolveModuleId(resource.id, module, index) === selectedModuleId);
 
     if (!hasMatchingModule) {
-      setSelectedModuleId(resolveModuleId(resource.id, resource.modules[0], 0));
+      setSelectedModuleId(resolveModuleId(resource.id, orderedModules[0], 0));
     }
   }, [resource, selectedModuleId]);
 
@@ -636,11 +684,8 @@ const GrowthDetailSection: React.FC = () => {
     const currentResource = resources.find((r) => r.id === selectedResourceId);
     if (!currentResource) return;
 
-    const moduleIds = (currentResource.modules || []).map((module, index) =>
-      typeof module?.id === 'string' && module.id.trim().length > 0
-        ? module.id
-        : `${selectedResourceId}-module-${index + 1}`
-    );
+    const orderedModules = getOrderedModules(currentResource.modules);
+    const moduleIds = orderedModules.map((module, index) => resolveModuleId(selectedResourceId, module, index));
     const totalModules = moduleIds.length;
     if (totalModules === 0) return;
 
@@ -661,6 +706,7 @@ const GrowthDetailSection: React.FC = () => {
         [selectedResourceId]: {
           viewedModuleIds: Array.from(viewedSet),
           totalModules: Math.max(Number(current.totalModules) || 0, totalModules),
+          lastViewedModuleId: moduleId,
           updatedAt: Date.now(),
         },
       };
@@ -844,7 +890,7 @@ const GrowthDetailSection: React.FC = () => {
               <p className="text-gray-400 text-lg mb-4">{resource?.description}</p>
               <p className="text-sm text-gray-500 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                {resource?.estimatedTime} • {resource?.modules?.length} modules
+                {resource?.estimatedTime} � {orderedResourceModules.length} modules
               </p>
               {resource?.learningOutcomes && resource.learningOutcomes.length > 0 && (
                 <div className="mt-4 rounded-lg border border-[#1A211A] bg-[#111611] p-4">
@@ -868,7 +914,7 @@ const GrowthDetailSection: React.FC = () => {
             </div>
 
             <div className="grid gap-4">
-              {resource?.modules?.map((mod, idx) => (
+              {resource && orderedResourceModules.map((mod, idx) => (
                 <div
                   key={resolveModuleId(resource.id, mod, idx)}
                   onClick={() => setSelectedModuleId(resolveModuleId(resource.id, mod, idx))}
@@ -885,7 +931,7 @@ const GrowthDetailSection: React.FC = () => {
                       <p className="text-gray-400">{mod.description}</p>
                     </div>
                     <div className="ml-4 flex-shrink-0">
-                      <div className="text-[#D9FF3D] group-hover:translate-x-1 transition">â†’</div>
+                      <div className="text-[#D9FF3D] group-hover:translate-x-1 transition">-&gt;</div>
                     </div>
                   </div>
                 </div>
@@ -966,7 +1012,7 @@ const GrowthDetailSection: React.FC = () => {
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
                               <h4 className="font-bold text-white mb-1 group-hover:text-[#D9FF3D] transition">
-                                ðŸ“„ {blog.title}
+                                📄 {blog.title}
                               </h4>
                               {(blog.content || blog.excerpt) && (
                                 <p className="text-sm text-gray-400">
@@ -980,7 +1026,7 @@ const GrowthDetailSection: React.FC = () => {
                                 </p>
                               )}
                             </div>
-                            <span className="text-[#D9FF3D] opacity-0 group-hover:opacity-100 transition">â†’</span>
+                            <span className="text-[#D9FF3D] opacity-0 group-hover:opacity-100 transition">-&gt;</span>
                           </div>
                         </button>
                       ))}
@@ -991,16 +1037,16 @@ const GrowthDetailSection: React.FC = () => {
             })()}
 
             {/* Navigation to Next Module */}
-            {resource?.modules && selectedModuleId && (
+            {resource && orderedResourceModules.length > 0 && selectedModuleId && (
               (() => {
-                const currentIdx = resource.modules.findIndex((module, index) =>
+                const currentIdx = orderedResourceModules.findIndex((module, index) =>
                   resolveModuleId(resource.id, module, index) === selectedModuleId
                 );
                 const hasResolvedIndex = currentIdx >= 0;
                 const hasPrev = hasResolvedIndex && currentIdx > 0;
-                const hasNext = hasResolvedIndex && currentIdx < (resource.modules?.length ?? 0) - 1;
+                const hasNext = hasResolvedIndex && currentIdx < orderedResourceModules.length - 1;
                 const isLastModule = hasResolvedIndex && !hasNext;
-                const currentModule = hasResolvedIndex ? resource.modules[currentIdx] : selectedModule;
+                const currentModule = hasResolvedIndex ? orderedResourceModules[currentIdx] : selectedModule;
                 const topicText = [
                   resource.title,
                   resource.category,
@@ -1020,7 +1066,7 @@ const GrowthDetailSection: React.FC = () => {
                       {hasPrev && (
                         <button
                           onClick={() => {
-                            const prevModule = resource.modules?.[currentIdx - 1];
+                            const prevModule = orderedResourceModules[currentIdx - 1];
                             if (prevModule) {
                               setSelectedModuleId(resolveModuleId(resource.id, prevModule, currentIdx - 1));
                             }
@@ -1033,7 +1079,7 @@ const GrowthDetailSection: React.FC = () => {
                       {hasNext && (
                         <button
                           onClick={() => {
-                            const nextModule = resource.modules?.[currentIdx + 1];
+                            const nextModule = orderedResourceModules[currentIdx + 1];
                             if (nextModule) {
                               setSelectedModuleId(resolveModuleId(resource.id, nextModule, currentIdx + 1));
                             }
@@ -1106,5 +1152,8 @@ const GrowthDetailSection: React.FC = () => {
 };
 
 export default GrowthDetailSection;
+
+
+
 
 
