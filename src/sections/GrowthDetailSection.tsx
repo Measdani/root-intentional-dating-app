@@ -77,6 +77,9 @@ type ModuleResourceCompletionMap = Record<string, Record<string, true>>;
 const buildModuleResourceCompletionKey = (resourceId: string, moduleId: string): string =>
   `${resourceId}::${moduleId}`;
 
+const isCommunicationSkillsModule = (title?: string): boolean =>
+  typeof title === 'string' && title.trim().toLowerCase().includes('communication skills');
+
 const PATH_REFLECTION_PROMPT =
   'What is one insight or behavior from this lesson that you would like to pay attention to in your relationships?';
 
@@ -972,26 +975,46 @@ const GrowthDetailSection: React.FC = () => {
 
             <div className="grid gap-4">
               {resource && orderedResourceModules.map((mod, idx) => (
-                <div
-                  key={resolveModuleId(resource.id, mod, idx)}
-                  onClick={() => setSelectedModuleId(resolveModuleId(resource.id, mod, idx))}
-                  className="bg-[#111611] border border-[#1A211A] rounded-lg p-6 cursor-pointer hover:border-[#D9FF3D] transition group"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#D9FF3D]/10 flex items-center justify-center font-bold text-[#D9FF3D]">
-                      {idx + 1}
+                (() => {
+                  const moduleId = resolveModuleId(resource.id, mod, idx);
+                  const completionKey = buildModuleResourceCompletionKey(resource.id, moduleId);
+                  const completedMap = moduleResourceCompletions[completionKey] || {};
+                  const moduleBlogIds = ((mod.blogIds || []).filter(
+                    (id): id is string => typeof id === 'string'
+                  )).filter((blogId) => blogs.some((blog) => blog.id === blogId));
+                  const moduleResourcesCompleted =
+                    moduleBlogIds.length > 0 && moduleBlogIds.every((blogId) => !!completedMap[blogId]);
+                  const showClearVoiceBadge =
+                    isCommunicationSkillsModule(mod.title) && moduleResourcesCompleted;
+
+                  return (
+                    <div
+                      key={moduleId}
+                      onClick={() => setSelectedModuleId(moduleId)}
+                      className="bg-[#111611] border border-[#1A211A] rounded-lg p-6 cursor-pointer hover:border-[#D9FF3D] transition group"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#D9FF3D]/10 flex items-center justify-center font-bold text-[#D9FF3D]">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold mb-2 group-hover:text-[#D9FF3D] transition">
+                            {mod.title}
+                          </h3>
+                          <p className="text-gray-400">{mod.description}</p>
+                        </div>
+                        <div className="ml-4 flex-shrink-0 text-right">
+                          {showClearVoiceBadge && (
+                            <p className="text-[11px] uppercase tracking-wide text-emerald-300 mb-1 whitespace-nowrap">
+                              Clear Voice Badge Earned
+                            </p>
+                          )}
+                          <div className="text-[#D9FF3D] group-hover:translate-x-1 transition">-&gt;</div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold mb-2 group-hover:text-[#D9FF3D] transition">
-                        {mod.title}
-                      </h3>
-                      <p className="text-gray-400">{mod.description}</p>
-                    </div>
-                    <div className="ml-4 flex-shrink-0">
-                      <div className="text-[#D9FF3D] group-hover:translate-x-1 transition">-&gt;</div>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()
               ))}
             </div>
           </div>
@@ -1140,6 +1163,10 @@ const GrowthDetailSection: React.FC = () => {
                 const resourcesCompletedForCurrentModule =
                   !hasModuleResources || currentModuleBlogIds.every((blogId) => !!currentCompletedMap[blogId]);
                 const nextButtonDisabled = hasNext && !resourcesCompletedForCurrentModule;
+                const showClearVoiceCompletionMessage =
+                  hasModuleResources &&
+                  resourcesCompletedForCurrentModule &&
+                  isCommunicationSkillsModule(currentModule?.title);
                 const topicText = [
                   resource.title,
                   resource.category,
@@ -1189,6 +1216,21 @@ const GrowthDetailSection: React.FC = () => {
                       <p className="text-sm text-amber-300">
                         Complete all Module Resources in this module to unlock Next Module.
                       </p>
+                    )}
+                    {showClearVoiceCompletionMessage && (
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+                        <p className="text-sm font-semibold text-emerald-200 mb-2">
+                          Clear Voice Badge Earned
+                        </p>
+                        <p className="text-sm text-emerald-100">
+                          You completed the Communication Skills module and practiced balancing honesty,
+                          empathy, and healthy boundaries in conversation.
+                        </p>
+                        <p className="text-sm text-emerald-100 mt-2">
+                          Keep practicing these skills in your daily interactions — the more you use
+                          them, the more natural they become.
+                        </p>
+                      </div>
                     )}
 
                     {isLastModule && !completedReflection && selectedResourceId && (
