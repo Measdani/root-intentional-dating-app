@@ -197,7 +197,7 @@ const ClarityRoomSection: React.FC = () => {
                 className="w-full py-3 px-4 border border-[#D9FF3D] text-[#D9FF3D] rounded-lg hover:bg-[#D9FF3D]/10 transition flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                {sectionKey === 'notes' ? '+ New Note' : 'New Reflection'}
+                {sectionKey === 'notes' ? 'New Note' : 'New Reflection'}
               </button>
             </div>
           ))}
