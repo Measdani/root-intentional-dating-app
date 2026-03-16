@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import { ArrowLeft, BookOpen, CheckCircle, Clock, Sparkles } from 'lucide-react';
@@ -29,7 +29,7 @@ const textToList = (value: string | undefined, fallback: string): string[] => {
   if (!trimmed) return [fallback];
 
   const newlineOrBulletParts = trimmed
-    .split(/\r?\n|�/g)
+    .split(/\r?\n|•/g)
     .map((part) => part.trim().replace(/^[-*]\s*/, ''))
     .filter(Boolean);
   if (newlineOrBulletParts.length > 1) return newlineOrBulletParts;
@@ -71,6 +71,11 @@ type PathReflectionRecord = {
   moduleId?: string;
   resourceStyle?: AssessmentCoreStyle;
 };
+
+type ModuleResourceCompletionMap = Record<string, Record<string, true>>;
+
+const buildModuleResourceCompletionKey = (resourceId: string, moduleId: string): string =>
+  `${resourceId}::${moduleId}`;
 
 const PATH_REFLECTION_PROMPT =
   'What is one insight or behavior from this lesson that you would like to pay attention to in your relationships?';
@@ -211,9 +216,13 @@ const GrowthDetailSection: React.FC = () => {
   const [resources, setResources] = useState(growthResources);
   const progressStorageKey = `rooted_growth_module_progress_${currentUser.id}`;
   const reflectionStorageKey = `rooted_growth_path_reflections_${currentUser.id}`;
+  const moduleResourceCompletionStorageKey =
+    `rooted_growth_module_resource_completion_${currentUser.id}`;
   const prefillResourceKey = 'rooted_growth_detail_prefill_resource_id';
   const startResourceKey = 'rooted_growth_detail_start_resource_id';
   const [pathReflections, setPathReflections] = useState<Record<string, PathReflectionRecord>>({});
+  const [moduleResourceCompletions, setModuleResourceCompletions] =
+    useState<ModuleResourceCompletionMap>({});
   const [completionReflection, setCompletionReflection] = useState('');
   const [reflectionFeedback, setReflectionFeedback] = useState<string | null>(null);
   const [reflectionChecking, setReflectionChecking] = useState(false);
@@ -285,14 +294,14 @@ const GrowthDetailSection: React.FC = () => {
     'g1-m1': {
       title: 'Understanding Your Emotions',
       keyPoints: [
-        'Emotions are not character flaws—they\'re data. Every feeling carries information about your values, boundaries, and needs.',
+        'Emotions are not character flawsâ€”they\'re data. Every feeling carries information about your values, boundaries, and needs.',
         'The goal isn\'t to eliminate emotions but to understand and choose your response to them.',
         'Many people were taught to suppress or deny emotions. In healthy relationships, you need to develop the capacity to feel, name, and communicate.',
         'The emotional regulation spectrum ranges from complete suppression to complete expression. Healthy regulation lives in the middle.',
         'Emotions serve a purpose: fear protects you, anger signals boundaries, sadness honors loss, joy celebrates meaning.',
       ],
       exercise: [
-        'Emotion Inventory: Over the next 3 days, write down each emotion you experience. Don\'t judge it—just name it specifically.',
+        'Emotion Inventory: Over the next 3 days, write down each emotion you experience. Don\'t judge itâ€”just name it specifically.',
         'Look for patterns: What situations trigger what emotions? What do these emotions have in common?',
         'Write a reflection: What would it feel like to accept rather than fight these emotions?',
       ],
@@ -323,7 +332,7 @@ const GrowthDetailSection: React.FC = () => {
       ],
       exercise: [
         'Try the 5-4-3-2-1 technique when you\'re calm. Notice how it feels.',
-        'Next time you feel anxious, use it. Time yourself—how long until you feel grounded?',
+        'Next time you feel anxious, use it. Time yourselfâ€”how long until you feel grounded?',
         'Combine techniques: Use box breathing + 5-4-3-2-1 together. What works best for you?',
       ],
     },
@@ -349,7 +358,7 @@ const GrowthDetailSection: React.FC = () => {
         'Accountability is: "I did this. It had this impact on you. I didn\'t intend harm, but intent doesn\'t erase impact."',
         'The three components: See your impact, own your part, commit to change.',
         'Without accountability, patterns repeat. With it, relationships deepen.',
-        'Accountability requires humility—the willingness to be wrong and grow from it.',
+        'Accountability requires humilityâ€”the willingness to be wrong and grow from it.',
       ],
       exercise: [
         'Reflect: Identify one way your behavior has impacted someone you care about.',
@@ -394,12 +403,12 @@ const GrowthDetailSection: React.FC = () => {
         'Circle back: "I said I\'d do X and I didn\'t. That matters. Here\'s my new plan."',
         'If you see a pattern: "I notice I do this thing repeatedly. I\'m working on it. I don\'t expect you to be okay with it, but I want you to know I see it."',
         'Build a "repair culture" where both of you can say "I got this wrong" without shame.',
-        'The goal isn\'t perfection—it\'s genuine effort and consistent improvement.',
+        'The goal isn\'t perfectionâ€”it\'s genuine effort and consistent improvement.',
       ],
       exercise: [
         'Identify one commitment you\'ve made that you didn\'t follow through on.',
         'Have the conversation: "I didn\'t follow through on X. Here\'s what got in the way, and here\'s my new plan."',
-        'Track your commitment: Check in weekly—are you following through?',
+        'Track your commitment: Check in weeklyâ€”are you following through?',
       ],
     },
     'g3-m1': {
@@ -409,7 +418,7 @@ const GrowthDetailSection: React.FC = () => {
         'Wholeness is interdependence: being complete in yourself while choosing deep connection.',
         'Many use relationships to fill internal voids: loneliness, lack of purpose, low self-worth.',
         'The paradox: Partners are MORE attracted to you when you\'re not desperate for them to complete you.',
-        'A strong sense of self is not selfish—it\'s the foundation for healthy partnership.',
+        'A strong sense of self is not selfishâ€”it\'s the foundation for healthy partnership.',
       ],
       exercise: [
         'Assess: On a scale of 1-10, how complete do you feel without a partner?',
@@ -436,11 +445,11 @@ const GrowthDetailSection: React.FC = () => {
     'g3-m3': {
       title: 'Building Your Self',
       keyPoints: [
-        'Spend intentional time alone—not scrolling, but being with yourself.',
+        'Spend intentional time aloneâ€”not scrolling, but being with yourself.',
         'Identify 3 non-negotiable practices that make you feel like yourself.',
         'Invest in relationships outside romance. Friendships create a healthy container for romantic love.',
         'Have goals and dreams that exist independently of partnership.',
-        'The question: "What do I want my life to look like?"—answer it for yourself, not your future partner.',
+        'The question: "What do I want my life to look like?"â€”answer it for yourself, not your future partner.',
       ],
       exercise: [
         'Solo time: Schedule 2 hours this week with just yourself. No phone, no distractions.',
@@ -460,7 +469,7 @@ const GrowthDetailSection: React.FC = () => {
       ],
       exercise: [
         'In your next conversation with your partner, share one of your goals or dreams that exists independently.',
-        'Disagree on something intentionally—notice if it feels threatening or enriching.',
+        'Disagree on something intentionallyâ€”notice if it feels threatening or enriching.',
         'Ask your partner: "What do you notice about me when I\'m connected to my own purpose?"',
       ],
     },
@@ -531,9 +540,9 @@ const GrowthDetailSection: React.FC = () => {
       title: 'Why Conflict Matters',
       keyPoints: [
         'Couples who never fight often have low emotional intimacy. They\'re avoiding, not connecting.',
-        'Conflict itself isn\'t the problem—how you handle it is.',
+        'Conflict itself isn\'t the problemâ€”how you handle it is.',
         'Conflict reveals what matters. When you disagree, you learn your partner\'s values.',
-        'The couples who stay together aren\'t those who avoid conflict—they\'re those who repair after it.',
+        'The couples who stay together aren\'t those who avoid conflictâ€”they\'re those who repair after it.',
         'Unresolved conflict corrodes intimacy. Resolved conflict deepens it.',
       ],
       exercise: [
@@ -737,6 +746,36 @@ const GrowthDetailSection: React.FC = () => {
   }, [reflectionStorageKey]);
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(moduleResourceCompletionStorageKey);
+      if (!saved) {
+        setModuleResourceCompletions({});
+        return;
+      }
+      const parsed = JSON.parse(saved);
+      if (!parsed || typeof parsed !== 'object') {
+        setModuleResourceCompletions({});
+        return;
+      }
+      setModuleResourceCompletions(parsed as ModuleResourceCompletionMap);
+    } catch (error) {
+      console.warn('Failed to load module resource completions:', error);
+      setModuleResourceCompletions({});
+    }
+  }, [moduleResourceCompletionStorageKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        moduleResourceCompletionStorageKey,
+        JSON.stringify(moduleResourceCompletions)
+      );
+    } catch (error) {
+      console.warn('Failed to persist module resource completions:', error);
+    }
+  }, [moduleResourceCompletions, moduleResourceCompletionStorageKey]);
+
+  useEffect(() => {
     setCompletionReflection('');
     setReflectionFeedback(null);
     setReflectionChecking(false);
@@ -836,6 +875,24 @@ const GrowthDetailSection: React.FC = () => {
     setReflectionChecking(false);
   };
 
+  const handleCompleteModuleResource = () => {
+    if (!selectedBlog || !selectedResourceId || !selectedModuleId) {
+      setSelectedBlog(null);
+      return;
+    }
+
+    const completionKey = buildModuleResourceCompletionKey(selectedResourceId, selectedModuleId);
+    setModuleResourceCompletions((previous) => ({
+      ...previous,
+      [completionKey]: {
+        ...(previous[completionKey] || {}),
+        [selectedBlog.id]: true,
+      },
+    }));
+
+    setSelectedBlog(null);
+  };
+
   return (
     <div className="min-h-screen bg-[#0F140F] text-white">
       {/* Header */}
@@ -854,7 +911,7 @@ const GrowthDetailSection: React.FC = () => {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-bold">Growth Mastery</h1>
+            <h1 className="text-2xl font-bold">Garden Mastery</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -890,7 +947,7 @@ const GrowthDetailSection: React.FC = () => {
               <p className="text-gray-400 text-lg mb-4">{resource?.description}</p>
               <p className="text-sm text-gray-500 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                {resource?.estimatedTime} � {orderedResourceModules.length} modules
+                {resource?.estimatedTime} • {orderedResourceModules.length} modules
               </p>
               {resource?.learningOutcomes && resource.learningOutcomes.length > 0 && (
                 <div className="mt-4 rounded-lg border border-[#1A211A] bg-[#111611] p-4">
@@ -980,6 +1037,11 @@ const GrowthDetailSection: React.FC = () => {
             {/* Module Resources */}
             {(() => {
               const moduleBlogIds = selectedModule?.blogIds || [];
+              const completionKey =
+                resource && selectedModuleId
+                  ? buildModuleResourceCompletionKey(resource.id, selectedModuleId)
+                  : null;
+              const completedMap = completionKey ? moduleResourceCompletions[completionKey] || {} : {};
               console.log('[GrowthDetailSection] Module render:', {
                 moduleId: selectedModule?.id,
                 blogIds: moduleBlogIds,
@@ -996,40 +1058,57 @@ const GrowthDetailSection: React.FC = () => {
 
               console.log('[GrowthDetailSection] Matched blogs:', moduleBogs.length);
               if (moduleBogs.length > 0) {
+                const completedCount = moduleBogs.filter((blog) => !!completedMap[blog.id]).length;
                 return (
                   <div className="bg-[#111611] border border-[#D9FF3D]/20 rounded-lg p-8">
-                    <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                      <BookOpen className="w-6 h-6 text-[#D9FF3D]" />
-                      Module Resources
-                    </h3>
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                      <h3 className="text-2xl font-bold flex items-center gap-3">
+                        <BookOpen className="w-6 h-6 text-[#D9FF3D]" />
+                        Module Resources
+                      </h3>
+                      <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">
+                        Completed {completedCount}/{moduleBogs.length}
+                      </p>
+                    </div>
                     <div className="space-y-3">
-                      {moduleBogs.map((blog) => (
-                        <button
-                          key={blog.id}
-                          onClick={() => setSelectedBlog(blog)}
-                          className="w-full text-left bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4 hover:border-[#D9FF3D] transition group"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <h4 className="font-bold text-white mb-1 group-hover:text-[#D9FF3D] transition">
-                                📄 {blog.title}
-                              </h4>
-                              {(blog.content || blog.excerpt) && (
-                                <p className="text-sm text-gray-400">
-                                  {`${(blog.content || blog.excerpt || '').slice(0, 180)}${(blog.content || blog.excerpt || '').length > 180 ? '...' : ''}`}
-                                </p>
-                              )}
-                              {blog.readTime && (
-                                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {blog.readTime} read
-                                </p>
-                              )}
+                      {moduleBogs.map((blog) => {
+                        const isCompleted = !!completedMap[blog.id];
+                        const previewText = blog.excerpt || blog.content || '';
+                        return (
+                          <button
+                            key={blog.id}
+                            onClick={() => setSelectedBlog(blog)}
+                            className="w-full text-left bg-[#0B0F0C] border border-[#1A211A] rounded-lg p-4 hover:border-[#D9FF3D] transition group"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-bold text-white group-hover:text-[#D9FF3D] transition">
+                                    {blog.title}
+                                  </h4>
+                                  {isCompleted && (
+                                    <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                      Completed
+                                    </span>
+                                  )}
+                                </div>
+                                {previewText && (
+                                  <p className="text-sm text-gray-400">
+                                    {`${previewText.slice(0, 180)}${previewText.length > 180 ? '...' : ''}`}
+                                  </p>
+                                )}
+                                {blog.readTime && (
+                                  <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {blog.readTime} read
+                                  </p>
+                                )}
+                              </div>
+                              <span className="text-[#D9FF3D] opacity-0 group-hover:opacity-100 transition">&gt;</span>
                             </div>
-                            <span className="text-[#D9FF3D] opacity-0 group-hover:opacity-100 transition">-&gt;</span>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -1047,6 +1126,20 @@ const GrowthDetailSection: React.FC = () => {
                 const hasNext = hasResolvedIndex && currentIdx < orderedResourceModules.length - 1;
                 const isLastModule = hasResolvedIndex && !hasNext;
                 const currentModule = hasResolvedIndex ? orderedResourceModules[currentIdx] : selectedModule;
+                const currentModuleBlogIds = ((currentModule?.blogIds || []).filter(
+                  (id): id is string => typeof id === 'string'
+                )).filter((blogId) => blogs.some((blog) => blog.id === blogId));
+                const currentCompletionKey =
+                  selectedResourceId && selectedModuleId
+                    ? buildModuleResourceCompletionKey(selectedResourceId, selectedModuleId)
+                    : null;
+                const currentCompletedMap = currentCompletionKey
+                  ? moduleResourceCompletions[currentCompletionKey] || {}
+                  : {};
+                const hasModuleResources = currentModuleBlogIds.length > 0;
+                const resourcesCompletedForCurrentModule =
+                  !hasModuleResources || currentModuleBlogIds.every((blogId) => !!currentCompletedMap[blogId]);
+                const nextButtonDisabled = hasNext && !resourcesCompletedForCurrentModule;
                 const topicText = [
                   resource.title,
                   resource.category,
@@ -1084,12 +1177,19 @@ const GrowthDetailSection: React.FC = () => {
                               setSelectedModuleId(resolveModuleId(resource.id, nextModule, currentIdx + 1));
                             }
                           }}
-                          className="flex-1 py-3 px-4 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg hover:bg-white transition font-bold"
+                          disabled={nextButtonDisabled}
+                          className="flex-1 py-3 px-4 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg hover:bg-white transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#D9FF3D]"
                         >
                           Next Module
                         </button>
                       )}
                     </div>
+
+                    {nextButtonDisabled && (
+                      <p className="text-sm text-amber-300">
+                        Complete all Module Resources in this module to unlock Next Module.
+                      </p>
+                    )}
 
                     {isLastModule && !completedReflection && selectedResourceId && (
                       <div className="rounded-xl border border-[#D9FF3D]/30 bg-[#111611] p-6 space-y-4">
@@ -1146,12 +1246,14 @@ const GrowthDetailSection: React.FC = () => {
         isOpen={!!selectedBlog}
         onClose={() => setSelectedBlog(null)}
         onBack={() => setSelectedBlog(null)}
+        onComplete={handleCompleteModuleResource}
       />
     </div>
   );
 };
 
 export default GrowthDetailSection;
+
 
 
 

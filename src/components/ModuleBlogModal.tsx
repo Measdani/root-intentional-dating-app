@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, ArrowLeft, Clock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 
@@ -7,6 +7,7 @@ interface ModuleBlogModalProps {
   isOpen: boolean;
   onClose: () => void;
   onBack?: () => void;
+  onComplete?: () => void;
 }
 
 type ModuleInputBehaviorOption = {
@@ -72,6 +73,7 @@ const ModuleBlogModal: React.FC<ModuleBlogModalProps> = ({
   isOpen,
   onClose,
   onBack,
+  onComplete,
 }) => {
   if (!isOpen || !blog) return null;
 
@@ -98,17 +100,46 @@ const ModuleBlogModal: React.FC<ModuleBlogModalProps> = ({
 
     const hasCurrent = behaviorOptions.some((entry) => entry.option === selectedBehaviorOption);
     if (!hasCurrent) {
-      setSelectedBehaviorOption(behaviorOptions[0].option);
+      setSelectedBehaviorOption('');
     }
   }, [behaviorOptions, selectedBehaviorOption, blog.id]);
 
   const selectedBehaviorResponse =
     behaviorOptions.find((entry) => entry.option === selectedBehaviorOption)?.response || '';
 
-  const contentParagraphs = (cleanedContent || '')
-    .split('\n\n')
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [hasScrolledToEnd, setHasScrolledToEnd] = useState(false);
+
+  const updateScrollCompletion = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const reachedBottom =
+      container.scrollTop + container.clientHeight >= container.scrollHeight - 8;
+    setHasScrolledToEnd(reachedBottom);
+  };
+
+  useEffect(() => {
+    setHasScrolledToEnd(false);
+    const frame = window.requestAnimationFrame(() => {
+      updateScrollCompletion();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [blog.id, cleanedContent, moduleInputData, behaviorOptions.length]);
+
+  const requiresBehaviorSelection = !!moduleInputData && behaviorOptions.length > 0;
+  const hasSelectedBehaviorOption = selectedBehaviorOption.trim().length > 0;
+  const canComplete =
+    hasScrolledToEnd && (!requiresBehaviorSelection || hasSelectedBehaviorOption);
+
+  const handleComplete = () => {
+    if (!canComplete) return;
+    if (onComplete) {
+      onComplete();
+      return;
+    }
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
@@ -116,7 +147,11 @@ const ModuleBlogModal: React.FC<ModuleBlogModalProps> = ({
         className="absolute inset-0 bg-[#0B0F0C]/90 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-[#111611] border border-[#1A211A] rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div
+        ref={scrollContainerRef}
+        onScroll={updateScrollCompletion}
+        className="relative bg-[#111611] border border-[#1A211A] rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+      >
         {/* Header */}
         <div className="sticky top-0 bg-[#111611] border-b border-[#1A211A] px-6 py-4 flex items-center justify-between">
           <div className="flex-1">
@@ -143,33 +178,23 @@ const ModuleBlogModal: React.FC<ModuleBlogModalProps> = ({
         <div className="p-8">
           {moduleInputData ? (
             <div className="space-y-6">
-              {contentParagraphs.length > 0 && (
-                <div className="prose prose-invert max-w-none text-gray-300">
-                  {contentParagraphs.map((paragraph, idx) => (
-                    <p key={`content-${idx}`} className="mb-4 leading-relaxed">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              )}
-
               {isNonEmptyString(moduleInputData.selfAwareness) && (
-                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
-                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Self-Awareness</h3>
+                <div className="rounded-xl border border-[#2A312A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-[#D9FF3D] mb-2">Self-Awareness</h3>
                   <p className="text-[#F6FFF2] whitespace-pre-wrap">{moduleInputData.selfAwareness}</p>
                 </div>
               )}
 
               {isNonEmptyString(moduleInputData.skillBuilding) && (
-                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
-                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Skill Building</h3>
+                <div className="rounded-xl border border-[#2A312A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-[#D9FF3D] mb-2">Skill Building</h3>
                   <p className="text-[#F6FFF2] whitespace-pre-wrap">{moduleInputData.skillBuilding}</p>
                 </div>
               )}
 
               {(isNonEmptyString(moduleInputData.behaviorPractice?.question) || behaviorOptions.length > 0) && (
-                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4 space-y-3">
-                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA]">Behavior Practice</h3>
+                <div className="rounded-xl border border-[#2A312A] bg-[#0B0F0C] p-4 space-y-3">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-[#D9FF3D]">Behavior Practice</h3>
                   {isNonEmptyString(moduleInputData.behaviorPractice?.question) && (
                     <p className="text-[#F6FFF2] font-medium whitespace-pre-wrap">
                       {moduleInputData.behaviorPractice?.question}
@@ -182,37 +207,40 @@ const ModuleBlogModal: React.FC<ModuleBlogModalProps> = ({
                         onChange={(event) => setSelectedBehaviorOption(event.target.value)}
                         className="w-full px-3 py-2 bg-[#111611] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
                       >
+                        <option value="">Select option</option>
                         {behaviorOptions.map((entry, idx) => (
                           <option key={`behavior-option-${idx}`} value={entry.option}>
                             {entry.option}
                           </option>
                         ))}
                       </select>
-                      <div className="rounded-lg border border-[#1A211A] bg-[#111611] p-3 text-[#F6FFF2] whitespace-pre-wrap min-h-[80px]">
-                        {selectedBehaviorResponse}
-                      </div>
+                      {hasSelectedBehaviorOption && (
+                        <div className="rounded-lg border border-[#1A211A] bg-[#111611] p-3 text-[#F6FFF2] whitespace-pre-wrap min-h-[80px]">
+                          {selectedBehaviorResponse}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
               )}
 
               {isNonEmptyString(moduleInputData.dating) && (
-                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
-                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Dating</h3>
+                <div className="rounded-xl border border-[#2A312A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-[#D9FF3D] mb-2">Dating</h3>
                   <p className="text-[#F6FFF2] whitespace-pre-wrap">{moduleInputData.dating}</p>
                 </div>
               )}
 
               {isNonEmptyString(moduleInputData.healthyTip) && (
-                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
-                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Healthy Tip</h3>
+                <div className="rounded-xl border border-[#2A312A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-[#D9FF3D] mb-2">Healthy Tip</h3>
                   <p className="text-[#F6FFF2] whitespace-pre-wrap">{moduleInputData.healthyTip}</p>
                 </div>
               )}
 
               {isNonEmptyString(moduleInputData.healthyConversationStarters) && (
-                <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4">
-                  <h3 className="text-sm uppercase tracking-wide text-[#A9B5AA] mb-2">Healthy Conversation Starters</h3>
+                <div className="rounded-xl border border-[#2A312A] bg-[#0B0F0C] p-4">
+                  <h3 className="text-xs uppercase tracking-[0.18em] text-[#D9FF3D] mb-2">Healthy Conversation Starters</h3>
                   <p className="text-[#F6FFF2] whitespace-pre-wrap">
                     {moduleInputData.healthyConversationStarters}
                   </p>
@@ -246,10 +274,11 @@ const ModuleBlogModal: React.FC<ModuleBlogModalProps> = ({
             </button>
           )}
           <button
-            onClick={onClose}
-            className="flex-1 py-3 px-4 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg hover:scale-[1.02] transition font-bold"
+            onClick={handleComplete}
+            disabled={!canComplete}
+            className="flex-1 py-3 px-4 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg hover:scale-[1.02] transition font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            Close
+            Complete
           </button>
         </div>
       </div>

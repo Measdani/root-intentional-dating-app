@@ -883,7 +883,7 @@ const GrowthModeSection: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
-              Growth Resources
+              The Garden
             </div>
           </button>
           <button
