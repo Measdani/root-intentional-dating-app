@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import {
   ArrowLeft,
   Download,
-  Trash2,
   UserX,
   ShieldCheck,
   Bell,
@@ -34,7 +33,6 @@ import {
   getCoreSettingUnlockDate,
   getUserSettingsForUser,
   isCoreSettingLocked,
-  removeUserSettingsForUser,
   saveUserSettingsForUser,
   type CoreSettingKey,
   type UserSettings,
@@ -812,23 +810,6 @@ const UserSettingsSection: React.FC = () => {
     setCurrentView('landing');
   };
 
-  const handleDeleteAccount = async () => {
-    if (!window.confirm('Delete account permanently? This action cannot be undone.')) return;
-
-    const deleted = await userService.deleteUser(currentUser.id);
-    if (!deleted) {
-      toast.error(`Account deletion could not be completed. Contact ${SUPPORT_EMAIL}.`);
-      return;
-    }
-
-    removeUserSettingsForUser(currentUser.id);
-    localStorage.removeItem(`assessmentResult_${currentUser.id}`);
-    localStorage.removeItem('currentUser');
-    window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
-    setCurrentView('landing');
-    toast.success('Your account has been deleted.');
-  };
-
   const handlePasswordChange = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error('Please fill all password fields.');
@@ -1060,26 +1041,31 @@ const UserSettingsSection: React.FC = () => {
             />
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button onClick={handlePasswordChange} className="btn-primary">Change Password</button>
-            <button onClick={handleDownloadData} className="btn-outline flex items-center gap-2">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <button
+              onClick={handlePasswordChange}
+              className="btn-primary w-full h-14 flex items-center justify-center"
+            >
+              Change Password
+            </button>
+            <button
+              onClick={handleDownloadData}
+              className="btn-outline w-full h-14 flex items-center justify-center gap-2"
+            >
               <Download className="w-4 h-4" />
               Download My Data
             </button>
-            <div className="flex flex-col gap-1">
-              <button onClick={openDeactivationFlow} className="btn-outline flex items-center gap-2">
-                <UserX className="w-4 h-4" />
-                Deactivate My Account
-              </button>
-              <p className="text-xs text-[#A9B5AA] max-w-sm">
-                If you&apos;re leaving, we&apos;d appreciate knowing why so we can improve the platform.
-              </p>
-            </div>
-            <button onClick={handleDeleteAccount} className="btn-outline text-red-300 border-red-500/40 hover:bg-red-500/10 flex items-center gap-2">
-              <Trash2 className="w-4 h-4" />
-              Delete Account
+            <button
+              onClick={openDeactivationFlow}
+              className="btn-outline w-full h-14 flex items-center justify-center gap-2"
+            >
+              <UserX className="w-4 h-4" />
+              Deactivate My Account
             </button>
           </div>
+          <p className="text-xs text-[#A9B5AA]">
+            If you&apos;re leaving, we&apos;d appreciate knowing why so we can improve the platform.
+          </p>
         </section>
 
         <section className="bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-4">
