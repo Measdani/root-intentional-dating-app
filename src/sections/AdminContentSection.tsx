@@ -259,7 +259,7 @@ const AdminContentSection: React.FC = () => {
                   <div className="mt-4 pt-4 border-t border-[#1A211A] space-y-4">
                     {resource.learningOutcomes && resource.learningOutcomes.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-[#F6FFF2] mb-2">Learning Outcomes</h4>
+                        <h4 className="font-medium text-[#F6FFF2] mb-2">Strengths</h4>
                         <ul className="space-y-1 text-sm text-[#A9B5AA]">
                           {resource.learningOutcomes.map((outcome, idx) => (
                             <li key={idx} className="flex gap-2">
@@ -326,7 +326,7 @@ const AdminContentSection: React.FC = () => {
                   <div className="mt-4 pt-4 border-t border-[#1A211A] space-y-4">
                     {resource.learningOutcomes && resource.learningOutcomes.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-[#F6FFF2] mb-2">Learning Outcomes</h4>
+                        <h4 className="font-medium text-[#F6FFF2] mb-2">Strengths</h4>
                         <ul className="space-y-1 text-sm text-[#A9B5AA]">
                           {resource.learningOutcomes.map((outcome, idx) => (
                             <li key={idx} className="flex gap-2">
@@ -519,9 +519,9 @@ const AdminContentSection: React.FC = () => {
                 </select>
               </div>
 
-              {/* Learning Outcomes */}
+              {/* Strengths */}
               <div>
-                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Learning Outcomes</label>
+                <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Strengths</label>
                 <div className="space-y-2 mb-3">
                   {(formData.learningOutcomes || []).map((outcome, idx) => (
                     <div key={idx} className="flex gap-2">
@@ -534,7 +534,7 @@ const AdminContentSection: React.FC = () => {
                           setFormData({ ...formData, learningOutcomes: updated });
                         }}
                         className="flex-1 px-3 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm"
-                        placeholder="Learning outcome"
+                        placeholder="Strength"
                       />
                       <button
                         type="button"
@@ -555,7 +555,7 @@ const AdminContentSection: React.FC = () => {
                     value={newOutcome}
                     onChange={(e) => setNewOutcome(e.target.value)}
                     className="flex-1 px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] text-sm"
-                    placeholder="Add new outcome..."
+                    placeholder="Add new strength..."
                   />
                   <button
                     type="button"
