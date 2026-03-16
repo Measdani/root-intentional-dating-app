@@ -35,7 +35,7 @@ const AGENT_NAME = "growth_mode_coach";
 const RULE_VERSION = "gmc-rules-2026-03-09";
 const MODEL_VERSION = "deterministic-rule-engine-v1";
 const SUPPORT_EMAIL = "support@rootedhearts.net";
-const COACH_NAME = "Willow";
+const COACH_NAME = "Forest";
 
 const REASON_CODE_THEME_MAP: Array<{
   pattern: RegExp;

@@ -97,6 +97,7 @@ const GrowthModeSection: React.FC = () => {
   const [modeRefreshTick, setModeRefreshTick] = useState(0);
   const [coachGuidance, setCoachGuidance] = useState<GrowthModeCoachResult | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
+  const [isCoachMinimized, setIsCoachMinimized] = useState(false);
 
   useEffect(() => {
     const handleModeUpdated = () => setModeRefreshTick((previous) => previous + 1);
@@ -626,64 +627,90 @@ const GrowthModeSection: React.FC = () => {
         ))}
 
         {(coachLoading || coachGuidance) && (
-          <div className="mb-8 rounded-2xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-[#D9FF3D]" />
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-[#D9FF3D]">
-                Willow, Your Inner Work Coach
-              </h2>
-            </div>
-
-            {coachLoading && (
-              <p className="text-sm text-[#A9B5AA]">Willow is preparing your next growth steps...</p>
-            )}
-
-            {!coachLoading && coachGuidance && (
-              <div className="space-y-4">
-                <p className="text-sm text-[#F6FFF2] leading-relaxed">
-                  {coachGuidance.explanationCopy}
-                </p>
-
-                {coachGuidance.recommendedModules.length > 0 && (
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">
-                      Recommended Modules
-                    </p>
-                    <ul className="space-y-1">
-                      {coachGuidance.recommendedModules.slice(0, 2).map((module) => (
-                        <li key={module} className="text-sm text-[#F6FFF2]">
-                          • {module}
-                        </li>
-                      ))}
-                    </ul>
+          <>
+            {!isCoachMinimized && (
+              <div className="mb-8 rounded-2xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#D9FF3D]" />
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-[#D9FF3D]">
+                      Forest, Your Inner Work Coach
+                    </h2>
                   </div>
-                )}
-
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
-                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">Reflection Prompt</p>
-                    <p className="text-sm text-[#F6FFF2]">{coachGuidance.reflectionPrompt}</p>
-                  </div>
-                  <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
-                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">Journaling Prompt</p>
-                    <p className="text-sm text-[#F6FFF2]">{coachGuidance.journalingPrompt}</p>
-                  </div>
+                  <button
+                    onClick={() => setIsCoachMinimized(true)}
+                    className="text-xs font-medium text-[#D9FF3D] hover:text-[#F6FFF2] transition-colors"
+                    aria-label="Minimize Forest coach message"
+                    title="Minimize Forest"
+                  >
+                    Minimize
+                  </button>
                 </div>
 
-                <p className="text-sm text-[#A9B5AA]">{coachGuidance.accountabilityNudge}</p>
-
-                {coachGuidance.reassessmentNotice && (
-                  <p className="text-sm text-[#D9FF3D]">{coachGuidance.reassessmentNotice}</p>
+                {coachLoading && (
+                  <p className="text-sm text-[#A9B5AA]">Forest is preparing your next growth steps...</p>
                 )}
 
-                {coachGuidance.escalateToSupport && (
-                  <p className="text-sm text-amber-300">
-                    Willow flagged this for human support review. Contact {coachGuidance.supportEmail || SUPPORT_EMAIL}.
-                  </p>
+                {!coachLoading && coachGuidance && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-[#F6FFF2] leading-relaxed">
+                      {coachGuidance.explanationCopy}
+                    </p>
+
+                    {coachGuidance.recommendedModules.length > 0 && (
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">
+                          Recommended Modules
+                        </p>
+                        <ul className="space-y-1">
+                          {coachGuidance.recommendedModules.slice(0, 2).map((module) => (
+                            <li key={module} className="text-sm text-[#F6FFF2]">
+                              • {module}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
+                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">Reflection Prompt</p>
+                        <p className="text-sm text-[#F6FFF2]">{coachGuidance.reflectionPrompt}</p>
+                      </div>
+                      <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
+                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">Journaling Prompt</p>
+                        <p className="text-sm text-[#F6FFF2]">{coachGuidance.journalingPrompt}</p>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-[#A9B5AA]">{coachGuidance.accountabilityNudge}</p>
+
+                    {coachGuidance.reassessmentNotice && (
+                      <p className="text-sm text-[#D9FF3D]">{coachGuidance.reassessmentNotice}</p>
+                    )}
+
+                    {coachGuidance.escalateToSupport && (
+                      <p className="text-sm text-amber-300">
+                        Forest flagged this for human support review. Contact {coachGuidance.supportEmail || SUPPORT_EMAIL}.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
-          </div>
+
+            {isCoachMinimized && (
+              <button
+                onClick={() => setIsCoachMinimized(false)}
+                className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-[#D9FF3D]/50 bg-[#0B0F0C] px-4 py-2 text-[#D9FF3D] shadow-lg shadow-black/30 hover:bg-[#121A12] transition-colors"
+                aria-label="Open Forest coach message"
+                title="Open Forest"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="text-sm font-semibold">Forest</span>
+              </button>
+            )}
+          </>
         )}
 
         {/* Tab Navigation */}
