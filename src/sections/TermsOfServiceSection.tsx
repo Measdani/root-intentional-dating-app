@@ -84,6 +84,12 @@ const TermsOfServiceSection: React.FC = () => {
             <p className="mb-4">
               All content, features, and functionality of Rooted Hearts (including but not limited to logos, graphics, text, and software) are owned by Rooted Hearts or its licensors. Users retain ownership of any content they post or upload to the Platform, but grant Rooted Hearts a worldwide, non-exclusive, royalty-free license to use, copy, modify, and display such content for the purpose of operating the Platform.
             </p>
+            <div className="rounded-lg border border-[#1A211A] bg-[#111611] p-4 text-sm">
+              <p className="text-[#F6FFF2] mb-2 font-medium">Intellectual Property</p>
+              <p>
+                All materials on the Rooted Hearts&trade; platform, including lessons, resources, conversation prompts, and educational content, are the intellectual property of Rooted Hearts. These materials are provided for personal use and may not be reproduced, distributed, or shared without permission.
+              </p>
+            </div>
           </section>
 
           <section>
