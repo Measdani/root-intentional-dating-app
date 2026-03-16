@@ -897,7 +897,7 @@ const GrowthModeSection: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Browse Members
+              Explore Connections
             </div>
           </button>
           <button

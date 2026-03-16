@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
-import { ArrowLeft, BookOpen, CheckCircle, Clock, Sparkles } from 'lucide-react';
+import { ArrowLeft, BookOpen, CheckCircle, Clock, Sparkles, Users } from 'lucide-react';
 import type { BlogArticle, AssessmentCoreStyle, GrowthResourceModule } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { resourceService } from '@/services/resourceService';
@@ -935,6 +935,16 @@ const GrowthDetailSection: React.FC = () => {
     setCurrentView('growth-mode');
   };
 
+  const navigateToExploreConnections = () => {
+    if (selectedResourceId) {
+      localStorage.setItem(prefillResourceKey, selectedResourceId);
+    } else {
+      localStorage.removeItem(prefillResourceKey);
+    }
+    localStorage.setItem('rooted_growth_mode_active_tab', 'browse');
+    setCurrentView('growth-mode');
+  };
+
   const openModuleWithHistory = (nextModuleId: string) => {
     if (selectedModuleId && nextModuleId !== selectedModuleId) {
       setModuleBackStack((previous) => [...previous, selectedModuleId]);
@@ -1004,6 +1014,13 @@ const GrowthDetailSection: React.FC = () => {
             <h1 className="text-2xl font-bold">Garden Mastery</h1>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={navigateToExploreConnections}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] hover:border-[#2A312A] transition"
+            >
+              <Users className="w-4 h-4" />
+              Explore Connections
+            </button>
             <button
               onClick={() => setCurrentView('clarity-room')}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] hover:border-[#2A312A] transition"
