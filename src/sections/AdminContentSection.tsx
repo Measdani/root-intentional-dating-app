@@ -125,6 +125,7 @@ const AdminContentSection: React.FC = () => {
       learningOutcomes: [],
       areasToBeMindfulOf: '',
       modules: [],
+      closingReflection: '',
     });
     setSelectedResource(null);
     setNewOutcome('');
@@ -749,6 +750,17 @@ const AdminContentSection: React.FC = () => {
                 >
                   + Add Module
                 </button>
+
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Closing Reflection</label>
+                  <textarea
+                    value={formData.closingReflection || ''}
+                    onChange={(e) => setFormData({ ...formData, closingReflection: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] resize-none"
+                    rows={3}
+                    placeholder="Add a final reflection prompt users should consider after completing this path..."
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-[#1A211A]">
