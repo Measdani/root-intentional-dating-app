@@ -14,7 +14,7 @@ import {
 } from '@/modules';
 import { growthResources, paidGrowthResources } from '@/data/assessment';
 import { toast } from 'sonner';
-import { BookOpen, Clock, CheckCircle, Calendar, Sparkles, TrendingUp, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Sparkles, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
@@ -98,6 +98,7 @@ const GrowthModeSection: React.FC = () => {
   const [coachGuidance, setCoachGuidance] = useState<GrowthModeCoachResult | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
   const [isCoachMinimized, setIsCoachMinimized] = useState(false);
+  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleModeUpdated = () => setModeRefreshTick((previous) => previous + 1);
@@ -197,6 +198,22 @@ const GrowthModeSection: React.FC = () => {
       completed_paths: completedPaths,
     };
   }, [resourceProgress, combinedModeResources.length]);
+
+  useEffect(() => {
+    if (combinedModeResources.length === 0) {
+      setSelectedResourceId(null);
+      return;
+    }
+
+    const hasSelected = selectedResourceId
+      ? combinedModeResources.some((resource: any) => resource.id === selectedResourceId)
+      : false;
+
+    if (!hasSelected) {
+      const firstResource = combinedModeResources[0];
+      setSelectedResourceId(typeof firstResource?.id === 'string' ? firstResource.id : null);
+    }
+  }, [combinedModeResources, selectedResourceId]);
 
   // Load fresh interactions on component mount and when entering browse/inbox tabs
   useEffect(() => {
@@ -518,61 +535,10 @@ const GrowthModeSection: React.FC = () => {
     });
   };
 
-  // Get color based on status
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-[#D9FF3D]/10 border-[#D9FF3D]';
-      case 'in-progress':
-        return 'bg-amber-500/10 border-amber-500';
-      case 'not-started':
-        return 'bg-[#111611] border-[#1A211A]';
-      default:
-        return 'bg-[#111611] border-[#1A211A]';
-    }
-  };
-
-  const formatCategoryLabel = (category: string) => {
-    switch (category) {
-      case 'emotional-regulation':
-        return 'Emotional Regulation';
-      case 'accountability':
-        return 'Accountability';
-      case 'autonomy':
-        return 'Autonomy & Wholeness';
-      case 'boundaries':
-        return 'Boundaries';
-      case 'conflict-repair':
-        return 'Conflict & Repair';
-      default:
-        return category
-          .replace(/-/g, ' ')
-          .replace(/\b\w/g, (char) => char.toUpperCase());
-    }
-  };
-
-  const improvementAreas = useMemo(() => {
-    if (!assessmentResult) return [];
-
-    const scoreBasedAreas = Object.entries(assessmentResult.categoryScores || {})
-      .filter(([, score]) => typeof score === 'number' && Number.isFinite(score) && score < 70)
-      .map(([category, score]) => ({
-        id: category,
-        label: formatCategoryLabel(category),
-        score: Math.round(score),
-      }))
-      .sort((a, b) => a.score - b.score);
-
-    if (scoreBasedAreas.length > 0) return scoreBasedAreas;
-
-    return (assessmentResult.growthAreas || [])
-      .filter((area) => typeof area === 'string' && area.trim().length > 0)
-      .map((area) => ({
-        id: area.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        label: area,
-        score: null as number | null,
-      }));
-  }, [assessmentResult]);
+  const selectedResource = useMemo(
+    () => combinedModeResources.find((resource: any) => resource.id === selectedResourceId) ?? null,
+    [combinedModeResources, selectedResourceId]
+  );
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
@@ -950,107 +916,34 @@ const GrowthModeSection: React.FC = () => {
         {/* Resources View */}
         {activeTab === 'resources' && (
           <div>
-        {/* Original Hero Message */}
         <div className="text-center mb-12 pb-12 border-b border-[#1A211A]">
           <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-6">
             <Sparkles className="w-10 h-10 text-amber-500" />
           </div>
-          <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-4">
-            Alignment Requires Readiness
+          <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-3">
+            Strengthening the Roots of Connection
           </h2>
-          <p className="text-[#F6FFF2] text-lg max-w-2xl mx-auto mb-4 leading-relaxed">
-            Based on your current assessment, we recommend strengthening a few foundational areas before entering partnership mode.
+          <p className="text-[#D9FF3D] text-base font-medium mb-6">
+            Welcome to Your Resource Space
           </p>
-          <p className="text-[#A9B5AA] text-base max-w-2xl mx-auto leading-relaxed">
-            This is not exclusion — it is preparation. <span className="text-[#F6FFF2] font-medium">Strong partnerships are built on emotional stability, accountability, and conflict repair skills.</span> Entering intentionally protects both you and your future partner.
-          </p>
-        </div>
-
-        {/* New Growth Mode Section */}
-        <div className="text-center mb-12">
-          <h2 className="font-display text-[clamp(28px,4vw,40px)] text-[#F6FFF2] mb-4">
-            Why Inner Work Space?
-          </h2>
-          <p className="text-[#A9B5AA] text-base max-w-2xl mx-auto mb-4 leading-relaxed">
-            In Inner Work Space, we focus on helping you develop <span className="text-[#D9FF3D]">key emotional, relational, and self-awareness skills.</span> These tools prepare you for deep, meaningful connections with others.
-          </p>
-          <p className="text-[#A9B5AA] text-sm max-w-2xl mx-auto leading-relaxed">
-            By completing one of the Inner Work Space paths, you'll build a stronger sense of self and align with your ideal partner's values, creating the foundation for a lasting and healthy relationship.
-          </p>
-        </div>
-
-        {/* Score Card */}
-        {assessmentResult && (
-          <div className="bg-[#111611] rounded-[24px] border border-[#1A211A] p-6 md:p-8 mb-10">
-            <div className="flex justify-center md:justify-end mb-6">
-              <div className="text-center px-6 py-3 bg-[#1A211A] rounded-xl">
-                <Calendar className="w-5 h-5 text-[#D9FF3D] mx-auto mb-1" />
-                <p className="text-xs text-[#A9B5AA]">Next Assessment Window:</p>
-                <p className="text-[#F6FFF2] font-medium">6 Months</p>
-              </div>
-            </div>
-
-            {/* Assessment Areas Section */}
-            <div className="mb-6 pt-6 border-t border-[#1A211A]">
-              <p className="font-mono-label text-[#A9B5AA] mb-4">Areas of Improvement</p>
-              {improvementAreas.length > 0 ? (
-                <div className="space-y-3">
-                  {improvementAreas.map((area) => (
-                    <div key={area.id} className="flex items-center gap-4">
-                      <span className="text-[#F6FFF2] text-sm flex-1">{area.label}</span>
-                      {typeof area.score === 'number' ? (
-                        <>
-                          <div className="flex-1 max-w-[150px]">
-                            <div className="h-1.5 bg-[#1A211A] rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-1000 ${
-                                  area.score >= 50 ? 'bg-amber-500' : 'bg-[#A9B5AA]'
-                                }`}
-                                style={{ width: `${area.score}%` }}
-                              />
-                            </div>
-                          </div>
-                          <span className="text-[#F6FFF2] text-sm w-10 text-right">{area.score}%</span>
-                        </>
-                      ) : (
-                        <span className="text-xs text-[#A9B5AA]">Growth Focus</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-[#A9B5AA]">
-                  Detailed improvement categories will appear after your next completed assessment.
-                </p>
-              )}
-              <p className="text-xs text-[#A9B5AA] mt-4 opacity-75">
-                These skills can be strengthened through guided practice and reflection.
-              </p>
-            </div>
-
-            {/* Why 6 Months Matters */}
-            <div className="pt-6 border-t border-[#1A211A]">
-              <p className="font-mono-label text-[#A9B5AA] mb-3 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Why 6 Months Matters
-              </p>
-              <div className="space-y-2">
-                <p className="text-[#F6FFF2] text-sm leading-relaxed">
-                  Growth is not a weekend decision.
-                </p>
-                <p className="text-[#F6FFF2] text-sm leading-relaxed">
-                  It is built through consistent reflection, intentional practice, and real-life application.
-                </p>
-                <p className="text-[#F6FFF2] text-sm leading-relaxed">
-                  Six months allows new patterns to take root so what changes is not just how you answer questions, but how you show up.
-                </p>
-              </div>
-              <p className="text-xs text-[#A9B5AA] mt-3 opacity-75">
-                This protects your future relationship from instability and ensures you enter connection grounded, not rushed. Healthy love requires readiness.
-              </p>
-            </div>
+          <div className="max-w-3xl mx-auto space-y-4 text-[#A9B5AA] leading-relaxed">
+            <p>
+              This is your space to explore the tools that help create the healthy relationship you want.
+            </p>
+            <p>
+              When you completed the assessment, it identified a primary and secondary area that may help strengthen the way you approach communication, connection, and growth in relationships.
+            </p>
+            <p>
+              These suggested paths are simply starting points. Feel free to explore all of the resources available as you continue learning and growing.
+            </p>
+            <p>
+              Your journal space is also here to support you along the way - a place to reflect, capture insights, and track your progress as you move through the lessons.
+            </p>
+            <p>
+              Healthy relationships are built through awareness, intention, and growth, and this space is designed to support you in that journey.
+            </p>
           </div>
-        )}
+        </div>
 
         {/* Growth Resources */}
         <div className="mb-12">
@@ -1059,94 +952,140 @@ const GrowthModeSection: React.FC = () => {
               Break/Exclusive Mode is active, so Inner and Advanced growth resources are temporarily unlocked here.
             </div>
           )}
-          <h3 className="font-mono-label text-[#F6FFF2] mb-2">Complete 2 Paths in 6 Months to Re-enter Matchmaking</h3>
-          <p className="text-[#A9B5AA] text-sm mb-6">Work through these guided resources at your own pace to develop essential skills for lasting connections.</p>
-          <div className="grid md:grid-cols-2 gap-4">
-            {combinedModeResources.map((resource: any) => {
-              const progress = getResourceProgress(resource);
-              const status = getPathStatus(progress);
-              const isCompleted = progress === 100;
+          <div className="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-4">
+            <div className="rounded-2xl border border-[#1A211A] bg-[#111611] p-3 h-fit">
+              <p className="text-xs uppercase tracking-wide text-[#A9B5AA] px-2 pb-2">Path Navigation</p>
+              <div className="space-y-2">
+                {combinedModeResources.map((resource: any) => {
+                  const progress = getResourceProgress(resource);
+                  const status = getPathStatus(progress);
+                  const isSelected = selectedResourceId === resource.id;
+                  const isCompleted = progress === 100;
 
-              return (
-              <div
-                key={resource.id}
-                onClick={() => setSelectedResourceForModal(resource)}
-                className={`rounded-[20px] border p-5 cursor-pointer transition-all duration-300 hover:ring-2 hover:ring-[#D9FF3D]/50 ${
-                  getStatusColor(status)
-                }`}
-              >
-                {/* Completion Badge */}
-                {isCompleted && (
-                  <div className="absolute top-3 right-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-full p-1.5">
-                    <CheckCircle className="w-4 h-4" />
-                  </div>
-                )}
-
-                <div className="flex items-start gap-4 mb-4">
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
-                    status === 'in-progress' ? 'bg-amber-500/20 text-amber-500' :
-                    'bg-[#1A211A] text-[#A9B5AA]'
-                  }`}>
-                    {getCategoryIcon(resource.category)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="text-[#F6FFF2] font-medium">{resource.title}</h4>
-                      {progress > 0 && !isCompleted && (
-                        <span className="text-xs font-medium text-amber-400 whitespace-nowrap">{progress}%</span>
-                      )}
-                    </div>
-                    <p className="text-[#A9B5AA] text-sm mb-3">{resource.description}</p>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="h-1.5 bg-[#0B0F0C] rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        status === 'completed' ? 'bg-[#D9FF3D]' :
-                        status === 'in-progress' ? 'bg-amber-500' :
-                        'bg-[#A9B5AA]'
+                  return (
+                    <button
+                      key={resource.id}
+                      onClick={() => setSelectedResourceId(resource.id)}
+                      className={`w-full text-left rounded-xl border px-3 py-3 transition-colors ${
+                        isSelected
+                          ? 'border-[#D9FF3D] bg-[#D9FF3D]/10'
+                          : 'border-[#1A211A] bg-[#0B0F0C] hover:border-[#2E372E]'
                       }`}
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-[#A9B5AA] mt-1.5">
-                    {isCompleted ? '✓ Completed' : progress > 0 ? `${progress}% complete` : 'Not started'}
-                  </p>
-                </div>
-
-                {/* Info Row */}
-                <div className="flex items-center justify-between gap-4 text-xs text-[#A9B5AA] pt-3 border-t border-[#1A211A]">
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {resource.estimatedTime}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full ${
-                      status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
-                      status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
-                      'bg-[#1A211A] text-[#A9B5AA]'
-                    }`}>
-                      {resource.category}
-                    </span>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentView('growth-detail');
-                    }}
-                    className="text-[#D9FF3D] hover:text-white font-medium transition whitespace-nowrap"
-                  >
-                    Learn More →
-                  </button>
-                </div>
-
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
+                          status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
+                          'bg-[#1A211A] text-[#A9B5AA]'
+                        }`}>
+                          {getCategoryIcon(resource.category)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-[#F6FFF2] truncate">{resource.title}</p>
+                          <p className="text-xs text-[#A9B5AA] mt-1">
+                            {isCompleted ? 'Completed' : progress > 0 ? `${progress}% complete` : 'Not started'}
+                          </p>
+                        </div>
+                        {isCompleted && <CheckCircle className="w-4 h-4 text-[#D9FF3D] flex-shrink-0 mt-0.5" />}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            );
-            })}
+            </div>
+
+            <div className="rounded-2xl border border-[#1A211A] bg-[#111611] p-5 md:p-6">
+              {selectedResource ? (
+                (() => {
+                  const progress = getResourceProgress(selectedResource);
+                  const status = getPathStatus(progress);
+                  const isCompleted = progress === 100;
+                  const totalModules = Array.isArray(selectedResource.modules)
+                    ? selectedResource.modules.length
+                    : 0;
+                  const previewModules = Array.isArray(selectedResource.modules)
+                    ? selectedResource.modules.slice(0, 4)
+                    : [];
+
+                  return (
+                    <div className="space-y-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                            status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
+                            status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
+                            'bg-[#1A211A] text-[#A9B5AA]'
+                          }`}>
+                            {getCategoryIcon(selectedResource.category)}
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-semibold text-[#F6FFF2]">{selectedResource.title}</h4>
+                            <p className="text-sm text-[#A9B5AA] mt-1">{selectedResource.description}</p>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full text-xs border border-[#2A312A] text-[#A9B5AA]">
+                          {selectedResource.category}
+                        </span>
+                      </div>
+
+                      <div>
+                        <div className="h-2 bg-[#0B0F0C] rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              status === 'completed' ? 'bg-[#D9FF3D]' :
+                              status === 'in-progress' ? 'bg-amber-500' :
+                              'bg-[#A9B5AA]'
+                            }`}
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-[#A9B5AA] mt-2">
+                          {isCompleted ? 'Completed' : progress > 0 ? `${progress}% complete` : 'Not started'}
+                        </p>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-3 text-xs text-[#A9B5AA]">
+                        <p className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5" />
+                          Estimated time: {selectedResource.estimatedTime}
+                        </p>
+                        <p>{totalModules} modules in this path</p>
+                      </div>
+
+                      {previewModules.length > 0 && (
+                        <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/50 p-4">
+                          <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">Module Preview</p>
+                          <ul className="space-y-1.5">
+                            {previewModules.map((module: any, index: number) => (
+                              <li key={module.id ?? `${selectedResource.id}-module-${index}`} className="text-sm text-[#F6FFF2]">
+                                {index + 1}. {module.title}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-3 pt-1">
+                        <button
+                          onClick={() => setSelectedResourceForModal(selectedResource)}
+                          className="px-4 py-2 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:brightness-95 transition"
+                        >
+                          Open Path
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('growth-detail')}
+                          className="px-4 py-2 rounded-lg border border-[#1A211A] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition"
+                        >
+                          Learn More
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                <p className="text-sm text-[#A9B5AA]">No growth resources are available right now.</p>
+              )}
+            </div>
           </div>
         </div>
           </div>
@@ -1442,3 +1381,4 @@ const GrowthModeSection: React.FC = () => {
 };
 
 export default GrowthModeSection;
+
