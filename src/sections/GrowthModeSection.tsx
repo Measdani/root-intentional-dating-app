@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useApp } from '@/store/AppContext';
 import {
   canUsersExchangeMessages,
@@ -22,6 +22,7 @@ import { getGrowthModeCoachGuidance, type GrowthModeCoachResult } from '@/servic
 import { SUPPORT_EMAIL } from '@/constants/support';
 import { ASSESSMENT_CORE_STYLES, ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
 import type { User, AssessmentCoreStyle, AssessmentResult } from '@/types';
+import { resourceService } from '@/services/resourceService';
 
 type ResourceProgressMap = Record<
   string,
@@ -203,6 +204,18 @@ const STYLE_PAIR_INSIGHTS: Record<AssessmentCoreStyle, Record<AssessmentCoreStyl
 const getDefaultPartnerStyle = (yourStyle: AssessmentCoreStyle): AssessmentCoreStyle =>
   ASSESSMENT_CORE_STYLES.find((style) => style !== yourStyle) ?? yourStyle;
 
+const loadStoredGrowthResources = () => {
+  try {
+    const saved = localStorage.getItem('growth-resources');
+    if (!saved) return growthResources;
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : growthResources;
+  } catch (error) {
+    console.warn('Failed to parse growth-resources from localStorage, falling back to defaults.', error);
+    return growthResources;
+  }
+};
+
 const LOW_SCORE_REASON_CODE_MAP: Record<string, string> = {
   'emotional-regulation': 'low_emotional_regulation',
   accountability: 'low_accountability',
@@ -233,6 +246,13 @@ const buildGrowthReasonCodes = (result: AssessmentResult | null): string[] => {
 };
 
 const GrowthModeSection: React.FC = () => {
+  const growthModeTabStorageKey = 'rooted_growth_mode_active_tab';
+  const resolveInitialGrowthModeTab = (): 'browse' | 'inbox' | 'resources' | 'blog' => {
+    const saved = localStorage.getItem(growthModeTabStorageKey);
+    return saved === 'browse' || saved === 'inbox' || saved === 'resources' || saved === 'blog'
+      ? saved
+      : 'browse';
+  };
   const { activeCommunity } = useCommunity();
   const {
     assessmentResult,
@@ -258,7 +278,8 @@ const GrowthModeSection: React.FC = () => {
     reloadInteractions,
     getNextRetakeDate,
   } = useApp();
-  const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources' | 'blog'>('browse');
+  const [activeTab, setActiveTab] =
+    useState<'browse' | 'inbox' | 'resources' | 'blog'>(resolveInitialGrowthModeTab);
   const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [messageText, setMessageText] = useState('');
@@ -328,12 +349,9 @@ const GrowthModeSection: React.FC = () => {
 
   // Log state changes
   useEffect(() => {
-    console.log('ðŸ”„ showReportModal state changed to:', showReportModal);
+    console.log('🔄 showReportModal state changed to:', showReportModal);
   }, [showReportModal]);
-  const [resources, setResources] = useState(() => {
-    const saved = localStorage.getItem('growth-resources');
-    return saved ? JSON.parse(saved) : growthResources;
-  });
+  const [resources, setResources] = useState(loadStoredGrowthResources);
   const [blogs] = useState<any[]>(() => {
     const saved = localStorage.getItem('community-blogs');
     return saved ? JSON.parse(saved) : [];
@@ -411,6 +429,33 @@ const GrowthModeSection: React.FC = () => {
     setShowSelectedResourceLearnMore(false);
   }, [selectedResourceId]);
 
+  useEffect(() => {
+    localStorage.setItem(growthModeTabStorageKey, activeTab);
+  }, [activeTab, growthModeTabStorageKey]);
+
+  const refreshGrowthResources = useCallback(async () => {
+    try {
+      const supabaseResources = await resourceService.getResources('free');
+      if (Array.isArray(supabaseResources) && supabaseResources.length > 0) {
+        setResources(supabaseResources);
+        try {
+          localStorage.setItem('growth-resources', JSON.stringify(supabaseResources));
+        } catch (storageError) {
+          console.warn('Failed to cache growth resources locally:', storageError);
+        }
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to load growth resources from Supabase:', error);
+    }
+
+    setResources(loadStoredGrowthResources());
+  }, []);
+
+  useEffect(() => {
+    refreshGrowthResources();
+  }, [refreshGrowthResources]);
+
   // Load fresh interactions on component mount and when entering browse/inbox tabs
   useEffect(() => {
     reloadInteractions();
@@ -428,12 +473,9 @@ const GrowthModeSection: React.FC = () => {
   // Reload resources when returning to resources tab
   useEffect(() => {
     if (activeTab === 'resources') {
-      const saved = localStorage.getItem('growth-resources');
-      if (saved) {
-        setResources(JSON.parse(saved));
-      }
+      refreshGrowthResources();
     }
-  }, [activeTab]);
+  }, [activeTab, refreshGrowthResources]);
 
   useEffect(() => {
     try {
@@ -1335,7 +1377,7 @@ const GrowthModeSection: React.FC = () => {
         <div className="mt-12 text-center">
           <p className="text-[#A9B5AA]/60 text-sm max-w-md mx-auto">
             "The work you do now will be the foundation of the relationship you want later.
-            This is not a delayâ€”it is an investment."
+            This is not a delay—it is an investment."
           </p>
         </div>
       </main>
@@ -1450,13 +1492,13 @@ const GrowthModeSection: React.FC = () => {
         onClose={() => setShowReportModal(false)}
         onSubmit={async (reason, details, shouldBlock) => {
           try {
-            console.log('ðŸ“ Submitting report for user:', selectedProfileUser.id, 'reason:', reason);
+            console.log('📝 Submitting report for user:', selectedProfileUser.id, 'reason:', reason);
             await reportUser(selectedProfileUser.id, reason, details);
             if (shouldBlock) {
-              console.log('ðŸš« Blocking user:', selectedProfileUser.id);
+              console.log('🚫 Blocking user:', selectedProfileUser.id);
               blockUser(selectedProfileUser.id);
             }
-            console.log('âœ… Report submitted successfully');
+            console.log('✅ Report submitted successfully');
             toast.success('Report submitted successfully. Admin team will review.');
             setShowReportModal(false);
             setSelectedProfileUser(null);
@@ -1625,7 +1667,7 @@ const GrowthModeSection: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  console.log('ðŸ“‹ Report User button clicked. Opening modal for user:', selectedProfileUser?.id);
+                  console.log('📋 Report User button clicked. Opening modal for user:', selectedProfileUser?.id);
                   setShowReportModal(true);
                 }}
                 className="w-full py-3 bg-[#1A211A] text-[#A9B5AA] rounded-lg font-medium hover:text-[#F6FFF2] transition-colors"
@@ -1641,5 +1683,9 @@ const GrowthModeSection: React.FC = () => {
 };
 
 export default GrowthModeSection;
+
+
+
+
 
 

@@ -907,6 +907,12 @@ const GrowthDetailSection: React.FC = () => {
                 if (selectedModuleId) {
                   setSelectedModuleId(null);
                 } else {
+                  if (selectedResourceId) {
+                    localStorage.setItem(prefillResourceKey, selectedResourceId);
+                  } else {
+                    localStorage.removeItem(prefillResourceKey);
+                  }
+                  localStorage.setItem('rooted_growth_mode_active_tab', 'resources');
                   setCurrentView('growth-mode');
                 }
               }}
