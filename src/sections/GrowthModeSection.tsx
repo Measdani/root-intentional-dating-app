@@ -887,9 +887,6 @@ const GrowthModeSection: React.FC = () => {
         {activeTab === 'resources' && (
           <div>
         <div className="text-center mb-12 pb-12 border-b border-[#1A211A]">
-          <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-10 h-10 text-amber-500" />
-          </div>
           <h2 className="font-display text-[clamp(32px,5vw,48px)] text-[#F6FFF2] mb-3">
             Strengthening the Roots of Connection
           </h2>
