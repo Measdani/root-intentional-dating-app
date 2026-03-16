@@ -415,12 +415,14 @@ const GrowthModeSection: React.FC = () => {
     }
 
     const hasSelected = selectedResourceId
-      ? combinedModeResources.some((resource: any) => resource.id === selectedResourceId)
+      ? combinedModeResources.some((resource: any) => String(resource.id) === selectedResourceId)
       : false;
 
     if (!hasSelected) {
       const firstResource = combinedModeResources[0];
-      setSelectedResourceId(typeof firstResource?.id === 'string' ? firstResource.id : null);
+      setSelectedResourceId(
+        firstResource?.id !== undefined && firstResource?.id !== null ? String(firstResource.id) : null
+      );
       setShowSelectedResourceLearnMore(false);
     }
   }, [combinedModeResources, selectedResourceId]);
@@ -716,13 +718,14 @@ const GrowthModeSection: React.FC = () => {
 
   const getResourceProgress = (resource: any): number => {
     if (!resource?.id) return 0;
+    const resourceId = String(resource.id);
 
-    const saved = resourceProgress[resource.id];
+    const saved = resourceProgress[resourceId];
     const moduleIds: string[] = Array.isArray(resource.modules)
       ? resource.modules.map((module: any, index: number) => (
           typeof module?.id === 'string' && module.id.trim().length > 0
             ? module.id
-            : `${resource.id}-module-${index + 1}`
+            : `${resourceId}-module-${index + 1}`
         ))
       : [];
 
@@ -739,7 +742,7 @@ const GrowthModeSection: React.FC = () => {
   };
 
   const selectedResource = useMemo(
-    () => combinedModeResources.find((resource: any) => resource.id === selectedResourceId) ?? null,
+    () => combinedModeResources.find((resource: any) => String(resource.id) === selectedResourceId) ?? null,
     [combinedModeResources, selectedResourceId]
   );
 
@@ -1164,13 +1167,14 @@ const GrowthModeSection: React.FC = () => {
                 {combinedModeResources.map((resource: any) => {
                   const progress = getResourceProgress(resource);
                   const status = getPathStatus(progress);
-                  const isSelected = selectedResourceId === resource.id;
+                  const resourceId = String(resource.id);
+                  const isSelected = selectedResourceId === resourceId;
                   const isCompleted = progress === 100;
 
                   return (
                     <button
                       key={resource.id}
-                      onClick={() => setSelectedResourceId(resource.id)}
+                      onClick={() => setSelectedResourceId(resourceId)}
                       className={`w-full text-left rounded-xl border px-3 py-3 transition-colors ${
                         isSelected
                           ? 'border-[#D9FF3D] bg-[#D9FF3D]/10'
@@ -1289,7 +1293,10 @@ const GrowthModeSection: React.FC = () => {
                       <div className="flex flex-wrap gap-3 pt-1">
                         <button
                           onClick={() => {
-                            localStorage.setItem('rooted_growth_detail_start_resource_id', selectedResource.id);
+                            localStorage.setItem(
+                              'rooted_growth_detail_start_resource_id',
+                              String(selectedResource.id)
+                            );
                             setCurrentView('growth-detail');
                           }}
                           className="px-4 py-2 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:brightness-95 transition"

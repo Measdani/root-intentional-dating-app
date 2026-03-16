@@ -76,6 +76,9 @@ type ModuleResourceCompletionMap = Record<string, Record<string, true>>;
 
 const buildModuleResourceCompletionKey = (resourceId: string, moduleId: string): string =>
   `${resourceId}::${moduleId}`;
+const CLEAR_VOICE_BADGE_FLAG = '__clear_voice_badge';
+const toResourceId = (value: unknown): string =>
+  typeof value === 'string' ? value : String(value ?? '');
 
 const isCommunicationSkillsModuleText = (value?: string): boolean =>
   typeof value === 'string' && value.trim().toLowerCase().includes('communication skills');
@@ -102,6 +105,15 @@ const isClearVoiceModule = (
       isCommunicationSkillsModuleText(blog.content)
     );
   });
+};
+
+const isClearVoiceBlog = (blog: BlogArticle | null | undefined): boolean => {
+  if (!blog) return false;
+  return (
+    isCommunicationSkillsModuleText(blog.title) ||
+    isCommunicationSkillsModuleText(blog.excerpt) ||
+    isCommunicationSkillsModuleText(blog.content)
+  );
 };
 
 const PATH_REFLECTION_PROMPT =
@@ -253,6 +265,8 @@ const GrowthDetailSection: React.FC = () => {
   const [completionReflection, setCompletionReflection] = useState('');
   const [reflectionFeedback, setReflectionFeedback] = useState<string | null>(null);
   const [reflectionChecking, setReflectionChecking] = useState(false);
+  const [moduleBackStack, setModuleBackStack] = useState<string[]>([]);
+  const [openedFromStart, setOpenedFromStart] = useState(false);
 
   // Load resources AND blogs on mount
   useEffect(() => {
@@ -628,13 +642,15 @@ const GrowthDetailSection: React.FC = () => {
     },
   };
 
-  const resource = selectedResourceId ? resources.find((entry) => entry.id === selectedResourceId) : null;
+  const resource = selectedResourceId
+    ? resources.find((entry) => toResourceId(entry.id) === selectedResourceId)
+    : null;
   const orderedResourceModules = useMemo(
     () => (resource ? getOrderedModules(resource.modules) : []),
     [resource]
   );
   const selectedModule = resource && selectedModuleId
-    ? orderedResourceModules.find((module, index) => resolveModuleId(resource.id, module, index) === selectedModuleId) ?? null
+    ? orderedResourceModules.find((module, index) => resolveModuleId(toResourceId(resource.id), module, index) === selectedModuleId) ?? null
     : null;
   const content = selectedModuleId
     ? (moduleContent[selectedModuleId] ?? (selectedModule ? buildFallbackModuleContent(selectedModule) : null))
@@ -646,20 +662,22 @@ const GrowthDetailSection: React.FC = () => {
     const startResourceId = localStorage.getItem(startResourceKey);
     if (startResourceId) {
       localStorage.removeItem(startResourceKey);
-      const matchedResource = resources.find((entry) => entry.id === startResourceId);
+      const matchedResource = resources.find((entry) => toResourceId(entry.id) === startResourceId);
       const targetResource = matchedResource ?? resources[0] ?? null;
       if (targetResource) {
-        setSelectedResourceId(targetResource.id);
+        setSelectedResourceId(toResourceId(targetResource.id));
+        setOpenedFromStart(true);
+        setModuleBackStack([]);
         const orderedModules = getOrderedModules(targetResource.modules);
         const moduleIds = orderedModules.map((module, index) =>
-          resolveModuleId(targetResource.id, module, index)
+          resolveModuleId(toResourceId(targetResource.id), module, index)
         );
         let targetModuleId = moduleIds[0] ?? null;
 
         try {
           const savedProgressRaw = localStorage.getItem(progressStorageKey);
           const savedProgress = savedProgressRaw ? JSON.parse(savedProgressRaw) : {};
-          const resourceProgress = savedProgress?.[targetResource.id];
+          const resourceProgress = savedProgress?.[toResourceId(targetResource.id)];
           const viewedModuleIds = Array.isArray(resourceProgress?.viewedModuleIds)
             ? resourceProgress.viewedModuleIds.filter((id: unknown): id is string => typeof id === 'string')
             : [];
@@ -688,17 +706,21 @@ const GrowthDetailSection: React.FC = () => {
       return;
     }
 
-    if (selectedResourceId && resources.some((entry) => entry.id === selectedResourceId)) return;
+    if (selectedResourceId && resources.some((entry) => toResourceId(entry.id) === selectedResourceId)) return;
     const prefilledResourceId = localStorage.getItem(prefillResourceKey);
     if (prefilledResourceId) {
       localStorage.removeItem(prefillResourceKey);
-      if (resources.some((entry) => entry.id === prefilledResourceId)) {
+      if (resources.some((entry) => toResourceId(entry.id) === prefilledResourceId)) {
         setSelectedResourceId(prefilledResourceId);
+        setOpenedFromStart(false);
+        setModuleBackStack([]);
         return;
       }
     }
 
-    setSelectedResourceId(resources[0]?.id ?? null);
+    setSelectedResourceId(resources[0] ? toResourceId(resources[0].id) : null);
+    setOpenedFromStart(false);
+    setModuleBackStack([]);
   }, [prefillResourceKey, progressStorageKey, resources, selectedResourceId, startResourceKey]);
 
   useEffect(() => {
@@ -707,17 +729,18 @@ const GrowthDetailSection: React.FC = () => {
     }
 
     const orderedModules = getOrderedModules(resource.modules);
-    const hasMatchingModule = orderedModules.some((module, index) => resolveModuleId(resource.id, module, index) === selectedModuleId);
+    const resourceId = toResourceId(resource.id);
+    const hasMatchingModule = orderedModules.some((module, index) => resolveModuleId(resourceId, module, index) === selectedModuleId);
 
     if (!hasMatchingModule) {
-      setSelectedModuleId(resolveModuleId(resource.id, orderedModules[0], 0));
+      setSelectedModuleId(resolveModuleId(resourceId, orderedModules[0], 0));
     }
   }, [resource, selectedModuleId]);
 
   useEffect(() => {
     if (!selectedResourceId || !selectedModuleId) return;
 
-    const currentResource = resources.find((r) => r.id === selectedResourceId);
+    const currentResource = resources.find((r) => toResourceId(r.id) === selectedResourceId);
     if (!currentResource) return;
 
     const orderedModules = getOrderedModules(currentResource.modules);
@@ -807,11 +830,6 @@ const GrowthDetailSection: React.FC = () => {
     setReflectionFeedback(null);
     setReflectionChecking(false);
   }, [selectedResourceId, selectedModuleId]);
-
-  useEffect(() => {
-    if (!selectedModuleId) return;
-    window.scrollTo({ top: 0, behavior: 'auto' });
-  }, [selectedModuleId]);
 
   const persistPathReflections = (nextMap: Record<string, PathReflectionRecord>) => {
     setPathReflections(nextMap);
@@ -907,6 +925,49 @@ const GrowthDetailSection: React.FC = () => {
     setReflectionChecking(false);
   };
 
+  const navigateBackToGardenTab = () => {
+    if (selectedResourceId) {
+      localStorage.setItem(prefillResourceKey, selectedResourceId);
+    } else {
+      localStorage.removeItem(prefillResourceKey);
+    }
+    localStorage.setItem('rooted_growth_mode_active_tab', 'resources');
+    setCurrentView('growth-mode');
+  };
+
+  const openModuleWithHistory = (nextModuleId: string) => {
+    if (selectedModuleId && nextModuleId !== selectedModuleId) {
+      setModuleBackStack((previous) => [...previous, selectedModuleId]);
+    }
+    setSelectedModuleId(nextModuleId);
+  };
+
+  const handleBackNavigation = () => {
+    if (selectedBlog) {
+      setSelectedBlog(null);
+      return;
+    }
+
+    if (selectedModuleId) {
+      if (moduleBackStack.length > 0) {
+        const previousModuleId = moduleBackStack[moduleBackStack.length - 1];
+        setModuleBackStack((previous) => previous.slice(0, -1));
+        setSelectedModuleId(previousModuleId);
+        return;
+      }
+
+      if (openedFromStart) {
+        navigateBackToGardenTab();
+        return;
+      }
+
+      setSelectedModuleId(null);
+      return;
+    }
+
+    navigateBackToGardenTab();
+  };
+
   const handleCompleteModuleResource = () => {
     if (!selectedBlog || !selectedResourceId || !selectedModuleId) {
       setSelectedBlog(null);
@@ -914,11 +975,14 @@ const GrowthDetailSection: React.FC = () => {
     }
 
     const completionKey = buildModuleResourceCompletionKey(selectedResourceId, selectedModuleId);
+    const shouldMarkClearVoice =
+      isClearVoiceBlog(selectedBlog) || isClearVoiceModule(selectedModule, blogs);
     setModuleResourceCompletions((previous) => ({
       ...previous,
       [completionKey]: {
         ...(previous[completionKey] || {}),
         [selectedBlog.id]: true,
+        ...(shouldMarkClearVoice ? { [CLEAR_VOICE_BADGE_FLAG]: true } : {}),
       },
     }));
 
@@ -932,19 +996,7 @@ const GrowthDetailSection: React.FC = () => {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                if (selectedModuleId) {
-                  setSelectedModuleId(null);
-                } else {
-                  if (selectedResourceId) {
-                    localStorage.setItem(prefillResourceKey, selectedResourceId);
-                  } else {
-                    localStorage.removeItem(prefillResourceKey);
-                  }
-                  localStorage.setItem('rooted_growth_mode_active_tab', 'resources');
-                  setCurrentView('growth-mode');
-                }
-              }}
+              onClick={handleBackNavigation}
               className="p-2 hover:bg-[#1A211A] rounded-lg transition"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -1011,8 +1063,9 @@ const GrowthDetailSection: React.FC = () => {
             <div className="grid gap-4">
               {resource && orderedResourceModules.map((mod, idx) => (
                 (() => {
-                  const moduleId = resolveModuleId(resource.id, mod, idx);
-                  const completionKey = buildModuleResourceCompletionKey(resource.id, moduleId);
+                  const resourceId = toResourceId(resource.id);
+                  const moduleId = resolveModuleId(resourceId, mod, idx);
+                  const completionKey = buildModuleResourceCompletionKey(resourceId, moduleId);
                   const completedMap = moduleResourceCompletions[completionKey] || {};
                   const moduleBlogIds = ((mod.blogIds || []).filter(
                     (id): id is string => typeof id === 'string'
@@ -1020,12 +1073,13 @@ const GrowthDetailSection: React.FC = () => {
                   const moduleResourcesCompleted =
                     moduleBlogIds.length > 0 && moduleBlogIds.every((blogId) => !!completedMap[blogId]);
                   const showClearVoiceBadge =
-                    isClearVoiceModule(mod, blogs) && moduleResourcesCompleted;
+                    moduleResourcesCompleted &&
+                    (isClearVoiceModule(mod, blogs) || !!completedMap[CLEAR_VOICE_BADGE_FLAG]);
 
                   return (
                     <div
                       key={moduleId}
-                      onClick={() => setSelectedModuleId(moduleId)}
+                      onClick={() => openModuleWithHistory(moduleId)}
                       className="bg-[#111611] border border-[#1A211A] rounded-lg p-6 cursor-pointer hover:border-[#D9FF3D] transition group"
                     >
                       <div className="flex items-start gap-4">
@@ -1097,7 +1151,7 @@ const GrowthDetailSection: React.FC = () => {
               const moduleBlogIds = selectedModule?.blogIds || [];
               const completionKey =
                 resource && selectedModuleId
-                  ? buildModuleResourceCompletionKey(resource.id, selectedModuleId)
+                  ? buildModuleResourceCompletionKey(toResourceId(resource.id), selectedModuleId)
                   : null;
               const completedMap = completionKey ? moduleResourceCompletions[completionKey] || {} : {};
               console.log('[GrowthDetailSection] Module render:', {
@@ -1177,7 +1231,7 @@ const GrowthDetailSection: React.FC = () => {
             {resource && orderedResourceModules.length > 0 && selectedModuleId && (
               (() => {
                 const currentIdx = orderedResourceModules.findIndex((module, index) =>
-                  resolveModuleId(resource.id, module, index) === selectedModuleId
+                  resolveModuleId(toResourceId(resource.id), module, index) === selectedModuleId
                 );
                 const hasResolvedIndex = currentIdx >= 0;
                 const hasPrev = hasResolvedIndex && currentIdx > 0;
@@ -1201,7 +1255,7 @@ const GrowthDetailSection: React.FC = () => {
                 const showClearVoiceCompletionMessage =
                   hasModuleResources &&
                   resourcesCompletedForCurrentModule &&
-                  isClearVoiceModule(currentModule, blogs);
+                  (isClearVoiceModule(currentModule, blogs) || !!currentCompletedMap[CLEAR_VOICE_BADGE_FLAG]);
                 const topicText = [
                   resource.title,
                   resource.category,
@@ -1223,7 +1277,9 @@ const GrowthDetailSection: React.FC = () => {
                           onClick={() => {
                             const prevModule = orderedResourceModules[currentIdx - 1];
                             if (prevModule) {
-                              setSelectedModuleId(resolveModuleId(resource.id, prevModule, currentIdx - 1));
+                              openModuleWithHistory(
+                                resolveModuleId(toResourceId(resource.id), prevModule, currentIdx - 1)
+                              );
                             }
                           }}
                           className="flex-1 py-3 px-4 bg-[#1A211A] text-white rounded-lg hover:bg-[#252C25] transition"
@@ -1236,7 +1292,9 @@ const GrowthDetailSection: React.FC = () => {
                           onClick={() => {
                             const nextModule = orderedResourceModules[currentIdx + 1];
                             if (nextModule) {
-                              setSelectedModuleId(resolveModuleId(resource.id, nextModule, currentIdx + 1));
+                              openModuleWithHistory(
+                                resolveModuleId(toResourceId(resource.id), nextModule, currentIdx + 1)
+                              );
                             }
                           }}
                           disabled={nextButtonDisabled}
