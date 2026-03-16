@@ -73,10 +73,120 @@ type PathReflectionRecord = {
 };
 
 type ModuleResourceCompletionMap = Record<string, Record<string, true>>;
+type ModuleCompletionBadge = {
+  label: string;
+  description: string;
+  encouragement: string;
+  aliases: string[];
+};
 
 const buildModuleResourceCompletionKey = (resourceId: string, moduleId: string): string =>
   `${resourceId}::${moduleId}`;
 const CLEAR_VOICE_BADGE_FLAG = '__clear_voice_badge';
+const CLEAR_VOICE_BADGE: ModuleCompletionBadge = {
+  label: 'Clear Voice Badge Earned',
+  description:
+    'You completed the Communication Skills module and practiced balancing honesty, empathy, and healthy boundaries in conversation.',
+  encouragement:
+    'Keep practicing these skills in your daily interactions — the more you use them, the more natural they become.',
+  aliases: ['communication skills'],
+};
+const MODULE_COMPLETION_BADGES: ModuleCompletionBadge[] = [
+  {
+    label: 'Steady Mind Badge Earned',
+    description:
+      'You completed the Emotional Regulation module and practiced recognizing emotions, pausing before reacting, and responding with calm honesty.',
+    encouragement:
+      'Strong emotions become powerful guides when they are met with awareness and intention.',
+    aliases: ['emotional regulation foundations', 'emotional regulation'],
+  },
+  {
+    label: 'Rooted Boundaries Badge Earned',
+    description:
+      'You completed the Healthy Boundaries module and practiced expressing needs with clarity, respect, and confidence.',
+    encouragement:
+      'Healthy boundaries protect your well-being and help relationships grow with trust and mutual respect.',
+    aliases: ['healthy boundaries'],
+  },
+  {
+    label: 'Courage in Conflict Badge Earned',
+    description:
+      'You completed the Conflict as Connection module and practiced approaching disagreements with honesty, empathy, and respect.',
+    encouragement:
+      'When handled thoughtfully, conflict can strengthen understanding and deepen connection.',
+    aliases: ['conflict as connection'],
+  },
+  {
+    label: 'Calm Awareness Badge Earned',
+    description:
+      'You completed the Emotional Triggers module and practiced recognizing emotional signals before responding.',
+    encouragement:
+      'Awareness transforms emotional reactions into opportunities for understanding and growth.',
+    aliases: ['emotional triggers'],
+  },
+  {
+    label: 'Secure Connection Badge Earned',
+    description:
+      'You completed the Attachment Styles module and explored how emotional patterns influence closeness and communication.',
+    encouragement:
+      'Understanding these patterns helps build relationships grounded in empathy, trust, and healthy boundaries.',
+    aliases: ['attachment styles', 'attachment style'],
+  },
+  {
+    label: 'Rooted Confidence Badge Earned',
+    description:
+      'You completed the Self-Worth & Identity module and reflected on how personal values shape communication and boundaries.',
+    encouragement:
+      'Confidence in who you are helps relationships grow from honesty and self-respect.',
+    aliases: [
+      'self-worth & identity',
+      'self worth & identity',
+      'self-worth and identity',
+      'self worth and identity',
+    ],
+  },
+  {
+    label: 'Integrity in Action Badge Earned',
+    description:
+      'You completed the Accountability module and practiced taking responsibility while maintaining honesty and respect.',
+    encouragement:
+      'Accountability strengthens trust and shows emotional maturity in relationships.',
+    aliases: ['the art of accountability', 'accountability'],
+  },
+  {
+    label: 'Whole Self Badge Earned',
+    description:
+      'You completed the Building Wholeness module and reflected on how personal growth strengthens relationships.',
+    encouragement:
+      'Healthy relationships grow strongest when two whole individuals continue evolving together.',
+    aliases: ['building wholeness', 'wholeness'],
+  },
+  {
+    label: 'Financial Clarity Badge Earned',
+    description:
+      'You completed the Financial Wellness module and practiced communicating financial values with openness and respect.',
+    encouragement:
+      'Clear financial conversations help relationships remain balanced, transparent, and aligned with shared goals.',
+    aliases: ['financial wellness'],
+  },
+  CLEAR_VOICE_BADGE,
+];
+
+const resolveModuleCompletionBadge = (
+  resourceTitle: string | undefined,
+  moduleTitle: string | undefined,
+  moduleDescription: string | undefined,
+  fallbackClearVoice: boolean
+): ModuleCompletionBadge | null => {
+  const searchText = `${resourceTitle || ''} ${moduleTitle || ''} ${moduleDescription || ''}`.toLowerCase();
+  const matchedBadge = MODULE_COMPLETION_BADGES.find((badge) =>
+    badge.aliases.some((alias) => searchText.includes(alias))
+  );
+  if (matchedBadge) return matchedBadge;
+  if (fallbackClearVoice) return CLEAR_VOICE_BADGE;
+  return null;
+};
+
 const toResourceId = (value: unknown): string =>
   typeof value === 'string' ? value : String(value ?? '');
 
@@ -1089,9 +1199,14 @@ const GrowthDetailSection: React.FC = () => {
                   )).filter((blogId) => blogs.some((blog) => blog.id === blogId));
                   const moduleResourcesCompleted =
                     moduleBlogIds.length > 0 && moduleBlogIds.every((blogId) => !!completedMap[blogId]);
-                  const showClearVoiceBadge =
-                    moduleResourcesCompleted &&
-                    (isClearVoiceModule(mod, blogs) || !!completedMap[CLEAR_VOICE_BADGE_FLAG]);
+                  const moduleCompletionBadge = moduleResourcesCompleted
+                    ? resolveModuleCompletionBadge(
+                        resource.title,
+                        mod.title,
+                        mod.description,
+                        isClearVoiceModule(mod, blogs) || !!completedMap[CLEAR_VOICE_BADGE_FLAG]
+                      )
+                    : null;
 
                   return (
                     <div
@@ -1110,9 +1225,9 @@ const GrowthDetailSection: React.FC = () => {
                           <p className="text-gray-400">{mod.description}</p>
                         </div>
                         <div className="ml-4 flex-shrink-0 text-right">
-                          {showClearVoiceBadge && (
+                          {moduleCompletionBadge && (
                             <p className="text-[11px] uppercase tracking-wide text-emerald-300 mb-1 whitespace-nowrap">
-                              Clear Voice Badge Earned
+                              {moduleCompletionBadge.label}
                             </p>
                           )}
                           <div className="text-[#D9FF3D] group-hover:translate-x-1 transition">-&gt;</div>
@@ -1269,10 +1384,16 @@ const GrowthDetailSection: React.FC = () => {
                 const resourcesCompletedForCurrentModule =
                   !hasModuleResources || currentModuleBlogIds.every((blogId) => !!currentCompletedMap[blogId]);
                 const nextButtonDisabled = hasNext && !resourcesCompletedForCurrentModule;
-                const showClearVoiceCompletionMessage =
-                  hasModuleResources &&
-                  resourcesCompletedForCurrentModule &&
-                  (isClearVoiceModule(currentModule, blogs) || !!currentCompletedMap[CLEAR_VOICE_BADGE_FLAG]);
+                const currentModuleCompletionBadge =
+                  hasModuleResources && resourcesCompletedForCurrentModule
+                    ? resolveModuleCompletionBadge(
+                        resource.title,
+                        currentModule?.title,
+                        currentModule?.description,
+                        isClearVoiceModule(currentModule, blogs) ||
+                          !!currentCompletedMap[CLEAR_VOICE_BADGE_FLAG]
+                      )
+                    : null;
                 const topicText = [
                   resource.title,
                   resource.category,
@@ -1327,18 +1448,16 @@ const GrowthDetailSection: React.FC = () => {
                         Complete all Module Resources in this module to unlock Next Module.
                       </p>
                     )}
-                    {showClearVoiceCompletionMessage && (
+                    {currentModuleCompletionBadge && (
                       <div className="text-sm text-emerald-200 space-y-1">
                         <p className="font-semibold">
-                          Clear Voice Badge Earned
+                          {currentModuleCompletionBadge.label}
                         </p>
                         <p className="text-emerald-100">
-                          You completed the Communication Skills module and practiced balancing honesty,
-                          empathy, and healthy boundaries in conversation.
+                          {currentModuleCompletionBadge.description}
                         </p>
                         <p className="text-emerald-100">
-                          Keep practicing these skills in your daily interactions — the more you use
-                          them, the more natural they become.
+                          {currentModuleCompletionBadge.encouragement}
                         </p>
                       </div>
                     )}
