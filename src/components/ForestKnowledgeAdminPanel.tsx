@@ -7,6 +7,7 @@ import { BookOpen, Edit2, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import {
   forestKnowledgeAdminService,
   type ForestKnowledgeRecord,
+  type ForestUnmatchedQueryRecord,
   type ForestKnowledgeUpsertInput,
 } from '@/services/forestKnowledgeAdminService';
 
@@ -30,8 +31,31 @@ const slugify = (value: string): string =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+type ForestUnmatchedQueryGroup = {
+  normalizedQuery: string;
+  latestQuery: string;
+  totalCount: number;
+  lastSeenAt?: string;
+  pageContexts: string[];
+  tokenSnapshot: string[];
+  topTopics: string[];
+};
+
+const formatTimestamp = (value?: string): string => {
+  if (!value) return 'Unknown';
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Unknown';
+
+  return parsed.toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+};
+
 const ForestKnowledgeAdminPanel: React.FC = () => {
   const [entries, setEntries] = useState<ForestKnowledgeRecord[]>([]);
+  const [unmatchedQueries, setUnmatchedQueries] = useState<ForestUnmatchedQueryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ForestKnowledgeRecord | null>(null);
@@ -39,11 +63,69 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
   const [keywordsInput, setKeywordsInput] = useState('');
 
   const activeCount = useMemo(() => entries.filter((entry) => entry.isActive).length, [entries]);
+  const unmatchedGroups = useMemo<ForestUnmatchedQueryGroup[]>(() => {
+    const grouped = new Map<string, ForestUnmatchedQueryGroup>();
+
+    unmatchedQueries.forEach((query) => {
+      const key = query.normalizedQuery || query.queryText.trim().toLowerCase();
+      const existing = grouped.get(key);
+
+      if (!existing) {
+        grouped.set(key, {
+          normalizedQuery: key,
+          latestQuery: query.queryText,
+          totalCount: 1,
+          lastSeenAt: query.createdAt,
+          pageContexts: query.pageContext ? [query.pageContext] : [],
+          tokenSnapshot: query.tokenSnapshot.slice(0, 8),
+          topTopics: query.topTopics.slice(0, 3),
+        });
+        return;
+      }
+
+      existing.totalCount += 1;
+
+      const existingTime = existing.lastSeenAt ? new Date(existing.lastSeenAt).getTime() : 0;
+      const queryTime = query.createdAt ? new Date(query.createdAt).getTime() : 0;
+      if (queryTime >= existingTime) {
+        existing.latestQuery = query.queryText;
+        existing.lastSeenAt = query.createdAt;
+      }
+
+      if (query.pageContext && !existing.pageContexts.includes(query.pageContext)) {
+        existing.pageContexts = [...existing.pageContexts, query.pageContext].slice(0, 4);
+      }
+
+      query.tokenSnapshot.forEach((token) => {
+        if (!existing.tokenSnapshot.includes(token) && existing.tokenSnapshot.length < 8) {
+          existing.tokenSnapshot.push(token);
+        }
+      });
+
+      query.topTopics.forEach((topic) => {
+        if (!existing.topTopics.includes(topic) && existing.topTopics.length < 4) {
+          existing.topTopics.push(topic);
+        }
+      });
+    });
+
+    return Array.from(grouped.values()).sort((a, b) => {
+      if (a.totalCount !== b.totalCount) return b.totalCount - a.totalCount;
+
+      const aTime = a.lastSeenAt ? new Date(a.lastSeenAt).getTime() : 0;
+      const bTime = b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [unmatchedQueries]);
 
   const loadEntries = async () => {
     setIsLoading(true);
-    const nextEntries = await forestKnowledgeAdminService.getAll();
+    const [nextEntries, nextUnmatchedQueries] = await Promise.all([
+      forestKnowledgeAdminService.getAll(),
+      forestKnowledgeAdminService.getUnmatchedQueries(),
+    ]);
     setEntries(nextEntries);
+    setUnmatchedQueries(nextUnmatchedQueries);
     setIsLoading(false);
   };
 
@@ -192,6 +274,87 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
           Use this tab for Forest-only doctrine and spiritual framing. Resource Area modules still
           belong in the resource editor, and long teaching content still belongs in blogs.
         </p>
+      </Card>
+
+      <Card className="border-[#1A211A] bg-[#111611] p-4">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h4 className="text-lg font-semibold text-[#F6FFF2]">
+              Unmatched Forest Questions ({unmatchedGroups.length} unique / {unmatchedQueries.length} total)
+            </h4>
+            <p className="text-sm text-[#A9B5AA]">
+              These are prompts Forest could not match strongly enough to answer. Use them to spot
+              missing keywords, new doctrine needs, or Resource Area gaps.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {isLoading ? (
+            <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4 text-sm text-[#A9B5AA]">
+              Loading unmatched Forest questions...
+            </div>
+          ) : unmatchedGroups.length === 0 ? (
+            <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4 text-sm text-[#A9B5AA]">
+              No unmatched Forest questions have been logged yet.
+            </div>
+          ) : (
+            unmatchedGroups.slice(0, 12).map((group) => (
+              <div
+                key={group.normalizedQuery}
+                className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4"
+              >
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-semibold text-[#F6FFF2]">{group.latestQuery}</p>
+                    <p className="mt-1 text-xs uppercase tracking-wide text-[#A9B5AA]">
+                      Last seen {formatTimestamp(group.lastSeenAt)}
+                    </p>
+                    <p className="mt-2 text-sm text-[#A9B5AA]">
+                      Search key: <span className="text-[#F6FFF2]">{group.normalizedQuery}</span>
+                    </p>
+                  </div>
+                  <Badge className="w-fit border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 text-[#D9FF3D]">
+                    {group.totalCount} miss{group.totalCount === 1 ? '' : 'es'}
+                  </Badge>
+                </div>
+
+                {group.pageContexts.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {group.pageContexts.map((pageContext) => (
+                      <Badge
+                        key={`${group.normalizedQuery}-${pageContext}`}
+                        className="border border-[#2A312A] bg-[#111611] text-[#A9B5AA]"
+                      >
+                        {pageContext}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
+
+                {group.tokenSnapshot.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {group.tokenSnapshot.map((token) => (
+                      <Badge
+                        key={`${group.normalizedQuery}-${token}`}
+                        className="border border-[#2A312A] bg-[#111611] text-[#A9B5AA]"
+                      >
+                        {token}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
+
+                {group.topTopics.length > 0 ? (
+                  <p className="mt-3 text-sm text-[#A9B5AA]">
+                    Closest topics seen before fallback:{' '}
+                    <span className="text-[#F6FFF2]">{group.topTopics.join(', ')}</span>
+                  </p>
+                ) : null}
+              </div>
+            ))
+          )}
+        </div>
       </Card>
 
       <div className="space-y-4">

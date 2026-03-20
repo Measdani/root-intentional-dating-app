@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { askForest, type ForestResponse } from '@/services/forestRagService';
+import { logForestUnmatchedQuery } from '@/services/forestTelemetryService';
 
 const ForestFloatingAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,7 +31,14 @@ const ForestFloatingAssistant: React.FC = () => {
     setIsLoadingResponse(true);
 
     try {
-      setResponse(await askForest(nextQuestion));
+      const nextResponse = await askForest(nextQuestion);
+      setResponse(nextResponse);
+
+      void logForestUnmatchedQuery({
+        question: nextQuestion,
+        response: nextResponse,
+        pageContext: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      });
     } finally {
       setIsLoadingResponse(false);
     }

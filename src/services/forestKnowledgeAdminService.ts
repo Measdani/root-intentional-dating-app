@@ -29,6 +29,18 @@ export type ForestKnowledgeUpsertInput = {
   isActive: boolean;
 };
 
+export type ForestUnmatchedQueryRecord = {
+  id: string;
+  queryText: string;
+  normalizedQuery: string;
+  tokenSnapshot: string[];
+  matchCount: number;
+  topScore: number;
+  topTopics: string[];
+  pageContext: string;
+  createdAt?: string;
+};
+
 type ForestKnowledgeRow = {
   id: string;
   slug: string;
@@ -43,6 +55,18 @@ type ForestKnowledgeRow = {
   is_active: boolean | null;
   created_at: string | null;
   updated_at: string | null;
+};
+
+type ForestUnmatchedQueryRow = {
+  id: string;
+  query_text: string;
+  normalized_query: string;
+  token_snapshot: string[] | null;
+  match_count: number | null;
+  top_score: number | null;
+  top_topics: string[] | null;
+  page_context: string | null;
+  created_at: string | null;
 };
 
 const mapRowToForestKnowledgeRecord = (row: ForestKnowledgeRow): ForestKnowledgeRecord => ({
@@ -72,6 +96,20 @@ const mapInputToRow = (input: ForestKnowledgeUpsertInput) => ({
   starter_prompt: input.starterPrompt || null,
   display_order: input.displayOrder,
   is_active: input.isActive,
+});
+
+const mapRowToForestUnmatchedQueryRecord = (
+  row: ForestUnmatchedQueryRow,
+): ForestUnmatchedQueryRecord => ({
+  id: row.id,
+  queryText: row.query_text,
+  normalizedQuery: row.normalized_query,
+  tokenSnapshot: Array.isArray(row.token_snapshot) ? row.token_snapshot : [],
+  matchCount: typeof row.match_count === 'number' ? row.match_count : 0,
+  topScore: typeof row.top_score === 'number' ? row.top_score : 0,
+  topTopics: Array.isArray(row.top_topics) ? row.top_topics : [],
+  pageContext: row.page_context ?? '',
+  createdAt: row.created_at ?? undefined,
 });
 
 export const forestKnowledgeAdminService = {
@@ -154,6 +192,27 @@ export const forestKnowledgeAdminService = {
     } catch (error: any) {
       console.error('Unexpected error deleting Forest knowledge entry:', error);
       return { error: error?.message || 'Unknown error' };
+    }
+  },
+
+  async getUnmatchedQueries(): Promise<ForestUnmatchedQueryRecord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('rh_forest_unmatched_queries')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Failed to load unmatched Forest queries:', error.message);
+        return [];
+      }
+
+      return Array.isArray(data)
+        ? data.map((row) => mapRowToForestUnmatchedQueryRecord(row as ForestUnmatchedQueryRow))
+        : [];
+    } catch (error) {
+      console.error('Unexpected error loading unmatched Forest queries:', error);
+      return [];
     }
   },
 };

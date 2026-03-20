@@ -16,7 +16,7 @@ export type ForestResponse = {
 };
 
 const FOREST_FALLBACK_ANSWER =
-  'Forest stays inside the Knowledge Base. If this question is outside what is stored here, return to the 333/777 rules or the 3 Layers: The Standard, The Detox, and Self-Awareness.';
+  'Forest needs a simpler prompt to find your answer. Try again';
 
 const LOW_SIGNAL_TOKENS = new Set([
   'about',
@@ -52,21 +52,21 @@ const FOREST_QUERY_EXPANSIONS: Record<string, string[]> = {
   pressure: ['control', 'fear', 'guilt', 'urgency', 'submission'],
 };
 
-const normalize = (value: string): string =>
+export const normalizeForestValue = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
-const tokenize = (value: string): string[] =>
-  normalize(value)
+export const tokenizeForestValue = (value: string): string[] =>
+  normalizeForestValue(value)
     .split(' ')
     .map((token) => token.trim())
     .filter((token) => token.length >= 3 && !LOW_SIGNAL_TOKENS.has(token));
 
 const expandQuestionTokens = (question: string): Set<string> => {
-  const expanded = new Set(tokenize(question));
+  const expanded = new Set(tokenizeForestValue(question));
 
   Array.from(expanded).forEach((token) => {
     (FOREST_QUERY_EXPANSIONS[token] ?? []).forEach((relatedToken) => {
-      tokenize(relatedToken).forEach((entry) => expanded.add(entry));
+      tokenizeForestValue(relatedToken).forEach((entry) => expanded.add(entry));
     });
   });
 
@@ -74,27 +74,27 @@ const expandQuestionTokens = (question: string): Set<string> => {
 };
 
 const scoreKnowledgeEntry = (question: string, entry: ForestKnowledgeEntry): number => {
-  const normalizedQuestion = normalize(question);
+  const normalizedQuestion = normalizeForestValue(question);
   const questionTokens = expandQuestionTokens(question);
   let score = 0;
 
   entry.keywords.forEach((keyword) => {
-    const normalizedKeyword = normalize(keyword);
+    const normalizedKeyword = normalizeForestValue(keyword);
     if (normalizedKeyword && normalizedQuestion.includes(normalizedKeyword)) {
       score += 7;
     }
   });
 
-  tokenize(entry.topic).forEach((token) => {
+  tokenizeForestValue(entry.topic).forEach((token) => {
     if (questionTokens.has(token)) score += 5;
   });
 
-  tokenize(entry.category).forEach((token) => {
+  tokenizeForestValue(entry.category).forEach((token) => {
     if (questionTokens.has(token)) score += 3;
   });
 
-  tokenize(entry.content)
-    .concat(tokenize(entry.searchText ?? ''))
+  tokenizeForestValue(entry.content)
+    .concat(tokenizeForestValue(entry.searchText ?? ''))
     .filter((token) => token.length >= 5)
     .forEach((token) => {
       if (questionTokens.has(token)) score += 1;
