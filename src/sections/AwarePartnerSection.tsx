@@ -281,11 +281,25 @@ const AwarePartnerSection: React.FC = () => {
           <h2 className="mt-2 font-display text-[clamp(30px,4vw,44px)] text-[#F6FFF2]">
             The Aware Partner
           </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#A9B5AA]">
-            Your path navigation now lives here on its own page. Choose a path below and continue the same activity flow you had before.
-          </p>
+          <div className="mt-3 max-w-3xl space-y-4 text-sm leading-relaxed text-[#A9B5AA]">
+            <p>This is where it begins.</p>
+            <p>
+              The Aware Partner focuses on understanding yourself: your patterns, your communication style,
+              your emotional responses, and the experiences that shaped how you show up in relationships.
+            </p>
+            <p>Before love can grow in a healthy way, awareness has to come first.</p>
+            <p>
+              Here, you&apos;ll learn to recognize what you need, how you react, and where growth is needed,
+              not with judgment, but with honesty.
+            </p>
+            <p>
+              Because you can&apos;t change what you don&apos;t understand...
+              <br />
+              and awareness is the first step toward becoming a better partner.
+            </p>
+          </div>
           <div className="mt-4 inline-flex items-center rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium text-[#D9FF3D]">
-            The Aware Partner Badge
+            Complete 1 of the 5 paths to unlock The Aware Partner Badge
           </div>
         </div>
 

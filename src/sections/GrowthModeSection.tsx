@@ -245,16 +245,16 @@ const PARTNER_JOURNEY_SECTIONS: PartnerJourneySection[] = [
   {
     title: 'The Intentional Partner',
     badge: 'The Intentional Partner Badge',
-    description: 'The section title and frame are ready here for the next set of lessons and prompts.',
+    description: 'Awareness without action keeps you stuck.',
     icon: Target,
-    isPlaceholder: true,
+    view: 'intentional-partner',
   },
   {
     title: 'The Healthy Partner',
     badge: 'The Healthy Partner Badge',
-    description: 'This section frame is ready for the final set of resources and completion criteria.',
+    description: 'This is where growth becomes consistency.',
     icon: Heart,
-    isPlaceholder: true,
+    view: 'healthy-partner',
   },
 ];
 
@@ -1116,6 +1116,10 @@ const GrowthModeSection: React.FC = () => {
             {PARTNER_JOURNEY_SECTIONS.map((section, index) => {
               const Icon = section.icon;
               const isInteractive = Boolean(section.view);
+              const cardActionCopy =
+                section.view === 'aware-partner'
+                  ? 'Path navigation for this section now opens on its own page.'
+                  : 'Open this section to view the hero introduction.';
               const baseCardClassName = `rounded-2xl border p-5 ${
                 section.isPlaceholder
                   ? 'border-[#2A312A] bg-[#111611]'
@@ -1161,9 +1165,7 @@ const GrowthModeSection: React.FC = () => {
 
                   {isInteractive ? (
                     <div className="mt-4 flex items-center justify-between rounded-xl border border-[#D9FF3D]/20 bg-[#0B0F0C]/50 px-4 py-4">
-                      <p className="text-sm text-[#A9B5AA]">
-                        Path navigation for this section now opens on its own page.
-                      </p>
+                      <p className="text-sm text-[#A9B5AA]">{cardActionCopy}</p>
                       <span className="text-sm font-medium text-[#D9FF3D]">Open</span>
                     </div>
                   ) : (
