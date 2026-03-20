@@ -8,6 +8,10 @@ import { getUserSettingsForUser } from '@/services/userSettingsService';
 import { SUPPORT_EMAIL } from '@/constants/support';
 import type { UserGenderIdentity, UserIdentityExpression } from '@/types';
 import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
+import {
+  getPartnerJourneyBadgeLabel,
+  normalizePartnerJourneyBadges,
+} from '@/services/partnerJourneyBadgeService';
 
 const formatGenderIdentity = (value?: UserGenderIdentity): string => {
   switch (value) {
@@ -133,6 +137,7 @@ const ProfileDetailSection: React.FC = () => {
     (style): style is keyof typeof ASSESSMENT_STYLE_META =>
       typeof style === 'string' && style in ASSESSMENT_STYLE_META
   );
+  const partnerJourneyBadges = normalizePartnerJourneyBadges(selectedUser.partnerJourneyBadges);
 
   const handleExpressInterest = async (
     message: string
@@ -454,6 +459,23 @@ const ProfileDetailSection: React.FC = () => {
                         </div>
                       ) : (
                         <p className="text-[#A9B5AA] text-sm">No path badges earned yet.</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#A9B5AA] mb-1">Partner Journey Badges</p>
+                      {partnerJourneyBadges.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {partnerJourneyBadges.map((badge) => (
+                            <span
+                              key={`partner-journey-badge-${badge}`}
+                              className="px-2.5 py-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 text-emerald-100 text-xs"
+                            >
+                              {getPartnerJourneyBadgeLabel(badge)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[#A9B5AA] text-sm">No partner journey badges earned yet.</p>
                       )}
                     </div>
                   </div>

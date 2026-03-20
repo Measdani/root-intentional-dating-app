@@ -3,6 +3,7 @@ import { useApp } from '@/store/AppContext';
 import { getRelationshipModeSnapshot } from '@/modules';
 import { growthResources, paidGrowthResources } from '@/data/assessment';
 import { resourceService } from '@/services/resourceService';
+import { hasPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
 import type { GrowthResource } from '@/types';
 import {
   ArrowLeft,
@@ -95,6 +96,10 @@ const AwarePartnerSection: React.FC = () => {
   const progressStorageKey = useMemo(
     () => `rooted_growth_module_progress_${currentUser.id}`,
     [currentUser.id]
+  );
+  const awareBadgeEarned = hasPartnerJourneyBadge(
+    currentUser.partnerJourneyBadges,
+    'aware-partner-badge'
   );
 
   const combinedModeResources = useMemo(() => {
@@ -298,8 +303,16 @@ const AwarePartnerSection: React.FC = () => {
               and awareness is the first step toward becoming a better partner.
             </p>
           </div>
-          <div className="mt-4 inline-flex items-center rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium text-[#D9FF3D]">
-            Complete 1 of the 5 paths to unlock The Aware Partner Badge
+          <div
+            className={`mt-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${
+              awareBadgeEarned
+                ? 'border-emerald-400/30 text-emerald-200'
+                : 'border-[#D9FF3D]/30 text-[#D9FF3D]'
+            }`}
+          >
+            {awareBadgeEarned
+              ? 'The Aware Partner Badge earned'
+              : 'Complete 1 of the 5 paths to unlock The Aware Partner Badge'}
           </div>
         </div>
 

@@ -6,6 +6,7 @@ type PartnerSectionIntroPageProps = {
   sectionNumber: number;
   title: string;
   children: React.ReactNode;
+  afterHero?: React.ReactNode;
 };
 
 const growthModeTabStorageKey = 'rooted_growth_mode_active_tab';
@@ -14,6 +15,7 @@ const PartnerSectionIntroPage: React.FC<PartnerSectionIntroPageProps> = ({
   sectionNumber,
   title,
   children,
+  afterHero,
 }) => {
   const { setCurrentView } = useApp();
 
@@ -51,6 +53,7 @@ const PartnerSectionIntroPage: React.FC<PartnerSectionIntroPageProps> = ({
             {children}
           </div>
         </div>
+        {afterHero && <div className="mt-8">{afterHero}</div>}
       </main>
     </div>
   );

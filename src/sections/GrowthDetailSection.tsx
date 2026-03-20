@@ -6,6 +6,7 @@ import type { BlogArticle, AssessmentCoreStyle, GrowthResourceModule } from '@/t
 import { supabase } from '@/lib/supabase';
 import { resourceService } from '@/services/resourceService';
 import { ASSESSMENT_STYLE_META, ASSESSMENT_CORE_STYLES } from '@/services/assessmentStyleService';
+import { persistPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
 import ModuleBlogModal from '@/components/ModuleBlogModal';
 import { toast } from 'sonner';
 
@@ -1022,13 +1023,22 @@ const GrowthDetailSection: React.FC = () => {
       [resourceId]: nextEntry,
     };
     persistPathReflections(nextMap);
+    const awareBadgeWasNew = persistPartnerJourneyBadge('aware-partner-badge', currentUser.id);
 
     if (style) {
       persistEarnedStyleBadge(style);
       const meta = ASSESSMENT_STYLE_META[style];
-      toast.success(`Forest approved your reflection. ${meta.label} badge unlocked.`);
+      toast.success(
+        awareBadgeWasNew
+          ? `Forest approved your reflection. ${meta.label} badge unlocked and The Aware Partner Badge is now yours.`
+          : `Forest approved your reflection. ${meta.label} badge unlocked.`
+      );
     } else {
-      toast.success('Forest approved your reflection. Path badge unlocked.');
+      toast.success(
+        awareBadgeWasNew
+          ? 'Forest approved your reflection. The Aware Partner Badge is now yours.'
+          : 'Forest approved your reflection. Path badge unlocked.'
+      );
     }
 
     setReflectionFeedback(null);

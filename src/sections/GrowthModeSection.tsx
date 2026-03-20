@@ -21,7 +21,11 @@ import { getUserSettingsForUser } from '@/services/userSettingsService';
 import { getGrowthModeCoachGuidance, type GrowthModeCoachResult } from '@/services/growthModeCoachService';
 import { SUPPORT_EMAIL } from '@/constants/support';
 import { ASSESSMENT_CORE_STYLES, ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
-import type { AppView, User, AssessmentCoreStyle, AssessmentResult } from '@/types';
+import {
+  getPartnerJourneyBadgeLabel,
+  hasPartnerJourneyBadge,
+} from '@/services/partnerJourneyBadgeService';
+import type { AppView, User, AssessmentCoreStyle, AssessmentResult, PartnerJourneyBadge } from '@/types';
 import { resourceService } from '@/services/resourceService';
 
 type ResourceProgressMap = Record<
@@ -40,7 +44,7 @@ type CompatibilityInsight = {
 
 type PartnerJourneySection = {
   title: string;
-  badge: string;
+  badge: PartnerJourneyBadge;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   view?: AppView;
@@ -237,21 +241,21 @@ const LOW_SCORE_REASON_CODE_MAP: Record<string, string> = {
 const PARTNER_JOURNEY_SECTIONS: PartnerJourneySection[] = [
   {
     title: 'The Aware Partner',
-    badge: 'The Aware Partner Badge',
+    badge: 'aware-partner-badge',
     description: 'This first section is in place and anchors the full relationship-growth journey.',
     icon: Brain,
     view: 'aware-partner',
   },
   {
     title: 'The Intentional Partner',
-    badge: 'The Intentional Partner Badge',
+    badge: 'intentional-partner-badge',
     description: 'Awareness without action keeps you stuck.',
     icon: Target,
     view: 'intentional-partner',
   },
   {
     title: 'The Healthy Partner',
-    badge: 'The Healthy Partner Badge',
+    badge: 'healthy-partner-badge',
     description: 'This is where growth becomes consistency.',
     icon: Heart,
     view: 'healthy-partner',
@@ -1119,7 +1123,13 @@ const GrowthModeSection: React.FC = () => {
               const cardActionCopy =
                 section.view === 'aware-partner'
                   ? 'Path navigation for this section now opens on its own page.'
-                  : 'Open this section to view the hero introduction.';
+                  : section.view === 'intentional-partner'
+                    ? 'Open this section to enter The Conflict Sandbox.'
+                    : 'Open this section to view the hero introduction.';
+              const sectionBadgeEarned = hasPartnerJourneyBadge(
+                currentUser.partnerJourneyBadges,
+                section.badge
+              );
               const baseCardClassName = `rounded-2xl border p-5 ${
                 section.isPlaceholder
                   ? 'border-[#2A312A] bg-[#111611]'
@@ -1149,7 +1159,7 @@ const GrowthModeSection: React.FC = () => {
 
                     <div className="flex flex-wrap gap-2">
                       <span className="rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium text-[#D9FF3D]">
-                        {section.badge}
+                        {getPartnerJourneyBadgeLabel(section.badge)}
                       </span>
                       <span
                         className={`rounded-full border px-3 py-1 text-xs font-medium ${
@@ -1158,7 +1168,11 @@ const GrowthModeSection: React.FC = () => {
                             : 'border-emerald-400/30 text-emerald-200'
                         }`}
                       >
-                        {section.isPlaceholder ? 'Frame ready' : 'Ready to open'}
+                        {section.isPlaceholder
+                          ? 'Frame ready'
+                          : sectionBadgeEarned
+                            ? 'Badge earned'
+                            : 'Ready to open'}
                       </span>
                     </div>
                   </div>
@@ -1166,7 +1180,9 @@ const GrowthModeSection: React.FC = () => {
                   {isInteractive ? (
                     <div className="mt-4 flex items-center justify-between rounded-xl border border-[#D9FF3D]/20 bg-[#0B0F0C]/50 px-4 py-4">
                       <p className="text-sm text-[#A9B5AA]">{cardActionCopy}</p>
-                      <span className="text-sm font-medium text-[#D9FF3D]">Open</span>
+                      <span className="text-sm font-medium text-[#D9FF3D]">
+                        {sectionBadgeEarned ? 'Review' : 'Open'}
+                      </span>
                     </div>
                   ) : (
                     <div className="mt-4 flex min-h-[96px] items-center rounded-xl border border-dashed border-[#2E372E] bg-[#0B0F0C] px-4 py-5">

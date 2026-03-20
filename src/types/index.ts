@@ -19,6 +19,10 @@ export type UserIdentityExpression =
 
 export type UserIdentityVisibility = 'after-mutual-interest' | 'always-visible';
 export type RelationshipMode = 'active' | 'break' | 'exclusive';
+export type PartnerJourneyBadge =
+  | 'aware-partner-badge'
+  | 'intentional-partner-badge'
+  | 'healthy-partner-badge';
 
 export interface User {
   id: string;
@@ -66,6 +70,7 @@ export interface User {
   poolId?: 'core-inner' | 'core-advanced'; // Which lane this account belongs to
   mode?: RelationshipMode;
   growthStyleBadges?: AssessmentCoreStyle[];
+  partnerJourneyBadges?: PartnerJourneyBadge[];
 }
 
 export type AssessmentOptionStyle =
