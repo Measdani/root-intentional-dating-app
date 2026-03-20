@@ -8,13 +8,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { FOREST_KNOWLEDGE_BASE, FOREST_STARTER_PROMPTS } from '@/data/forestKnowledgeBase';
+import {
+  FOREST_KNOWLEDGE_BASE,
+  FOREST_STARTER_PROMPTS,
+  type ForestKnowledgeEntry,
+  type ForestStarterPrompt,
+} from '@/data/forestKnowledgeBase';
 import { askForest, type ForestResponse } from '@/services/forestRagService';
+import { getForestKnowledgeBase, getForestStarterPrompts } from '@/services/forestKnowledgeService';
 
 const ForestFloatingAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<ForestResponse | null>(null);
+  const [knowledgeEntries, setKnowledgeEntries] = useState<ForestKnowledgeEntry[]>(FOREST_KNOWLEDGE_BASE);
+  const [starterPrompts, setStarterPrompts] = useState<ForestStarterPrompt[]>(FOREST_STARTER_PROMPTS);
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
 
   useEffect(() => {
     const handleOpenForest = () => setIsOpen(true);
@@ -22,12 +31,41 @@ const ForestFloatingAssistant: React.FC = () => {
     return () => window.removeEventListener('open-forest-assistant', handleOpenForest);
   }, []);
 
-  const handleAskForest = (questionOverride?: string) => {
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadForestKnowledge = async () => {
+      const [nextKnowledgeEntries, nextStarterPrompts] = await Promise.all([
+        getForestKnowledgeBase(),
+        getForestStarterPrompts(),
+      ]);
+
+      if (!isMounted) return;
+      setKnowledgeEntries(
+        nextKnowledgeEntries.filter((entry) => typeof entry.displayOrder === 'number' && entry.displayOrder > 0),
+      );
+      setStarterPrompts(nextStarterPrompts);
+    };
+
+    void loadForestKnowledge();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleAskForest = async (questionOverride?: string) => {
     const nextQuestion = (questionOverride ?? question).trim();
     if (!nextQuestion) return;
 
     setQuestion(nextQuestion);
-    setResponse(askForest(nextQuestion));
+    setIsLoadingResponse(true);
+
+    try {
+      setResponse(await askForest(nextQuestion));
+    } finally {
+      setIsLoadingResponse(false);
+    }
   };
 
   return (
@@ -57,8 +95,9 @@ const ForestFloatingAssistant: React.FC = () => {
           </div>
           <DialogTitle className="font-display text-3xl text-[#F6FFF2]">Forest</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-[#A9B5AA]">
-            Forest is available from this icon on every user page. He stays grounded in The
-            Standard, The Detox, and Self-Awareness instead of giving generic advice.
+            Forest is available from this icon on every user page. He reads from the Rooted Hearts
+            doctrine, Resource Area materials, and published resource blogs so the guidance stays
+            grounded in what is actually inside the app.
           </DialogDescription>
         </DialogHeader>
 
@@ -66,8 +105,9 @@ const ForestFloatingAssistant: React.FC = () => {
           <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4">
             <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Forest&apos;s Lane</p>
             <p className="mt-2 text-sm leading-relaxed text-[#F6FFF2]">
-              Forest only answers from the local knowledge base. If a question falls outside of it,
-              he redirects users back to the 333/777 rules and the 3 Layers instead of guessing.
+              Forest answers from the Supabase doctrine table plus the Resource Area content sources.
+              If a question falls outside of what the app actually contains, he redirects users back
+              to the 333/777 rules and the 3 Layers instead of guessing.
             </p>
           </div>
 
@@ -81,11 +121,11 @@ const ForestFloatingAssistant: React.FC = () => {
               className="mt-3 w-full rounded-xl border border-[#1A211A] bg-[#111611] px-4 py-3 text-sm text-[#F6FFF2] placeholder:text-[#738073] focus:border-[#D9FF3D] focus:outline-none resize-none"
             />
             <div className="mt-3 flex flex-wrap gap-2">
-              {FOREST_STARTER_PROMPTS.map((prompt) => (
+              {starterPrompts.map((prompt) => (
                 <button
                   key={prompt.label}
                   type="button"
-                  onClick={() => handleAskForest(prompt.question)}
+                  onClick={() => void handleAskForest(prompt.question)}
                   className="rounded-full border border-[#2A312A] px-3 py-1.5 text-xs font-medium text-[#A9B5AA] hover:border-[#D9FF3D]/40 hover:text-[#F6FFF2] transition"
                 >
                   {prompt.label}
@@ -95,16 +135,24 @@ const ForestFloatingAssistant: React.FC = () => {
             <div className="mt-4 flex justify-end">
               <button
                 type="button"
-                onClick={() => handleAskForest()}
-                className="inline-flex items-center gap-2 rounded-full bg-[#D9FF3D] px-4 py-2 text-sm font-semibold text-[#0B0F0C] hover:brightness-95 transition"
+                onClick={() => void handleAskForest()}
+                disabled={isLoadingResponse}
+                className="inline-flex items-center gap-2 rounded-full bg-[#D9FF3D] px-4 py-2 text-sm font-semibold text-[#0B0F0C] hover:brightness-95 transition disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Send className="h-4 w-4" />
-                Ask Forest
+                {isLoadingResponse ? 'Forest Is Reading...' : 'Ask Forest'}
               </button>
             </div>
           </div>
 
-          {response ? (
+          {isLoadingResponse ? (
+            <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-4">
+              <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Forest Response</p>
+              <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
+                Forest is reading the knowledge base and grounding your question now.
+              </p>
+            </div>
+          ) : response ? (
             <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-4">
               <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">
                 {response.redirectUsed ? 'Redirect' : 'Forest Response'}
@@ -131,11 +179,11 @@ const ForestFloatingAssistant: React.FC = () => {
             </div>
           ) : (
             <div className="grid gap-3 md:grid-cols-3">
-              {FOREST_KNOWLEDGE_BASE.map((entry) => (
+              {knowledgeEntries.map((entry) => (
                 <button
                   key={`${entry.category}-${entry.topic}`}
                   type="button"
-                  onClick={() => handleAskForest(entry.topic)}
+                  onClick={() => void handleAskForest(entry.topic)}
                   className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4 text-left hover:border-[#D9FF3D]/40 transition"
                 >
                   <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">{entry.category}</p>

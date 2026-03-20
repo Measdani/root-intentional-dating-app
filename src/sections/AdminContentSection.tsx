@@ -10,6 +10,7 @@ import { growthResources, paidGrowthResources, membershipTiers } from '@/data/as
 import type { GrowthResource, BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
 import { resourceService } from '@/services/resourceService';
+import ForestKnowledgeAdminPanel from '@/components/ForestKnowledgeAdminPanel';
 
 type ModuleInputBehaviorOption = {
   id: string;
@@ -125,7 +126,7 @@ const AdminContentSection: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<GrowthResource>>({});
   const [newOutcome, setNewOutcome] = useState('');
-  const [activeTab, setActiveTab] = useState<'free' | 'paid' | 'membership' | 'blogs'>('free');
+  const [activeTab, setActiveTab] = useState<'free' | 'paid' | 'membership' | 'blogs' | 'forest'>('free');
   const [blogs, setBlogs] = useState<BlogArticle[]>(() => {
     const saved = localStorage.getItem('community-blogs');
     return saved ? JSON.parse(saved) : [];
@@ -441,6 +442,7 @@ const AdminContentSection: React.FC = () => {
           <TabsTrigger value="paid" onClick={() => setActiveTab('paid')}>Paid Resources</TabsTrigger>
           <TabsTrigger value="membership" onClick={() => setActiveTab('membership')}>Membership Tiers</TabsTrigger>
           <TabsTrigger value="blogs" onClick={() => setActiveTab('blogs')}>Community Blog</TabsTrigger>
+          <TabsTrigger value="forest" onClick={() => setActiveTab('forest')}>Forest Knowledge</TabsTrigger>
         </TabsList>
 
         <TabsContent value="free" className="space-y-4">
@@ -688,6 +690,10 @@ const AdminContentSection: React.FC = () => {
               </div>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="forest" className="space-y-4">
+          <ForestKnowledgeAdminPanel />
         </TabsContent>
       </Tabs>
 
