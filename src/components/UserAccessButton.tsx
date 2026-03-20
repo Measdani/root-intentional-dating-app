@@ -21,7 +21,7 @@ const UserAccessButton: React.FC = () => {
   }
 
   return (
-    <div className="fixed top-24 right-8 z-40">
+    <div>
       <div className="relative">
         <button
           onClick={() => {
@@ -33,7 +33,7 @@ const UserAccessButton: React.FC = () => {
           }}
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}
-          className="group relative w-12 h-12 bg-green-600 text-white rounded-full shadow-lg hover:scale-110 transition-transform flex items-center justify-center"
+          className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-green-600 text-white shadow-lg transition-transform hover:scale-110"
         >
           <Settings className="w-5 h-5" />
         </button>

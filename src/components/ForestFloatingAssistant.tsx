@@ -41,7 +41,7 @@ const ForestFloatingAssistant: React.FC = () => {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="fixed top-24 right-24 z-[115] flex items-center gap-2 rounded-full border border-[#D9FF3D]/50 bg-[#0B0F0C] px-4 py-2 text-[#D9FF3D] shadow-lg shadow-black/30 hover:bg-[#121A12] transition-colors"
+          className="flex items-center gap-2 rounded-full border border-[#D9FF3D]/50 bg-[#0B0F0C] px-4 py-2 text-[#D9FF3D] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
           aria-label="Open Forest"
           title="Open Forest"
         >
@@ -57,9 +57,7 @@ const ForestFloatingAssistant: React.FC = () => {
         <DialogHeader className="border-b border-[#1A211A] px-5 py-5 pr-12">
           <div className="flex items-center gap-2 text-[#D9FF3D]">
             <Sparkles className="h-4 w-4" />
-            <p className="text-xs font-semibold uppercase tracking-[0.18em]">
-              Forest, Objective Spiritual Observer
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em]">Objective Spiritual Observer</p>
           </div>
           <DialogTitle className="font-display text-3xl text-[#F6FFF2]">Forest</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-[#A9B5AA]">
@@ -71,7 +69,6 @@ const ForestFloatingAssistant: React.FC = () => {
 
         <div className="max-h-[80vh] overflow-y-auto px-5 py-5 space-y-5">
           <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4">
-            <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Forest&apos;s Lane</p>
             <p className="mt-2 text-sm leading-relaxed text-[#F6FFF2]">
               Forest answers from the Supabase doctrine table plus the Resource Area content sources.
               If a question falls outside of what the app actually contains, he redirects users back
@@ -80,7 +77,6 @@ const ForestFloatingAssistant: React.FC = () => {
           </div>
 
           <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-4">
-            <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Ask Forest</p>
             <textarea
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
@@ -145,7 +141,6 @@ const ForestFloatingAssistant: React.FC = () => {
             </div>
           ) : (
             <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4">
-              <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Search Forest</p>
               <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
                 Ask a full question in the text box above. Forest will search your stored content
                 and answer from what exists in the app.

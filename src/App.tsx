@@ -200,8 +200,12 @@ const AppContent: React.FC = () => {
         <>
           <EmailModal />
           <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
-          {currentView !== 'landing' && <UserAccessButton />}
-          {currentView !== 'landing' && <ForestFloatingAssistant />}
+          {currentView !== 'landing' && (
+            <div className="fixed top-24 right-4 z-[115] flex flex-col items-end gap-3 sm:right-8">
+              <UserAccessButton />
+              <ForestFloatingAssistant />
+            </div>
+          )}
         </>
       )}
       <Toaster theme="dark" position="bottom-right" />
