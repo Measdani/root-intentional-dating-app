@@ -38,6 +38,14 @@ type CompatibilityInsight = {
   rootedRule: string;
 };
 
+type PartnerJourneySection = {
+  title: string;
+  badge: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  isPlaceholder?: boolean;
+};
+
 const STYLE_PAIR_INSIGHTS: Record<AssessmentCoreStyle, Record<AssessmentCoreStyle, CompatibilityInsight>> = {
   oak: {
     oak: {
@@ -224,6 +232,29 @@ const LOW_SCORE_REASON_CODE_MAP: Record<string, string> = {
   'conflict-repair': 'low_conflict_repair',
   'integrity-check': 'low_integrity_alignment',
 };
+
+const PARTNER_JOURNEY_SECTIONS: PartnerJourneySection[] = [
+  {
+    title: 'The Aware Partner',
+    badge: 'The Aware Partner Badge',
+    description: 'This first section is in place and anchors the full relationship-growth journey.',
+    icon: Brain,
+  },
+  {
+    title: 'The Intentional Partner',
+    badge: 'The Intentional Partner Badge',
+    description: 'The section title and frame are ready here for the next set of lessons and prompts.',
+    icon: Target,
+    isPlaceholder: true,
+  },
+  {
+    title: 'The Healthy Partner',
+    badge: 'The Healthy Partner Badge',
+    description: 'This section frame is ready for the final set of resources and completion criteria.',
+    icon: Heart,
+    isPlaceholder: true,
+  },
+];
 
 const buildGrowthReasonCodes = (result: AssessmentResult | null): string[] => {
   if (!result) return [];
@@ -1151,6 +1182,76 @@ const GrowthModeSection: React.FC = () => {
             <Users className="w-4 h-4" />
             Compatibility Map
           </button>
+        </div>
+
+        <div className="mb-12">
+          <div className="mb-5">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Partner Journey</p>
+            <h3 className="mt-2 font-display text-2xl text-[#F6FFF2]">Resource Area Sections</h3>
+            <p className="mt-2 max-w-3xl text-sm text-[#A9B5AA]">
+              The second and third section frames are now in place below the first section so the area is ready for the next buildout.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {PARTNER_JOURNEY_SECTIONS.map((section, index) => {
+              const Icon = section.icon;
+
+              return (
+                <div
+                  key={section.title}
+                  className={`rounded-2xl border p-5 ${
+                    section.isPlaceholder
+                      ? 'border-[#2A312A] bg-[#111611]'
+                      : 'border-[#D9FF3D]/30 bg-[#D9FF3D]/10'
+                  }`}
+                >
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-4">
+                      <div
+                        className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${
+                          section.isPlaceholder
+                            ? 'bg-[#1A211A] text-[#A9B5AA]'
+                            : 'bg-[#D9FF3D]/20 text-[#D9FF3D]'
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Section {index + 1}</p>
+                        <h4 className="mt-1 text-xl font-semibold text-[#F6FFF2]">{section.title}</h4>
+                        <p className="mt-2 text-sm text-[#A9B5AA]">{section.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium text-[#D9FF3D]">
+                        {section.badge}
+                      </span>
+                      <span
+                        className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                          section.isPlaceholder
+                            ? 'border-[#2A312A] text-[#A9B5AA]'
+                            : 'border-emerald-400/30 text-emerald-200'
+                        }`}
+                      >
+                        {section.isPlaceholder ? 'Frame ready' : 'In place'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {section.isPlaceholder && (
+                    <div className="mt-4 flex min-h-[96px] items-center rounded-xl border border-dashed border-[#2E372E] bg-[#0B0F0C] px-4 py-5">
+                      <p className="text-sm text-[#A9B5AA]">
+                        Section frame added. Share the lesson structure and content for this section and I can build it next.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Growth Resources */}
