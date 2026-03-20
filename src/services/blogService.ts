@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { sampleBlogs } from '@/data/blogs'
 import type { BlogArticle } from '@/types'
 
 function toBoolean(value: unknown): boolean {
@@ -9,6 +10,29 @@ function toBoolean(value: unknown): boolean {
     return normalized === 'true' || normalized === '1' || normalized === 't' || normalized === 'yes'
   }
   return false
+}
+
+function isModuleOnly(value: unknown): boolean {
+  return toBoolean(value)
+}
+
+function getStoredPublicBlogs(): BlogArticle[] {
+  if (typeof window === 'undefined') return []
+
+  try {
+    const saved = window.localStorage.getItem('community-blogs')
+    if (!saved) return []
+
+    const parsed = JSON.parse(saved)
+    if (!Array.isArray(parsed)) return []
+
+    return parsed
+      .map(mapRowToBlog)
+      .filter((blog) => !isModuleOnly(blog.moduleOnly) && blog.published !== false)
+  } catch (error) {
+    console.warn('Failed to parse stored community blogs:', error)
+    return []
+  }
 }
 
 export const blogService = {
@@ -77,6 +101,20 @@ export const blogService = {
       console.error('Unexpected error fetching blogs:', e)
       return []
     }
+  },
+
+  async getPublicBlogsWithFallback(): Promise<BlogArticle[]> {
+    const supabaseBlogs = await this.getAllBlogs()
+    if (supabaseBlogs.length > 0) {
+      return supabaseBlogs.filter((blog) => !isModuleOnly(blog.moduleOnly) && blog.published !== false)
+    }
+
+    const storedBlogs = getStoredPublicBlogs()
+    if (storedBlogs.length > 0) {
+      return storedBlogs
+    }
+
+    return sampleBlogs.filter((blog) => !isModuleOnly(blog.moduleOnly) && blog.published !== false)
   },
 
   async getAllBlogsIncludingUnpublished(): Promise<BlogArticle[]> {

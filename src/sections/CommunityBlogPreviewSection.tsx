@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { sampleBlogs } from '@/data/blogs';
 import { BookOpen, Clock } from 'lucide-react';
 import type { BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
@@ -10,48 +9,16 @@ const CommunityBlogPreviewSection: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const sectionRef = useRef<HTMLElement>(null);
-  const isModuleOnly = (blog: any): boolean => {
-    const raw = blog?.moduleOnly ?? blog?.module_only;
-    if (typeof raw === 'boolean') return raw;
-    if (typeof raw === 'number') return raw === 1;
-    if (typeof raw === 'string') {
-      const normalized = raw.trim().toLowerCase();
-      return normalized === 'true' || normalized === '1' || normalized === 't' || normalized === 'yes';
-    }
-    return false;
-  };
-
-  // Load public blogs from Supabase or localStorage, fallback to sample blogs
+  // Load public blogs from shared user feed
   useEffect(() => {
     const loadBlogs = async () => {
       try {
-        const supabaseBlogList = await blogService.getAllBlogs();
-        if (supabaseBlogList.length > 0) {
-          // Only show public blogs (not module-only)
-          const publicBlogs = supabaseBlogList.filter((b) => !isModuleOnly(b));
-          setBlogs(publicBlogs.slice(0, 6)); // Show up to 6
-          return;
-        }
+        const publicBlogs = await blogService.getPublicBlogsWithFallback();
+        setBlogs(publicBlogs.slice(0, 6));
+        return;
       } catch (error) {
         console.error('Error loading blogs from Supabase:', error);
       }
-
-      // Try localStorage as fallback
-      try {
-        const saved = localStorage.getItem('community-blogs');
-        if (saved) {
-          const localBlogs = JSON.parse(saved);
-          const publicBlogs = localBlogs.filter((b: BlogArticle) => !isModuleOnly(b));
-          setBlogs(publicBlogs.slice(0, 6));
-          return;
-        }
-      } catch (error) {
-        console.error('Error loading blogs from localStorage:', error);
-      }
-
-      // Use sample blogs as final fallback
-      const publicSamples = sampleBlogs.filter((b) => !isModuleOnly(b));
-      setBlogs(publicSamples.slice(0, 6));
     };
 
     loadBlogs();

@@ -10,41 +10,14 @@ const CommunityBlogPage: React.FC = () => {
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const isModuleOnly = (blog: any): boolean => {
-    const raw = blog?.moduleOnly ?? blog?.module_only;
-    if (typeof raw === 'boolean') return raw;
-    if (typeof raw === 'number') return raw === 1;
-    if (typeof raw === 'string') {
-      const normalized = raw.trim().toLowerCase();
-      return normalized === 'true' || normalized === '1' || normalized === 't' || normalized === 'yes';
-    }
-    return false;
-  };
-
   // Load blogs from Supabase (public blogs only)
   useEffect(() => {
     const loadBlogs = async () => {
       try {
-        const supabaseBlogList = await blogService.getAllBlogs();
-        if (supabaseBlogList.length > 0) {
-          console.log('Loaded community blogs from Supabase:', supabaseBlogList.length);
-          setBlogs(supabaseBlogList.filter((b) => !isModuleOnly(b)));
-        } else {
-          console.log('No public blogs in Supabase, checking localStorage');
-          const saved = localStorage.getItem('community-blogs');
-          if (saved) {
-            const localBlogs = JSON.parse(saved);
-            setBlogs(localBlogs.filter((b: any) => !isModuleOnly(b)));
-          }
-        }
+        const publicBlogs = await blogService.getPublicBlogsWithFallback();
+        setBlogs(publicBlogs);
       } catch (error) {
         console.error('Error loading community blogs:', error);
-        // Fall back to localStorage
-        const saved = localStorage.getItem('community-blogs');
-        if (saved) {
-          const localBlogs = JSON.parse(saved);
-          setBlogs(localBlogs.filter((b: any) => !isModuleOnly(b)));
-        }
       }
     };
     loadBlogs();
@@ -57,8 +30,6 @@ const CommunityBlogPage: React.FC = () => {
   }, [selectedBlog?.id]);
 
   const filteredBlogs = blogs.filter((blog) => {
-    // Only show public blogs (not module-only)
-    if (isModuleOnly(blog)) return false;
     const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       blog.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !selectedCategory || blog.category === selectedCategory;

@@ -17,12 +17,13 @@ import { BookOpen, Clock, Sparkles, Brain, Target, Heart, Users, MessageCircle, 
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
+import { blogService } from '@/services/blogService';
 import { ASSESSMENT_CORE_STYLES, ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
 import {
   getPartnerJourneyBadgeLabel,
   hasPartnerJourneyBadge,
 } from '@/services/partnerJourneyBadgeService';
-import type { AppView, User, AssessmentCoreStyle, PartnerJourneyBadge } from '@/types';
+import type { AppView, User, AssessmentCoreStyle, PartnerJourneyBadge, BlogArticle } from '@/types';
 
 type ResourceProgressMap = Record<
   string,
@@ -335,10 +336,7 @@ const GrowthModeSection: React.FC = () => {
   useEffect(() => {
     console.log('🔄 showReportModal state changed to:', showReportModal);
   }, [showReportModal]);
-  const [blogs] = useState<any[]>(() => {
-    const saved = localStorage.getItem('community-blogs');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const isModuleOnly = (blog: any): boolean => {
     const raw = blog?.moduleOnly ?? blog?.module_only;
     if (typeof raw === 'boolean') return raw;
@@ -353,6 +351,15 @@ const GrowthModeSection: React.FC = () => {
     () => blogs.filter((blog) => !isModuleOnly(blog) && blog.published !== false),
     [blogs]
   );
+
+  useEffect(() => {
+    const loadBlogs = async () => {
+      const publicBlogFeed = await blogService.getPublicBlogsWithFallback();
+      setBlogs(publicBlogFeed);
+    };
+
+    void loadBlogs();
+  }, []);
   const progressStorageKey = useMemo(
     () => `rooted_growth_module_progress_${currentUser.id}`,
     [currentUser.id]

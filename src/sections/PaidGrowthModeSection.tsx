@@ -6,6 +6,7 @@ import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, 
 import type { BlogArticle } from '@/types';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import { resourceService } from '@/services/resourceService';
+import { blogService } from '@/services/blogService';
 
 const PaidGrowthModeSection: React.FC = () => {
   const { setCurrentView, currentUser, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
@@ -39,12 +40,14 @@ const PaidGrowthModeSection: React.FC = () => {
     reloadNotifications();
   }, [reloadNotifications]);
 
-  // Load blogs from localStorage
+  // Load public blogs from the shared user feed
   useEffect(() => {
-    const saved = localStorage.getItem('community-blogs');
-    if (saved) {
-      setBlogs(JSON.parse(saved));
-    }
+    const loadBlogs = async () => {
+      const publicBlogFeed = await blogService.getPublicBlogsWithFallback();
+      setBlogs(publicBlogFeed);
+    };
+
+    void loadBlogs();
   }, []);
 
   // Load paid resources from Supabase, fallback to local storage/default data
