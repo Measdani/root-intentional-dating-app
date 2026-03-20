@@ -33,7 +33,10 @@ const AlignmentKeyButton: React.FC<AlignmentKeyButtonProps> = ({
         </button>
       </DialogTrigger>
 
-      <DialogContent className="border border-[#D9FF3D]/30 bg-[#111611] text-[#F6FFF2] sm:max-w-2xl">
+      <DialogContent
+        overlayClassName="bg-black/55 backdrop-blur-md"
+        className="border border-[#D9FF3D]/30 bg-[#111611] text-[#F6FFF2] sm:max-w-2xl"
+      >
         <DialogHeader className="text-left">
           <p className="text-xs uppercase tracking-[0.18em] text-[#D9FF3D]">The Alignment Key</p>
           <DialogTitle className="font-display text-3xl text-[#F6FFF2]">{title}</DialogTitle>
