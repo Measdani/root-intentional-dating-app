@@ -68,14 +68,6 @@ const ForestFloatingAssistant: React.FC = () => {
         </DialogHeader>
 
         <div className="max-h-[80vh] overflow-y-auto px-5 py-5 space-y-5">
-          <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4">
-            <p className="mt-2 text-sm leading-relaxed text-[#F6FFF2]">
-              Forest answers from the Supabase doctrine table plus the Resource Area content sources.
-              If a question falls outside of what the app actually contains, he redirects users back
-              to the 333/777 rules and the 3 Layers instead of guessing.
-            </p>
-          </div>
-
           <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-4">
             <textarea
               value={question}
@@ -90,10 +82,6 @@ const ForestFloatingAssistant: React.FC = () => {
                 }
               }}
             />
-            <p className="mt-3 text-xs leading-relaxed text-[#A9B5AA]">
-              Write your question here and Forest will search the stored doctrine, Resource Area
-              materials, and published teachings before responding.
-            </p>
             <div className="mt-4 flex justify-end">
               <button
                 type="button"
@@ -139,14 +127,7 @@ const ForestFloatingAssistant: React.FC = () => {
                 </div>
               )}
             </div>
-          ) : (
-            <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4">
-              <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
-                Ask a full question in the text box above. Forest will search your stored content
-                and answer from what exists in the app.
-              </p>
-            </div>
-          )}
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
