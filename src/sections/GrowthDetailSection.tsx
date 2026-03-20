@@ -1159,8 +1159,7 @@ const GrowthDetailSection: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                localStorage.removeItem(originViewKey);
-                setCurrentView('growth-mode');
+                window.dispatchEvent(new Event('open-forest-assistant'));
               }}
               className="w-10 h-10 rounded-lg border border-[#1A211A] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition flex items-center justify-center"
               title="Forest"

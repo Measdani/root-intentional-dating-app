@@ -13,7 +13,7 @@ import {
   useCommunity,
 } from '@/modules';
 import { toast } from 'sonner';
-import { BookOpen, Clock, Sparkles, Brain, Target, Heart, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
+import { BookOpen, Clock, Sparkles, Brain, Target, Heart, Users, MessageCircle, Send, X } from 'lucide-react';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
@@ -259,7 +259,6 @@ const GrowthModeSection: React.FC = () => {
     getReceivedInterests,
     getSentInterests,
     getConversation,
-    setShowSupportModal,
     reportUser,
     blockUser,
     isUserBlocked,
@@ -536,11 +535,12 @@ const GrowthModeSection: React.FC = () => {
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <h1 className="font-display text-xl text-[#F6FFF2]">Inner Work Space</h1>
           <button
-            onClick={() => setShowSupportModal(true)}
+            onClick={() => window.dispatchEvent(new Event('open-forest-assistant'))}
             className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
-            title="Contact Support"
+            title="Open Forest"
+            aria-label="Open Forest"
           >
-            <HelpCircle className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
           </button>
         </div>
       </header>
