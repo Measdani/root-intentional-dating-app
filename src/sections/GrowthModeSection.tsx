@@ -1122,10 +1122,10 @@ const GrowthModeSection: React.FC = () => {
               const isInteractive = Boolean(section.view);
               const cardActionCopy =
                 section.view === 'aware-partner'
-                  ? 'Path navigation for this section now opens on its own page.'
+                  ? 'Open this section to enter Path Navigation.'
                   : section.view === 'intentional-partner'
                     ? 'Open this section to enter The Conflict Sandbox.'
-                    : 'Open this section to view the hero introduction.';
+                    : 'Open this section to enter The Pace Meter.';
               const sectionBadgeEarned = hasPartnerJourneyBadge(
                 currentUser.partnerJourneyBadges,
                 section.badge
@@ -1158,9 +1158,11 @@ const GrowthModeSection: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium text-[#D9FF3D]">
-                        {getPartnerJourneyBadgeLabel(section.badge)}
-                      </span>
+                      {sectionBadgeEarned && (
+                        <span className="rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium text-[#D9FF3D]">
+                          {getPartnerJourneyBadgeLabel(section.badge)}
+                        </span>
+                      )}
                       <span
                         className={`rounded-full border px-3 py-1 text-xs font-medium ${
                           section.isPlaceholder
@@ -1180,9 +1182,7 @@ const GrowthModeSection: React.FC = () => {
                   {isInteractive ? (
                     <div className="mt-4 flex items-center justify-between rounded-xl border border-[#D9FF3D]/20 bg-[#0B0F0C]/50 px-4 py-4">
                       <p className="text-sm text-[#A9B5AA]">{cardActionCopy}</p>
-                      <span className="text-sm font-medium text-[#D9FF3D]">
-                        {sectionBadgeEarned ? 'Review' : 'Open'}
-                      </span>
+                      <span className="text-sm font-medium text-[#D9FF3D]">Open</span>
                     </div>
                   ) : (
                     <div className="mt-4 flex min-h-[96px] items-center rounded-xl border border-dashed border-[#2E372E] bg-[#0B0F0C] px-4 py-5">
