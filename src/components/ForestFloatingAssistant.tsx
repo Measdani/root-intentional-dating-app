@@ -8,50 +8,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  FOREST_KNOWLEDGE_BASE,
-  FOREST_STARTER_PROMPTS,
-  type ForestKnowledgeEntry,
-  type ForestStarterPrompt,
-} from '@/data/forestKnowledgeBase';
 import { askForest, type ForestResponse } from '@/services/forestRagService';
-import { getForestKnowledgeBase, getForestStarterPrompts } from '@/services/forestKnowledgeService';
 
 const ForestFloatingAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<ForestResponse | null>(null);
-  const [knowledgeEntries, setKnowledgeEntries] = useState<ForestKnowledgeEntry[]>(FOREST_KNOWLEDGE_BASE);
-  const [starterPrompts, setStarterPrompts] = useState<ForestStarterPrompt[]>(FOREST_STARTER_PROMPTS);
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
 
   useEffect(() => {
     const handleOpenForest = () => setIsOpen(true);
     window.addEventListener('open-forest-assistant', handleOpenForest);
     return () => window.removeEventListener('open-forest-assistant', handleOpenForest);
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadForestKnowledge = async () => {
-      const [nextKnowledgeEntries, nextStarterPrompts] = await Promise.all([
-        getForestKnowledgeBase(),
-        getForestStarterPrompts(),
-      ]);
-
-      if (!isMounted) return;
-      setKnowledgeEntries(
-        nextKnowledgeEntries.filter((entry) => typeof entry.displayOrder === 'number' && entry.displayOrder > 0),
-      );
-      setStarterPrompts(nextStarterPrompts);
-    };
-
-    void loadForestKnowledge();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const handleAskForest = async (questionOverride?: string) => {
@@ -119,19 +87,17 @@ const ForestFloatingAssistant: React.FC = () => {
               rows={4}
               placeholder="Ask about covenant, counterfeits, chemistry, peace, or whether something feels Spirit-led..."
               className="mt-3 w-full rounded-xl border border-[#1A211A] bg-[#111611] px-4 py-3 text-sm text-[#F6FFF2] placeholder:text-[#738073] focus:border-[#D9FF3D] focus:outline-none resize-none"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  void handleAskForest();
+                }
+              }}
             />
-            <div className="mt-3 flex flex-wrap gap-2">
-              {starterPrompts.map((prompt) => (
-                <button
-                  key={prompt.label}
-                  type="button"
-                  onClick={() => void handleAskForest(prompt.question)}
-                  className="rounded-full border border-[#2A312A] px-3 py-1.5 text-xs font-medium text-[#A9B5AA] hover:border-[#D9FF3D]/40 hover:text-[#F6FFF2] transition"
-                >
-                  {prompt.label}
-                </button>
-              ))}
-            </div>
+            <p className="mt-3 text-xs leading-relaxed text-[#A9B5AA]">
+              Write your question here and Forest will search the stored doctrine, Resource Area
+              materials, and published teachings before responding.
+            </p>
             <div className="mt-4 flex justify-end">
               <button
                 type="button"
@@ -178,19 +144,12 @@ const ForestFloatingAssistant: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-3">
-              {knowledgeEntries.map((entry) => (
-                <button
-                  key={`${entry.category}-${entry.topic}`}
-                  type="button"
-                  onClick={() => void handleAskForest(entry.topic)}
-                  className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4 text-left hover:border-[#D9FF3D]/40 transition"
-                >
-                  <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">{entry.category}</p>
-                  <h3 className="mt-2 text-lg font-semibold text-[#F6FFF2]">{entry.topic}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#A9B5AA]">{entry.content}</p>
-                </button>
-              ))}
+            <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4">
+              <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Search Forest</p>
+              <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
+                Ask a full question in the text box above. Forest will search your stored content
+                and answer from what exists in the app.
+              </p>
             </div>
           )}
         </div>
