@@ -44,6 +44,7 @@ import EmailModal from '@/components/EmailModal';
 import ContactSupportModal from '@/components/ContactSupportModal';
 import Footer from '@/components/Footer';
 import UserAccessButton from '@/components/UserAccessButton';
+import ForestFloatingAssistant from '@/components/ForestFloatingAssistant';
 
 const AppContent: React.FC = () => {
   const { currentView, showSupportModal, setShowSupportModal, currentUser } = useApp();
@@ -200,6 +201,7 @@ const AppContent: React.FC = () => {
           <EmailModal />
           <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
           {currentView !== 'landing' && <UserAccessButton />}
+          {currentView !== 'landing' && <ForestFloatingAssistant />}
         </>
       )}
       <Toaster theme="dark" position="bottom-right" />
