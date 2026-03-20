@@ -46,6 +46,37 @@ const HealthyPartnerSection: React.FC = () => {
           ? 'The Healthy Partner Badge earned'
           : 'Complete The Pace Meter to unlock The Healthy Partner Badge'}
       </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-3xl border border-[#1A211A] bg-[#0B0F0C] p-5">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Forest&apos;s Rule</p>
+          <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
+            Slow the fantasy down until the facts can speak.
+            <br />
+            Pace is not punishment.
+            <br />
+            If someone cannot respect your timeline, they cannot respect your standards.
+          </p>
+        </div>
+
+        <div className="rounded-3xl border border-[#1A211A] bg-[#0B0F0C] p-5">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">How You Pass This Stage</p>
+          <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[#A9B5AA]">
+            <li>- Reveal both the healthy and unhealthy side of all 4 stages</li>
+            <li>- Review all 8 cards before the graduation prompt unlocks</li>
+            <li>- Answer Forest&apos;s final prompt with pace, boundaries, and respect in view</li>
+            <li>- Show that you can protect standards without confusing pressure for love</li>
+          </ul>
+        </div>
+
+        <div className="rounded-3xl border border-[#1A211A] bg-[#0B0F0C] p-5">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Badge Unlock</p>
+          <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
+            Review all 8 Pace Meter cards, pass the final boundary check, and Forest will attach
+            The Healthy Partner Badge to your profile.
+          </p>
+        </div>
+      </div>
     </PartnerSectionIntroPage>
   );
 };

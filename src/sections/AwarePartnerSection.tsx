@@ -314,6 +314,37 @@ const AwarePartnerSection: React.FC = () => {
               ? 'The Aware Partner Badge earned'
               : 'Complete 1 of the 5 paths to unlock The Aware Partner Badge'}
           </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-3xl border border-[#1A211A] bg-[#0B0F0C] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Forest&apos;s Rule</p>
+              <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
+                Do not rush past yourself.
+                <br />
+                Forest is looking for honest reflection, not filler.
+                <br />
+                Your insight has to connect to what you actually learned.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-[#1A211A] bg-[#0B0F0C] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">How You Pass This Stage</p>
+              <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[#A9B5AA]">
+                <li>- Work through a full path until the final module</li>
+                <li>- Submit a reflection with real insight, not one-line filler</li>
+                <li>- Keep your response tied to the lesson and your relationship patterns</li>
+                <li>- Let Forest approve the reflection before moving on</li>
+              </ul>
+            </div>
+
+            <div className="rounded-3xl border border-[#1A211A] bg-[#0B0F0C] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Badge Unlock</p>
+              <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
+                Finish one path and get Forest&apos;s approval on the final reflection to unlock that
+                path badge. The same approval also unlocks The Aware Partner Badge for your profile.
+              </p>
+            </div>
+          </div>
         </div>
 
         {modeResourceAccessActive && (
