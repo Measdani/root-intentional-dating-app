@@ -142,7 +142,7 @@ const validateConfessionOfIntent = (value: string): ScenarioValidationResult => 
 const CONFLICT_SANDBOX_SCENARIOS: ConflictScenario[] = [
   {
     id: 'unknown-name',
-    title: 'The "Slow Fade" (Testing Avoidance)',
+    title: 'Jealousy',
     trigger:
       'Forest: "Scenario time. You are cuddling on the couch, and your partner\'s phone lights up. It is a text from Alex saying, \'That was fun today!\'. You do not know an Alex. What is your first move?"',
     oldSelfPrompt:
