@@ -1,5 +1,6 @@
 import React from 'react';
 import PaceMeter from '@/components/PaceMeter';
+import AlignmentKeyButton from '@/components/AlignmentKeyButton';
 import PartnerSectionIntroPage from '@/components/PartnerSectionIntroPage';
 import { useApp } from '@/store/AppContext';
 import { hasPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
@@ -35,16 +36,37 @@ const HealthyPartnerSection: React.FC = () => {
         <br />
         it&apos;s built in how you show up every day.
       </p>
-      <div
-        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${
-          badgeEarned
-            ? 'border-emerald-400/30 text-emerald-200'
-            : 'border-[#D9FF3D]/30 text-[#D9FF3D]'
-        }`}
-      >
-        {badgeEarned
-          ? 'The Healthy Partner Badge earned'
-          : 'Complete The Pace Meter to unlock The Healthy Partner Badge'}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div
+          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${
+            badgeEarned
+              ? 'border-emerald-400/30 text-emerald-200'
+              : 'border-[#D9FF3D]/30 text-[#D9FF3D]'
+          }`}
+        >
+          {badgeEarned
+            ? 'The Healthy Partner Badge earned'
+            : 'Complete The Pace Meter to unlock The Healthy Partner Badge'}
+        </div>
+
+        <AlignmentKeyButton
+          title="Self-Awareness (The Final Check)"
+          prompt="The Spirit vs. The Flesh"
+          forestMessage={[
+            "You've done the work.",
+            'Now comes the moment that matters most - discernment.',
+            'Because not everything that feels strong is aligned.',
+            'What many people call "chemistry" is often just familiarity meeting emotion.',
+            'Your Spirit is quiet. Your Flesh is loud.',
+            "The rush. The urgency. The pull to move faster than clarity allows - that's not always connection. Sometimes, it's habit.",
+            'So pause and ask yourself:',
+            'Who is leading right now?',
+            "If it's your Flesh, it will feel urgent, fast, and consuming. If it's your Spirit, it will feel steady, clear, and at peace.",
+            "Alignment doesn't feel chaotic. It feels grounded.",
+            "Don't confuse a racing heart with a divine sign.",
+            "Alignment is not just about who you meet... it's about who you allow access to your life.",
+          ]}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

@@ -4,6 +4,7 @@ import { getRelationshipModeSnapshot } from '@/modules';
 import { growthResources, paidGrowthResources } from '@/data/assessment';
 import { resourceService } from '@/services/resourceService';
 import { hasPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
+import AlignmentKeyButton from '@/components/AlignmentKeyButton';
 import type { GrowthResource } from '@/types';
 import {
   ArrowLeft,
@@ -304,15 +305,35 @@ const AwarePartnerSection: React.FC = () => {
             </p>
           </div>
           <div
-            className={`mt-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${
-              awareBadgeEarned
-                ? 'border-emerald-400/30 text-emerald-200'
-                : 'border-[#D9FF3D]/30 text-[#D9FF3D]'
-            }`}
+            className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
           >
-            {awareBadgeEarned
-              ? 'The Aware Partner Badge earned'
-              : 'Complete 1 of the 5 paths to unlock The Aware Partner Badge'}
+            <div
+              className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${
+                awareBadgeEarned
+                  ? 'border-emerald-400/30 text-emerald-200'
+                  : 'border-[#D9FF3D]/30 text-[#D9FF3D]'
+              }`}
+            >
+              {awareBadgeEarned
+                ? 'The Aware Partner Badge earned'
+                : 'Complete 1 of the 5 paths to unlock The Aware Partner Badge'}
+            </div>
+
+            <AlignmentKeyButton
+              title="The Standard & The Shield"
+              prompt="Covenant Territory"
+              forestMessage={[
+                'Before you start, we need to define the destination.',
+                "You're not just looking for a date - you're preparing for a Covenant.",
+                'In this space, "good enough" is a trap.',
+                "Your Shield is not a wall to keep people out. It's a filter - one that allows only those who are aligned and led with intention to come close to what you're building.",
+                'Because access is not something you give lightly.',
+                'A soul tie is easy to create... but painful to break.',
+                "So we set the standard now - so you don't give a permanent place in your life to a temporary feeling.",
+                'Hold your line.',
+                "Alignment is not just about who you meet... it's about who you allow access to your life.",
+              ]}
+            />
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
