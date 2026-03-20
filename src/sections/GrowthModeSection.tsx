@@ -17,6 +17,15 @@ import { toast } from 'sonner';
 import { BookOpen, Clock, Sparkles, Brain, Target, Heart, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { FOREST_KNOWLEDGE_BASE, FOREST_STARTER_PROMPTS } from '@/data/forestKnowledgeBase';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
 import { getGrowthModeCoachGuidance, type GrowthModeCoachResult } from '@/services/growthModeCoachService';
 import { SUPPORT_EMAIL } from '@/constants/support';
@@ -25,6 +34,7 @@ import {
   getPartnerJourneyBadgeLabel,
   hasPartnerJourneyBadge,
 } from '@/services/partnerJourneyBadgeService';
+import { askForest, type ForestResponse } from '@/services/forestRagService';
 import type { AppView, User, AssessmentCoreStyle, AssessmentResult, PartnerJourneyBadge } from '@/types';
 import { resourceService } from '@/services/resourceService';
 
@@ -325,7 +335,9 @@ const GrowthModeSection: React.FC = () => {
   const [modeRefreshTick, setModeRefreshTick] = useState(0);
   const [coachGuidance, setCoachGuidance] = useState<GrowthModeCoachResult | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
-  const [isCoachMinimized, setIsCoachMinimized] = useState(false);
+  const [isForestOpen, setIsForestOpen] = useState(false);
+  const [forestQuestion, setForestQuestion] = useState('');
+  const [forestResponse, setForestResponse] = useState<ForestResponse | null>(null);
   const defaultYourStyle = currentUser.primaryStyle ?? assessmentResult?.primaryStyle ?? 'oak';
   const defaultPartnerStyle =
     currentUser.secondaryStyle ??
@@ -613,6 +625,14 @@ const GrowthModeSection: React.FC = () => {
     getNextRetakeDate,
   ]);
 
+  const handleAskForest = useCallback((questionOverride?: string) => {
+    const nextQuestion = (questionOverride ?? forestQuestion).trim();
+    if (!nextQuestion) return;
+
+    setForestQuestion(nextQuestion);
+    setForestResponse(askForest(nextQuestion));
+  }, [forestQuestion]);
+
   // Calculate unread message count for growth mode inbox
   const unreadMessageCount = useMemo(() => {
     const allInterests = [
@@ -752,92 +772,189 @@ const GrowthModeSection: React.FC = () => {
           </div>
         ))}
 
-        {(coachLoading || coachGuidance) && (
-          <>
-            {!isCoachMinimized && (
-              <div className="mb-8 rounded-2xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#D9FF3D]" />
-                    <h2 className="text-sm font-semibold uppercase tracking-wide text-[#D9FF3D]">
-                      Forest, Your Inner Work Coach
-                    </h2>
-                  </div>
+        <Dialog open={isForestOpen} onOpenChange={setIsForestOpen}>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-[#D9FF3D]/50 bg-[#0B0F0C] px-4 py-2 text-[#D9FF3D] shadow-lg shadow-black/30 hover:bg-[#121A12] transition-colors"
+              aria-label="Open Forest"
+              title="Open Forest"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="text-sm font-semibold">Forest</span>
+            </button>
+          </DialogTrigger>
+
+          <DialogContent
+            overlayClassName="bg-[#0B0F0C]/75 backdrop-blur-sm"
+            className="max-w-3xl border border-[#D9FF3D]/30 bg-[#111611] p-0 text-[#F6FFF2]"
+          >
+            <DialogHeader className="border-b border-[#1A211A] px-5 py-5 pr-12">
+              <div className="flex items-center gap-2 text-[#D9FF3D]">
+                <Sparkles className="h-4 w-4" />
+                <p className="text-xs font-semibold uppercase tracking-[0.18em]">
+                  Forest, Objective Spiritual Observer
+                </p>
+              </div>
+              <DialogTitle className="font-display text-3xl text-[#F6FFF2]">
+                Forest
+              </DialogTitle>
+              <DialogDescription className="text-sm leading-relaxed text-[#A9B5AA]">
+                Forest stays closed when users enter Growth Mode. Open him from the floating icon
+                whenever you want grounded guidance from The Standard, The Detox, and
+                Self-Awareness.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="max-h-[80vh] overflow-y-auto px-5 py-5 space-y-5">
+              <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4">
+                <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Forest&apos;s Lane</p>
+                <p className="mt-2 text-sm leading-relaxed text-[#F6FFF2]">
+                  Forest only answers from the local knowledge base. If a question falls outside of
+                  it, he redirects users back to the 333/777 rules and the 3 Layers instead of
+                  guessing.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-4">
+                <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Ask Forest</p>
+                <textarea
+                  value={forestQuestion}
+                  onChange={(event) => setForestQuestion(event.target.value)}
+                  rows={4}
+                  placeholder="Ask about covenant, counterfeits, chemistry, peace, or whether something feels Spirit-led..."
+                  className="mt-3 w-full rounded-xl border border-[#1A211A] bg-[#111611] px-4 py-3 text-sm text-[#F6FFF2] placeholder:text-[#738073] focus:border-[#D9FF3D] focus:outline-none resize-none"
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {FOREST_STARTER_PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt.label}
+                      type="button"
+                      onClick={() => handleAskForest(prompt.question)}
+                      className="rounded-full border border-[#2A312A] px-3 py-1.5 text-xs font-medium text-[#A9B5AA] hover:border-[#D9FF3D]/40 hover:text-[#F6FFF2] transition"
+                    >
+                      {prompt.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-4 flex justify-end">
                   <button
-                    onClick={() => setIsCoachMinimized(true)}
-                    className="text-xs font-medium text-[#D9FF3D] hover:text-[#F6FFF2] transition-colors"
-                    aria-label="Minimize Forest coach message"
-                    title="Minimize Forest"
+                    type="button"
+                    onClick={() => handleAskForest()}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#D9FF3D] px-4 py-2 text-sm font-semibold text-[#0B0F0C] hover:brightness-95 transition"
                   >
-                    Minimize
+                    <Send className="h-4 w-4" />
+                    Ask Forest
                   </button>
                 </div>
+              </div>
 
-                {coachLoading && (
-                  <p className="text-sm text-[#A9B5AA]">Forest is preparing your next growth steps...</p>
-                )}
+              {forestResponse ? (
+                <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-4">
+                  <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">
+                    {forestResponse.redirectUsed ? 'Redirect' : 'Forest Response'}
+                  </p>
+                  <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-[#F6FFF2]">
+                    {forestResponse.answer}
+                  </p>
 
-                {!coachLoading && coachGuidance && (
-                  <div className="space-y-4">
-                    <p className="text-sm text-[#F6FFF2] leading-relaxed">
-                      {coachGuidance.explanationCopy}
-                    </p>
-
-                    {coachGuidance.recommendedModules.length > 0 && (
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">
-                          Recommended Modules
-                        </p>
-                        <ul className="space-y-1">
-                          {coachGuidance.recommendedModules.slice(0, 2).map((module) => (
-                            <li key={module} className="text-sm text-[#F6FFF2]">
-                              - {module}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    <div className="grid md:grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
-                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">Reflection Prompt</p>
-                        <p className="text-sm text-[#F6FFF2]">{coachGuidance.reflectionPrompt}</p>
-                      </div>
-                      <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
-                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">Journaling Prompt</p>
-                        <p className="text-sm text-[#F6FFF2]">{coachGuidance.journalingPrompt}</p>
+                  {forestResponse.matches.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Grounded In</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {forestResponse.matches.map((match) => (
+                          <span
+                            key={`${match.category}-${match.topic}`}
+                            className="rounded-full border border-[#D9FF3D]/25 px-3 py-1 text-xs font-medium text-[#D9FF3D]"
+                          >
+                            {match.category} - {match.topic}
+                          </span>
+                        ))}
                       </div>
                     </div>
+                  )}
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-3">
+                  {FOREST_KNOWLEDGE_BASE.map((entry) => (
+                    <button
+                      key={`${entry.category}-${entry.topic}`}
+                      type="button"
+                      onClick={() => handleAskForest(entry.topic)}
+                      className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4 text-left hover:border-[#D9FF3D]/40 transition"
+                    >
+                      <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">{entry.category}</p>
+                      <h3 className="mt-2 text-lg font-semibold text-[#F6FFF2]">{entry.topic}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-[#A9B5AA]">{entry.content}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
 
-                    <p className="text-sm text-[#A9B5AA]">{coachGuidance.accountabilityNudge}</p>
+              {(coachLoading || coachGuidance) && (
+                <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#D9FF3D]/10 p-4">
+                  <p className="text-xs uppercase tracking-wide text-[#D9FF3D]">Inner Work Guidance</p>
 
-                    {coachGuidance.reassessmentNotice && (
-                      <p className="text-sm text-[#D9FF3D]">{coachGuidance.reassessmentNotice}</p>
-                    )}
+                  {coachLoading && (
+                    <p className="mt-3 text-sm text-[#A9B5AA]">
+                      Forest is preparing your next grounded steps...
+                    </p>
+                  )}
 
-                    {coachGuidance.escalateToSupport && (
-                      <p className="text-sm text-amber-300">
-                        Forest flagged this for human support review. Contact {coachGuidance.supportEmail || SUPPORT_EMAIL}.
+                  {!coachLoading && coachGuidance && (
+                    <div className="mt-3 space-y-4">
+                      <p className="text-sm leading-relaxed text-[#F6FFF2]">
+                        {coachGuidance.explanationCopy}
                       </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
 
-            {isCoachMinimized && (
-              <button
-                onClick={() => setIsCoachMinimized(false)}
-                className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-[#D9FF3D]/50 bg-[#0B0F0C] px-4 py-2 text-[#D9FF3D] shadow-lg shadow-black/30 hover:bg-[#121A12] transition-colors"
-                aria-label="Open Forest coach message"
-                title="Open Forest"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span className="text-sm font-semibold">Forest</span>
-              </button>
-            )}
-          </>
-        )}
+                      {coachGuidance.recommendedModules.length > 0 && (
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-2">
+                            Recommended Modules
+                          </p>
+                          <ul className="space-y-1">
+                            {coachGuidance.recommendedModules.slice(0, 2).map((module) => (
+                              <li key={module} className="text-sm text-[#F6FFF2]">
+                                - {module}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
+                          <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">
+                            Reflection Prompt
+                          </p>
+                          <p className="text-sm text-[#F6FFF2]">{coachGuidance.reflectionPrompt}</p>
+                        </div>
+                        <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/60 p-3">
+                          <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1">
+                            Journaling Prompt
+                          </p>
+                          <p className="text-sm text-[#F6FFF2]">{coachGuidance.journalingPrompt}</p>
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-[#A9B5AA]">{coachGuidance.accountabilityNudge}</p>
+
+                      {coachGuidance.reassessmentNotice && (
+                        <p className="text-sm text-[#D9FF3D]">{coachGuidance.reassessmentNotice}</p>
+                      )}
+
+                      {coachGuidance.escalateToSupport && (
+                        <p className="text-sm text-amber-300">
+                          Forest flagged this for human support review. Contact {coachGuidance.supportEmail || SUPPORT_EMAIL}.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Tab Navigation */}
         <div className="mb-10 flex gap-4 border-b border-[#1A211A]">
