@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import AuthPoolTabs from '@/components/AuthPoolTabs';
 import { communityIdToPoolId, persistUserPoolMembership, useCommunity } from '@/modules';
+import { authService, signOutSupabaseSession } from '@/services/authService';
 import { userService } from '@/services/userService';
 import { moderateProfileQuality } from '@/services/profileQualityService';
 import { toast } from 'sonner';
@@ -354,8 +355,17 @@ const SignUpSection: React.FC = () => {
     return (
       normalized.includes('duplicate key value violates unique constraint') ||
       normalized.includes('users_email_key') ||
-      normalized.includes('already exists')
+      normalized.includes('already exists') ||
+      normalized.includes('already registered') ||
+      normalized.includes('user_already_exists')
     );
+  };
+
+  const showDuplicateEmailError = () => {
+    const message =
+      'This email is already in use. If an account was blocked, it cannot be recreated with the same email.';
+    setErrors({ submit: message });
+    toast.error('Email already in use. Please use a different email.');
   };
 
   const stripInlinePhotoPayloads = (photoUrl?: string) => {
@@ -403,6 +413,8 @@ const SignUpSection: React.FC = () => {
     setIsLoading(true);
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
       // Calculate billingPeriodEnd based on tier
       const now = Date.now();
       const billingPeriodEnd = tier
@@ -430,7 +442,7 @@ const SignUpSection: React.FC = () => {
 
       const profileModeration = await moderateProfileQuality({
         appUserId: newUserId,
-        appUserEmail: email,
+        appUserEmail: normalizedEmail,
         bio: trimmedBio,
         promptsJson: {
           relationship_intent: partnershipIntent,
@@ -461,10 +473,33 @@ const SignUpSection: React.FC = () => {
 
       clearProfileReviewErrors();
 
+      const { data: signUpData, error: signUpError } = await authService.signUpWithPassword(
+        normalizedEmail,
+        password
+      );
+
+      if (signUpError) {
+        if (isDuplicateEmailError(signUpError.message)) {
+          showDuplicateEmailError();
+          return;
+        }
+
+        console.warn('Supabase auth sign up failed:', signUpError.message);
+        setErrors({ submit: signUpError.message || 'Account creation failed. Please try again.' });
+        toast.error(signUpError.message || 'Account creation failed. Please try again.');
+        return;
+      }
+
+      const authUser = signUpData.user;
+      if (!authUser || (Array.isArray(authUser.identities) && authUser.identities.length === 0)) {
+        showDuplicateEmailError();
+        return;
+      }
+
       // Build the new User object
       const newUser: User = {
-        id: newUserId,
-        email,
+        id: authUser.id,
+        email: normalizedEmail,
         name: name.trim(),
         age: parseInt(age),
         city: trimmedCity,
@@ -525,15 +560,23 @@ const SignUpSection: React.FC = () => {
       const { error: supabaseError } = await userService.createUser(newUser);
       if (supabaseError) {
         if (isDuplicateEmailError(supabaseError)) {
-          const message = 'This email is already in use. If an account was blocked, it cannot be recreated with the same email.';
-          setErrors({ submit: message });
-          toast.error('Email already in use. Please use a different email.');
+          await signOutSupabaseSession();
+          showDuplicateEmailError();
           return;
         }
 
+        await signOutSupabaseSession();
         console.warn('Supabase user create failed:', supabaseError);
         setErrors({ submit: 'Account creation failed. Please try again.' });
         toast.error('Account creation failed. Please try again.');
+        return;
+      }
+
+      window.dispatchEvent(new CustomEvent('new-user', { detail: newUser }));
+
+      if (!signUpData.session) {
+        toast.success('Account created. Check your email to confirm it, then sign in.');
+        setCurrentView('user-login');
         return;
       }
 
@@ -543,9 +586,6 @@ const SignUpSection: React.FC = () => {
 
       // Trigger AppContext to pick up the new user
       window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
-
-      // Notify admin context of new user
-      window.dispatchEvent(new CustomEvent('new-user', { detail: sessionUser }));
 
       // Brief delay to let state settle
       await new Promise((resolve) => setTimeout(resolve, 100));

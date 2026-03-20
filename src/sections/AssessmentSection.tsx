@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
+import { signOutAndClearLocalUser } from '@/services/authService';
 import { useCommunity } from '@/modules';
 import { assessmentQuestions as defaultAssessmentQuestions, calculateAssessmentResult } from '@/data/assessment';
 import type { AssessmentQuestion } from '@/types';
@@ -225,12 +226,11 @@ const AssessmentSection: React.FC = () => {
     };
     localStorage.setItem('assessmentAbandonment', JSON.stringify(abandonmentData));
 
-    // Clear current user and log out
-    localStorage.removeItem('currentUser');
-    window.dispatchEvent(new CustomEvent('user-logout'));
+      // Clear current user and log out
+      void signOutAndClearLocalUser();
 
-    // Navigate to landing page
-    setCurrentView('landing');
+      // Navigate to landing page
+      setCurrentView('landing');
   };
 
   const handleConfirmExit = () => {

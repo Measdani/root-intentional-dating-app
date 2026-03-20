@@ -70,13 +70,13 @@ const AdminLoginSection: React.FC = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@rootedhearts.app"
+                placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-[#0B0F0C] border-[#1A211A] text-[#F6FFF2] placeholder-[#A9B5AA]/50"
               />
               <p className="text-xs text-[#A9B5AA]">
-                Try: sarah@rootedhearts.app, marcus@rootedhearts.app, or emma@rootedhearts.app
+                Use your real admin email, or the demo accounts: sarah@rooted.app, marcus@rooted.app, or emma@rooted.app
               </p>
             </div>
 
@@ -114,6 +114,13 @@ const AdminLoginSection: React.FC = () => {
               )}
             </Button>
           </form>
+
+          <button
+            onClick={() => setCurrentView('password-reset')}
+            className="w-full text-sm text-[#D9FF3D] hover:underline"
+          >
+            Forgot password?
+          </button>
 
           {/* Footer */}
           <div className="pt-4 border-t border-[#1A211A]">

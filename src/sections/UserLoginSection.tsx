@@ -23,6 +23,7 @@ import { testUsers } from '@/data/testUsers';
 import { mockAdminCredentials } from '@/data/admins';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import type { AssessmentResult } from '@/types';
+import { authService, signOutSupabaseSession } from '@/services/authService';
 import {
   buildEmptyStyleScores,
   isAssessmentCoreStyle,
@@ -307,6 +308,7 @@ const UserLoginSection: React.FC = () => {
           return;
         }
 
+        await signOutSupabaseSession();
         localStorage.removeItem('currentUser');
         window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
         setCurrentView('admin-dashboard');
@@ -328,8 +330,23 @@ const UserLoginSection: React.FC = () => {
           return;
         }
       } else {
-        // Non-tester accounts come from Supabase.
+        const { error: signInError } = await authService.signInWithPassword(normalizedEmail, password);
+        if (signInError) {
+          setError('Invalid email or password');
+          toast.error('Invalid email or password');
+          setIsLoading(false);
+          return;
+        }
+
+        // Non-tester accounts come from Supabase app data after auth succeeds.
         user = await userService.getUserByEmail(normalizedEmail);
+        if (!user) {
+          await signOutSupabaseSession();
+          setError('This account is missing its profile record. Contact support.');
+          toast.error('Account profile not found.');
+          setIsLoading(false);
+          return;
+        }
       }
 
       if (!user) {
@@ -489,6 +506,16 @@ const UserLoginSection: React.FC = () => {
               )}
             </Button>
           </form>
+
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => setCurrentView('password-reset')}
+              className="text-sm text-[#D9FF3D] hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
 
           <p className="text-center text-sm text-[#A9B5AA]">
             New to {activeCommunity.name}?{' '}

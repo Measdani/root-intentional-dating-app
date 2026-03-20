@@ -11,6 +11,7 @@ import {
   poolIdToCommunityId,
 } from '@/modules';
 import { useApp } from '@/store/AppContext';
+import { signOutAndClearLocalUser } from '@/services/authService';
 import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { calculateAlignmentScore } from '@/data/users';
@@ -288,9 +289,7 @@ const BrowseSection: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    // Dispatch custom event to trigger AppContext to revert to default user
-    window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
+    void signOutAndClearLocalUser();
     setCurrentView('user-login');
   };
 

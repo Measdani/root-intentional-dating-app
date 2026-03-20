@@ -181,6 +181,7 @@ export type AppView =
   | 'admin-reports'
   | 'admin-support'
   | 'user-login'
+  | 'password-reset'
   | 'user-settings'
   | 'privacy-policy'
   | 'terms-of-service'

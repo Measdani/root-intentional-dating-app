@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
+import { signOutAndClearLocalUser } from '@/services/authService';
 import {
   canUsersExchangeMessages,
   canUsersMatch,
@@ -529,9 +530,7 @@ const GrowthModeSection: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
-    window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
+    void signOutAndClearLocalUser();
     setCurrentView('landing');
   };
 

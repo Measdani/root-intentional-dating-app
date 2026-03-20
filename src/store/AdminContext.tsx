@@ -7,6 +7,7 @@ import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
 import { assessmentQuestions as defaultAssessmentQuestions } from '@/data/assessment';
 import { normalizeAssessmentQuestionsWithStyles } from '@/services/assessmentStyleService';
+import { authService, signOutSupabaseSession } from '@/services/authService';
 
 interface AdminContextType {
   session: AdminSession;
@@ -75,6 +76,24 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 const ADMIN_STORAGE_KEY = 'rooted-admin-session';
 const DATA_STORAGE_KEY = 'rooted-admin-data';
+const SUPABASE_ADMIN_PERMISSIONS: AdminUser['permissions'] = [
+  { resource: 'users', actions: ['view', 'create', 'edit', 'delete'] },
+  { resource: 'assessments', actions: ['view', 'create', 'edit', 'delete'] },
+  { resource: 'content', actions: ['view', 'create', 'edit', 'delete'] },
+  { resource: 'analytics', actions: ['view'] },
+  { resource: 'settings', actions: ['view', 'edit'] },
+  { resource: 'reports', actions: ['view', 'resolve'] },
+];
+
+const buildSupabaseAdminUser = (email: string, name?: string, id?: string): AdminUser => ({
+  id: id || `supabase-admin-${email}`,
+  name: name?.trim() || email.split('@')[0] || 'Admin',
+  email,
+  role: 'super-admin',
+  permissions: SUPABASE_ADMIN_PERMISSIONS,
+  createdAt: new Date().toISOString(),
+  lastLogin: new Date().toISOString(),
+});
 
 const safeSetLocalStorage = (key: string, value: string) => {
   try {
@@ -342,33 +361,60 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsLoading(true);
     setError(null);
     try {
-      // Validate credentials
-      if (mockAdminCredentials[email] !== password) {
-        setError('Invalid email or password');
+      const normalizedEmail = email.trim().toLowerCase();
+      const mockPassword = mockAdminCredentials[normalizedEmail];
+
+      if (mockPassword) {
+        if (mockPassword !== password) {
+          setError('Invalid email or password');
+          return false;
+        }
+
+        await signOutSupabaseSession();
+
+        const adminUser = mockAdminUsers.find((a) => a.email === normalizedEmail);
+        if (!adminUser) {
+          setError('Admin user not found');
+          return false;
+        }
+
+        const updatedAdmin = { ...adminUser, lastLogin: new Date().toISOString() };
+        setAdmins((prev: AdminUser[]) =>
+          prev.map((a: AdminUser) => (a.id === adminUser.id ? updatedAdmin : a))
+        );
+
+        saveSession({
+          adminUser: updatedAdmin,
+          isAuthenticated: true,
+          loginTime: new Date().toISOString(),
+        });
+        return true;
+      }
+
+      const { error: authError } = await authService.signInWithPassword(normalizedEmail, password);
+      if (authError) {
+        setError(authError.message || 'Invalid email or password');
         return false;
       }
 
-      // Find admin user
-      const adminUser = mockAdminUsers.find((a) => a.email === email);
-      if (!adminUser) {
-        setError('Admin user not found');
+      const appUser = await userService.getUserByEmail(normalizedEmail);
+      if (!appUser?.isAdmin) {
+        await signOutSupabaseSession();
+        setError('This account does not have admin access.');
         return false;
       }
 
-      // Update last login
-      const updatedAdmin = { ...adminUser, lastLogin: new Date().toISOString() };
-      setAdmins((prev: AdminUser[]) =>
-        prev.map((a: AdminUser) => (a.id === adminUser.id ? updatedAdmin : a))
+      const supabaseAdminUser = buildSupabaseAdminUser(
+        normalizedEmail,
+        appUser.name,
+        appUser.id,
       );
 
-      // Create session
-      const newSession: AdminSession = {
-        adminUser: updatedAdmin,
+      saveSession({
+        adminUser: supabaseAdminUser,
         isAuthenticated: true,
         loginTime: new Date().toISOString(),
-      };
-
-      saveSession(newSession);
+      });
       return true;
     } finally {
       setIsLoading(false);
@@ -376,6 +422,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [saveSession]);
 
   const logout = useCallback(() => {
+    void signOutSupabaseSession();
     saveSession({
       adminUser: null,
       isAuthenticated: false,

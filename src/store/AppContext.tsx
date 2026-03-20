@@ -97,6 +97,28 @@ interface AppContextType extends AppState {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const getInitialAppView = (): AppView => {
+  if (typeof window === 'undefined') return 'landing';
+
+  const url = new URL(window.location.href);
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const hashParams = new URLSearchParams(hash);
+
+  if (
+    url.searchParams.get('view') === 'password-reset' ||
+    url.searchParams.get('type') === 'recovery' ||
+    url.searchParams.has('code') ||
+    hashParams.get('type') === 'recovery' ||
+    hashParams.has('access_token')
+  ) {
+    return 'password-reset';
+  }
+
+  return 'landing';
+};
+
 const isUserLike = (value: unknown): value is User =>
   Boolean(value && typeof value === 'object' && typeof (value as { id?: unknown }).id === 'string');
 
@@ -347,8 +369,8 @@ const appendProfileUnavailableMessageForMatches = (
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentView, setCurrentViewState] = useState<AppView>('landing');
-  const [previousView, setPreviousView] = useState<AppView>('landing');
+  const [currentView, setCurrentViewState] = useState<AppView>(() => getInitialAppView());
+  const [previousView, setPreviousView] = useState<AppView>(() => getInitialAppView());
   const [assessmentAnswers, setAssessmentAnswers] = useState<AssessmentAnswer[]>([]);
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -782,7 +804,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentView !== 'assessment-not-completed' &&
       currentView !== 'community-blog' &&
       currentView !== 'clarity-room' &&
-      currentView !== 'user-settings'
+      currentView !== 'user-settings' &&
+      currentView !== 'password-reset'
     ) {
       // Check if we should show the assessment-not-completed page
       const shouldShowNotCompleted = sessionStorage.getItem('showAssessmentNotCompleted') === 'true';

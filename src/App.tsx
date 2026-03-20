@@ -35,6 +35,7 @@ import AdminAssessmentsSection from '@/sections/AdminAssessmentsSection';
 import AdminContentSection from '@/sections/AdminContentSection';
 import AdminSupportSection from '@/sections/AdminSupportSection';
 import UserLoginSection from '@/sections/UserLoginSection';
+import PasswordResetSection from '@/sections/PasswordResetSection';
 import SignUpSection from '@/sections/SignUpSection';
 import UserSettingsSection from '@/sections/UserSettingsSection';
 import PrivacyPolicySection from '@/sections/PrivacyPolicySection';
@@ -78,6 +79,10 @@ const AppContent: React.FC = () => {
   const renderView = () => {
     if (currentView === 'user-login') {
       return <UserLoginSection />;
+    }
+
+    if (currentView === 'password-reset') {
+      return <PasswordResetSection />;
     }
 
     if (currentView === 'sign-up') {
@@ -193,10 +198,10 @@ const AppContent: React.FC = () => {
       <div className="flex-1">
         {renderView()}
       </div>
-      {!currentView.startsWith('admin-') && currentView !== 'user-login' && currentView !== 'sign-up' && (
+      {!currentView.startsWith('admin-') && currentView !== 'user-login' && currentView !== 'password-reset' && currentView !== 'sign-up' && (
         <Footer />
       )}
-      {!currentView.startsWith('admin-') && currentView !== 'user-login' && currentView !== 'sign-up' && (
+      {!currentView.startsWith('admin-') && currentView !== 'user-login' && currentView !== 'password-reset' && currentView !== 'sign-up' && (
         <>
           <EmailModal />
           <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />

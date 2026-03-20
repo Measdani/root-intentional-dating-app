@@ -17,6 +17,7 @@ import { userService } from '@/services/userService';
 import { supportService } from '@/services/supportService';
 import { SUPPORT_EMAIL } from '@/constants/support';
 import type { SupportCategory, SupportMessage } from '@/types';
+import { signOutAndClearLocalUser, authService } from '@/services/authService';
 import {
   cancelExclusiveRequest,
   declineExclusiveRequest,
@@ -804,13 +805,12 @@ const UserSettingsSection: React.FC = () => {
   };
 
   const handleFinishDeactivationExit = () => {
-    localStorage.removeItem('currentUser');
-    window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
+    void signOutAndClearLocalUser();
     resetDeactivationFlow();
     setCurrentView('landing');
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error('Please fill all password fields.');
       return;
@@ -824,10 +824,27 @@ const UserSettingsSection: React.FC = () => {
       return;
     }
 
+    if (!currentUser.email) {
+      toast.error('This account does not have an email address available for password change.');
+      return;
+    }
+
+    const { error: signInError } = await authService.signInWithPassword(currentUser.email, currentPassword);
+    if (signInError) {
+      toast.error('Current password is incorrect.');
+      return;
+    }
+
+    const { error: updateError } = await authService.updatePassword(newPassword);
+    if (updateError) {
+      toast.error(updateError.message);
+      return;
+    }
+
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    toast.success('Password updated for this MVP session.');
+    toast.success('Password updated.');
   };
 
   const handleSupportSubmit = async (e: React.FormEvent) => {
@@ -909,8 +926,7 @@ const UserSettingsSection: React.FC = () => {
   };
 
   const signOut = () => {
-    localStorage.removeItem('currentUser');
-    window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
+    void signOutAndClearLocalUser();
     setCurrentView('landing');
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
+import { signOutAndClearLocalUser } from '@/services/authService';
 import { growthResources, paidGrowthResources } from '@/data/assessment';
 import { getRelationshipModeSnapshot } from '@/modules';
 import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock, Brain } from 'lucide-react';
@@ -155,8 +156,7 @@ const PaidGrowthModeSection: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    window.dispatchEvent(new Event('storage'));
+    void signOutAndClearLocalUser();
     setCurrentView('landing');
   };
 
