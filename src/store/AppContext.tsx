@@ -771,6 +771,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (shouldRedirect &&
       currentView !== 'growth-mode' &&
+      currentView !== 'aware-partner' &&
       currentView !== 'growth-detail' &&
       currentView !== 'profile' &&
       currentView !== 'conversation' &&

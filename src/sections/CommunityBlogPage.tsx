@@ -92,7 +92,7 @@ const CommunityBlogPage: React.FC = () => {
               onClick={() => {
                 if (currentUser?.id) {
                   // Determine target view based on user status or previous view
-                  const safeViews = ['browse', 'growth-mode', 'paid-growth-mode', 'inbox', 'conversation'];
+                  const safeViews = ['browse', 'growth-mode', 'aware-partner', 'paid-growth-mode', 'inbox', 'conversation'];
                   let targetView = 'browse'; // default fallback
 
                   // If previous view is safe, use it

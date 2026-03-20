@@ -155,6 +155,7 @@ export type AppView =
   | 'assessment-result'
   | 'assessment-not-completed'
   | 'growth-mode'
+  | 'aware-partner'
   | 'paid-growth-mode'
   | 'growth-detail'
   | 'community-blog'

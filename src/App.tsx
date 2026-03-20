@@ -19,6 +19,7 @@ import ProfileDetailSection from '@/sections/ProfileDetailSection';
 import InboxSection from '@/sections/InboxSection';
 import ConversationSection from '@/sections/ConversationSection';
 import GrowthModeSection from '@/sections/GrowthModeSection';
+import AwarePartnerSection from '@/sections/AwarePartnerSection';
 import GrowthDetailSection from '@/sections/GrowthDetailSection';
 import ClarityRoomSection from '@/sections/ClarityRoomSection';
 import CommunityBlogPage from '@/sections/CommunityBlogPage';
@@ -143,6 +144,8 @@ const AppContent: React.FC = () => {
         return <ConversationSection />;
       case 'growth-mode':
         return <GrowthModeSection />;
+      case 'aware-partner':
+        return <AwarePartnerSection />;
       case 'growth-detail':
         return <GrowthDetailSection />;
       case 'paid-growth-mode':

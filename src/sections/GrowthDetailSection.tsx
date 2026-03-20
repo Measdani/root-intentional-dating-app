@@ -369,6 +369,7 @@ const GrowthDetailSection: React.FC = () => {
     `rooted_growth_module_resource_completion_${currentUser.id}`;
   const prefillResourceKey = 'rooted_growth_detail_prefill_resource_id';
   const startResourceKey = 'rooted_growth_detail_start_resource_id';
+  const originViewKey = 'rooted_growth_detail_origin_view';
   const [pathReflections, setPathReflections] = useState<Record<string, PathReflectionRecord>>({});
   const [moduleResourceCompletions, setModuleResourceCompletions] =
     useState<ModuleResourceCompletionMap>({});
@@ -1036,13 +1037,19 @@ const GrowthDetailSection: React.FC = () => {
   };
 
   const navigateBackToGardenTab = () => {
+    const originView = localStorage.getItem(originViewKey) === 'aware-partner'
+      ? 'aware-partner'
+      : 'growth-mode';
+
     if (selectedResourceId) {
       localStorage.setItem(prefillResourceKey, selectedResourceId);
     } else {
       localStorage.removeItem(prefillResourceKey);
     }
+
+    localStorage.removeItem(originViewKey);
     localStorage.setItem('rooted_growth_mode_active_tab', 'resources');
-    setCurrentView('growth-mode');
+    setCurrentView(originView);
   };
 
   const navigateToExploreConnections = () => {
@@ -1051,6 +1058,8 @@ const GrowthDetailSection: React.FC = () => {
     } else {
       localStorage.removeItem(prefillResourceKey);
     }
+
+    localStorage.removeItem(originViewKey);
     localStorage.setItem('rooted_growth_mode_active_tab', 'browse');
     setCurrentView('growth-mode');
   };
@@ -1139,7 +1148,10 @@ const GrowthDetailSection: React.FC = () => {
               Journal
             </button>
             <button
-              onClick={() => setCurrentView('growth-mode')}
+              onClick={() => {
+                localStorage.removeItem(originViewKey);
+                setCurrentView('growth-mode');
+              }}
               className="w-10 h-10 rounded-lg border border-[#1A211A] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition flex items-center justify-center"
               title="Forest"
               aria-label="Open Forest"

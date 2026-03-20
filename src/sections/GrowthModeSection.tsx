@@ -14,14 +14,14 @@ import {
 } from '@/modules';
 import { growthResources, paidGrowthResources } from '@/data/assessment';
 import { toast } from 'sonner';
-import { BookOpen, Clock, CheckCircle, Sparkles, Brain, Target, Heart, Shield, Zap, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
+import { BookOpen, Clock, Sparkles, Brain, Target, Heart, Users, HelpCircle, MessageCircle, Send, X } from 'lucide-react';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
 import { getGrowthModeCoachGuidance, type GrowthModeCoachResult } from '@/services/growthModeCoachService';
 import { SUPPORT_EMAIL } from '@/constants/support';
 import { ASSESSMENT_CORE_STYLES, ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
-import type { User, AssessmentCoreStyle, AssessmentResult } from '@/types';
+import type { AppView, User, AssessmentCoreStyle, AssessmentResult } from '@/types';
 import { resourceService } from '@/services/resourceService';
 
 type ResourceProgressMap = Record<
@@ -43,6 +43,7 @@ type PartnerJourneySection = {
   badge: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
+  view?: AppView;
   isPlaceholder?: boolean;
 };
 
@@ -239,6 +240,7 @@ const PARTNER_JOURNEY_SECTIONS: PartnerJourneySection[] = [
     badge: 'The Aware Partner Badge',
     description: 'This first section is in place and anchors the full relationship-growth journey.',
     icon: Brain,
+    view: 'aware-partner',
   },
   {
     title: 'The Intentional Partner',
@@ -320,8 +322,6 @@ const GrowthModeSection: React.FC = () => {
   const [coachGuidance, setCoachGuidance] = useState<GrowthModeCoachResult | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
   const [isCoachMinimized, setIsCoachMinimized] = useState(false);
-  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
-  const [showSelectedResourceLearnMore, setShowSelectedResourceLearnMore] = useState(false);
   const defaultYourStyle = currentUser.primaryStyle ?? assessmentResult?.primaryStyle ?? 'oak';
   const defaultPartnerStyle =
     currentUser.secondaryStyle ??
@@ -437,30 +437,6 @@ const GrowthModeSection: React.FC = () => {
       completed_paths: completedPaths,
     };
   }, [resourceProgress, combinedModeResources.length]);
-
-  useEffect(() => {
-    if (combinedModeResources.length === 0) {
-      setSelectedResourceId(null);
-      setShowSelectedResourceLearnMore(false);
-      return;
-    }
-
-    const hasSelected = selectedResourceId
-      ? combinedModeResources.some((resource: any) => String(resource.id) === selectedResourceId)
-      : false;
-
-    if (!hasSelected) {
-      const firstResource = combinedModeResources[0];
-      setSelectedResourceId(
-        firstResource?.id !== undefined && firstResource?.id !== null ? String(firstResource.id) : null
-      );
-      setShowSelectedResourceLearnMore(false);
-    }
-  }, [combinedModeResources, selectedResourceId]);
-
-  useEffect(() => {
-    setShowSelectedResourceLearnMore(false);
-  }, [selectedResourceId]);
 
   useEffect(() => {
     localStorage.setItem(growthModeTabStorageKey, activeTab);
@@ -719,63 +695,6 @@ const GrowthModeSection: React.FC = () => {
     setSelectedUser(user);
     setCurrentView('profile');
   };
-
-  // Map categories to icons
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Emotional Regulation':
-        return <Brain className="w-5 h-5" />;
-      case 'Accountability':
-        return <Target className="w-5 h-5" />;
-      case 'Autonomy':
-        return <Heart className="w-5 h-5" />;
-      case 'Boundaries':
-        return <Shield className="w-5 h-5" />;
-      case 'Conflict & Repair':
-        return <Zap className="w-5 h-5" />;
-      case 'Integrity Check':
-        return <CheckCircle className="w-5 h-5" />;
-      default:
-        return <BookOpen className="w-5 h-5" />;
-    }
-  };
-
-  // Get status based on progress
-  const getPathStatus = (progress: number) => {
-    if (progress === 100) return 'completed';
-    if (progress > 0) return 'in-progress';
-    return 'not-started';
-  };
-
-  const getResourceProgress = (resource: any): number => {
-    if (!resource?.id) return 0;
-    const resourceId = String(resource.id);
-
-    const saved = resourceProgress[resourceId];
-    const moduleIds: string[] = Array.isArray(resource.modules)
-      ? resource.modules.map((module: any, index: number) => (
-          typeof module?.id === 'string' && module.id.trim().length > 0
-            ? module.id
-            : `${resourceId}-module-${index + 1}`
-        ))
-      : [];
-
-    const totalModules = moduleIds.length > 0 ? moduleIds.length : (saved?.totalModules || 0);
-    if (totalModules <= 0) return 0;
-
-    const viewedSet = new Set<string>(saved?.viewedModuleIds || []);
-    const viewedCount = moduleIds.length > 0
-      ? moduleIds.filter((moduleId: string) => viewedSet.has(moduleId)).length
-      : viewedSet.size;
-
-    const percentage = Math.round((Math.min(viewedCount, totalModules) / totalModules) * 100);
-    return Math.max(0, Math.min(100, percentage));
-  };
-
-  const selectedResource = useMemo(
-    () => combinedModeResources.find((resource: any) => String(resource.id) === selectedResourceId) ?? null,
-    [combinedModeResources, selectedResourceId]
-  );
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
@@ -1189,23 +1108,22 @@ const GrowthModeSection: React.FC = () => {
             <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Partner Journey</p>
             <h3 className="mt-2 font-display text-2xl text-[#F6FFF2]">Resource Area Sections</h3>
             <p className="mt-2 max-w-3xl text-sm text-[#A9B5AA]">
-              The second and third section frames are now in place below the first section so the area is ready for the next buildout.
+              Choose a section below. The Aware Partner now opens its own page so the path navigation has a dedicated space.
             </p>
           </div>
 
           <div className="space-y-4">
             {PARTNER_JOURNEY_SECTIONS.map((section, index) => {
               const Icon = section.icon;
+              const isInteractive = Boolean(section.view);
+              const baseCardClassName = `rounded-2xl border p-5 ${
+                section.isPlaceholder
+                  ? 'border-[#2A312A] bg-[#111611]'
+                  : 'border-[#D9FF3D]/30 bg-[#D9FF3D]/10'
+              }`;
 
-              return (
-                <div
-                  key={section.title}
-                  className={`rounded-2xl border p-5 ${
-                    section.isPlaceholder
-                      ? 'border-[#2A312A] bg-[#111611]'
-                      : 'border-[#D9FF3D]/30 bg-[#D9FF3D]/10'
-                  }`}
-                >
+              const cardBody = (
+                <>
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="flex items-start gap-4">
                       <div
@@ -1236,188 +1154,50 @@ const GrowthModeSection: React.FC = () => {
                             : 'border-emerald-400/30 text-emerald-200'
                         }`}
                       >
-                        {section.isPlaceholder ? 'Frame ready' : 'In place'}
+                        {section.isPlaceholder ? 'Frame ready' : 'Ready to open'}
                       </span>
                     </div>
                   </div>
 
-                  {section.isPlaceholder && (
+                  {isInteractive ? (
+                    <div className="mt-4 flex items-center justify-between rounded-xl border border-[#D9FF3D]/20 bg-[#0B0F0C]/50 px-4 py-4">
+                      <p className="text-sm text-[#A9B5AA]">
+                        Path navigation for this section now opens on its own page.
+                      </p>
+                      <span className="text-sm font-medium text-[#D9FF3D]">Open</span>
+                    </div>
+                  ) : (
                     <div className="mt-4 flex min-h-[96px] items-center rounded-xl border border-dashed border-[#2E372E] bg-[#0B0F0C] px-4 py-5">
                       <p className="text-sm text-[#A9B5AA]">
                         Section frame added. Share the lesson structure and content for this section and I can build it next.
                       </p>
                     </div>
                   )}
+                </>
+              );
+
+              if (section.view) {
+                return (
+                  <button
+                    key={section.title}
+                    type="button"
+                    onClick={() => {
+                      localStorage.setItem(growthModeTabStorageKey, 'resources');
+                      setCurrentView(section.view as AppView);
+                    }}
+                    className={`${baseCardClassName} w-full text-left transition hover:border-[#D9FF3D]/50 hover:bg-[#D9FF3D]/12`}
+                  >
+                    {cardBody}
+                  </button>
+                );
+              }
+
+              return (
+                <div key={section.title} className={baseCardClassName}>
+                  {cardBody}
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* Growth Resources */}
-        <div className="mb-12">
-          {modeResourceAccessActive && (
-            <div className="mb-5 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-              Break/Exclusive Mode is active, so Inner and Advanced growth resources are temporarily unlocked here.
-            </div>
-          )}
-          <div className="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-4">
-            <div className="rounded-2xl border border-[#1A211A] bg-[#111611] p-3 h-fit">
-              <p className="text-xs uppercase tracking-wide text-[#A9B5AA] px-2 pb-2">Path Navigation</p>
-              <div className="space-y-2">
-                {combinedModeResources.map((resource: any) => {
-                  const progress = getResourceProgress(resource);
-                  const status = getPathStatus(progress);
-                  const resourceId = String(resource.id);
-                  const isSelected = selectedResourceId === resourceId;
-                  const isCompleted = progress === 100;
-
-                  return (
-                    <button
-                      key={resource.id}
-                      onClick={() => setSelectedResourceId(resourceId)}
-                      className={`w-full text-left rounded-xl border px-3 py-3 transition-colors ${
-                        isSelected
-                          ? 'border-[#D9FF3D] bg-[#D9FF3D]/10'
-                          : 'border-[#1A211A] bg-[#0B0F0C] hover:border-[#2E372E]'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
-                          status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
-                          'bg-[#1A211A] text-[#A9B5AA]'
-                        }`}>
-                          {getCategoryIcon(resource.category)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-[#F6FFF2] truncate">{resource.title}</p>
-                          <p className="text-xs text-[#A9B5AA] mt-1">
-                            {isCompleted ? 'Completed' : progress > 0 ? `${progress}% complete` : 'Not started'}
-                          </p>
-                        </div>
-                        {isCompleted && <CheckCircle className="w-4 h-4 text-[#D9FF3D] flex-shrink-0 mt-0.5" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-[#1A211A] bg-[#111611] p-5 md:p-6">
-              {selectedResource ? (
-                (() => {
-                  const progress = getResourceProgress(selectedResource);
-                  const status = getPathStatus(progress);
-                  const isCompleted = progress === 100;
-                  const totalModules = Array.isArray(selectedResource.modules)
-                    ? selectedResource.modules.length
-                    : 0;
-
-                  return (
-                    <div className="space-y-5">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="flex items-start gap-3">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            status === 'completed' ? 'bg-[#D9FF3D]/20 text-[#D9FF3D]' :
-                            status === 'in-progress' ? 'bg-amber-500/20 text-amber-400' :
-                            'bg-[#1A211A] text-[#A9B5AA]'
-                          }`}>
-                            {getCategoryIcon(selectedResource.category)}
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-semibold text-[#F6FFF2]">{selectedResource.title}</h4>
-                            {!showSelectedResourceLearnMore ? (
-                              <p className="text-sm text-[#A9B5AA] mt-1">{selectedResource.description}</p>
-                            ) : (
-                              <div className="mt-2 space-y-3">
-                                {Array.isArray(selectedResource.learningOutcomes) && selectedResource.learningOutcomes.length > 0 && (
-                                  <div>
-                                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1.5">Strengths</p>
-                                    <ul className="space-y-1.5">
-                                      {selectedResource.learningOutcomes.map((outcome: string, index: number) => (
-                                        <li key={`${selectedResource.id}-strength-${index}`} className="text-sm text-[#F6FFF2]">
-                                          - {outcome}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {selectedResource.areasToBeMindfulOf && (
-                                  <div>
-                                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA] mb-1.5">Areas to Be Mindful Of</p>
-                                    <p className="text-sm text-[#F6FFF2] whitespace-pre-wrap">{selectedResource.areasToBeMindfulOf}</p>
-                                  </div>
-                                )}
-                                {(!selectedResource.learningOutcomes || selectedResource.learningOutcomes.length === 0) && !selectedResource.areasToBeMindfulOf && (
-                                  <p className="text-sm text-[#A9B5AA]">No additional path details added yet.</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {!showSelectedResourceLearnMore && (
-                          <span className="px-2.5 py-1 rounded-full text-xs border border-[#2A312A] text-[#A9B5AA]">
-                            {selectedResource.category}
-                          </span>
-                        )}
-                      </div>
-
-                      {!showSelectedResourceLearnMore && (
-                        <>
-                          <div>
-                            <div className="h-2 bg-[#0B0F0C] rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${
-                                  status === 'completed' ? 'bg-[#D9FF3D]' :
-                                  status === 'in-progress' ? 'bg-amber-500' :
-                                  'bg-[#A9B5AA]'
-                                }`}
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
-                            <p className="text-xs text-[#A9B5AA] mt-2">
-                              {isCompleted ? 'Completed' : progress > 0 ? `${progress}% complete` : 'Not started'}
-                            </p>
-                          </div>
-
-                          <div className="grid sm:grid-cols-2 gap-3 text-xs text-[#A9B5AA]">
-                            <p className="flex items-center gap-2">
-                              <Clock className="w-3.5 h-3.5" />
-                              Estimated time: {selectedResource.estimatedTime}
-                            </p>
-                            <p>{totalModules} modules in this path</p>
-                          </div>
-                        </>
-                      )}
-
-                      <div className="flex flex-wrap gap-3 pt-1">
-                        <button
-                          onClick={() => {
-                            localStorage.setItem(
-                              'rooted_growth_detail_start_resource_id',
-                              String(selectedResource.id)
-                            );
-                            setCurrentView('growth-detail');
-                          }}
-                          className="px-4 py-2 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:brightness-95 transition"
-                        >
-                          Start
-                        </button>
-                        <button
-                          onClick={() => setShowSelectedResourceLearnMore((previous) => !previous)}
-                          className="px-4 py-2 rounded-lg border border-[#1A211A] text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition"
-                        >
-                          {showSelectedResourceLearnMore ? 'Show Less' : 'Learn More'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()
-              ) : (
-                <p className="text-sm text-[#A9B5AA]">No growth resources are available right now.</p>
-              )}
-            </div>
           </div>
         </div>
           </div>
