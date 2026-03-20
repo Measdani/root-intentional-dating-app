@@ -142,7 +142,7 @@ const validateConfessionOfIntent = (value: string): ScenarioValidationResult => 
 const CONFLICT_SANDBOX_SCENARIOS: ConflictScenario[] = [
   {
     id: 'unknown-name',
-    title: 'The Unknown Name',
+    title: 'The "Slow Fade" (Testing Avoidance)',
     trigger:
       'Forest: "Scenario time. You are cuddling on the couch, and your partner\'s phone lights up. It is a text from Alex saying, \'That was fun today!\'. You do not know an Alex. What is your first move?"',
     oldSelfPrompt:
@@ -369,7 +369,6 @@ const ConflictSandbox: React.FC = () => {
   );
   const [progress, setProgress] = useState<ConflictSandboxProgress>(() => loadProgress(progressStorageKey));
   const [firstMoveFeedback, setFirstMoveFeedback] = useState<string | null>(null);
-  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const redirectTimeoutRef = useRef<number | null>(null);
   const badgeEarned = hasPartnerJourneyBadge(currentUser.partnerJourneyBadges, intentionalPartnerBadge);
 
@@ -408,7 +407,6 @@ const ConflictSandbox: React.FC = () => {
 
   useEffect(() => {
     setFirstMoveFeedback(null);
-    setActionFeedback(null);
   }, [activeScenario.id]);
 
   const returnToResources = () => {
@@ -452,13 +450,6 @@ const ConflictSandbox: React.FC = () => {
 
   const handlePassScenario = () => {
     if (!activeDraft.whatIfUnlocked) {
-      setActionFeedback('Open Forest\'s intervention first, then complete the action step.');
-      return;
-    }
-
-    const validation = activeScenario.validator(activeDraft.actionResponse);
-    if (!validation.passed) {
-      setActionFeedback(validation.feedback || 'Forest wants one more pass at this response.');
       return;
     }
 
@@ -481,22 +472,20 @@ const ConflictSandbox: React.FC = () => {
     };
 
     persistProgress(nextProgress);
-    setActionFeedback(null);
     setFirstMoveFeedback(null);
 
     if (nextCompletedScenarioIds.length >= CONFLICT_SANDBOX_SCENARIOS.length) {
       const badgeWasNew = persistPartnerJourneyBadge(intentionalPartnerBadge, currentUser.id);
       toast.success(
         badgeWasNew
-          ? `${getPartnerJourneyBadgeLabel(intentionalPartnerBadge)} unlocked. Returning to Resource Space.`
-          : 'Conflict Sandbox complete. Returning to Resource Space.'
+          ? `You chose understanding over reaction. That's growth. ${getPartnerJourneyBadgeLabel(intentionalPartnerBadge)} unlocked. Returning to Resource Space.`
+          : 'You chose understanding over reaction. That\'s growth. Returning to Resource Space.'
       );
       queueReturnToResources();
       return;
     }
 
-    const scenariosLeft = CONFLICT_SANDBOX_SCENARIOS.length - nextCompletedScenarioIds.length;
-    toast.success(`Forest cleared "${activeScenario.title}". ${scenariosLeft} scenario${scenariosLeft === 1 ? '' : 's'} left.`);
+    toast.success('You chose understanding over reaction. That\'s growth.');
   };
 
   if (sectionCompleted) {
@@ -544,6 +533,9 @@ const ConflictSandbox: React.FC = () => {
               The Conflict Sandbox
             </div>
             <h3 className="mt-4 font-display text-3xl text-[#F6FFF2]">Practice the new move before real conflict asks for it</h3>
+            <p className="mt-2 text-sm font-medium text-[#D9FF3D]">
+              You&apos;re not being tested - you&apos;re being prepared.
+            </p>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#A9B5AA]">
               Forest will walk you through 8 conflict triggers. Answer with your first instinct, let him show you the chain reaction, then prove the healthier move in writing.
             </p>
@@ -648,20 +640,18 @@ const ConflictSandbox: React.FC = () => {
                   <textarea
                     value={activeDraft.actionResponse}
                     onChange={(event) => {
-                      if (actionFeedback) setActionFeedback(null);
                       updateDraft(activeScenario.id, { actionResponse: event.target.value });
                     }}
                     rows={5}
                     placeholder={activeScenario.actionPlaceholder}
                     className="mt-4 w-full rounded-2xl border border-[#1A211A] bg-[#111611] px-4 py-3 text-sm text-[#F6FFF2] placeholder:text-[#738073] focus:border-[#D9FF3D] focus:outline-none resize-none"
                   />
-                  {actionFeedback && <p className="mt-3 text-sm text-amber-300">{actionFeedback}</p>}
                   <button
                     onClick={handlePassScenario}
                     className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#D9FF3D] px-5 py-2.5 text-sm font-semibold text-[#0B0F0C] hover:brightness-95 transition"
                   >
-                    Pass this scenario
-                    <CheckCircle className="h-4 w-4" />
+                    Next
+                    <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
               </>
@@ -673,12 +663,16 @@ const ConflictSandbox: React.FC = () => {
           <div className="rounded-3xl border border-[#1A211A] bg-[#111611] p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Forest&apos;s Rule</p>
             <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
-              Awareness is not enough here. Each prompt has to prove the healthier move in language that builds clarity, safety, and respect.
+              Awareness isn&apos;t enough here.
+              <br />
+              Every response must reflect the partner you&apos;re becoming.
+              <br />
+              Choose words that create clarity, safety, and respect.
             </p>
           </div>
 
           <div className="rounded-3xl border border-[#1A211A] bg-[#111611] p-5">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">What Passes</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">How You Pass This Stage</p>
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[#A9B5AA]">
               <li>- First-person ownership over accusation</li>
               <li>- Clarity over guessing</li>

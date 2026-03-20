@@ -18,11 +18,13 @@ const IntentionalPartnerSection: React.FC = () => {
       afterHero={<ConflictSandbox />}
     >
       <p>Awareness without action keeps you stuck.</p>
+      <p>Intention is what changes how you show up when it matters most.</p>
       <p>
         The Intentional Partner is about applying what you&apos;ve learned: making conscious choices in
         how you communicate, set boundaries, and show up for others.
       </p>
       <p>This is where you move with purpose instead of reacting from habit.</p>
+      <p>This is where you stop reacting... and start choosing.</p>
       <p>You begin to:</p>
       <ul className="space-y-1 pl-5 list-disc">
         <li>Communicate clearly</li>
