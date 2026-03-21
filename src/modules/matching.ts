@@ -10,6 +10,13 @@ export const canUsersMatch = (
     return true;
   }
 
+  if (
+    (viewer.gender !== 'male' && viewer.gender !== 'female') ||
+    (candidate.gender !== 'male' && candidate.gender !== 'female')
+  ) {
+    return true;
+  }
+
   const oppositeGender = viewer.gender === 'male' ? 'female' : 'male';
   return candidate.gender === oppositeGender;
 };

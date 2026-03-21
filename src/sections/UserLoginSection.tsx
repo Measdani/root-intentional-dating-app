@@ -14,6 +14,7 @@ import {
 } from '@/modules';
 import { userService } from '@/services/userService';
 import { assessmentService } from '@/services/assessmentService';
+import { hasDatingProfile, normalizeUserProfile } from '@/lib/userProfile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -201,8 +202,15 @@ const UserLoginSection: React.FC = () => {
 
   const routeAfterLogin = async (user: any) => {
     const canonicalTester = user?.email ? getCanonicalTestUser(user.email) : null;
-    let effectiveUser = canonicalTester || user;
+    let effectiveUser = canonicalTester || normalizeUserProfile(user);
     const persistRemote = !canonicalTester;
+
+    if (effectiveUser.isAdmin && !hasDatingProfile(effectiveUser)) {
+      effectiveUser = await syncUserPoolForOutcome(effectiveUser, true, false);
+      refreshSession(effectiveUser);
+      setCurrentView('browse');
+      return;
+    }
 
     if (isSuspended(effectiveUser)) {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);

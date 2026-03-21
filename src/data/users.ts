@@ -1,3 +1,4 @@
+import { normalizeUserProfile } from '@/lib/userProfile';
 import type { User } from '@/types';
 
 export const sampleUsers: User[] = [
@@ -369,28 +370,30 @@ const CURRENT_USER_ID = 'u1'; // 'u1' = Maya, 'u7' = Alex
 export const currentUser: User = sampleUsers.find(u => u.id === CURRENT_USER_ID) || sampleUsers[0];
 
 export const calculateAlignmentScore = (user1: User, user2: User): number => {
+  const normalizedUser1 = normalizeUserProfile(user1);
+  const normalizedUser2 = normalizeUserProfile(user2);
   let score = 70; // Base score
   
   // Values alignment (up to 15 points)
-  const sharedValues = user1.values.filter(v => user2.values.includes(v));
+  const sharedValues = normalizedUser1.values.filter(v => normalizedUser2.values.includes(v));
   score += Math.min(sharedValues.length * 3, 15);
   
   // Family intent alignment (up to 10 points)
-  if (user1.familyAlignment.wantsChildren === user2.familyAlignment.wantsChildren) {
+  if (normalizedUser1.familyAlignment.wantsChildren === normalizedUser2.familyAlignment.wantsChildren) {
     score += 5;
   }
-  if (user1.familyAlignment.openToPartnerWithParent === user2.familyAlignment.openToPartnerWithParent ||
-      user1.familyAlignment.openToPartnerWithParent === 'comfortable' ||
-      user2.familyAlignment.openToPartnerWithParent === 'comfortable') {
+  if (normalizedUser1.familyAlignment.openToPartnerWithParent === normalizedUser2.familyAlignment.openToPartnerWithParent ||
+      normalizedUser1.familyAlignment.openToPartnerWithParent === 'comfortable' ||
+      normalizedUser2.familyAlignment.openToPartnerWithParent === 'comfortable') {
     score += 5;
   }
   
   // Partnership intent alignment (up to 5 points)
-  if (user1.partnershipIntent === user2.partnershipIntent) {
+  if (normalizedUser1.partnershipIntent === normalizedUser2.partnershipIntent) {
     score += 5;
   } else if (
-    (user1.partnershipIntent === 'marriage' && user2.partnershipIntent === 'life-partnership') ||
-    (user1.partnershipIntent === 'life-partnership' && user2.partnershipIntent === 'marriage')
+    (normalizedUser1.partnershipIntent === 'marriage' && normalizedUser2.partnershipIntent === 'life-partnership') ||
+    (normalizedUser1.partnershipIntent === 'life-partnership' && normalizedUser2.partnershipIntent === 'marriage')
   ) {
     score += 3;
   }

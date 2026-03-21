@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { normalizeUserProfile } from '@/lib/userProfile'
 import type { User } from '@/types'
 
 export const userService = {
@@ -204,7 +205,7 @@ export const userService = {
 }
 
 function mapRowToUser(row: any): User {
-  return {
+  return normalizeUserProfile({
     id: row.id,
     email: row.email,
     name: row.name,
@@ -236,7 +237,7 @@ function mapRowToUser(row: any): User {
     backgroundCheckDate: row.background_check_date,
     suspensionEndDate: row.suspension_end_date,
     isAdmin: row.is_admin,
-  }
+  })
 }
 
 function toPoolId(value: unknown): User['poolId'] {

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { AppView, AssessmentAnswer, AssessmentOptionStyle, AssessmentResult, User, InteractionState, UserInteraction, ConversationMessage, Report, ReportReason, ReportSeverity, SupportMessage, SupportCategory, AdminNotification, ConciergeSnapshot, ConciergeNudge } from '@/types';
 import { sampleUsers, currentUser as defaultUser } from '@/data/users';
+import { normalizeUserProfile } from '@/lib/userProfile';
 import {
   applyRelationshipModeToUser,
   canUsersExchangeMessages,
@@ -122,7 +123,7 @@ const getInitialAppView = (): AppView => {
 const isUserLike = (value: unknown): value is User =>
   Boolean(value && typeof value === 'object' && typeof (value as { id?: unknown }).id === 'string');
 
-const normalizeUser = (user: User): User => applyRelationshipModeToUser(user);
+const normalizeUser = (user: User): User => applyRelationshipModeToUser(normalizeUserProfile(user));
 
 const upsertUserById = (existingUsers: User[], user: User): User[] => {
   const normalizedUser = normalizeUser(user);
