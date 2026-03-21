@@ -364,6 +364,23 @@ const UserLoginSection: React.FC = () => {
         return;
       }
 
+      if (user.isAdmin) {
+        const adminAuthenticated = await adminLogin(normalizedEmail, password);
+        if (!adminAuthenticated) {
+          setError('This account does not have admin access.');
+          toast.error('This account does not have admin access.');
+          setIsLoading(false);
+          return;
+        }
+
+        localStorage.removeItem('currentUser');
+        window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
+        toast.success(`Welcome back, ${user.name || 'Admin'}!`);
+        setCurrentView('admin-dashboard');
+        setIsLoading(false);
+        return;
+      }
+
       const pooledUser = resolveUserForActivePool(user);
       const sessionUser = persistCurrentUserSession(pooledUser);
       // Dispatch custom event to trigger AppContext update (StorageEvent doesn't work for same-tab)
