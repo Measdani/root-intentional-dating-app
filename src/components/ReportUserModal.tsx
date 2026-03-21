@@ -67,11 +67,9 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
 
   if (!isOpen || !reportedUser) {
-    console.log('ReportUserModal not rendering. isOpen:', isOpen, 'reportedUser:', reportedUser?.name);
     return null;
   }
 
-  console.log('📝 ReportUserModal rendering for user:', reportedUser.name);
   const detailsLength = details.length;
   const minLength = 50;
   const maxLength = 1000;
@@ -82,11 +80,9 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isReady || !selectedReason) {
-      console.warn('Report form not ready. isReady:', isReady, 'selectedReason:', selectedReason);
       return;
     }
 
-    console.log('🚀 Submitting report form. Reason:', selectedReason, 'Details length:', detailsLength, 'Should block:', shouldBlock);
     setIsSubmitting(true);
 
     // Simulate API call

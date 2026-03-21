@@ -155,8 +155,8 @@ const PaidGrowthModeSection: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    void signOutAndClearLocalUser();
+  const handleLogout = async () => {
+    await signOutAndClearLocalUser();
     setCurrentView('landing');
   };
 

@@ -529,8 +529,8 @@ const GrowthModeSection: React.FC = () => {
     setCurrentView('profile');
   };
 
-  const handleLogout = () => {
-    void signOutAndClearLocalUser();
+  const handleLogout = async () => {
+    await signOutAndClearLocalUser();
     setCurrentView('landing');
   };
 

@@ -288,9 +288,9 @@ const BrowseSection: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    void signOutAndClearLocalUser();
-    setCurrentView('user-login');
+  const handleLogout = async () => {
+    await signOutAndClearLocalUser();
+    setCurrentView('landing');
   };
 
   return (

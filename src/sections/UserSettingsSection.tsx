@@ -804,8 +804,8 @@ const UserSettingsSection: React.FC = () => {
     }
   };
 
-  const handleFinishDeactivationExit = () => {
-    void signOutAndClearLocalUser();
+  const handleFinishDeactivationExit = async () => {
+    await signOutAndClearLocalUser();
     resetDeactivationFlow();
     setCurrentView('landing');
   };
@@ -925,8 +925,8 @@ const UserSettingsSection: React.FC = () => {
     );
   };
 
-  const signOut = () => {
-    void signOutAndClearLocalUser();
+  const signOut = async () => {
+    await signOutAndClearLocalUser();
     setCurrentView('landing');
   };
 

@@ -217,7 +217,7 @@ const AssessmentSection: React.FC = () => {
     }, 100);
   };
 
-  const handleLogoutFromAssessment = () => {
+  const handleLogoutFromAssessment = async () => {
     // Record that assessment was abandoned
     const abandonmentData = {
       abandonedAt: new Date().toISOString(),
@@ -227,7 +227,7 @@ const AssessmentSection: React.FC = () => {
     localStorage.setItem('assessmentAbandonment', JSON.stringify(abandonmentData));
 
       // Clear current user and log out
-      void signOutAndClearLocalUser();
+      await signOutAndClearLocalUser();
 
       // Navigate to landing page
       setCurrentView('landing');
