@@ -31,6 +31,7 @@ interface AppState {
   selectedUser: User | null;
   selectedConversation: UserInteraction | null;
   currentUser: User;
+  isUserAuthenticated: boolean;
   users: User[];
   hasJoinedList: boolean;
   showEmailModal: boolean;
@@ -376,6 +377,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<UserInteraction | null>(null);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState<boolean>(() => {
+    try {
+      return Boolean(localStorage.getItem('currentUser'));
+    } catch (error) {
+      console.error('Failed to inspect currentUser storage:', error);
+      return false;
+    }
+  });
 
   // Check localStorage for logged-in user (from demo login), otherwise use default
   // Use state + effect to make it reactive when user logs in/out
@@ -458,6 +467,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         syncUsersFromStorage();
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
+          setIsUserAuthenticated(true);
           const parsedUser = JSON.parse(savedUser) as User;
 
           // Check if this user has a stored suspension
@@ -497,9 +507,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setCurrentUserState(normalizedUser);
           setUsers((prev) => upsertUserById(prev, normalizedUser));
         } else {
+          setIsUserAuthenticated(false);
           const fallbackUser = normalizeUser(defaultUser);
           setCurrentUserState(fallbackUser);
           setUsers((prev) => upsertUserById(prev, fallbackUser));
+          setAssessmentResult(null);
+          setSelectedUser(null);
+          setSelectedConversation(null);
         }
       } catch (error) {
         console.error('Failed to update user from localStorage:', error);
@@ -792,7 +806,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (currentUser.userStatus === 'suspended' || currentUser.userStatus === 'needs-growth') ||
       hasFailedAssessmentSignal;
 
-    if (shouldRedirect &&
+    if (isUserAuthenticated &&
+      shouldRedirect &&
       currentView !== 'growth-mode' &&
       currentView !== 'aware-partner' &&
       currentView !== 'intentional-partner' &&
@@ -823,12 +838,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentViewState('growth-mode');
       }
     }
-  }, [currentUser.userStatus, currentUser.assessmentPassed, currentView]);
+  }, [currentUser.userStatus, currentUser.assessmentPassed, currentView, isUserAuthenticated]);
 
   // Auto-redirect users who passed assessment to browse view
   // This prevents users from being re-presented with the assessment they've already passed
   useEffect(() => {
     if (
+      isUserAuthenticated &&
       currentUser.assessmentPassed === true &&
       currentUser.userStatus === 'active' &&
       currentView === 'landing'
@@ -836,7 +852,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPreviousView(currentView);
       setCurrentViewState('browse');
     }
-  }, [currentUser.assessmentPassed, currentUser.userStatus, currentView]);
+  }, [currentUser.assessmentPassed, currentUser.userStatus, currentView, isUserAuthenticated]);
 
   // Wrapper function to track previous view when changing views
   const setCurrentView = useCallback((view: AppView) => {
@@ -2022,6 +2038,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     selectedUser,
     selectedConversation,
     currentUser,
+    isUserAuthenticated,
     users,
     hasJoinedList,
     showEmailModal,

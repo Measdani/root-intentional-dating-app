@@ -48,7 +48,7 @@ import UserAccessButton from '@/components/UserAccessButton';
 import ForestFloatingAssistant from '@/components/ForestFloatingAssistant';
 
 const AppContent: React.FC = () => {
-  const { currentView, showSupportModal, setShowSupportModal, currentUser } = useApp();
+  const { currentView, showSupportModal, setShowSupportModal, currentUser, isUserAuthenticated } = useApp();
   const { session } = useAdmin();
   const [authPoolBanner, setAuthPoolBanner] = React.useState<string | null>(null);
 
@@ -126,6 +126,29 @@ const AppContent: React.FC = () => {
       };
 
       return <AdminLayout>{renderAdminView()}</AdminLayout>;
+    }
+
+    const userProtectedViews = new Set([
+      'assessment',
+      'assessment-reflection',
+      'assessment-result',
+      'assessment-not-completed',
+      'browse',
+      'profile',
+      'inbox',
+      'conversation',
+      'growth-mode',
+      'aware-partner',
+      'intentional-partner',
+      'healthy-partner',
+      'growth-detail',
+      'paid-growth-mode',
+      'user-settings',
+      'clarity-room',
+    ]);
+
+    if (userProtectedViews.has(currentView) && !isUserAuthenticated) {
+      return <UserLoginSection />;
     }
 
     // Protect assessment view - only accessible to logged-in users
