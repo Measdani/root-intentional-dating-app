@@ -20,6 +20,7 @@ import {
   runAdminCopilot,
   type AdminCopilotSummaryResult,
 } from '@/services/adminCopilotService';
+import { PATH_LABELS } from '@/lib/pathways';
 
 const AdminDashboardSection: React.FC = () => {
   const [copilotSummary, setCopilotSummary] = useState<AdminCopilotSummaryResult | null>(null);
@@ -178,12 +179,12 @@ const AdminDashboardSection: React.FC = () => {
       {!copilotLoading && !copilotError && copilotSummary && (
         <Card className="bg-[#111611] border-[#1A211A] p-6 mb-8">
           <h3 className="text-lg font-display font-bold text-[#F6FFF2] mb-4">
-            Growth Mode Insights
+            {PATH_LABELS.intentional} Insights
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
             <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C]/60 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-[#A9B5AA] mb-1">In Growth Mode</p>
+              <p className="text-[11px] uppercase tracking-wide text-[#A9B5AA] mb-1">On {PATH_LABELS.intentional}</p>
               <p className="text-xl font-display text-[#F6FFF2]">
                 {copilotSummary.growthModeInsights.growth_mode_users}
               </p>

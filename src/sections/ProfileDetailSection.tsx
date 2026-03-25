@@ -12,6 +12,7 @@ import {
   getPartnerJourneyBadgeLabel,
   normalizePartnerJourneyBadges,
 } from '@/services/partnerJourneyBadgeService';
+import { PATH_LABELS } from '@/lib/pathways';
 
 const formatGenderIdentity = (value?: UserGenderIdentity): string => {
   switch (value) {
@@ -194,7 +195,7 @@ const ProfileDetailSection: React.FC = () => {
             }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
           >
-            <span>Alignment Space Resources</span>
+            <span>{currentUser.assessmentPassed ? `${PATH_LABELS.alignment} Resources` : `${PATH_LABELS.intentional} Resources`}</span>
           </button>
 
           <div className="flex items-center gap-6">

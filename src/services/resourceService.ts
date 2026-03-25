@@ -1,38 +1,67 @@
 import { supabase } from '@/lib/supabase';
 import type { GrowthResource } from '@/types';
+import {
+  LEGACY_PATH_RESOURCE_RECORD_IDS,
+  PATH_RESOURCE_RECORD_IDS,
+  type PathResourceBucket,
+} from '@/lib/pathways';
+
+const readResourceRow = async (ids: string[]): Promise<{ id: string; data: GrowthResource[] } | null> => {
+  const { data, error } = await supabase
+    .from('growth_resources')
+    .select('id, data')
+    .in('id', ids);
+
+  if (error) {
+    console.warn('Failed to fetch growth resources from Supabase:', error);
+    return null;
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return null;
+  }
+
+  const orderedIds = new Map(ids.map((id, index) => [id, index]));
+  const row = [...data].sort(
+    (a, b) => (orderedIds.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (orderedIds.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+  )[0];
+
+  return row
+    ? {
+        id: row.id,
+        data: Array.isArray(row.data) ? (row.data as GrowthResource[]) : [],
+      }
+    : null;
+};
 
 export const resourceService = {
-  async saveResources(resources: GrowthResource[], type: 'free' | 'paid' = 'free'): Promise<{ error: string | null }> {
+  async saveResources(
+    resources: GrowthResource[],
+    bucket: PathResourceBucket = 'intentional'
+  ): Promise<{ error: string | null }> {
     try {
-      console.log(`[resourceService] Attempting to save ${type} resources:`, resources.length);
-      const resourceId = `resources_${type}`;
+      console.log(`[resourceService] Attempting to save ${bucket} resources:`, resources.length);
+      const resourceId = PATH_RESOURCE_RECORD_IDS[bucket];
+      const legacyResourceId = LEGACY_PATH_RESOURCE_RECORD_IDS[bucket];
+      const existingData = await readResourceRow([resourceId, legacyResourceId]);
 
-      // First check if record exists
-      const { data: existingData } = await supabase
-        .from('growth_resources')
-        .select('id')
-        .eq('id', resourceId)
-        .single();
-
-      let error;
+      let error = null;
       if (existingData) {
-        // Record exists, update it
         const { error: updateError } = await supabase
           .from('growth_resources')
           .update({
-            type,
+            type: bucket,
             data: resources,
             updated_at: Date.now(),
           })
-          .eq('id', resourceId);
+          .eq('id', existingData.id);
         error = updateError;
       } else {
-        // Record doesn't exist, insert it
         const { error: insertError } = await supabase
           .from('growth_resources')
           .insert({
             id: resourceId,
-            type,
+            type: bucket,
             data: resources,
             updated_at: Date.now(),
           });
@@ -43,7 +72,7 @@ export const resourceService = {
         console.error('Failed to save resources to Supabase:', error);
         return { error: error.message };
       }
-      console.log(`Resources (${type}) saved to Supabase`);
+      console.log(`Resources (${bucket}) saved to Supabase`);
       return { error: null };
     } catch (e: any) {
       console.error('Unexpected error saving resources:', e);
@@ -51,29 +80,21 @@ export const resourceService = {
     }
   },
 
-  async getResources(type: 'free' | 'paid' = 'free'): Promise<GrowthResource[]> {
+  async getResources(bucket: PathResourceBucket = 'intentional'): Promise<GrowthResource[]> {
     try {
-      console.log(`[resourceService.getResources] Fetching ${type} resources from Supabase`);
-      const { data, error } = await supabase
-        .from('growth_resources')
-        .select('data')
-        .eq('id', `resources_${type}`)
-        .single();
+      console.log(`[resourceService.getResources] Fetching ${bucket} resources from Supabase`);
+      const row = await readResourceRow([
+        PATH_RESOURCE_RECORD_IDS[bucket],
+        LEGACY_PATH_RESOURCE_RECORD_IDS[bucket],
+      ]);
 
-      console.log(`[resourceService.getResources] Response:`, { data, error });
-
-      if (error) {
-        console.warn(`Failed to fetch ${type} resources from Supabase:`, error);
+      if (!row) {
+        console.log(`No ${bucket} resources found in Supabase`);
         return [];
       }
 
-      if (!data || !data.data) {
-        console.log(`No ${type} resources found in Supabase`);
-        return [];
-      }
-
-      console.log(`Loaded ${type} resources from Supabase:`, data.data.length, 'resources');
-      return data.data;
+      console.log(`Loaded ${bucket} resources from Supabase:`, row.data.length, 'resources');
+      return row.data;
     } catch (e: any) {
       console.error('Unexpected error fetching resources:', e);
       return [];

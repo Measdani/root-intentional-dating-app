@@ -18,6 +18,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import type { Report, ReportStatus, ReportReason, ReportSeverity } from '@/types';
+import { PATH_LABELS } from '@/lib/pathways';
 
 type ReportSourceFilter = 'all' | 'member-reported' | 'concierge-system';
 const SYSTEM_CONCIERGE_REPORTER_ID = 'system-concierge';
@@ -635,8 +636,8 @@ const AdminReportsSection: React.FC = () => {
 
                     // Send suspension notification with message based on user's assessment status
                     const suspensionMessage = reportedUser.assessmentPassed
-                      ? `Following a review of recent activity reported by a member of the community, your access to the Alignment Space has been suspended. You have been moved to the Inner Work Space, where you may continue engaging with the community. Reassessment for Alignment Space eligibility will be available on ${formattedDate}. If you believe this action was made in error, contact ${SUPPORT_EMAIL}.`
-                      : `Following a review of recent activity reported by a member of the community, your reassessment eligibility has been extended by 6 months. You may continue participating in the Inner Work Space during this time. Reassessment will be available on ${formattedDate}. If you believe this action was made in error, contact ${SUPPORT_EMAIL}.`;
+                      ? `Following a review of recent activity reported by a member of the community, your access to ${PATH_LABELS.alignment} has been suspended. You have been moved to ${PATH_LABELS.intentional}, where you may continue engaging with the community. Reassessment for ${PATH_LABELS.alignment} eligibility will be available on ${formattedDate}. If you believe this action was made in error, contact ${SUPPORT_EMAIL}.`
+                      : `Following a review of recent activity reported by a member of the community, your reassessment eligibility has been extended by 6 months. You may continue participating in ${PATH_LABELS.intentional} during this time. Reassessment will be available on ${formattedDate}. If you believe this action was made in error, contact ${SUPPORT_EMAIL}.`;
 
                     addNotification(
                       'suspension',

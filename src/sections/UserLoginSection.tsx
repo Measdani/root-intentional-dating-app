@@ -21,7 +21,6 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { testUsers } from '@/data/testUsers';
-import { mockAdminCredentials } from '@/data/admins';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import type { AssessmentResult } from '@/types';
 import { authService, signOutSupabaseSession } from '@/services/authService';
@@ -71,6 +70,8 @@ const UserLoginSection: React.FC = () => {
       'community-blogs',
       'growth-resources',
       'paid-growth-resources',
+      'intentional-path-resources',
+      'alignment-path-resources',
       'rooted-admin-data',
       'rooted-admin-users',
       'rooted-admin-reports',
@@ -304,25 +305,6 @@ const UserLoginSection: React.FC = () => {
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const isAdminEmail = Object.prototype.hasOwnProperty.call(mockAdminCredentials, normalizedEmail);
-
-      // Silent admin login path through the regular login screen.
-      if (isAdminEmail) {
-        const adminAuthenticated = await adminLogin(normalizedEmail, password);
-        if (!adminAuthenticated) {
-          setError('Invalid email or password');
-          toast.error('Invalid email or password');
-          setIsLoading(false);
-          return;
-        }
-
-        await signOutSupabaseSession();
-        localStorage.removeItem('currentUser');
-        window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
-        setCurrentView('admin-dashboard');
-        setIsLoading(false);
-        return;
-      }
 
       // Tester accounts are canonical and should never drift.
       // If email matches a tester, never fall back to Supabase.

@@ -1,28 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { signOutAndClearLocalUser } from '@/services/authService';
-import { growthResources, paidGrowthResources } from '@/data/assessment';
-import { getRelationshipModeSnapshot } from '@/modules';
-import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Lock, Brain } from 'lucide-react';
-import type { BlogArticle } from '@/types';
+import { PATH_LABELS, readPathResourcesFromStorage, writePathResourcesToStorage } from '@/lib/pathways';
+import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Brain } from 'lucide-react';
+import type { BlogArticle, GrowthResource } from '@/types';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import { resourceService } from '@/services/resourceService';
 import { blogService } from '@/services/blogService';
 
 const PaidGrowthModeSection: React.FC = () => {
-  const { setCurrentView, currentUser, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
+  const { setCurrentView, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
   const [activeResource, setActiveResource] = useState<string | null>(null);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'resources' | 'blog'>('resources');
-  const [modeRefreshTick, setModeRefreshTick] = useState(0);
-  const [resources, setResources] = useState(() => {
-    const saved = localStorage.getItem('paid-growth-resources');
-    return saved ? JSON.parse(saved) : paidGrowthResources;
-  });
-  const [coreResources, setCoreResources] = useState(() => {
-    const saved = localStorage.getItem('growth-resources');
-    return saved ? JSON.parse(saved) : growthResources;
-  });
+  const [resources, setResources] = useState<GrowthResource[]>(() =>
+    readPathResourcesFromStorage('alignment', [])
+  );
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const isModuleOnly = (blog: any): boolean => {
     const raw = blog?.moduleOnly ?? blog?.module_only;
@@ -51,31 +44,21 @@ const PaidGrowthModeSection: React.FC = () => {
     void loadBlogs();
   }, []);
 
-  // Load paid resources from Supabase, fallback to local storage/default data
+  // Load alignment path resources from Supabase.
   useEffect(() => {
-    const loadPaidResources = async () => {
+    const loadAlignmentResources = async () => {
       try {
-        const supabaseResources = await resourceService.getResources('paid');
-        if (supabaseResources.length > 0) {
-          setResources(supabaseResources);
-          return;
-        }
+        const supabaseResources = await resourceService.getResources('alignment');
+        setResources(supabaseResources);
+        writePathResourcesToStorage('alignment', supabaseResources);
       } catch (error) {
-        console.error('Failed to load paid resources from Supabase:', error);
+        console.error('Failed to load alignment path resources from Supabase:', error);
+        setResources(readPathResourcesFromStorage('alignment', []));
       }
-
-      const saved = localStorage.getItem('paid-growth-resources');
-      setResources(saved ? JSON.parse(saved) : paidGrowthResources);
     };
 
-    loadPaidResources();
+    loadAlignmentResources();
   }, []);
-
-  useEffect(() => {
-    if (activeTab !== 'resources') return;
-    const saved = localStorage.getItem('growth-resources');
-    setCoreResources(saved ? JSON.parse(saved) : growthResources);
-  }, [activeTab]);
   const [pathProgress] = useState<Record<string, number>>({
     pg1: 60,
     pg2: 30,
@@ -84,36 +67,7 @@ const PaidGrowthModeSection: React.FC = () => {
     pg5: 25,
   });
 
-  useEffect(() => {
-    const handleModeUpdated = () => setModeRefreshTick((previous) => previous + 1);
-    window.addEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
-    const interval = window.setInterval(() => {
-      setModeRefreshTick((previous) => previous + 1);
-    }, 60000);
-    return () => {
-      window.removeEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
-      window.clearInterval(interval);
-    };
-  }, []);
-
-  const relationshipModeSnapshot = useMemo(
-    () => getRelationshipModeSnapshot(currentUser.id),
-    [currentUser.id, modeRefreshTick]
-  );
-  const modeResourceAccessActive = relationshipModeSnapshot.mode !== 'active';
-  const visibleResources = useMemo(() => {
-    if (!modeResourceAccessActive) return resources;
-
-    const seen = new Set<string>();
-    return [...coreResources, ...resources].filter((resource: any) => {
-      const key = typeof resource?.id === 'string' && resource.id.length > 0
-        ? resource.id
-        : JSON.stringify(resource);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [coreResources, modeResourceAccessActive, resources]);
+  const visibleResources = useMemo(() => resources, [resources]);
 
   // Map categories to icons
   const getCategoryIcon = (category: string) => {
@@ -164,10 +118,6 @@ const PaidGrowthModeSection: React.FC = () => {
     setCurrentView('browse');
   };
 
-  // Check if user has paid membership
-  const isPaidMember = currentUser.membershipTier === 'quarterly' || currentUser.membershipTier === 'annual';
-  const canAccessPremiumResources = isPaidMember || modeResourceAccessActive;
-
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
       {/* Header */}
@@ -179,7 +129,7 @@ const PaidGrowthModeSection: React.FC = () => {
           >
             <span>Browse Profiles</span>
           </button>
-          <h1 className="font-display text-xl text-[#F6FFF2]">Alignment Space</h1>
+          <h1 className="font-display text-xl text-[#F6FFF2]">{PATH_LABELS.alignment}</h1>
           <div className="w-24" />
         </div>
       </header>
@@ -225,15 +175,7 @@ const PaidGrowthModeSection: React.FC = () => {
             You've demonstrated the readiness to build intentional, lasting partnerships. These resources are designed to help you deepen your capacity to love and be loved.
           </p>
           <p className="text-[#A9B5AA] text-base max-w-2xl mx-auto leading-relaxed">
-            {modeResourceAccessActive && !isPaidMember ? (
-              <>
-                <span className="text-emerald-400 font-medium">Break/Exclusive Mode is active,</span> so advanced resources are temporarily unlocked while your mode is active.
-              </>
-            ) : (
-              <>
-                <span className="text-emerald-400 font-medium">As a paid member,</span> you have access to advanced growth paths that will help you navigate partnership, intimacy, shared vision, and resilience. Your investment in growth today becomes the foundation of exceptional relationships.
-              </>
-            )}
+            <span className="text-emerald-400 font-medium">{PATH_LABELS.alignment}</span> is for members who passed the assessment and are ready to deepen partnership capacity while building stable, intentional relationships.
           </p>
         </div>
 
@@ -249,7 +191,7 @@ const PaidGrowthModeSection: React.FC = () => {
                 You've shown the emotional stability, accountability, and self-awareness needed to build healthy relationships. Now it's time to go deeper.
               </p>
               <p className="text-xs text-[#D9FF3D]">
-                💚 Unlock the full potential of partnership with our premium growth resources
+                💚 Your alignment resources are now open.
               </p>
             </div>
           </div>
@@ -267,7 +209,7 @@ const PaidGrowthModeSection: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
-              Advanced Resources
+              Alignment Resources
             </div>
           </button>
           <button
@@ -297,13 +239,8 @@ const PaidGrowthModeSection: React.FC = () => {
         {/* Growth Resources */}
         {activeTab === 'resources' && (
         <div className="mb-12">
-          {modeResourceAccessActive && (
-            <div className="mb-5 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-              Inner and Advanced resources are both visible while Break/Exclusive Mode is active.
-            </div>
-          )}
           <h3 className="font-mono-label text-[#F6FFF2] mb-2">Deepen Your Alignment</h3>
-          <p className="text-[#A9B5AA] text-sm mb-6">These advanced resources help you become the best partner you can be. Work through them at your own pace as you navigate relationship building.</p>
+          <p className="text-[#A9B5AA] text-sm mb-6">These resources belong to {PATH_LABELS.alignment} and support partnership readiness, clarity, intimacy, and resilience.</p>
           <div className="grid md:grid-cols-2 gap-4">
             {visibleResources.map((resource: any) => {
               const status = getPathStatus(resource.id);
@@ -446,24 +383,6 @@ const PaidGrowthModeSection: React.FC = () => {
             )}
           </div>
         )}
-
-        {/* Membership Check */}
-        {!canAccessPremiumResources && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-[20px] p-6 mb-12 text-center">
-            <Lock className="w-8 h-8 text-amber-400 mx-auto mb-3" />
-            <p className="text-amber-300 font-medium mb-2">Premium Content</p>
-            <p className="text-[#A9B5AA] text-sm mb-4">
-              These resources are available to quarterly and annual members. Upgrade to unlock your full potential.
-            </p>
-            <button
-              onClick={() => setCurrentView('membership')}
-              className="px-6 py-2 bg-amber-500/20 text-amber-400 rounded-lg font-medium hover:bg-amber-500/30 transition-colors"
-            >
-              View Membership Options
-            </button>
-          </div>
-        )}
-
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -10,6 +10,7 @@ import {
 } from '@/modules';
 import { userService } from '@/services/userService';
 import { BookOpen, ArrowRight } from 'lucide-react';
+import { PATH_LABELS } from '@/lib/pathways';
 
 const AssessmentReflectionSection: React.FC = () => {
   const { assessmentResult, setCurrentView } = useApp();
@@ -163,12 +164,12 @@ const AssessmentReflectionSection: React.FC = () => {
             {/* Placement Explanation */}
             <div className="bg-[#111611]/80 backdrop-blur-sm rounded-[24px] border border-[#1A211A] p-8">
               <h2 className="font-display text-xl mb-4 text-[#F6FFF2]">
-                {isInnerWork ? 'Inner Work Space' : 'Alignment Space'}
+                {isInnerWork ? PATH_LABELS.intentional : PATH_LABELS.alignment}
               </h2>
               <p className="text-[#A9B5AA] text-sm leading-relaxed mb-4">
                 {isInnerWork
-                  ? 'The Inner Work Space is a structured environment designed to help you explore your patterns, clarify your values, and build the relational foundation needed for lasting partnership.'
-                  : 'The Alignment Space is where you\'ll discover compatible partners who share your vision for intentional relationships built on shared values.'}
+                  ? `${PATH_LABELS.intentional} is a structured environment designed to help you explore your patterns, clarify your values, and build the relational foundation needed for lasting partnership.`
+                  : `${PATH_LABELS.alignment} is where you'll discover compatible partners who share your vision for intentional relationships built on shared values.`}
               </p>
               {isInnerWork && (
                 <p className="text-[#A9B5AA] text-sm leading-relaxed text-amber-500/80">

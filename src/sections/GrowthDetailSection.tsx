@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
+import { getPathBucketForUser, readPathResourcesFromStorage } from '@/lib/pathways';
 import { ArrowLeft, BookOpen, CheckCircle, Clock, Sparkles, Users } from 'lucide-react';
 import type { BlogArticle, AssessmentCoreStyle, GrowthResourceModule } from '@/types';
 import { supabase } from '@/lib/supabase';
@@ -359,11 +360,14 @@ const runForestReflectionCheck = (
 
 const GrowthDetailSection: React.FC = () => {
   const { setCurrentView, currentUser } = useApp();
+  const pathBucket = getPathBucketForUser(currentUser);
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
-  const [resources, setResources] = useState(growthResources);
+  const [resources, setResources] = useState(() =>
+    readPathResourcesFromStorage(pathBucket, pathBucket === 'intentional' ? growthResources : [])
+  );
   const progressStorageKey = `rooted_growth_module_progress_${currentUser.id}`;
   const reflectionStorageKey = `rooted_growth_path_reflections_${currentUser.id}`;
   const moduleResourceCompletionStorageKey =
@@ -387,14 +391,15 @@ const GrowthDetailSection: React.FC = () => {
       try {
         console.log('[GrowthDetailSection] Loading resources...');
         // Load resources from Supabase
-        const supabaseResources = await resourceService.getResources('free');
+        const supabaseResources = await resourceService.getResources(pathBucket);
         console.log('[GrowthDetailSection] Resources result:', { count: supabaseResources.length, hasModules: supabaseResources[0]?.modules?.length });
         if (supabaseResources.length > 0) {
-          console.log('Loaded free resources from Supabase:', supabaseResources.length);
+          console.log(`Loaded ${pathBucket} resources from Supabase:`, supabaseResources.length);
           setResources(supabaseResources);
         } else {
-          const savedResources = localStorage.getItem('growth-resources');
-          setResources(savedResources ? JSON.parse(savedResources) : growthResources);
+          setResources(
+            readPathResourcesFromStorage(pathBucket, pathBucket === 'intentional' ? growthResources : [])
+          );
         }
 
         console.log('[GrowthDetailSection] Loading blogs...');
@@ -429,10 +434,9 @@ const GrowthDetailSection: React.FC = () => {
         }
       } catch (error) {
         console.error('Error loading data:', error);
-        const savedResources = localStorage.getItem('growth-resources');
-        if (savedResources) {
-          setResources(JSON.parse(savedResources));
-        }
+        setResources(
+          readPathResourcesFromStorage(pathBucket, pathBucket === 'intentional' ? growthResources : [])
+        );
         const savedBlogs = localStorage.getItem('community-blogs');
         if (savedBlogs) {
           setBlogs(JSON.parse(savedBlogs));
@@ -440,7 +444,7 @@ const GrowthDetailSection: React.FC = () => {
       }
     };
     loadData();
-  }, []);
+  }, [pathBucket]);
 
   // Detailed module content
   const moduleContent: Record<string, ModuleContent> = {

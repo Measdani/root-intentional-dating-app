@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { calculateAlignmentScore } from '@/data/users';
 import type { User } from '@/types';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
+import { PATH_LABELS } from '@/lib/pathways';
 
 const EXCLUSIVE_LETTERS_STORAGE_KEY = 'rooted_exclusive_letters_v1';
 
@@ -305,7 +306,7 @@ const BrowseSection: React.FC = () => {
             }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
           >
-            <span>Alignment Space</span>
+            <span>{currentUser.assessmentPassed ? PATH_LABELS.alignment : PATH_LABELS.intentional}</span>
           </button>
 
           <div className="text-center">

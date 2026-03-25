@@ -6,6 +6,7 @@ import { assessmentQuestions as defaultAssessmentQuestions, calculateAssessmentR
 import type { AssessmentQuestion } from '@/types';
 import { ChevronRight } from 'lucide-react';
 import { normalizeAssessmentQuestionsWithStyles, resolveAssessmentOptionStyle } from '@/services/assessmentStyleService';
+import { PATH_LABELS } from '@/lib/pathways';
 
 const ADMIN_DATA_STORAGE_KEY = 'rooted-admin-data';
 
@@ -49,7 +50,7 @@ const AssessmentSection: React.FC = () => {
   } = useApp();
   const { activeCommunity } = useCommunity();
   const isLgbtqCommunity = activeCommunity.matchingMode === 'inclusive';
-  const innerWorkLabel = isLgbtqCommunity ? 'LGBTQ+ Inner Work Space' : 'Inner Work Space';
+  const intentionalPathLabel = PATH_LABELS.intentional;
 
   const [isVisible, setIsVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -327,8 +328,8 @@ const AssessmentSection: React.FC = () => {
                   connection in relationships.
                 </p>
                 <p className="text-[#A9B5AA] text-base leading-relaxed">
-                  Your responses will determine whether you enter Alignment Space, where you'll have tools and
-                  resources to support a healthy relationship as you date and grow, or the {innerWorkLabel},
+                  Your responses will determine whether you enter {PATH_LABELS.alignment}, where you'll have tools and
+                  resources to support a healthy relationship as you date and grow, or {intentionalPathLabel},
                   where you can strengthen important relationship skills while continuing to meet others who are also
                   focused on personal growth.
                 </p>
@@ -478,7 +479,7 @@ const AssessmentSection: React.FC = () => {
               </h3>
               <div className="space-y-4 mt-4">
                 <p className="text-[#A9B5AA] text-sm leading-relaxed">
-                  If you leave before completing the assessment, you will automatically be placed in <span className="text-[#D9FF3D] font-semibold">{innerWorkLabel}</span>.
+                  If you leave before completing the assessment, you will automatically be placed in <span className="text-[#D9FF3D] font-semibold">{intentionalPathLabel}</span>.
                 </p>
                 <p className="text-[#A9B5AA] text-sm leading-relaxed">
                   You may retake the assessment after the required waiting period.

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { Sprout, BookOpen, Calendar } from 'lucide-react';
 import { growthResources } from '@/data/assessment';
+import { PATH_LABELS } from '@/lib/pathways';
 
 const GrowthSection: React.FC = () => {
   const { setCurrentView } = useApp();
@@ -82,7 +83,7 @@ const GrowthSection: React.FC = () => {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
             >
-              Inner Work Space gives you tools, not rejection. Come back stronger.
+              {PATH_LABELS.intentional} gives you tools, not rejection. Come back stronger.
             </p>
 
             {/* Growth Resources Preview */}
@@ -109,7 +110,7 @@ const GrowthSection: React.FC = () => {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
             >
-              Learn about Inner Work Space
+              Learn about {PATH_LABELS.intentional}
             </button>
 
             <p

@@ -22,6 +22,7 @@ import {
   normalizeMilestones,
   type MilestoneAction,
 } from '@/services/relationshipMilestoneService';
+import { PATH_LABELS } from '@/lib/pathways';
 
 interface AppState {
   currentView: AppView;
@@ -565,7 +566,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const currentTime = Date.now();
 
         if (currentTime < coolingPeriodEndTime) {
-          // Still in cooling period - place user in Inner Work Space
+          // Still in cooling period - place user on The Intentional Path
           setCurrentUserState(prev => ({
             ...prev,
             userStatus: 'needs-growth',
@@ -767,7 +768,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           userId: currentUser.id,
           type: 'warning',
           title: 'Suspension Period Ended',
-          message: 'Your account suspension period has ended. You must now complete the Inner Work Space assessment to regain full access to browsing and matching.',
+          message: `Your account suspension period has ended. You must now complete the ${PATH_LABELS.intentional} assessment to regain full access to browsing and matching.`,
           createdAt: Date.now(),
           read: false,
         };

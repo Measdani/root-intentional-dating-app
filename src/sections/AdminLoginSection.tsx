@@ -76,7 +76,7 @@ const AdminLoginSection: React.FC = () => {
                 className="bg-[#0B0F0C] border-[#1A211A] text-[#F6FFF2] placeholder-[#A9B5AA]/50"
               />
               <p className="text-xs text-[#A9B5AA]">
-                Use your real admin email, or the demo accounts: sarah@rooted.app, marcus@rooted.app, or emma@rooted.app
+                Use your real Supabase admin email.
               </p>
             </div>
 
@@ -93,9 +93,6 @@ const AdminLoginSection: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-[#0B0F0C] border-[#1A211A] text-[#F6FFF2] placeholder-[#A9B5AA]/50"
               />
-              <p className="text-xs text-[#A9B5AA]">
-                All accounts use password: admin123
-              </p>
             </div>
 
             {/* Submit button */}

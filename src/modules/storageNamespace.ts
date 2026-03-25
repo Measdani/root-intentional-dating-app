@@ -5,6 +5,8 @@ const NAMESPACE_EXACT_KEYS = new Set<string>([
   'assessmentResult',
   'assessmentLog',
   'assessmentAbandonment',
+  'intentional-path-resources',
+  'alignment-path-resources',
   'growth-resources',
   'paid-growth-resources',
   'community-blogs',

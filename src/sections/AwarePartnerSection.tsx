@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { getRelationshipModeSnapshot } from '@/modules';
-import { growthResources, paidGrowthResources } from '@/data/assessment';
+import { growthResources } from '@/data/assessment';
+import {
+  PATH_LABELS,
+  readPathResourcesFromStorage,
+  writePathResourcesToStorage,
+} from '@/lib/pathways';
 import { resourceService } from '@/services/resourceService';
 import { hasPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
 import AlignmentKeyButton from '@/components/AlignmentKeyButton';
@@ -32,15 +36,7 @@ const growthDetailOriginViewKey = 'rooted_growth_detail_origin_view';
 const growthDetailStartResourceKey = 'rooted_growth_detail_start_resource_id';
 
 const loadStoredGrowthResources = (): GrowthResource[] => {
-  try {
-    const saved = localStorage.getItem('growth-resources');
-    if (!saved) return growthResources;
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : growthResources;
-  } catch (error) {
-    console.warn('Failed to parse growth-resources from localStorage, falling back to defaults.', error);
-    return growthResources;
-  }
+  return readPathResourcesFromStorage('intentional', growthResources);
 };
 
 const getCategoryIcon = (category: string) => {
@@ -70,30 +66,10 @@ const getPathStatus = (progress: number) => {
 
 const AwarePartnerSection: React.FC = () => {
   const { currentUser, setCurrentView } = useApp();
-  const [modeRefreshTick, setModeRefreshTick] = useState(0);
   const [resources, setResources] = useState<GrowthResource[]>(loadStoredGrowthResources);
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showSelectedResourceLearnMore, setShowSelectedResourceLearnMore] = useState(false);
   const [resourceProgress, setResourceProgress] = useState<ResourceProgressMap>({});
-
-  useEffect(() => {
-    const handleModeUpdated = () => setModeRefreshTick((previous) => previous + 1);
-    window.addEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
-    const interval = window.setInterval(() => {
-      setModeRefreshTick((previous) => previous + 1);
-    }, 60000);
-
-    return () => {
-      window.removeEventListener('relationship-mode-updated', handleModeUpdated as EventListener);
-      window.clearInterval(interval);
-    };
-  }, []);
-
-  const relationshipModeSnapshot = useMemo(
-    () => getRelationshipModeSnapshot(currentUser.id),
-    [currentUser.id, modeRefreshTick]
-  );
-  const modeResourceAccessActive = relationshipModeSnapshot.mode !== 'active';
   const progressStorageKey = useMemo(
     () => `rooted_growth_module_progress_${currentUser.id}`,
     [currentUser.id]
@@ -103,24 +79,7 @@ const AwarePartnerSection: React.FC = () => {
     'aware-partner-badge'
   );
 
-  const combinedModeResources = useMemo(() => {
-    if (!modeResourceAccessActive) return resources;
-
-    const savedPaidResources = localStorage.getItem('paid-growth-resources');
-    const paidResources = savedPaidResources ? JSON.parse(savedPaidResources) : paidGrowthResources;
-    const paidList = Array.isArray(paidResources) ? paidResources : [];
-
-    const seen = new Set<string>();
-    return [...resources, ...paidList].filter((resource: GrowthResource) => {
-      const key =
-        typeof resource?.id === 'string' && resource.id.length > 0
-          ? resource.id
-          : JSON.stringify(resource);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [modeResourceAccessActive, resources]);
+  const combinedModeResources = useMemo(() => resources, [resources]);
 
   useEffect(() => {
     if (combinedModeResources.length === 0) {
@@ -146,14 +105,10 @@ const AwarePartnerSection: React.FC = () => {
 
   const refreshGrowthResources = useCallback(async () => {
     try {
-      const supabaseResources = await resourceService.getResources('free');
+      const supabaseResources = await resourceService.getResources('intentional');
       if (Array.isArray(supabaseResources) && supabaseResources.length > 0) {
         setResources(supabaseResources);
-        try {
-          localStorage.setItem('growth-resources', JSON.stringify(supabaseResources));
-        } catch (storageError) {
-          console.warn('Failed to cache growth resources locally:', storageError);
-        }
+        writePathResourcesToStorage('intentional', supabaseResources);
         return;
       }
     } catch (error) {
@@ -368,11 +323,9 @@ const AwarePartnerSection: React.FC = () => {
           </div>
         </div>
 
-        {modeResourceAccessActive && (
-          <div className="mb-5 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-            Break/Exclusive Mode is active, so Inner and Advanced growth resources are temporarily unlocked here.
-          </div>
-        )}
+        <div className="mb-5 rounded-xl border border-[#D9FF3D]/20 bg-[#D9FF3D]/5 px-4 py-3 text-sm text-[#F6FFF2]">
+          {PATH_LABELS.intentional} resources stay tied to the assessment-fail path.
+        </div>
 
         <div className="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-4">
           <div className="rounded-2xl border border-[#1A211A] bg-[#111611] p-3 h-fit">

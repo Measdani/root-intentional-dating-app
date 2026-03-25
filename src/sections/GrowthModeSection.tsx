@@ -25,6 +25,7 @@ import {
   hasPartnerJourneyBadge,
 } from '@/services/partnerJourneyBadgeService';
 import type { AppView, User, AssessmentCoreStyle, PartnerJourneyBadge, BlogArticle } from '@/types';
+import { PATH_LABELS } from '@/lib/pathways';
 
 type ResourceProgressMap = Record<
   string,
@@ -539,7 +540,7 @@ const GrowthModeSection: React.FC = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="font-display text-xl text-[#F6FFF2]">Inner Work Space</h1>
+          <h1 className="font-display text-xl text-[#F6FFF2]">{PATH_LABELS.intentional}</h1>
           <button
             onClick={() => window.dispatchEvent(new Event('open-forest-assistant'))}
             className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
@@ -654,7 +655,7 @@ const GrowthModeSection: React.FC = () => {
         {activeTab === 'browse' && (
           <div>
             <div className="text-center mb-10">
-              <h2 className="font-display text-3xl text-[#F6FFF2] mb-2">Inner Work Space Community</h2>
+              <h2 className="font-display text-3xl text-[#F6FFF2] mb-2">{PATH_LABELS.intentional} Community</h2>
             </div>
 
             {modeStatusMessage && (
@@ -676,7 +677,7 @@ const GrowthModeSection: React.FC = () => {
                       <p className="text-[#A9B5AA] text-sm">{user.city}</p>
                       <div className="flex items-center gap-1 mt-2">
                         <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded">
-                          Growth Mode
+                          {PATH_LABELS.intentional}
                         </span>
                       </div>
                     </div>
@@ -709,7 +710,7 @@ const GrowthModeSection: React.FC = () => {
                 <Users className="w-12 h-12 text-[#1A211A] mx-auto mb-4" />
                 <p className="text-[#A9B5AA]">
                   {canReceiveNewMatches
-                    ? 'No members in growth mode yet. Check back soon!'
+                    ? `No members on ${PATH_LABELS.intentional} yet. Check back soon!`
                     : 'New matching is paused while your mode is active.'}
                 </p>
               </div>
@@ -1188,7 +1189,7 @@ const GrowthModeSection: React.FC = () => {
               </h2>
               <p className="text-[#A9B5AA] text-sm mb-3">{selectedProfileUser.city}</p>
               <span className="text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded inline-block">
-                Growth Mode
+                {PATH_LABELS.intentional}
               </span>
             </div>
 
@@ -1330,6 +1331,7 @@ const GrowthModeSection: React.FC = () => {
 };
 
 export default GrowthModeSection;
+
 
 
 

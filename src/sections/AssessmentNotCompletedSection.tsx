@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { AlertCircle, ChevronRight } from 'lucide-react';
+import { PATH_LABELS } from '@/lib/pathways';
 
 const AssessmentNotCompletedSection: React.FC = () => {
   const { setCurrentView } = useApp();
@@ -53,7 +54,7 @@ const AssessmentNotCompletedSection: React.FC = () => {
 
             <div className="bg-[#111611]/50 border border-[#1A211A] rounded-xl p-6 space-y-3">
               <p className="text-[#F6FFF2] font-semibold">
-                Because your assessment was not finished, your account has been placed in <span className="text-[#D9FF3D]">Inner Work Space</span>.
+                Because your assessment was not finished, your account has been placed in <span className="text-[#D9FF3D]">{PATH_LABELS.intentional}</span>.
               </p>
               <p className="text-[#A9B5AA] italic">
                 This is not a rejection.
@@ -67,7 +68,7 @@ const AssessmentNotCompletedSection: React.FC = () => {
           {/* What's Available */}
           <div className="space-y-4">
             <h2 className="text-[#F6FFF2] font-semibold text-lg">
-              Inner Work Space provides access to:
+              {PATH_LABELS.intentional} provides access to:
             </h2>
             <div className="space-y-3">
               {growthFocusItems.map((item, index) => (
@@ -95,7 +96,7 @@ const AssessmentNotCompletedSection: React.FC = () => {
                   Our placement process isn't about judgment—it's about creating the right environment for your growth. When an assessment isn't completed, it signals that either the timing wasn't right, or additional reflection is needed before diving into intentional dating.
                 </p>
                 <p>
-                  Inner Work Space is designed for exactly this: deepening your self-awareness, strengthening your emotional foundations, and preparing you for the kind of intentional connections we facilitate.
+                  {PATH_LABELS.intentional} is designed for exactly this: deepening your self-awareness, strengthening your emotional foundations, and preparing you for the kind of intentional connections we facilitate.
                 </p>
                 <p>
                   Many of our most successful members started in this space. The work you do here directly translates to healthier, more aligned relationships.
@@ -110,7 +111,7 @@ const AssessmentNotCompletedSection: React.FC = () => {
               onClick={handleEnterInnerWork}
               className="w-full bg-[#D9FF3D] text-[#0B0F0C] font-semibold py-4 rounded-xl hover:bg-[#E8FF5C] transition-all duration-300 flex items-center justify-center gap-2 group"
             >
-              Enter Inner Work Space
+              Enter {PATH_LABELS.intentional}
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
 

@@ -6,7 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { Trash2, Edit2, Plus, X, ChevronDown, ChevronUp, Clock, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { growthResources, paidGrowthResources, membershipTiers } from '@/data/assessment';
+import { growthResources, membershipTiers } from '@/data/assessment';
+import {
+  PATH_LABELS,
+  readPathResourcesFromStorage,
+  writePathResourcesToStorage,
+  type PathResourceBucket,
+} from '@/lib/pathways';
 import type { GrowthResource, BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
 import { resourceService } from '@/services/resourceService';
@@ -112,21 +118,19 @@ const buildModuleInputPayload = (form: ModuleInputFormState) => {
 };
 
 const AdminContentSection: React.FC = () => {
-  const [resources, setResources] = useState<GrowthResource[]>(() => {
-    const saved = localStorage.getItem('growth-resources');
-    return saved ? JSON.parse(saved) : growthResources;
-  });
-  const [paidResources, setPaidResources] = useState<GrowthResource[]>(() => {
-    const saved = localStorage.getItem('paid-growth-resources');
-    return saved ? JSON.parse(saved) : paidGrowthResources;
-  });
+  const [intentionalResources, setIntentionalResources] = useState<GrowthResource[]>(() =>
+    readPathResourcesFromStorage('intentional', growthResources)
+  );
+  const [alignmentResources, setAlignmentResources] = useState<GrowthResource[]>(() =>
+    readPathResourcesFromStorage('alignment', [])
+  );
   const [tiers] = useState(membershipTiers);
   const [showForm, setShowForm] = useState(false);
   const [selectedResource, setSelectedResource] = useState<GrowthResource | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<GrowthResource>>({});
   const [newOutcome, setNewOutcome] = useState('');
-  const [activeTab, setActiveTab] = useState<'free' | 'paid' | 'membership' | 'blogs' | 'forest'>('free');
+  const [activeTab, setActiveTab] = useState<'intentional' | 'alignment' | 'membership' | 'blogs' | 'forest'>('intentional');
   const [blogs, setBlogs] = useState<BlogArticle[]>(() => {
     const saved = localStorage.getItem('community-blogs');
     return saved ? JSON.parse(saved) : [];
@@ -142,13 +146,13 @@ const AdminContentSection: React.FC = () => {
 
   // Save resources to localStorage whenever they change
   React.useEffect(() => {
-    localStorage.setItem('growth-resources', JSON.stringify(resources));
-  }, [resources]);
+    writePathResourcesToStorage('intentional', intentionalResources);
+  }, [intentionalResources]);
 
-  // Save paid resources to localStorage whenever they change
+  // Save alignment path resources to localStorage whenever they change
   React.useEffect(() => {
-    localStorage.setItem('paid-growth-resources', JSON.stringify(paidResources));
-  }, [paidResources]);
+    writePathResourcesToStorage('alignment', alignmentResources);
+  }, [alignmentResources]);
 
   // Save blogs to localStorage whenever they change
   React.useEffect(() => {
@@ -179,18 +183,16 @@ const AdminContentSection: React.FC = () => {
   React.useEffect(() => {
     const loadResources = async () => {
       try {
-        // Load free resources
-        const freeResources = await resourceService.getResources('free');
-        if (freeResources.length > 0) {
-          console.log('Loaded free resources from Supabase:', freeResources.length);
-          setResources(freeResources);
+        const loadedIntentionalResources = await resourceService.getResources('intentional');
+        if (loadedIntentionalResources.length > 0) {
+          console.log('Loaded intentional path resources from Supabase:', loadedIntentionalResources.length);
+          setIntentionalResources(loadedIntentionalResources);
         }
 
-        // Load paid resources
-        const paidResourcesList = await resourceService.getResources('paid');
-        if (paidResourcesList.length > 0) {
-          console.log('Loaded paid resources from Supabase:', paidResourcesList.length);
-          setPaidResources(paidResourcesList);
+        const loadedAlignmentResources = await resourceService.getResources('alignment');
+        if (loadedAlignmentResources.length > 0) {
+          console.log('Loaded alignment path resources from Supabase:', loadedAlignmentResources.length);
+          setAlignmentResources(loadedAlignmentResources);
         }
       } catch (error) {
         console.error('Error loading resources from Supabase:', error);
@@ -375,8 +377,9 @@ const AdminContentSection: React.FC = () => {
       return;
     }
 
-    const currentResources = activeTab === 'paid' ? paidResources : resources;
-    const setCurrentResources = activeTab === 'paid' ? setPaidResources : setResources;
+    const resourceBucket: PathResourceBucket = activeTab === 'alignment' ? 'alignment' : 'intentional';
+    const currentResources = resourceBucket === 'alignment' ? alignmentResources : intentionalResources;
+    const setCurrentResources = resourceBucket === 'alignment' ? setAlignmentResources : setIntentionalResources;
     let updatedResources: GrowthResource[];
 
     if (selectedResource) {
@@ -390,7 +393,7 @@ const AdminContentSection: React.FC = () => {
     } else {
       const newResource: GrowthResource = {
         ...formData,
-        id: `${activeTab === 'paid' ? 'pg' : 'g'}${Date.now()}`,
+        id: `${resourceBucket === 'alignment' ? 'ap' : 'ip'}${Date.now()}`,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       } as GrowthResource;
@@ -401,8 +404,7 @@ const AdminContentSection: React.FC = () => {
 
     // Save to Supabase
     console.log('[AdminContentSection] Calling resourceService.saveResources with', updatedResources.length, 'resources');
-    const resourceType = activeTab === 'paid' ? 'paid' : 'free';
-    const result = await resourceService.saveResources(updatedResources, resourceType);
+    const result = await resourceService.saveResources(updatedResources, resourceBucket);
     console.log('[AdminContentSection] resourceService.saveResources returned:', result);
     if (result.error) {
       toast.error(`Database save failed: ${result.error}`);
@@ -414,18 +416,18 @@ const AdminContentSection: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this resource?')) {
+      const resourceBucket: PathResourceBucket = activeTab === 'alignment' ? 'alignment' : 'intentional';
       let updatedResources: GrowthResource[];
-      if (activeTab === 'paid') {
-        updatedResources = paidResources.filter(r => r.id !== id);
-        setPaidResources(updatedResources);
+      if (resourceBucket === 'alignment') {
+        updatedResources = alignmentResources.filter(r => r.id !== id);
+        setAlignmentResources(updatedResources);
       } else {
-        updatedResources = resources.filter(r => r.id !== id);
-        setResources(updatedResources);
+        updatedResources = intentionalResources.filter(r => r.id !== id);
+        setIntentionalResources(updatedResources);
       }
 
       // Save to Supabase
-      const resourceType = activeTab === 'paid' ? 'paid' : 'free';
-      const result = await resourceService.saveResources(updatedResources, resourceType);
+      const result = await resourceService.saveResources(updatedResources, resourceBucket);
       if (result.error) {
         toast.error(`Database update failed: ${result.error}`);
       } else {
@@ -436,24 +438,24 @@ const AdminContentSection: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0B0F0C] p-4 md:p-8">
-      <Tabs defaultValue="free" className="space-y-6">
+      <Tabs defaultValue="intentional" className="space-y-6">
         <TabsList className="bg-[#111611] border-[#1A211A] p-1">
-          <TabsTrigger value="free" onClick={() => setActiveTab('free')}>Free Resources</TabsTrigger>
-          <TabsTrigger value="paid" onClick={() => setActiveTab('paid')}>Paid Resources</TabsTrigger>
+          <TabsTrigger value="intentional" onClick={() => setActiveTab('intentional')}>{PATH_LABELS.intentional}</TabsTrigger>
+          <TabsTrigger value="alignment" onClick={() => setActiveTab('alignment')}>{PATH_LABELS.alignment}</TabsTrigger>
           <TabsTrigger value="membership" onClick={() => setActiveTab('membership')}>Membership Tiers</TabsTrigger>
           <TabsTrigger value="blogs" onClick={() => setActiveTab('blogs')}>Community Blog</TabsTrigger>
           <TabsTrigger value="forest" onClick={() => setActiveTab('forest')}>Forest Knowledge</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="free" className="space-y-4">
+        <TabsContent value="intentional" className="space-y-4">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Free Growth Resources ({resources.length})</h3>
-            <p className="text-sm text-[#A9B5AA]">For users who haven't passed the assessment</p>
+            <h3 className="text-xl font-display font-bold text-[#F6FFF2]">{PATH_LABELS.intentional} Resources ({intentionalResources.length})</h3>
+            <p className="text-sm text-[#A9B5AA]">For members who did not pass the assessment</p>
             <Button onClick={handleAddNew} className="bg-[#D9FF3D] text-[#0B0F0C] hover:bg-[#C4E622]"><Plus className="w-4 h-4 mr-2" />Add Resource</Button>
           </div>
 
           <div className="space-y-4">
-            {resources.map((resource) => (
+            {intentionalResources.map((resource) => (
               <Card key={resource.id} className="bg-[#111611] border-[#1A211A] p-6 cursor-pointer hover:border-[#2A3A2A] transition-colors" onClick={() => setExpandedId(expandedId === resource.id ? null : resource.id)}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -516,17 +518,17 @@ const AdminContentSection: React.FC = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="paid" className="space-y-4">
+        <TabsContent value="alignment" className="space-y-4">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Paid Growth Resources ({paidResources.length})</h3>
-              <p className="text-sm text-[#A9B5AA]">For users who passed the assessment (quarterly & annual members)</p>
+              <h3 className="text-xl font-display font-bold text-[#F6FFF2]">{PATH_LABELS.alignment} Resources ({alignmentResources.length})</h3>
+              <p className="text-sm text-[#A9B5AA]">For members who passed the assessment</p>
             </div>
             <Button onClick={handleAddNew} className="bg-emerald-500 text-[#0B0F0C] hover:bg-emerald-600"><Plus className="w-4 h-4 mr-2" />Add Resource</Button>
           </div>
 
           <div className="space-y-4">
-            {paidResources.map((resource) => (
+            {alignmentResources.map((resource) => (
               <Card key={resource.id} className="bg-[#111611] border-[#1A211A] p-6 cursor-pointer hover:border-emerald-500/50 transition-colors" onClick={() => setExpandedId(expandedId === resource.id ? null : resource.id)}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">

@@ -12,6 +12,7 @@ import { Check, TrendingUp, Lock } from 'lucide-react';
 import { assessmentService } from '@/services/assessmentService';
 import { userService } from '@/services/userService';
 import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
+import { PATH_LABELS } from '@/lib/pathways';
 
 const AssessmentResultSection: React.FC = () => {
   const { assessmentResult, setCurrentView, canRetakeAssessment, getNextRetakeDate } = useApp();
@@ -168,7 +169,7 @@ const AssessmentResultSection: React.FC = () => {
   const secondaryStyleMeta = assessmentResult.secondaryStyle
     ? ASSESSMENT_STYLE_META[assessmentResult.secondaryStyle]
     : null;
-  const environmentLabel = assessmentResult.passed ? 'Alignment Space' : 'Inner Work';
+  const environmentLabel = assessmentResult.passed ? PATH_LABELS.alignment : PATH_LABELS.intentional;
 
   const formatRetakeDate = (date: Date) => date.toLocaleDateString('en-US', {
     month: 'short',
@@ -281,7 +282,7 @@ const AssessmentResultSection: React.FC = () => {
               Inside your space you will have access to several tools designed to support both connection and personal growth:
             </p>
             <ul className="space-y-2 text-sm text-[#A9B5AA] list-disc pl-5">
-              <li>Alignment and Inner Work relationship resources</li>
+              <li>{PATH_LABELS.intentional} and {PATH_LABELS.alignment} resources</li>
               <li>A private journal area for reflection and personal insight</li>
               <li>The dating pool, where you can meet others approaching relationships intentionally</li>
               <li>A Break Area if you ever feel burnt out and want to focus on personal growth</li>
@@ -311,8 +312,8 @@ const AssessmentResultSection: React.FC = () => {
                   ? 'Explore LGBTQ+ Profiles'
                   : 'Explore Profiles'
                 : isLgbtqCommunity
-                  ? 'Enter LGBTQ+ Inner Work Space'
-                  : 'Enter Inner Work Space'}
+                  ? `Enter ${PATH_LABELS.intentional}`
+                  : `Enter ${PATH_LABELS.intentional}`}
             </button>
           </div>
         </div>

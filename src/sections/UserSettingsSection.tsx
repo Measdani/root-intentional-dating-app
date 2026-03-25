@@ -38,6 +38,7 @@ import {
   type CoreSettingKey,
   type UserSettings,
 } from '@/services/userSettingsService';
+import { PATH_LABELS } from '@/lib/pathways';
 import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
 
 const LOCK_COPY_TITLE = 'Intentional Stability Policy';
@@ -278,7 +279,7 @@ const UserSettingsSection: React.FC = () => {
     ? (canRetakeNow ? 'Available now' : retakeDateLabel)
     : 'Not required';
   const retakeStatusCopy = currentUser.assessmentPassed === true
-    ? 'Assessment completed in Alignment Space.'
+    ? `Assessment completed in ${PATH_LABELS.alignment}.`
     : (canRetakeAssessment() ? 'Eligible for reassessment now.' : 'Retake is currently locked.');
   const primaryStyleMeta = currentUser.primaryStyle
     ? ASSESSMENT_STYLE_META[currentUser.primaryStyle]
@@ -550,7 +551,7 @@ const UserSettingsSection: React.FC = () => {
 
   const handleRetakeAssessment = () => {
     if (!failedAssessment) {
-      toast.info('Retake is only available for members in Inner Work Space.');
+      toast.info(`Retake is only available for members in ${PATH_LABELS.intentional}.`);
       return;
     }
     if (!canRetakeNow) {
@@ -1364,7 +1365,7 @@ const UserSettingsSection: React.FC = () => {
             onClick={() => setCurrentView(currentUser.assessmentPassed ? 'paid-growth-mode' : 'growth-mode')}
             className="btn-outline"
           >
-            Open Alignment Space Resources
+            {currentUser.assessmentPassed ? `Open ${PATH_LABELS.alignment} Resources` : `Open ${PATH_LABELS.intentional} Resources`}
           </button>
         </section>
 
@@ -1568,7 +1569,7 @@ const UserSettingsSection: React.FC = () => {
         </section>
 
         <section className="bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5">
-          <h2 className="font-display text-xl">Growth & Inner Work Preferences</h2>
+          <h2 className="font-display text-xl">{PATH_LABELS.intentional} Preferences</h2>
           <div className="grid md:grid-cols-2 gap-3">
             <button
               onClick={() => handleFlexibleUpdate((prev) => ({
@@ -1938,7 +1939,7 @@ const UserSettingsSection: React.FC = () => {
                   : 'border-[#1A211A] text-[#A9B5AA]'
               }`}
             >
-              Inner Work reminders
+              Intentional Path reminders
             </button>
             <button
               onClick={() => handleFlexibleUpdate((prev) => ({
@@ -2351,7 +2352,7 @@ const UserSettingsSection: React.FC = () => {
               <p className="text-sm text-[#F6FFF2]">Returning to the Dating Pool:</p>
               <p className="text-sm text-[#A9B5AA]">• You may reactivate your profile</p>
               <p className="text-sm text-[#A9B5AA]">• A 24-hour cooldown period applies before becoming visible again</p>
-              <p className="text-sm text-[#A9B5AA]">• Your previous environment (Inner Work or Alignment) will remain the same</p>
+              <p className="text-sm text-[#A9B5AA]">• Your previous environment ({PATH_LABELS.intentional} or {PATH_LABELS.alignment}) will remain the same</p>
             </div>
 
             <p className="text-sm text-[#A9B5AA]">Break Mode is about intentional pacing — not starting over.</p>
@@ -2378,3 +2379,5 @@ const UserSettingsSection: React.FC = () => {
 };
 
 export default UserSettingsSection;
+
+

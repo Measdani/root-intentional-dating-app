@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import type { AdminUser, AdminSession, UserWithAdminData, UserStatus, UserFilters, AnalyticsSnapshot } from '@/types/admin';
 import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, ReportStatus, ReportStatistics, ReportFilters, SupportMessage, SupportMessageStatistics, SupportMessageFilters } from '@/types/index';
-import { mockAdminUsers, mockAdminCredentials } from '@/data/admins';
 import { reportService } from '@/services/reportService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
@@ -129,7 +128,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [users, setUsers] = useState<UserWithAdminData[]>([]);
-  const [admins, setAdmins] = useState<AdminUser[]>(mockAdminUsers);
+  const [admins] = useState<AdminUser[]>([]);
   const [assessmentQuestions, setAssessmentQuestions] = useState<AssessmentQuestion[]>(
     () => defaultAssessmentQuestions
   );
@@ -362,34 +361,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setError(null);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const mockPassword = mockAdminCredentials[normalizedEmail];
-
-      if (mockPassword) {
-        if (mockPassword !== password) {
-          setError('Invalid email or password');
-          return false;
-        }
-
-        await signOutSupabaseSession();
-
-        const adminUser = mockAdminUsers.find((a) => a.email === normalizedEmail);
-        if (!adminUser) {
-          setError('Admin user not found');
-          return false;
-        }
-
-        const updatedAdmin = { ...adminUser, lastLogin: new Date().toISOString() };
-        setAdmins((prev: AdminUser[]) =>
-          prev.map((a: AdminUser) => (a.id === adminUser.id ? updatedAdmin : a))
-        );
-
-        saveSession({
-          adminUser: updatedAdmin,
-          isAuthenticated: true,
-          loginTime: new Date().toISOString(),
-        });
-        return true;
-      }
 
       const { error: authError } = await authService.signInWithPassword(normalizedEmail, password);
       if (authError) {

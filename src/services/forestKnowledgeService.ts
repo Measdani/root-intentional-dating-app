@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import { growthResources, paidGrowthResources } from '@/data/assessment';
 import { sampleBlogs } from '@/data/blogs';
 import { growthModuleContent } from '@/data/growthModuleContent';
 import {
@@ -77,7 +76,7 @@ const buildResourceSearchText = (resource: GrowthResource): string =>
 
 const buildResourceKnowledgeEntries = (
   resources: GrowthResource[],
-  resourceAreaLabel: 'Free Resource Area' | 'Paid Resource Area',
+  resourceAreaLabel: 'The Intentional Path Resource Area' | 'The Alignment Path Resource Area',
 ): ForestKnowledgeEntry[] =>
   resources.flatMap((resource) => {
     const resourceEntry: ForestKnowledgeEntry = {
@@ -203,8 +202,8 @@ export const getForestKnowledgeBase = async (): Promise<ForestKnowledgeEntry[]> 
   knowledgeRequest = (async () => {
     const [
       { data, error },
-      freeResources,
-      paidResources,
+      intentionalResources,
+      alignmentResources,
       publishedBlogs,
     ] = await Promise.all([
       supabase
@@ -213,8 +212,8 @@ export const getForestKnowledgeBase = async (): Promise<ForestKnowledgeEntry[]> 
         .eq('is_active', true)
         .order('display_order', { ascending: true })
         .order('topic', { ascending: true }),
-      resourceService.getResources('free'),
-      resourceService.getResources('paid'),
+      resourceService.getResources('intentional'),
+      resourceService.getResources('alignment'),
       getPublishedBlogs(),
     ]);
 
@@ -226,20 +225,20 @@ export const getForestKnowledgeBase = async (): Promise<ForestKnowledgeEntry[]> 
       .map((row) => normalizeForestKnowledgeRow(row as ForestKnowledgeRow))
       .filter((entry): entry is ForestKnowledgeEntry => Boolean(entry));
 
-    const freeResourceEntries = buildResourceKnowledgeEntries(
-      freeResources.length > 0 ? freeResources : growthResources,
-      'Free Resource Area',
+    const intentionalResourceEntries = buildResourceKnowledgeEntries(
+      intentionalResources,
+      'The Intentional Path Resource Area',
     );
-    const paidResourceEntries = buildResourceKnowledgeEntries(
-      paidResources.length > 0 ? paidResources : paidGrowthResources,
-      'Paid Resource Area',
+    const alignmentResourceEntries = buildResourceKnowledgeEntries(
+      alignmentResources,
+      'The Alignment Path Resource Area',
     );
     const blogKnowledgeEntries = buildBlogKnowledgeEntries(publishedBlogs);
 
     knowledgeCache = [
       ...(doctrineEntries.length > 0 ? doctrineEntries : FOREST_KNOWLEDGE_BASE),
-      ...freeResourceEntries,
-      ...paidResourceEntries,
+      ...intentionalResourceEntries,
+      ...alignmentResourceEntries,
       ...blogKnowledgeEntries,
     ];
 
