@@ -1,15 +1,21 @@
 import { supabase } from '@/lib/supabase'
 import { normalizeUserProfile } from '@/lib/userProfile'
+import { validateUsCityState } from '@/lib/usLocationValidation'
 import type { User } from '@/types'
 
 export const userService = {
   async createUser(user: User): Promise<{ error: string | null; data?: User }> {
+    const locationValidation = await validateUsCityState(user.city)
+    if (!locationValidation.isValid) {
+      return { error: locationValidation.error }
+    }
+
     const basePayload = {
       id: user.id,
       email: user.email,
       name: user.name,
       age: user.age,
-      city: user.city,
+      city: locationValidation.canonicalCityState,
       gender: user.gender,
       partnership_intent: user.partnershipIntent,
       family_alignment: user.familyAlignment,
@@ -122,10 +128,18 @@ export const userService = {
   async updateUser(userId: string, updates: Partial<User>): Promise<boolean> {
     const updateData: any = {}
 
+    if (updates.city !== undefined) {
+      const locationValidation = await validateUsCityState(updates.city)
+      if (!locationValidation.isValid) {
+        console.warn('Rejected invalid city update:', locationValidation.error)
+        return false
+      }
+      updateData.city = locationValidation.canonicalCityState
+    }
+
     // Map User fields to snake_case for database
     if (updates.name !== undefined) updateData.name = updates.name
     if (updates.age !== undefined) updateData.age = updates.age
-    if (updates.city !== undefined) updateData.city = updates.city
     if (updates.gender !== undefined) updateData.gender = updates.gender
     if (updates.partnershipIntent !== undefined) updateData.partnership_intent = updates.partnershipIntent
     if (updates.familyAlignment !== undefined) updateData.family_alignment = updates.familyAlignment

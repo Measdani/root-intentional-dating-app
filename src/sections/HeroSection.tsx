@@ -2,19 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import CommunitySwitcher from '@/components/CommunitySwitcher';
 import { useCommunity } from '@/modules';
+import { lgbtqWaitlistService } from '@/services/lgbtqWaitlistService';
+import { toast } from 'sonner';
 import { ChevronDown, X } from 'lucide-react';
 
-const WAITLIST_STORAGE_KEY = 'rooted_lgbtq_waitlist_submissions';
+const WAITLIST_TOKEN_PARAM = 'waitlistToken';
 
-type LgbtqWaitlistSubmission = {
-  id: string;
-  name: string;
-  email: string;
-  safetyFeature: string;
-  identityPreferences: string;
-  personalWork: string;
-  submittedAt: number;
-};
+type WaitlistSurveyStatus = 'form' | 'verification-sent' | 'verified';
 
 const emptyWaitlistForm = {
   name: '',
@@ -29,9 +23,12 @@ const HeroSection: React.FC = () => {
   const { activeCommunity } = useCommunity();
   const [isVisible, setIsVisible] = useState(false);
   const [showWaitlistSurvey, setShowWaitlistSurvey] = useState(false);
-  const [waitlistComplete, setWaitlistComplete] = useState(false);
+  const [waitlistStatus, setWaitlistStatus] = useState<WaitlistSurveyStatus>('form');
+  const [waitlistStatusMessage, setWaitlistStatusMessage] = useState('');
   const [waitlistForm, setWaitlistForm] = useState(emptyWaitlistForm);
   const [waitlistErrors, setWaitlistErrors] = useState<Record<string, string>>({});
+  const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
+  const [isVerifyingWaitlistToken, setIsVerifyingWaitlistToken] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -49,7 +46,8 @@ const HeroSection: React.FC = () => {
   const openWaitlistSurvey = () => {
     setWaitlistForm(emptyWaitlistForm);
     setWaitlistErrors({});
-    setWaitlistComplete(false);
+    setWaitlistStatus('form');
+    setWaitlistStatusMessage('');
     setShowWaitlistSurvey(true);
   };
 
@@ -71,7 +69,59 @@ const HeroSection: React.FC = () => {
     }
   };
 
-  const submitWaitlistSurvey = () => {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get(WAITLIST_TOKEN_PARAM);
+    if (!token) return;
+
+    url.searchParams.delete(WAITLIST_TOKEN_PARAM);
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+
+    let isCancelled = false;
+    setShowWaitlistSurvey(true);
+    setWaitlistErrors({});
+    setWaitlistStatus('verification-sent');
+    setWaitlistStatusMessage('Verifying your email...');
+    setIsVerifyingWaitlistToken(true);
+
+    void lgbtqWaitlistService
+      .verifyEmail(token)
+      .then((result) => {
+        if (isCancelled) return;
+        setWaitlistStatus('verified');
+        setWaitlistStatusMessage(result.message);
+        toast.success('Your waitlist email has been verified.');
+      })
+      .catch((error) => {
+        if (isCancelled) return;
+        const message =
+          error instanceof Error ? error.message : 'This verification link could not be completed.';
+        setWaitlistStatus('form');
+        setWaitlistStatusMessage('');
+        setWaitlistErrors({ submit: message });
+        toast.error(message);
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsVerifyingWaitlistToken(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const getWaitlistRedirectUrl = () => {
+    const url = new URL(window.location.href);
+    url.hash = '';
+    url.searchParams.delete(WAITLIST_TOKEN_PARAM);
+    return url.toString();
+  };
+
+  const submitWaitlistSurvey = async () => {
     const nextErrors: Record<string, string> = {};
 
     if (!waitlistForm.name.trim()) {
@@ -100,30 +150,34 @@ const HeroSection: React.FC = () => {
       return;
     }
 
-    const submission: LgbtqWaitlistSubmission = {
-      id:
-        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-          ? crypto.randomUUID()
-          : `waitlist_${Date.now()}`,
-      name: waitlistForm.name.trim(),
-      email: trimmedEmail,
-      safetyFeature: waitlistForm.safetyFeature.trim(),
-      identityPreferences: waitlistForm.identityPreferences.trim(),
-      personalWork: waitlistForm.personalWork.trim(),
-      submittedAt: Date.now(),
-    };
-
     try {
-      const raw = localStorage.getItem(WAITLIST_STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      const existing = Array.isArray(parsed) ? parsed : [];
-      existing.push(submission);
-      localStorage.setItem(WAITLIST_STORAGE_KEY, JSON.stringify(existing));
-    } catch (error) {
-      console.warn('Failed to save LGBTQ+ waitlist submission:', error);
-    }
+      setIsSubmittingWaitlist(true);
+      setWaitlistErrors({});
+      const result = await lgbtqWaitlistService.requestVerification({
+        name: waitlistForm.name.trim(),
+        email: trimmedEmail,
+        safetyFeature: waitlistForm.safetyFeature.trim(),
+        identityPreferences: waitlistForm.identityPreferences.trim(),
+        personalWork: waitlistForm.personalWork.trim(),
+        redirectUrl: getWaitlistRedirectUrl(),
+      });
 
-    setWaitlistComplete(true);
+      setWaitlistStatus(result.status === 'verification_sent' ? 'verification-sent' : 'verified');
+      setWaitlistStatusMessage(result.message);
+
+      if (result.status === 'verification_sent') {
+        toast.success('Verification email sent. Check your inbox.');
+      } else {
+        toast.success('This waitlist email is already verified.');
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unable to submit the waitlist survey right now.';
+      setWaitlistErrors({ submit: message });
+      toast.error(message);
+    } finally {
+      setIsSubmittingWaitlist(false);
+    }
   };
 
   return (
@@ -252,10 +306,32 @@ const HeroSection: React.FC = () => {
               </button>
             </div>
 
-            {waitlistComplete ? (
+            {isVerifyingWaitlistToken ? (
+              <div className="rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5 text-center">
+                <p className="text-lg font-medium text-[#F6FFF2]">Verifying your email...</p>
+                <p className="mt-2 text-sm text-[#A9B5AA]">
+                  Hold on while I confirm your waitlist email.
+                </p>
+              </div>
+            ) : waitlistStatus === 'verified' ? (
               <div className="rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5 text-center">
                 <p className="text-lg font-medium text-[#F6FFF2]">
-                  Thank you, you will be notified when we launch.
+                  {waitlistStatusMessage ||
+                    'Thank you for your survey. Your email has been verified. We will contact you when we launch.'}
+                </p>
+                <button
+                  onClick={closeWaitlistSurvey}
+                  className="mt-4 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] transition-transform hover:scale-[1.02]"
+                >
+                  Close
+                </button>
+              </div>
+            ) : waitlistStatus === 'verification-sent' ? (
+              <div className="rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5 text-center">
+                <p className="text-lg font-medium text-[#F6FFF2]">Check your email</p>
+                <p className="mt-2 text-sm text-[#A9B5AA]">
+                  {waitlistStatusMessage ||
+                    'We sent a verification link to your email. We will not contact you until the address is confirmed.'}
                 </p>
                 <button
                   onClick={closeWaitlistSurvey}
@@ -266,6 +342,11 @@ const HeroSection: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
+                {waitlistErrors.submit && (
+                  <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                    {waitlistErrors.submit}
+                  </div>
+                )}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-[#F6FFF2]">Name *</label>
                   <input
@@ -287,6 +368,9 @@ const HeroSection: React.FC = () => {
                     placeholder="you@email.com"
                     className="w-full rounded-lg border border-[#1A211A] bg-[#0B0F0C] px-4 py-2 text-[#F6FFF2] placeholder-[#6E7A6F] focus:border-[#D9FF3D] focus:outline-none"
                   />
+                  <p className="mt-1 text-xs text-[#6E7A6F]">
+                    We will send a verification link first. Your waitlist confirmation happens after you verify.
+                  </p>
                   {waitlistErrors.email && <p className="mt-1 text-xs text-red-300">{waitlistErrors.email}</p>}
                 </div>
 
@@ -337,9 +421,10 @@ const HeroSection: React.FC = () => {
 
                 <button
                   onClick={submitWaitlistSurvey}
-                  className="w-full rounded-xl bg-[#D9FF3D] px-4 py-3 font-medium text-[#0B0F0C] transition-transform hover:scale-[1.01]"
+                  disabled={isSubmittingWaitlist}
+                  className="w-full rounded-xl bg-[#D9FF3D] px-4 py-3 font-medium text-[#0B0F0C] transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Join Waitlist & Submit Survey
+                  {isSubmittingWaitlist ? 'Sending verification email...' : 'Submit Survey & Verify Email'}
                 </button>
               </div>
             )}

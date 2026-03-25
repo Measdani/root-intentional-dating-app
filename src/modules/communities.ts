@@ -15,7 +15,7 @@ export const COMMUNITIES: Record<CommunityId, CommunityDefinition> = {
     signupGenderGuidance:
       'Rooted Hearts currently supports men and women seeking opposite-sex partnerships.',
     signupPlatformConfirmation:
-      'I confirm that Rooted Hearts is a men and women platform designed for opposite-sex partnerships, currently available only to Georgia residents, and understand that my experience depends on my participation, alignment, and engagement within this ecosystem.',
+      'I confirm that Rooted Hearts is a men and women platform designed for opposite-sex partnerships, currently available to residents of the United States, and understand that my experience depends on my participation, alignment, and engagement within this ecosystem.',
     matchingMode: 'opposite-gender',
   },
 };
