@@ -208,20 +208,6 @@ export const userService = {
   },
 
   async deleteUser(userId: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', userId)
-
-    if (error) {
-      console.warn('Failed to delete user:', error.message)
-      return false
-    }
-
-    return true
-  },
-
-  async deleteUser(userId: string): Promise<boolean> {
     try {
       await accountDeletionService.adminDeleteUser(userId)
     } catch (error) {
