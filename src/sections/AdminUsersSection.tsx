@@ -97,8 +97,12 @@ const AdminUsersSection: React.FC = () => {
     toast.success(`User ${action} successfully`);
   };
 
-  const handleDeleteUser = (userId: string) => {
-    deleteUser(userId);
+  const handleDeleteUser = async (userId: string) => {
+    const deleted = await deleteUser(userId);
+    if (!deleted) {
+      toast.error('Unable to delete this user right now.');
+      return;
+    }
     setDeleteConfirm(null);
     toast.success('User deleted successfully');
   };
@@ -247,7 +251,14 @@ const AdminUsersSection: React.FC = () => {
                   <div className="flex gap-2 justify-center">
                     <Button size="sm" variant="ghost" onClick={() => { setSelectedUser(user); toast.info(`Viewing ${user.name}`); }} className="text-[#D9FF3D] hover:bg-[#D9FF3D]/10"><Eye className="w-4 h-4" /></Button>
                     {user.status === 'active' ? (<Button size="sm" variant="ghost" onClick={() => handleStatusUpdate(user.id, 'suspended')} className="text-yellow-400 hover:bg-yellow-500/10"><Lock className="w-4 h-4" /></Button>) : user.status === 'suspended' ? (<Button size="sm" variant="ghost" onClick={() => handleStatusUpdate(user.id, 'active')} className="text-green-400 hover:bg-green-500/10"><Unlock className="w-4 h-4" /></Button>) : null}
-                    <Button size="sm" variant="ghost" onClick={() => setDeleteConfirm(user.id)} className="text-red-400 hover:bg-red-500/10"><Trash2 className="w-4 h-4" /></Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setDeleteConfirm(user.id)}
+                      className="text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -268,7 +279,7 @@ const AdminUsersSection: React.FC = () => {
         <AlertDialogContent className="bg-[#111611] border-[#1A211A]">
           <AlertDialogTitle className="text-[#F6FFF2]">Delete User</AlertDialogTitle>
           <AlertDialogDescription className="text-[#A9B5AA]">
-            Are you sure you want to delete this user? This action cannot be undone.
+            Are you sure you want to permanently delete this user? Their login and profile data will be removed.
           </AlertDialogDescription>
           <div className="flex gap-4 justify-end pt-4">
             <AlertDialogCancel className="bg-[#0B0F0C] border-[#1A211A] text-[#F6FFF2] hover:bg-[#1A211A]">Cancel</AlertDialogCancel>

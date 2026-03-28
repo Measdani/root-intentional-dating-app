@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAdmin } from '@/store/AdminContext';
 import { useApp } from '@/store/AppContext';
 import { getUserPoolId, persistUserPoolMembership, toInnerPool } from '@/modules';
+import { accountEnforcementService } from '@/services/accountEnforcementService';
 import { userService } from '@/services/userService';
 import { SUPPORT_EMAIL } from '@/constants/support';
 import { toast } from 'sonner';
@@ -22,10 +23,11 @@ import { PATH_LABELS } from '@/lib/pathways';
 
 type ReportSourceFilter = 'all' | 'member-reported' | 'concierge-system';
 const SYSTEM_CONCIERGE_REPORTER_ID = 'system-concierge';
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const AdminReportsSection: React.FC = () => {
   const { reports = [], reportStats, updateReportStatus } = useAdmin();
-  const { users, interactions, suspendUser, removeUser, addNotification } = useApp();
+  const { users, interactions, suspendUser, addNotification } = useApp();
 
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'all'>('all');
@@ -132,6 +134,114 @@ const AdminReportsSection: React.FC = () => {
   };
 
   const reportedUser = selectedReport ? users.find(u => u.id === selectedReport.reportedUserId) : null;
+
+  const closeModerationModals = () => {
+    setShowResolveModal(false);
+    setShowDetailModal(false);
+  };
+
+  const dismissSelectedReport = () => {
+    if (!selectedReport) return;
+
+    updateReportStatus(selectedReport.id, 'dismissed');
+    toast.success('Report dismissed');
+    closeModerationModals();
+  };
+
+  const applyWarning = () => {
+    if (!selectedReport || !reportedUser) return;
+
+    updateReportStatus(selectedReport.id, 'resolved');
+    addNotification(
+      'warning',
+      'Guideline Warning',
+      `Your account has been flagged for behavior that does not align with Rooted Hearts community guidelines. This is a formal warning. Review the guidelines and adjust your behavior immediately. Further violations can lead to temporary suspension, a soft reset into ${PATH_LABELS.intentional}, or a permanent ban. Contact ${SUPPORT_EMAIL} if you need clarification.`,
+      selectedReport.reportedUserId
+    );
+    toast.success(`Warning sent to ${reportedUser.name}`);
+    closeModerationModals();
+  };
+
+  const applyTimedEnforcement = async (
+    durationDays: number,
+    config: {
+      notificationTitle: string;
+      successToast: string;
+      moderationNote: string;
+      buildMessage: (formattedDate: string) => string;
+    }
+  ) => {
+    if (!selectedReport || !reportedUser) return;
+
+    const suspensionEndDate = new Date(Date.now() + durationDays * DAY_IN_MS);
+    const formattedDate = suspensionEndDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const fallbackPool = 'core-inner';
+    const reportedPool = getUserPoolId(reportedUser, fallbackPool);
+    const intentionalPool = toInnerPool(reportedPool);
+
+    persistUserPoolMembership(
+      { id: selectedReport.reportedUserId, email: reportedUser.email },
+      intentionalPool
+    );
+
+    try {
+      await userService.updateUser(selectedReport.reportedUserId, {
+        poolId: intentionalPool,
+        userStatus: 'suspended',
+        suspensionEndDate: suspensionEndDate.getTime(),
+        assessmentPassed: false,
+        guidelinesAckRequired: true,
+        moderationNote: config.moderationNote,
+      });
+    } catch (error) {
+      console.error('[AdminReports] Failed to apply timed enforcement:', error);
+      toast.error(`We couldn't update ${reportedUser.name}'s account right now.`);
+      return;
+    }
+
+    suspendUser(selectedReport.reportedUserId, suspensionEndDate.getTime());
+    updateReportStatus(selectedReport.id, 'resolved');
+    addNotification(
+      'suspension',
+      config.notificationTitle,
+      config.buildMessage(formattedDate),
+      selectedReport.reportedUserId
+    );
+
+    toast.success(config.successToast.replace('{date}', formattedDate));
+    closeModerationModals();
+  };
+
+  const applyPermanentBan = async () => {
+    if (!selectedReport || !reportedUser) return;
+
+    const reason = selectedReport.details?.trim()
+      ? `Permanent ban from report ${selectedReport.id}: ${selectedReport.details.trim()}`
+      : `Permanent ban from report ${selectedReport.id}: ${selectedReport.reason}`;
+
+    try {
+      await accountEnforcementService.adminBanUser(
+        selectedReport.reportedUserId,
+        reason,
+        selectedReport.id
+      );
+    } catch (error) {
+      console.error('[AdminReports] Failed to permanently ban user:', error);
+      toast.error(
+        error instanceof Error ? error.message : `We couldn't permanently ban ${reportedUser.name}.`
+      );
+      return;
+    }
+
+    updateReportStatus(selectedReport.id, 'resolved');
+    toast.success(`${reportedUser.name}'s account has been permanently banned`);
+    closeModerationModals();
+  };
 
   return (
     <div className="min-h-screen bg-[#0B0F0C] p-4 md:p-8">
@@ -545,9 +655,7 @@ const AdminReportsSection: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    // TODO: Update report status to 'dismissed' in AdminContext
-                    toast.success('Report dismissed');
-                    setShowDetailModal(false);
+                    dismissSelectedReport();
                   }}
                   className="py-2 px-4 bg-[#1A211A] text-[#A9B5AA] rounded-lg font-medium hover:bg-[#2A312A] transition-colors"
                 >
@@ -582,105 +690,84 @@ const AdminReportsSection: React.FC = () => {
               <p className="text-[#A9B5AA] text-sm mb-6">Choose enforcement action:</p>
 
               <div className="space-y-3">
-                {/* Tier 1: Warning */}
                 <button
-                  onClick={() => {
-                    updateReportStatus(selectedReport.id, 'resolved');
-                    addNotification(
-                      'warning',
-                      'First Violation: Warning',
-                      'Your account has been flagged for violating our community guidelines. This is your first warning. Please review our community standards and adjust your behavior accordingly. Continued violations may result in a temporary suspension or permanent removal from the platform. We are here to help if you need clarification on the guidelines.',
-                      selectedReport.reportedUserId
-                    );
-                    toast.success(`Warning sent to ${reportedUser.name}`);
-                    setShowResolveModal(false);
-                    setShowDetailModal(false);
-                  }}
+                  onClick={applyWarning}
                   className="w-full py-3 bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-lg font-medium hover:bg-blue-600/30 transition-colors text-left"
                 >
-                  <div className="font-medium">⚠️ Tier 1: First Violation Warning</div>
+                  <div className="font-medium">Tier 1: Warning</div>
                   <div className="text-xs opacity-75 mt-1">Send warning message to inbox. Account remains active.</div>
                 </button>
 
-                {/* Tier 2: 6-Month Suspension */}
                 <button
-                  onClick={async () => {
-                    // Calculate suspension end date (6 months from now)
-                    const suspensionEndDate = new Date();
-                    suspensionEndDate.setMonth(suspensionEndDate.getMonth() + 6);
-                    const formattedDate = suspensionEndDate.toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    });
-
-                    // Update report status
-                    updateReportStatus(selectedReport.id, 'resolved');
-
-                    // Demote advanced accounts to inner lane inside their own entity.
-                    const fallbackPool = 'core-inner';
-                    const reportedPool = getUserPoolId(reportedUser, fallbackPool);
-                    const demotedPool = toInnerPool(reportedPool);
-                    persistUserPoolMembership(
-                      { id: selectedReport.reportedUserId, email: reportedUser.email },
-                      demotedPool
-                    );
-                    await userService.updateUser(selectedReport.reportedUserId, {
-                      poolId: demotedPool,
-                      userStatus: 'suspended',
-                      suspensionEndDate: suspensionEndDate.getTime(),
-                    });
-
-                    // Suspend the user - they will be redirected to growth-mode on next login
-                    suspendUser(selectedReport.reportedUserId, suspensionEndDate.getTime());
-
-                    // Send suspension notification with message based on user's assessment status
-                    const suspensionMessage = reportedUser.assessmentPassed
-                      ? `Following a review of recent activity reported by a member of the community, your access to ${PATH_LABELS.alignment} has been suspended. You have been moved to ${PATH_LABELS.intentional}, where you may continue engaging with the community. Reassessment for ${PATH_LABELS.alignment} eligibility will be available on ${formattedDate}. If you believe this action was made in error, contact ${SUPPORT_EMAIL}.`
-                      : `Following a review of recent activity reported by a member of the community, your reassessment eligibility has been extended by 6 months. You may continue participating in ${PATH_LABELS.intentional} during this time. Reassessment will be available on ${formattedDate}. If you believe this action was made in error, contact ${SUPPORT_EMAIL}.`;
-
-                    addNotification(
-                      'suspension',
-                      'Account Status Update: Reassessment Extended',
-                      suspensionMessage,
-                      selectedReport.reportedUserId
-                    );
-
-                    toast.success(`${reportedUser.name}'s account suspended until ${formattedDate}`);
-                    setShowResolveModal(false);
-                    setShowDetailModal(false);
-                  }}
+                  onClick={() =>
+                    applyTimedEnforcement(7, {
+                      notificationTitle: '7-Day Suspension',
+                      successToast: `${reportedUser.name}'s account suspended until {date}`,
+                      moderationNote: '7-day suspension applied from admin report review.',
+                      buildMessage: (formattedDate) =>
+                        `Following a review of recent activity, your account has been suspended for 7 days. You have been moved into ${PATH_LABELS.intentional} and must acknowledge the community guidelines before re-entry. Access review resumes on ${formattedDate}. Contact ${SUPPORT_EMAIL} if you believe this action was made in error.`,
+                    })
+                  }
                   className="w-full py-3 bg-orange-600/20 text-orange-300 border border-orange-500/30 rounded-lg font-medium hover:bg-orange-600/30 transition-colors text-left"
                 >
-                  <div className="font-medium">⏸️ Tier 2: 6-Month Suspension</div>
-                  <div className="text-xs opacity-75 mt-1">Temporary suspension with message explaining terms.</div>
+                  <div className="font-medium">Tier 2: 7-Day Suspension</div>
+                  <div className="text-xs opacity-75 mt-1">Short timeout with mandatory guideline acknowledgement.</div>
                 </button>
 
-                {/* Tier 3: Permanent Removal */}
                 <button
-                  onClick={() => {
-                    // Update report status
-                    updateReportStatus(selectedReport.id, 'resolved');
+                  onClick={() =>
+                    applyTimedEnforcement(14, {
+                      notificationTitle: '14-Day Suspension',
+                      successToast: `${reportedUser.name}'s account suspended until {date}`,
+                      moderationNote: '14-day suspension applied from admin report review.',
+                      buildMessage: (formattedDate) =>
+                        `Following a review of recent activity, your account has been suspended for 14 days. You have been moved into ${PATH_LABELS.intentional} and must acknowledge the community guidelines before re-entry. Access review resumes on ${formattedDate}. Contact ${SUPPORT_EMAIL} if you believe this action was made in error.`,
+                    })
+                  }
+                  className="w-full py-3 bg-orange-700/20 text-orange-200 border border-orange-500/30 rounded-lg font-medium hover:bg-orange-700/30 transition-colors text-left"
+                >
+                  <div className="font-medium">Tier 2: 14-Day Suspension</div>
+                  <div className="text-xs opacity-75 mt-1">Extended timeout for repeated or more serious misalignment.</div>
+                </button>
 
-                    // Permanently remove user from platform
-                    removeUser(selectedReport.reportedUserId);
+                <button
+                  onClick={() =>
+                    applyTimedEnforcement(30, {
+                      notificationTitle: '30-Day Suspension',
+                      successToast: `${reportedUser.name}'s account suspended until {date}`,
+                      moderationNote: '30-day suspension applied from admin report review.',
+                      buildMessage: (formattedDate) =>
+                        `Following a review of recent activity, your account has been suspended for 30 days. You have been moved into ${PATH_LABELS.intentional} and must acknowledge the community guidelines before re-entry. Access review resumes on ${formattedDate}. Contact ${SUPPORT_EMAIL} if you believe this action was made in error.`,
+                    })
+                  }
+                  className="w-full py-3 bg-orange-800/20 text-orange-100 border border-orange-500/30 rounded-lg font-medium hover:bg-orange-800/30 transition-colors text-left"
+                >
+                  <div className="font-medium">Tier 2: 30-Day Suspension</div>
+                  <div className="text-xs opacity-75 mt-1">Longer timeout for repeated guideline problems.</div>
+                </button>
 
-                    // Send removal notification
-                    addNotification(
-                      'removal',
-                      'Permanent Removal: Account Permanently Removed',
-                      `Your account has been permanently removed from our platform due to serious violations of our community guidelines. This action is irreversible. You will no longer be able to access the platform or create a new account with the same email address. For support inquiries, contact ${SUPPORT_EMAIL}.`,
-                      selectedReport.reportedUserId
-                    );
+                <button
+                  onClick={() =>
+                    applyTimedEnforcement(45, {
+                      notificationTitle: 'Soft Reset',
+                      successToast: `${reportedUser.name}'s soft reset runs through {date}`,
+                      moderationNote: 'Soft reset applied from admin report review.',
+                      buildMessage: (formattedDate) =>
+                        `Your account has been placed into a soft reset. Rooted Hearts is pausing your access while you regroup and return with more intention. You have been moved into ${PATH_LABELS.intentional}. You may request re-entry after ${formattedDate}, and you will need to acknowledge the community guidelines before returning. Contact ${SUPPORT_EMAIL} if you believe this action was made in error.`,
+                    })
+                  }
+                  className="w-full py-3 bg-yellow-700/20 text-yellow-200 border border-yellow-500/30 rounded-lg font-medium hover:bg-yellow-700/30 transition-colors text-left"
+                >
+                  <div className="font-medium">Tier 3: Soft Reset</div>
+                  <div className="text-xs opacity-75 mt-1">Pause access, then return later through {PATH_LABELS.intentional}.</div>
+                </button>
 
-                    toast.success(`${reportedUser.name}'s account has been permanently removed`);
-                    setShowResolveModal(false);
-                    setShowDetailModal(false);
-                  }}
+                <button
+                  onClick={applyPermanentBan}
                   className="w-full py-3 bg-red-600/20 text-red-300 border border-red-500/30 rounded-lg font-medium hover:bg-red-600/30 transition-colors text-left"
                 >
-                  <div className="font-medium">🗑️ Tier 3: Permanent Removal</div>
-                  <div className="text-xs opacity-75 mt-1">Irreversible deletion from platform.</div>
+                  <div className="font-medium">Tier 4: Permanent Ban</div>
+                  <div className="text-xs opacity-75 mt-1">Delete the account and block the email from re-entry.</div>
                 </button>
 
                 <button

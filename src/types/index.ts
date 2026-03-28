@@ -65,6 +65,9 @@ export interface User {
   billingPeriodEnd?: number; // Timestamp when current billing period expires
   consentTimestamp?: number; // Timestamp when policies were accepted
   consentVersion?: string; // Policy version accepted (e.g., "v1.0")
+  guidelinesAckRequired?: boolean; // Whether post-enforcement guideline acknowledgement is required
+  guidelinesAcknowledgedAt?: number; // Timestamp of the latest guideline acknowledgement
+  moderationNote?: string; // Internal moderation note surfaced when access is restricted
   membershipStatus?: 'active' | 'inactive' | 'cancelled'; // Subscription state
   cancelAtPeriodEnd?: boolean; // Whether subscription cancels at period end
   poolId?: 'core-inner' | 'core-advanced'; // Which lane this account belongs to

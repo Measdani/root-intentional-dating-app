@@ -75,7 +75,7 @@ const TermsOfServiceSection: React.FC = () => {
               <li>• Attempting to manipulate or defraud other users.</li>
             </ul>
             <p className="mt-4">
-              Users who violate these guidelines may face warnings, temporary suspension, or permanent removal from the Platform, at our sole discretion.
+              Users who violate these guidelines may face warnings, temporary suspension, soft reset, or permanent ban from the Platform, at our sole discretion.
             </p>
           </section>
 

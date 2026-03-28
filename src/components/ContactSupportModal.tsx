@@ -154,7 +154,7 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
 
               <section>
                 <h3 className="font-medium text-[#F6FFF2] mb-2">Consequences</h3>
-                <p>Violations of community guidelines may result in warnings, temporary suspension (up to 6 months), or permanent removal from the platform. We believe in giving people a chance to improve their behavior while maintaining community safety.</p>
+                <p>Violations of community guidelines may result in warnings, temporary suspension, soft reset, or permanent ban from the platform. We believe in giving people a chance to improve their behavior while maintaining community safety.</p>
               </section>
             </div>
           </div>

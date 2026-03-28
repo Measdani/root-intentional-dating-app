@@ -67,6 +67,11 @@ export const normalizeUserProfile = (user: Partial<User>): User => {
     consentTimestamp:
       typeof user.consentTimestamp === 'number' ? user.consentTimestamp : undefined,
     consentVersion: user.consentVersion,
+    guidelinesAckRequired:
+      typeof user.guidelinesAckRequired === 'boolean' ? user.guidelinesAckRequired : false,
+    guidelinesAcknowledgedAt:
+      typeof user.guidelinesAcknowledgedAt === 'number' ? user.guidelinesAcknowledgedAt : undefined,
+    moderationNote: user.moderationNote,
     membershipStatus: user.membershipStatus ?? 'active',
     cancelAtPeriodEnd:
       typeof user.cancelAtPeriodEnd === 'boolean' ? user.cancelAtPeriodEnd : false,

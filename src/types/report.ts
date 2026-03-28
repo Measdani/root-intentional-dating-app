@@ -20,6 +20,8 @@ export type ReportActionType =
   | 'warning'
   | 'temporary-suspension'
   | 'permanent-suspension'
+  | 'soft-reset'
+  | 'permanent-ban'
   | 'account-deletion'
   | 'dismissed'
   | 'no-action';

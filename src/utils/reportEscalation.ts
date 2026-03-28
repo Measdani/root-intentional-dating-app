@@ -17,9 +17,8 @@ export const checkEscalationRules = (
     return {
       shouldEscalate: true,
       suggestedAction: {
-        type: 'temporary-suspension',
-        reason: 'Critical severity report requires immediate action',
-        duration: 7,
+        type: 'permanent-ban',
+        reason: 'Critical severity report requires permanent ban',
         notifyReporter: true,
         notifyReported: true,
       },
@@ -54,7 +53,7 @@ export const checkEscalationRules = (
     return {
       shouldEscalate: true,
       suggestedAction: {
-        type: 'permanent-suspension',
+        type: 'permanent-ban',
         reason: 'Pattern of high-severity violations',
         notifyReporter: false,
         notifyReported: true,
@@ -69,7 +68,7 @@ export const checkEscalationRules = (
     return {
       shouldEscalate: true,
       suggestedAction: {
-        type: 'permanent-suspension',
+        type: 'permanent-ban',
         reason: 'Verified underage user',
         notifyReporter: false,
         notifyReported: true,

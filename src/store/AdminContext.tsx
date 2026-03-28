@@ -4,6 +4,7 @@ import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, Report
 import { reportService } from '@/services/reportService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
+import { accountDeletionService } from '@/services/accountDeletionService';
 import { assessmentQuestions as defaultAssessmentQuestions } from '@/data/assessment';
 import { normalizeAssessmentQuestionsWithStyles } from '@/services/assessmentStyleService';
 import { authService, signOutSupabaseSession } from '@/services/authService';
@@ -48,7 +49,7 @@ interface AdminContextType {
 
   // User methods
   updateUserStatus: (userId: string, status: UserStatus) => void;
-  deleteUser: (userId: string) => void;
+  deleteUser: (userId: string) => Promise<boolean>;
   updateUser: (userId: string, data: Partial<UserWithAdminData>) => void;
   setSelectedUser: (user: UserWithAdminData | null) => void;
 
@@ -425,11 +426,19 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const deleteUser = useCallback(
-    (userId: string) => {
+    async (userId: string): Promise<boolean> => {
+      try {
+        await accountDeletionService.adminDeleteUser(userId)
+      } catch (error) {
+        console.error('Failed to delete user account:', error)
+        return false
+      }
+
       setUsers((prev) => prev.filter((u) => u.id !== userId));
-      saveData();
+      setSelectedUser((prev) => (prev?.id === userId ? null : prev));
+      return true
     },
-    [saveData]
+    []
   );
 
   const updateUser = useCallback(

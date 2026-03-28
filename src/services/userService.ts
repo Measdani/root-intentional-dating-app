@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { accountDeletionService } from '@/services/accountDeletionService'
 import { normalizeUserProfile } from '@/lib/userProfile'
 import { validateUsCityState } from '@/lib/usLocationValidation'
 import type { User } from '@/types'
@@ -158,6 +159,9 @@ export const userService = {
     if (updates.billingPeriodEnd !== undefined) updateData.billing_period_end = updates.billingPeriodEnd
     if (updates.consentTimestamp !== undefined) updateData.consent_timestamp = updates.consentTimestamp
     if (updates.consentVersion !== undefined) updateData.consent_version = updates.consentVersion
+    if (updates.guidelinesAckRequired !== undefined) updateData.guidelines_ack_required = updates.guidelinesAckRequired
+    if ('guidelinesAcknowledgedAt' in updates) updateData.guidelines_acknowledged_at = updates.guidelinesAcknowledgedAt ?? null
+    if (updates.moderationNote !== undefined) updateData.moderation_note = updates.moderationNote
     if (updates.cancelAtPeriodEnd !== undefined) updateData.cancel_at_period_end = updates.cancelAtPeriodEnd
     if (updates.poolId !== undefined) updateData.pool_id = updates.poolId
     if (updates.userStatus !== undefined) updateData.user_status = updates.userStatus
@@ -216,6 +220,20 @@ export const userService = {
 
     return true
   },
+
+  async deleteUser(userId: string): Promise<boolean> {
+    try {
+      await accountDeletionService.adminDeleteUser(userId)
+    } catch (error) {
+      console.warn(
+        'Failed to delete user:',
+        error instanceof Error ? error.message : 'unknown error'
+      )
+      return false
+    }
+
+    return true
+  },
 }
 
 function mapRowToUser(row: any): User {
@@ -243,6 +261,9 @@ function mapRowToUser(row: any): User {
     billingPeriodEnd: row.billing_period_end,
     consentTimestamp: row.consent_timestamp,
     consentVersion: row.consent_version,
+    guidelinesAckRequired: row.guidelines_ack_required,
+    guidelinesAcknowledgedAt: row.guidelines_acknowledged_at,
+    moderationNote: row.moderation_note,
     cancelAtPeriodEnd: row.cancel_at_period_end,
     poolId: toPoolId(row.pool_id),
     userStatus: row.user_status,
