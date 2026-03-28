@@ -4,6 +4,7 @@ import AuthPoolTabs from '@/components/AuthPoolTabs';
 import { communityIdToPoolId, persistUserPoolMembership, useCommunity } from '@/modules';
 import { authService, signOutSupabaseSession } from '@/services/authService';
 import { userService } from '@/services/userService';
+import { pendingSignupService } from '@/services/pendingSignupService';
 import { moderateProfileQuality } from '@/services/profileQualityService';
 import { preloadUsPlaceIndex, validateUsCityState } from '@/lib/usLocationValidation';
 import { toast } from 'sonner';
@@ -555,10 +556,25 @@ const SignUpSection: React.FC = () => {
         mode: 'active',
       };
 
-      // Save to Supabase
+      const pendingSignup = pendingSignupService.save(newUser);
+
+      if (!signUpData.session) {
+        if (pendingSignup.photoPayloadStripped) {
+          console.warn('Pending signup draft was saved without inline photo payloads.');
+        }
+        if (!pendingSignup.stored) {
+          console.warn('Pending signup draft could not be persisted locally.');
+        }
+        toast.success('Account created. Check your email to confirm it, then sign in to finish setup.');
+        setCurrentView('user-login');
+        return;
+      }
+
+      // Save to Supabase after a confirmed session exists.
       const { error: supabaseError } = await userService.createUser(newUser);
       if (supabaseError) {
         if (isDuplicateEmailError(supabaseError)) {
+          pendingSignupService.clear(normalizedEmail);
           await signOutSupabaseSession();
           showDuplicateEmailError();
           return;
@@ -571,13 +587,8 @@ const SignUpSection: React.FC = () => {
         return;
       }
 
+      pendingSignupService.clear(normalizedEmail);
       window.dispatchEvent(new CustomEvent('new-user', { detail: newUser }));
-
-      if (!signUpData.session) {
-        toast.success('Account created. Check your email to confirm it, then sign in.');
-        setCurrentView('user-login');
-        return;
-      }
 
       // Persist to localStorage (with quota-safe fallback)
       const sessionUser = persistCurrentUserSession(newUser);

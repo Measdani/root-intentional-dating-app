@@ -24,6 +24,7 @@ import { testUsers } from '@/data/testUsers';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import type { AssessmentResult } from '@/types';
 import { authService, signOutSupabaseSession } from '@/services/authService';
+import { pendingSignupService } from '@/services/pendingSignupService';
 import {
   buildEmptyStyleScores,
   isAssessmentCoreStyle,
@@ -201,6 +202,36 @@ const UserLoginSection: React.FC = () => {
     return sessionUser;
   };
 
+  const restorePendingSignupProfile = async (
+    normalizedEmail: string,
+    authUserId: string
+  ) => {
+    const pendingSignup = pendingSignupService.getByEmail(normalizedEmail);
+    if (!pendingSignup) return null;
+
+    const pendingUser = {
+      ...pendingSignup,
+      id: authUserId,
+      email: normalizedEmail,
+    };
+
+    const { error: createError, data } = await userService.createUser(pendingUser);
+    if (createError) {
+      console.warn('Failed to restore pending signup profile:', createError);
+      const existingUser = await userService.getUserByEmail(normalizedEmail);
+      if (existingUser) {
+        pendingSignupService.clear(normalizedEmail);
+        return existingUser;
+      }
+      return null;
+    }
+
+    pendingSignupService.clear(normalizedEmail);
+    const restoredUser = data ?? pendingUser;
+    window.dispatchEvent(new CustomEvent('new-user', { detail: restoredUser }));
+    return restoredUser;
+  };
+
   const routeAfterLogin = async (user: any) => {
     const canonicalTester = user?.email ? getCanonicalTestUser(user.email) : null;
     let effectiveUser = canonicalTester || normalizeUserProfile(user);
@@ -320,7 +351,7 @@ const UserLoginSection: React.FC = () => {
           return;
         }
       } else {
-        const { error: signInError } = await authService.signInWithPassword(normalizedEmail, password);
+        const { data: signInData, error: signInError } = await authService.signInWithPassword(normalizedEmail, password);
         if (signInError) {
           setError('Invalid email or password');
           toast.error('Invalid email or password');
@@ -330,6 +361,14 @@ const UserLoginSection: React.FC = () => {
 
         // Non-tester accounts come from Supabase app data after auth succeeds.
         user = await userService.getUserByEmail(normalizedEmail);
+        if (!user && signInData.user?.id) {
+          const pendingSignupHadTrimmedPhotos =
+            pendingSignupService.wasPhotoPayloadStripped(normalizedEmail);
+          user = await restorePendingSignupProfile(normalizedEmail, signInData.user.id);
+          if (user && pendingSignupHadTrimmedPhotos) {
+            toast.info('Your profile was restored, but you may need to re-add photos if they were not saved in browser storage.');
+          }
+        }
         if (!user) {
           await signOutSupabaseSession();
           setError('This account is missing its profile record. Contact support.');
