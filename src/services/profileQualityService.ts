@@ -57,8 +57,8 @@ const FALLBACK_FAILURE_RESULT: ModerateProfileQualityResult = {
   confidence: 0,
   recommendedAction: 'escalate_to_review',
   profileStatus: 'flagged',
-  blockedReason: 'Profile review unavailable.',
-  userFeedback: `We could not review this profile right now. Please try again shortly or contact ${SUPPORT_EMAIL}.`,
+  blockedReason: 'Profile review temporarily unavailable.',
+  userFeedback: `We could not finish reviewing your profile right now. This looks like a temporary review issue, not necessarily a problem with your answers. Please try again shortly or contact ${SUPPORT_EMAIL}.`,
   improvementNotes: [],
   escalate: true,
 };

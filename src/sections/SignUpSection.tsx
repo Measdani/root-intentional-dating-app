@@ -6,6 +6,13 @@ import { authService, signOutSupabaseSession } from '@/services/authService';
 import { userService } from '@/services/userService';
 import { pendingSignupService } from '@/services/pendingSignupService';
 import { moderateProfileQuality } from '@/services/profileQualityService';
+import {
+  PROFILE_BIO_MIN_CHAR_COUNT,
+  PROFILE_BIO_MIN_WORD_COUNT,
+  PROFILE_GROWTH_FOCUS_MIN_CHAR_COUNT,
+  validateGrowthFocusText,
+  validateRequiredProfileBio,
+} from '@/lib/profileTextValidation';
 import { preloadUsPlaceIndex, validateUsCityState } from '@/lib/usLocationValidation';
 import { toast } from 'sonner';
 import {
@@ -312,7 +319,14 @@ const SignUpSection: React.FC = () => {
       case 5:
         if (selectedValues.length < 3)
           errs.values = 'Select at least 3 values';
-        if (!growthFocus.trim()) errs.growthFocus = 'Growth focus is required';
+        const growthFocusValidation = validateGrowthFocusText(growthFocus);
+        if (!growthFocusValidation.isValid && growthFocusValidation.error) {
+          errs.growthFocus = growthFocusValidation.error;
+        }
+        const bioValidation = validateRequiredProfileBio(bio);
+        if (!bioValidation.isValid && bioValidation.error) {
+          errs.bio = bioValidation.error;
+        }
         break;
       case 6:
         const requiredPolicyKeys = [...Object.keys(POLICIES), 'platformConfirmation'];
@@ -338,10 +352,19 @@ const SignUpSection: React.FC = () => {
     setStep((prev) => (prev - 1) as typeof step);
   };
 
-  const clearProfileReviewErrors = () => {
-    if (!errors.profileReview && !errors.profileSuggestions) return;
+  const clearStepFiveErrors = () => {
+    if (
+      !errors.values &&
+      !errors.growthFocus &&
+      !errors.bio &&
+      !errors.profileReview &&
+      !errors.profileSuggestions
+    ) return;
     setErrors((prev) => {
       const next = { ...prev };
+      delete next.values;
+      delete next.growthFocus;
+      delete next.bio;
       delete next.profileReview;
       delete next.profileSuggestions;
       return next;
@@ -439,6 +462,12 @@ const SignUpSection: React.FC = () => {
         isLgbtqCommunity && communityBoundaries.trim()
           ? communityBoundaries.trim()
           : undefined;
+      const profileStepErrors = await validateStep(5);
+      if (Object.keys(profileStepErrors).length > 0) {
+        setStep(5);
+        setErrors(profileStepErrors);
+        return;
+      }
 
       const profileModeration = await moderateProfileQuality({
         appUserId: newUserId,
@@ -471,7 +500,7 @@ const SignUpSection: React.FC = () => {
         return;
       }
 
-      clearProfileReviewErrors();
+      clearStepFiveErrors();
 
       const { data: signUpData, error: signUpError } = await authService.signUpWithPassword(
         normalizedEmail,
@@ -540,7 +569,7 @@ const SignUpSection: React.FC = () => {
         },
         values: selectedValues,
         growthFocus: trimmedGrowthFocus,
-        bio: trimmedBio || undefined,
+        bio: trimmedBio,
         communityBoundaries: normalizedCommunityBoundaries,
         assessmentPassed: false,
         membershipTier: tier ?? 'monthly',
@@ -1117,7 +1146,7 @@ const SignUpSection: React.FC = () => {
                             } else if (selectedValues.length < 7) {
                               setSelectedValues([...selectedValues, value]);
                             }
-                            clearProfileReviewErrors();
+                            clearStepFiveErrors();
                           }}
                           className={`py-2 px-3 rounded-lg border text-xs text-center transition-all ${
                             selectedValues.includes(value)
@@ -1143,27 +1172,46 @@ const SignUpSection: React.FC = () => {
                 value={growthFocus}
                 onChange={(e) => {
                   setGrowthFocus(e.target.value);
-                  clearProfileReviewErrors();
+                  clearStepFiveErrors();
                 }}
                 placeholder="e.g. Building emotional resilience"
-                className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors"
+                minLength={PROFILE_GROWTH_FOCUS_MIN_CHAR_COUNT}
+                className={`w-full px-4 py-2 bg-[#0B0F0C] border rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors ${
+                  errors.growthFocus ? 'border-red-500/50' : 'border-[#1A211A]'
+                }`}
               />
+              <p className="text-xs text-[#A9B5AA] mt-1">
+                Use a short real phrase, not random letters.
+              </p>
+              {errors.growthFocus && (
+                <p className="text-xs text-red-300 mt-2">{errors.growthFocus}</p>
+              )}
             </div>
 
             <div>
               <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
-                About You (Optional)
+                About You
               </label>
               <textarea
                 value={bio}
                 onChange={(e) => {
                   setBio(e.target.value);
-                  clearProfileReviewErrors();
+                  clearStepFiveErrors();
                 }}
-                placeholder="Tell us a bit about yourself..."
+                placeholder="Share a few real details about who you are and what kind of relationship you're looking for."
                 rows={4}
-                className="w-full px-4 py-2 bg-[#0B0F0C] border border-[#1A211A] rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors resize-none"
+                minLength={PROFILE_BIO_MIN_CHAR_COUNT}
+                maxLength={500}
+                className={`w-full px-4 py-2 bg-[#0B0F0C] border rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors resize-none ${
+                  errors.bio ? 'border-red-500/50' : 'border-[#1A211A]'
+                }`}
               />
+              <p className="text-xs text-[#A9B5AA] mt-1">
+                Required. Use real words and aim for at least {PROFILE_BIO_MIN_WORD_COUNT} words.
+              </p>
+              {errors.bio && (
+                <p className="text-xs text-red-300 mt-2">{errors.bio}</p>
+              )}
               <p className="text-xs text-[#A9B5AA] mt-1">
                 {bio.length} / 500
               </p>
@@ -1181,7 +1229,7 @@ const SignUpSection: React.FC = () => {
                   value={communityBoundaries}
                   onChange={(e) => {
                     setCommunityBoundaries(e.target.value);
-                    clearProfileReviewErrors();
+                    clearStepFiveErrors();
                   }}
                   placeholder={'e.g., "No fetishizing," "Respect pronouns," "Serious dating only," "No secrecy."'}
                   rows={3}
