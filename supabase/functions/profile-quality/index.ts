@@ -40,9 +40,10 @@ type ProfileDecision = {
 };
 
 const AGENT_NAME = "profile_quality";
-const RULE_VERSION = "pq-rules-2026-03-09";
+const RULE_VERSION = "pq-rules-2026-03-28-lite";
 const MODEL_VERSION = "deterministic-rule-engine-v1";
 const SUPPORT_EMAIL = "support@rootedhearts.net";
+const MIN_BIO_CHAR_COUNT = 20;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -102,6 +103,9 @@ const LOW_EFFORT_PATTERNS = [
   /^\s*(ask me|just ask|idk|later)\s*[.!?]*\s*$/i,
   /^\s*(hi|hey|hello)\s*[.!?]*\s*$/i,
 ];
+const BIO_WORD_PATTERN = /[a-z]+(?:['-][a-z]+)*/gi;
+const LONG_CONSONANT_CLUSTER_PATTERN = /[bcdfghjklmnpqrstvwxyz]{5,}/i;
+const REPEATED_CHARACTER_PATTERN = /(.)\1{3,}/i;
 
 const SEXUAL_PATTERNS = [
   /\bnudes?\b/i,
@@ -171,6 +175,45 @@ const INTENTIONALITY_PATTERNS = [
 
 const matchesAny = (value: string, patterns: RegExp[]) => patterns.some((pattern) => pattern.test(value));
 
+const getBioWords = (value: string): string[] =>
+  value.match(BIO_WORD_PATTERN)?.map((word) => word.toLowerCase()) ?? [];
+
+const countVowels = (value: string): number =>
+  (value.match(/[aeiouy]/gi) ?? []).length;
+
+const isSuspiciousBioWord = (word: string): boolean => {
+  if (word.length < 8) return false;
+
+  const vowelRatio = countVowels(word) / word.length;
+  const hasLongConsonantCluster = LONG_CONSONANT_CLUSTER_PATTERN.test(word);
+  const hasRepeatedCharacters = REPEATED_CHARACTER_PATTERN.test(word);
+
+  return (
+    hasRepeatedCharacters ||
+    (word.length >= 10 && hasLongConsonantCluster) ||
+    (word.length >= 12 && (vowelRatio < 0.22 || vowelRatio > 0.8))
+  );
+};
+
+const looksLikeKeyboardSmash = (value: string): boolean => {
+  const words = getBioWords(value);
+  if (words.length === 0) return false;
+
+  const suspiciousWords = words.filter(isSuspiciousBioWord);
+  if (suspiciousWords.length === 0) return false;
+
+  const alphaCharacters = value.replace(/[^a-z]/gi, "");
+  const suspiciousCharacterCount = suspiciousWords.reduce(
+    (total, word) => total + word.length,
+    0,
+  );
+  const suspiciousCharacterShare = alphaCharacters.length > 0
+    ? suspiciousCharacterCount / alphaCharacters.length
+    : 0;
+
+  return suspiciousWords.length >= 2 || suspiciousCharacterShare >= 0.45;
+};
+
 const flattenPromptValue = (value: unknown): string[] => {
   if (typeof value === "string") {
     const trimmed = value.trim();
@@ -200,6 +243,7 @@ const buildPromptSnippets = (promptsJson: Record<string, unknown> | null | undef
 
 const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | null | undefined): ProfileDecision => {
   const safeBio = bio.trim();
+  const bioWords = getBioWords(safeBio);
   const promptSnippets = buildPromptSnippets(promptsJson);
   const promptText = promptSnippets.join(" ");
   const combinedText = [safeBio, promptText].filter(Boolean).join("\n");
@@ -214,11 +258,16 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
   const hasSuspiciousIdentity = matchesAny(combinedText, IDENTITY_SUSPICIOUS_PATTERNS);
   const hasIntentSignals = matchesAny(combinedText, INTENTIONALITY_PATTERNS);
 
+  const hasMissingRequiredBio = safeBio.length === 0;
+  const hasTooShortBio = safeBio.length > 0 && safeBio.length < MIN_BIO_CHAR_COUNT;
+  const hasNoRealBioWords = safeBio.length > 0 && bioWords.length === 0;
+  const hasGibberishBio = safeBio.length > 0 && looksLikeKeyboardSmash(safeBio);
   const isLowEffortBio = safeBio.length > 0 && LOW_EFFORT_PATTERNS.some((pattern) => pattern.test(safeBio));
-  const hasBareMinimumText = (safeBio.length + promptText.length) < 60;
-  const hasVeryShortBio = safeBio.length > 0 && safeBio.length < 20;
-  const hasNoBioAndMinimalPrompts = safeBio.length === 0 && promptSnippets.length < 2;
-  const isIncomplete = hasNoBioAndMinimalPrompts || hasBareMinimumText || hasVeryShortBio;
+  const needsBasicEdits =
+    hasMissingRequiredBio ||
+    hasTooShortBio ||
+    hasNoRealBioWords ||
+    hasGibberishBio;
 
   if (hasSexual) labels.push("sexual_explicit");
   if (hasAggressive) labels.push("aggressive_disrespectful");
@@ -226,18 +275,27 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
   if (hasScam) labels.push("scam_like_solicitation");
   if (hasExternalContact) labels.push("external_contact_pushing");
   if (hasSuspiciousIdentity) labels.push("suspicious_identity_claim");
-  if (isIncomplete) labels.push("incomplete_too_vague");
+  if (hasMissingRequiredBio) labels.push("bio_required");
+  if (hasTooShortBio) labels.push("bio_too_short");
+  if (hasNoRealBioWords) labels.push("bio_needs_real_words");
   if (isLowEffortBio) labels.push("low_effort");
+  if (hasGibberishBio) labels.push("gibberish_or_random_text");
   if (labels.length === 0) labels.push("clean_acceptable");
 
-  if (isIncomplete) {
-    improvementNotes.push("Share specific details about who you are and what kind of relationship you want.");
+  if (hasMissingRequiredBio) {
+    improvementNotes.push("Add an About You section before submitting your profile.");
+  }
+  if (hasTooShortBio) {
+    improvementNotes.push("Add a little more detail to About You before submitting your profile.");
   }
   if (!hasIntentSignals) {
     improvementNotes.push("Add one clear sentence about your relationship intentions.");
   }
   if (isLowEffortBio) {
     improvementNotes.push("Avoid generic lines like 'just ask' and include something concrete from your life.");
+  }
+  if (hasNoRealBioWords || hasGibberishBio) {
+    improvementNotes.push("Replace random letters or keyboard-smash text with real words and clear sentences.");
   }
   if (hasExternalContact) {
     improvementNotes.push("Remove requests to move off-platform and keep early connection inside the app.");
@@ -246,23 +304,33 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
   let clarity = 100;
   let effort = 100;
   let warmthRespect = 100;
-  let intentionality = hasIntentSignals ? 90 : 65;
+  let intentionality = hasIntentSignals ? 90 : 75;
   let authenticity = 100;
   let safetyScore = 100;
 
-  if (safeBio.length < 30) clarity -= 30;
-  if (promptSnippets.length < 2) clarity -= 20;
-  if (isIncomplete) clarity -= 20;
-
-  if (safeBio.length < 20) effort -= 35;
-  if (promptSnippets.length < 2) effort -= 20;
-  if (isLowEffortBio) effort -= 25;
+  if (hasMissingRequiredBio) {
+    clarity -= 35;
+    effort -= 35;
+    intentionality -= 20;
+  }
+  if (hasTooShortBio) {
+    clarity -= 20;
+    effort -= 20;
+  }
+  if (hasNoRealBioWords) {
+    clarity -= 35;
+    authenticity -= 35;
+  }
+  if (hasGibberishBio) {
+    clarity -= 45;
+    effort -= 40;
+    authenticity -= 35;
+  }
+  if (isLowEffortBio) effort -= 15;
 
   if (hasAggressive) warmthRespect -= 50;
   if (hasDiscriminatory) warmthRespect -= 60;
   if (hasSexual) warmthRespect -= 40;
-
-  if (isIncomplete) intentionality -= 15;
 
   if (hasScam) authenticity -= 60;
   if (hasSuspiciousIdentity) authenticity -= 45;
@@ -318,7 +386,12 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
     };
   }
 
-  if (hasExternalContact || isIncomplete || isLowEffortBio || qualityScore < 55) {
+  if (needsBasicEdits) {
+    const userFeedback = hasMissingRequiredBio
+      ? "About You is required before your profile can go live. Add a short description in real words."
+      : hasNoRealBioWords || hasGibberishBio
+      ? "Please replace random letters in About You with real words before submitting again."
+      : `About You needs a little more detail before your profile can go live. Add at least ${MIN_BIO_CHAR_COUNT} characters in real words.`;
     return {
       labels,
       quality_score: qualityScore,
@@ -327,15 +400,14 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
       recommended_action: "needs_edits",
       profile_status: "needs_edits",
       blocked_reason: "Profile quality needs improvement before publishing.",
-      user_feedback:
-        "Your profile needs a few updates before it can go live. Try sharing more about who you are, what you value, and what kind of relationship you're building toward.",
+      user_feedback: userFeedback,
       improvement_notes: improvementNotes,
       escalate: false,
       severity_for_case: null,
     };
   }
 
-  if (qualityScore < 75 || !hasIntentSignals) {
+  if (hasExternalContact || isLowEffortBio || !hasIntentSignals || qualityScore < 60) {
     return {
       labels,
       quality_score: qualityScore,

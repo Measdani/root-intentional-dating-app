@@ -8,7 +8,6 @@ import { pendingSignupService } from '@/services/pendingSignupService';
 import { moderateProfileQuality } from '@/services/profileQualityService';
 import {
   PROFILE_BIO_MIN_CHAR_COUNT,
-  PROFILE_BIO_MIN_WORD_COUNT,
   PROFILE_GROWTH_FOCUS_MIN_CHAR_COUNT,
   validateGrowthFocusText,
   validateRequiredProfileBio,
@@ -1181,7 +1180,7 @@ const SignUpSection: React.FC = () => {
                 }`}
               />
               <p className="text-xs text-[#A9B5AA] mt-1">
-                Use a short real phrase, not random letters.
+                Use a short real phrase in real words.
               </p>
               {errors.growthFocus && (
                 <p className="text-xs text-red-300 mt-2">{errors.growthFocus}</p>
@@ -1207,7 +1206,7 @@ const SignUpSection: React.FC = () => {
                 }`}
               />
               <p className="text-xs text-[#A9B5AA] mt-1">
-                Required. Use real words and aim for at least {PROFILE_BIO_MIN_WORD_COUNT} words.
+                Required. Use real words and give a short description of yourself.
               </p>
               {errors.bio && (
                 <p className="text-xs text-red-300 mt-2">{errors.bio}</p>

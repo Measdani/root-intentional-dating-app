@@ -1,9 +1,5 @@
-export const PROFILE_BIO_MIN_CHAR_COUNT = 30;
-export const PROFILE_BIO_MIN_WORD_COUNT = 6;
-const PROFILE_BIO_MIN_UNIQUE_WORD_COUNT = 4;
-export const PROFILE_GROWTH_FOCUS_MIN_CHAR_COUNT = 12;
-export const PROFILE_GROWTH_FOCUS_MIN_WORD_COUNT = 2;
-const PROFILE_GROWTH_FOCUS_MIN_UNIQUE_WORD_COUNT = 2;
+export const PROFILE_BIO_MIN_CHAR_COUNT = 20;
+export const PROFILE_GROWTH_FOCUS_MIN_CHAR_COUNT = 4;
 
 const WORD_PATTERN = /[a-z]+(?:['-][a-z]+)*/gi;
 const LONG_CONSONANT_CLUSTER_PATTERN = /[bcdfghjklmnpqrstvwxyz]{5,}/i;
@@ -74,18 +70,11 @@ export const validateRequiredProfileBio = (
     };
   }
 
-  const words = getWords(normalizedBio);
-  const uniqueWordCount = new Set(words).size;
-
-  if (
-    normalizedBio.length < PROFILE_BIO_MIN_CHAR_COUNT ||
-    words.length < PROFILE_BIO_MIN_WORD_COUNT ||
-    uniqueWordCount < PROFILE_BIO_MIN_UNIQUE_WORD_COUNT
-  ) {
+  if (normalizedBio.length < PROFILE_BIO_MIN_CHAR_COUNT) {
     return {
       isValid: false,
       error:
-        'About You must be at least 30 characters and include a few real details about you.',
+        `About You must be at least ${PROFILE_BIO_MIN_CHAR_COUNT} characters and use real words.`,
       normalizedBio,
     };
   }
@@ -110,6 +99,7 @@ export const validateGrowthFocusText = (
   value: string
 ): ProfileTextValidationResult => {
   const normalizedText = value.trim();
+  const words = getWords(normalizedText);
 
   if (!normalizedText) {
     return {
@@ -119,18 +109,14 @@ export const validateGrowthFocusText = (
     };
   }
 
-  const words = getWords(normalizedText);
-  const uniqueWordCount = new Set(words).size;
-
   if (
     normalizedText.length < PROFILE_GROWTH_FOCUS_MIN_CHAR_COUNT ||
-    words.length < PROFILE_GROWTH_FOCUS_MIN_WORD_COUNT ||
-    uniqueWordCount < PROFILE_GROWTH_FOCUS_MIN_UNIQUE_WORD_COUNT
+    words.length === 0
   ) {
     return {
       isValid: false,
       error:
-        "Growth Focus should be a short real phrase, like 'Building emotional resilience.'",
+        'Growth Focus should be a short real phrase, not random letters.',
       normalizedText,
     };
   }
