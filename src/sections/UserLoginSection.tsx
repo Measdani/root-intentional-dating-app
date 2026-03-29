@@ -151,8 +151,8 @@ const UserLoginSection: React.FC = () => {
         const saved = localStorage.getItem(key);
         if (!saved) continue;
         const parsed = JSON.parse(saved);
-        // Guard against cross-user leakage from legacy global key.
-        if (userId && parsed?.userId && parsed.userId !== userId) {
+        // Guard against cross-user leakage from the legacy global key.
+        if (userId && key === 'assessmentResult' && parsed?.userId !== userId) {
           continue;
         }
         const normalized = normalizeAssessmentResult(parsed);

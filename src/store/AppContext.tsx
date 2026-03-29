@@ -544,22 +544,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // Restore assessment result from persistent storage if user doesn't have it
           if (parsedUser.assessmentPassed === undefined) {
             try {
-              const savedResult = localStorage.getItem('assessmentResult');
+              const scopedResult = parsedUser.id
+                ? localStorage.getItem(`assessmentResult_${parsedUser.id}`)
+                : null;
+              const legacyResult = localStorage.getItem('assessmentResult');
+              const savedResult = scopedResult ?? legacyResult;
+
               if (savedResult) {
                 const result = JSON.parse(savedResult);
-                const passed =
-                  typeof result.passed === 'boolean'
-                    ? result.passed
-                    : Number(result.percentage ?? 0) >= 85;
-                parsedUser.assessmentPassed = passed;
-                parsedUser.alignmentScore = result.percentage;
-                if (typeof result.primaryStyle === 'string') {
-                  parsedUser.primaryStyle = result.primaryStyle;
+                const belongsToParsedUser = !(
+                  parsedUser.id &&
+                  savedResult === legacyResult &&
+                  result?.userId !== parsedUser.id
+                );
+
+                if (belongsToParsedUser) {
+                  const passed =
+                    typeof result.passed === 'boolean'
+                      ? result.passed
+                      : Number(result.percentage ?? 0) >= 85;
+                  parsedUser.assessmentPassed = passed;
+                  parsedUser.alignmentScore = result.percentage;
+                  if (typeof result.primaryStyle === 'string') {
+                    parsedUser.primaryStyle = result.primaryStyle;
+                  }
+                  if (typeof result.secondaryStyle === 'string') {
+                    parsedUser.secondaryStyle = result.secondaryStyle;
+                  }
+                  parsedUser.userStatus = passed ? 'active' : 'needs-growth';
                 }
-                if (typeof result.secondaryStyle === 'string') {
-                  parsedUser.secondaryStyle = result.secondaryStyle;
-                }
-                parsedUser.userStatus = passed ? 'active' : 'needs-growth';
               }
             } catch (err) {
               console.error('Failed to restore assessment result:', err);
@@ -660,8 +673,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const legacyResult = localStorage.getItem('assessmentResult');
           if (legacyResult) {
             const parsedLegacyResult = JSON.parse(legacyResult);
-            hasStoredAssessmentResult =
-              !parsedLegacyResult?.userId || parsedLegacyResult.userId === currentUser.id;
+            hasStoredAssessmentResult = parsedLegacyResult?.userId === currentUser.id;
           }
         }
 
@@ -912,7 +924,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const legacyResult = localStorage.getItem('assessmentResult');
         if (legacyResult) {
           const parsed = JSON.parse(legacyResult);
-          hasStoredAssessmentResult = !parsed?.userId || parsed.userId === currentUser.id;
+          hasStoredAssessmentResult = parsed?.userId === currentUser.id;
         }
       }
     } catch (error) {
