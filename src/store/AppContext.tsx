@@ -612,6 +612,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUsers((prev) => upsertUserById(prev, currentUser));
   }, [currentUser]);
 
+  useEffect(() => {
+    if (!selectedUser) return;
+
+    if (selectedUser.id === currentUser.id) {
+      setSelectedUser((prev) => (prev?.id === currentUser.id ? normalizeUser(currentUser) : prev));
+      return;
+    }
+
+    const syncedSelectedUser = users.find((user) => user.id === selectedUser.id);
+    if (syncedSelectedUser) {
+      setSelectedUser((prev) => (prev?.id === syncedSelectedUser.id ? syncedSelectedUser : prev));
+    }
+  }, [currentUser, selectedUser?.id, users]);
+
   // Apply stored suspensions when currentUser changes (e.g., on login)
   useEffect(() => {
     try {
