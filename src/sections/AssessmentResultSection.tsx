@@ -240,12 +240,16 @@ const AssessmentResultSection: React.FC = () => {
             )}
           </div>
 
-          <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-              <p className="text-[#A9B5AA] text-sm mb-2">Your Dating Style</p>
-              <p className="text-sm text-[#A9B5AA] mb-4">
+          <div className="mb-8">
+            <div className="mb-4">
+              <h3 className="text-[#F6FFF2] font-semibold text-lg mb-2">Your Dating Style</h3>
+              <p className="text-sm text-[#A9B5AA]">
                 Most people express a blend of relationship styles, but one or two typically stand out.
               </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
               <p className="text-xs text-[#A9B5AA] mb-2">Primary Style</p>
               {primaryStyleMeta ? (
                 <>
@@ -256,19 +260,20 @@ const AssessmentResultSection: React.FC = () => {
               ) : (
                 <p className="text-sm text-[#A9B5AA]">Not enough style data yet.</p>
               )}
-            </div>
+              </div>
 
-            <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
-              <p className="text-xs text-[#A9B5AA] mb-2">Secondary Style</p>
-              {secondaryStyleMeta ? (
-                <>
-                  <p className="text-[#F6FFF2] font-medium">
-                    {secondaryStyleMeta.emoji} {secondaryStyleMeta.label} - {secondaryStyleMeta.subtitle}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-[#A9B5AA]">Not enough style data yet.</p>
-              )}
+              <div className="p-4 bg-[#111611]/80 border border-[#1A211A] rounded-xl">
+                <p className="text-xs text-[#A9B5AA] mb-2">Secondary Style</p>
+                {secondaryStyleMeta ? (
+                  <>
+                    <p className="text-[#F6FFF2] font-medium">
+                      {secondaryStyleMeta.emoji} {secondaryStyleMeta.label} - {secondaryStyleMeta.subtitle}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-[#A9B5AA]">Not enough style data yet.</p>
+                )}
+              </div>
             </div>
           </div>
 
