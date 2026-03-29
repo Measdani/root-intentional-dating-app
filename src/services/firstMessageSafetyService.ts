@@ -68,7 +68,9 @@ const FALLBACK_FAILURE_RESULT: ModerateFirstMessageResult = {
   messageStatus: 'flagged',
   blockedReason: 'Safety review unavailable.',
   rewritePrompt: null,
-  userFeedback: `We could not verify this message right now. Please try again shortly or contact ${SUPPORT_EMAIL}.`,
+  userFeedback:
+    `We could not review this introduction right now. Your draft was not sent. ` +
+    `If your message uses real words and thoughtful intent, please try again shortly or contact ${SUPPORT_EMAIL}.`,
   escalate: true,
   accountabilityLevel: 0,
   lockScope: null,

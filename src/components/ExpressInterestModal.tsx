@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { User } from '@/types';
 import { X, Check, MessageCircle, Loader2 } from 'lucide-react';
+import { looksLikeKeyboardSmash } from '@/lib/profileTextValidation';
 
 interface ExpressInterestModalProps {
   isOpen: boolean;
@@ -31,10 +32,20 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
   const minLength = 120;
   const maxLength = 500;
   const isValidLength = messageLength >= minLength && messageLength <= maxLength;
-  const isReady = isValidLength && !isSubmitting;
+  const trimmedMessage = message.trim();
+  const messageQualityError =
+    isValidLength && looksLikeKeyboardSmash(trimmedMessage)
+      ? 'Use real words and tell them what stood out to you. Random letters or filler text cannot be sent.'
+      : null;
+  const isReady = isValidLength && !messageQualityError && !isSubmitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (messageQualityError) {
+      setSubmitFeedback(messageQualityError);
+      return;
+    }
+
     if (!isReady) return;
 
     setSubmitFeedback(null);
@@ -69,7 +80,6 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
 
   const handleClose = () => {
     if (!isSubmitting && !isSuccess) {
-      // Could add confirmation dialog here if message has content
       onClose();
       setMessage('');
       setIsSuccess(false);
@@ -79,12 +89,9 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-[#0B0F0C]/80 backdrop-blur-sm" onClick={handleClose} />
 
-      {/* Modal */}
       <div className="relative bg-[#111611] rounded-[28px] border border-[#1A211A] p-8 w-full max-w-md animate-scale-in max-h-[90vh] overflow-y-auto">
-        {/* Close Button */}
         <button
           onClick={handleClose}
           disabled={isSubmitting || isSuccess}
@@ -105,7 +112,6 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
           </div>
         ) : (
           <>
-            {/* User Info */}
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D9FF3D] to-[#a8cc2d] flex items-center justify-center flex-shrink-0">
@@ -128,7 +134,6 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
               )}
             </div>
 
-            {/* Message Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm text-[#F6FFF2] mb-3 font-medium">
@@ -138,21 +143,23 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                   <p className="text-xs text-[#D9FF3D] flex items-start gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#D9FF3D] mt-0.5 flex-shrink-0" />
                     <span>
-                      <strong>Minimum 120 characters required.</strong> This ensures meaningful conversations and intentional connections.
+                      <strong>Minimum 120 characters required.</strong> This helps keep introductions thoughtful and intentional.
                     </span>
                   </p>
                 </div>
                 {targetUser.alignmentScore && (
                   <p className="text-xs text-[#D9FF3D] mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#D9FF3D]" />
-                    You share {targetUser.alignmentScore}% alignment — lead with that.
+                    You share {targetUser.alignmentScore}% alignment - lead with that.
                   </p>
                 )}
                 <textarea
                   value={message}
                   onChange={(e) => {
                     setMessage(e.target.value.slice(0, maxLength));
-                    if (submitFeedback) setSubmitFeedback(null);
+                    if (submitFeedback) {
+                      setSubmitFeedback(null);
+                    }
                   }}
                   placeholder="Tell them what stood out to you and why..."
                   className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] placeholder:text-[#A9B5AA]/50 focus:outline-none focus:border-[#D9FF3D] transition-colors resize-none"
@@ -160,20 +167,26 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                 />
               </div>
 
-              {/* Character Count */}
               <div className="flex justify-between items-center text-xs">
                 <div className="flex items-center gap-2">
                   {messageLength < minLength ? (
                     <>
                       <div className="w-2 h-2 rounded-full bg-red-500" />
                       <span className="text-red-400">
-                        Minimum 120 characters — meaningful introductions only.
+                        Minimum 120 characters - write a thoughtful introduction.
+                      </span>
+                    </>
+                  ) : messageQualityError ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                      <span className="text-red-400">
+                        Use real words and tell them what stood out to you.
                       </span>
                     </>
                   ) : (
                     <>
                       <div className="w-2 h-2 rounded-full bg-[#D9FF3D]" />
-                      <span className="text-[#D9FF3D]">Ready for safety review.</span>
+                      <span className="text-[#D9FF3D]">Looks good. Ready for message review.</span>
                     </>
                   )}
                 </div>
@@ -188,7 +201,6 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
                 </div>
               )}
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={!isReady}
@@ -208,7 +220,6 @@ const ExpressInterestModal: React.FC<ExpressInterestModalProps> = ({
               </button>
             </form>
 
-            {/* Helper Text */}
             <p className="text-center text-[#A9B5AA]/50 text-xs mt-4">
               Be genuine and authentic. Good messages increase your chances of connecting.
             </p>
