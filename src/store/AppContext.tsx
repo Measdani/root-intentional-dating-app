@@ -23,6 +23,7 @@ import {
   type MilestoneAction,
 } from '@/services/relationshipMilestoneService';
 import { PATH_LABELS } from '@/lib/pathways';
+import { isEmailConfirmationRedirect, primeEmailConfirmationNotice } from '@/services/authService';
 
 interface AppState {
   currentView: AppView;
@@ -115,6 +116,10 @@ const getInitialAppView = (): AppView => {
     hashParams.get('type') === 'recovery'
   ) {
     return 'password-reset';
+  }
+
+  if (isEmailConfirmationRedirect()) {
+    return 'user-login';
   }
 
   return 'landing';
@@ -419,6 +424,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return usersWithCurrent;
     }
   });
+
+  useEffect(() => {
+    if (primeEmailConfirmationNotice()) {
+      setPreviousView('landing');
+      setCurrentViewState('user-login');
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

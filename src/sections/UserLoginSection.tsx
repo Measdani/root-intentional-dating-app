@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
 import { useAdmin } from '@/store/AdminContext';
@@ -23,7 +23,13 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { testUsers } from '@/data/testUsers';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import type { AssessmentResult } from '@/types';
-import { authService, signOutSupabaseSession } from '@/services/authService';
+import {
+  authService,
+  clearAuthRedirectUrlState,
+  consumeEmailConfirmationNotice,
+  isEmailConfirmationRedirect,
+  signOutSupabaseSession,
+} from '@/services/authService';
 import { pendingSignupService } from '@/services/pendingSignupService';
 import {
   buildEmptyStyleScores,
@@ -38,6 +44,7 @@ const UserLoginSection: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [loginUser, setLoginUser] = useState<any>(null);
@@ -201,6 +208,18 @@ const UserLoginSection: React.FC = () => {
     window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
     return sessionUser;
   };
+
+  useEffect(() => {
+    const shouldShowConfirmationNotice =
+      consumeEmailConfirmationNotice() || isEmailConfirmationRedirect();
+
+    if (!shouldShowConfirmationNotice) return;
+
+    clearAuthRedirectUrlState();
+    void signOutSupabaseSession();
+    setInfoMessage('Your email is confirmed. Sign in to finish setup.');
+    toast.success('Your email is confirmed. Sign in to finish setup.');
+  }, []);
 
   const restorePendingSignupProfile = async (
     normalizedEmail: string,
@@ -504,6 +523,13 @@ const UserLoginSection: React.FC = () => {
               {activeCommunity.loginSubtitle}
             </p>
           </div>
+
+          {infoMessage && (
+            <div className="flex gap-3 p-4 bg-[#D9FF3D]/10 border border-[#D9FF3D]/30 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-[#D9FF3D] flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-[#F6FFF2]">{infoMessage}</p>
+            </div>
+          )}
 
           {error && (
             <div className="flex gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">

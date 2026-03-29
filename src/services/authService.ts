@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 const PASSWORD_RESET_VIEW = 'password-reset';
+const EMAIL_CONFIRMATION_NOTICE_KEY = 'rooted_email_confirmation_notice';
 
 const getHashParams = (): URLSearchParams => {
   if (typeof window === 'undefined') return new URLSearchParams();
@@ -30,7 +31,21 @@ export const isRecoveryRedirect = (): boolean => {
   );
 };
 
-export const clearPasswordResetUrlState = (): void => {
+export const isEmailConfirmationRedirect = (): boolean => {
+  if (typeof window === 'undefined' || isRecoveryRedirect()) return false;
+
+  const url = new URL(window.location.href);
+  const hashParams = getHashParams();
+
+  return (
+    url.searchParams.has('code') ||
+    url.searchParams.has('token_hash') ||
+    hashParams.has('access_token') ||
+    hashParams.has('refresh_token')
+  );
+};
+
+export const clearAuthRedirectUrlState = (): void => {
   if (typeof window === 'undefined') return;
 
   const url = new URL(window.location.href);
@@ -41,6 +56,28 @@ export const clearPasswordResetUrlState = (): void => {
   url.hash = '';
   const nextUrl = `${url.pathname}${url.search}`;
   window.history.replaceState({}, '', nextUrl);
+};
+
+export const clearPasswordResetUrlState = (): void => {
+  clearAuthRedirectUrlState();
+};
+
+export const primeEmailConfirmationNotice = (): boolean => {
+  if (typeof window === 'undefined' || !isEmailConfirmationRedirect()) return false;
+
+  sessionStorage.setItem(EMAIL_CONFIRMATION_NOTICE_KEY, '1');
+  clearAuthRedirectUrlState();
+  return true;
+};
+
+export const consumeEmailConfirmationNotice = (): boolean => {
+  if (typeof window === 'undefined') return false;
+
+  const queued = sessionStorage.getItem(EMAIL_CONFIRMATION_NOTICE_KEY) === '1';
+  if (queued) {
+    sessionStorage.removeItem(EMAIL_CONFIRMATION_NOTICE_KEY);
+  }
+  return queued;
 };
 
 export const clearLocalCurrentUser = (): void => {
