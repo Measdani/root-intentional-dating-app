@@ -26,9 +26,7 @@ export const isRecoveryRedirect = (): boolean => {
   return (
     url.searchParams.get('view') === PASSWORD_RESET_VIEW ||
     url.searchParams.get('type') === 'recovery' ||
-    hashParams.get('type') === 'recovery' ||
-    hashParams.has('access_token') ||
-    url.searchParams.has('code')
+    hashParams.get('type') === 'recovery'
   );
 };
 

@@ -112,9 +112,7 @@ const getInitialAppView = (): AppView => {
   if (
     url.searchParams.get('view') === 'password-reset' ||
     url.searchParams.get('type') === 'recovery' ||
-    url.searchParams.has('code') ||
-    hashParams.get('type') === 'recovery' ||
-    hashParams.has('access_token')
+    hashParams.get('type') === 'recovery'
   ) {
     return 'password-reset';
   }
