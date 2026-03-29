@@ -266,6 +266,10 @@ const OFF_PLATFORM_PATTERNS = [
   /\big\b/i,
 ];
 
+const WORD_PATTERN = /[a-z]+(?:['-][a-z]+)*/gi;
+const LONG_CONSONANT_CLUSTER_PATTERN = /[bcdfghjklmnpqrstvwxyz]{5,}/i;
+const REPEATED_CHARACTER_PATTERN = /(.)\1{3,}/i;
+
 const HATE_PATTERNS = [
   /\bi hate (black|white|latino|asian|gay|lesbian|trans)\b/i,
   /\bno (black|white|latino|asian|gay|lesbian|trans) people\b/i,
@@ -284,6 +288,46 @@ const BLACKMAIL_PATTERNS = [
   /\bleak (your )?(pics|photos|messages)\b/i,
   /\bsend (it|them) to your family\b/i,
 ];
+
+const getWords = (value: string): string[] =>
+  value.match(WORD_PATTERN)?.map((word) => word.toLowerCase()) ?? [];
+
+const countVowels = (value: string): number =>
+  (value.match(/[aeiouy]/gi) ?? []).length;
+
+const isSuspiciousWord = (word: string): boolean => {
+  if (word.length < 8) return false;
+
+  const vowelRatio = countVowels(word) / word.length;
+  const hasLongConsonantCluster = LONG_CONSONANT_CLUSTER_PATTERN.test(word);
+  const hasRepeatedCharacters = REPEATED_CHARACTER_PATTERN.test(word);
+
+  return (
+    hasRepeatedCharacters ||
+    (word.length >= 10 && hasLongConsonantCluster) ||
+    (word.length >= 12 && (vowelRatio < 0.22 || vowelRatio > 0.8))
+  );
+};
+
+const looksLikeKeyboardSmash = (value: string): boolean => {
+  const words = getWords(value);
+  if (words.length === 0) return false;
+
+  const suspiciousWords = words.filter(isSuspiciousWord);
+  if (suspiciousWords.length === 0) return false;
+
+  const alphaCharacters = value.replace(/[^a-z]/gi, "");
+  const suspiciousCharacterCount = suspiciousWords.reduce(
+    (total, word) => total + word.length,
+    0,
+  );
+  const suspiciousCharacterShare =
+    alphaCharacters.length > 0
+      ? suspiciousCharacterCount / alphaCharacters.length
+      : 0;
+
+  return suspiciousWords.length >= 2 || suspiciousCharacterShare >= 0.45;
+};
 
 const MINOR_PATTERNS = [
   /\bi'?m (1[0-7])\b/i,
@@ -315,6 +359,7 @@ const evaluateFirstMessage = (content: string, isFirstMessage: boolean): SafetyD
   const hasManipulation = matchesAny(text, MANIPULATION_PATTERNS);
   const hasOffPlatform = isFirstMessage && matchesAny(text, OFF_PLATFORM_PATTERNS);
   const hasHate = matchesAny(text, HATE_PATTERNS);
+  const hasKeyboardSmash = looksLikeKeyboardSmash(text);
 
   const isLowEffort = (
     text.length <= 10 ||
@@ -332,6 +377,7 @@ const evaluateFirstMessage = (content: string, isFirstMessage: boolean): SafetyD
   if (hasManipulation) labels.push("manipulation_pressure");
   if (hasOffPlatform) labels.push("off_platform_pressure_early");
   if (hasHate) labels.push("hate_discrimination");
+  if (hasKeyboardSmash) labels.push("gibberish_keyboard_smash");
   if (labels.length === 0 && isLowEffort) labels.push("low_effort");
   if (labels.length === 0) labels.push("respectful_safe");
 
@@ -373,6 +419,20 @@ const evaluateFirstMessage = (content: string, isFirstMessage: boolean): SafetyD
       blocked_reason: "Opening message must stay respectful and non-coercive.",
       rewrite_prompt: "Try a greeting, mention something specific from their profile, and ask one thoughtful question.",
       user_feedback: LEVEL_1_FEEDBACK,
+      escalate: false,
+      severity_for_case: null,
+    };
+  }
+
+  if (hasKeyboardSmash) {
+    return {
+      labels,
+      confidence: 0.94,
+      recommended_action: "block_and_rewrite",
+      message_status: "blocked",
+      blocked_reason: "Messages must use real words and show thoughtful intent.",
+      rewrite_prompt: "Respond in real words, mention something specific from the conversation, and ask one thoughtful question.",
+      user_feedback: "Please use real words and respond thoughtfully. Random letters or filler text can't be sent.",
       escalate: false,
       severity_for_case: null,
     };

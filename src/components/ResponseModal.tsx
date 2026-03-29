@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { User, ConversationMessage } from '@/types';
 import { X, Check, MessageCircle, Loader2 } from 'lucide-react';
+import { looksLikeKeyboardSmash } from '@/lib/profileTextValidation';
 
 interface ResponseModalProps {
   isOpen: boolean;
@@ -22,10 +23,8 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitFeedback, setSubmitFeedback] = useState<string | null>(null);
 
-  // Check if the selected message is the background check starter
   const isBackgroundCheckMessage = message.includes('background check');
 
-  // Conversation starters based on user alignment and interests
   const conversationStarters = [
     `What drew you to ${senderUser?.name}? I'm curious about what resonated with you.`,
     `I love your focus on ${senderUser?.growthFocus}. How did you develop that mindset?`,
@@ -42,10 +41,20 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
   const minLength = 120;
   const maxLength = 500;
   const isValidLength = messageLength >= minLength && messageLength <= maxLength;
-  const isReady = isValidLength && !isSubmitting;
+  const trimmedMessage = message.trim();
+  const messageQualityError =
+    isValidLength && looksLikeKeyboardSmash(trimmedMessage)
+      ? 'Use real words and respond thoughtfully. Random letters or filler text cannot be sent.'
+      : null;
+  const isReady = isValidLength && !messageQualityError && !isSubmitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (messageQualityError) {
+      setSubmitFeedback(messageQualityError);
+      return;
+    }
+
     if (!isReady) return;
 
     setSubmitFeedback(null);
@@ -64,7 +73,6 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
     setIsSubmitting(false);
     setIsSuccess(true);
 
-    // Close after showing success
     setTimeout(() => {
       onClose();
       setMessage('');
@@ -84,12 +92,9 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-[#0B0F0C]/80 backdrop-blur-sm" onClick={handleClose} />
 
-      {/* Modal */}
       <div className="relative bg-[#111611] rounded-[28px] border border-[#1A211A] p-8 w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in">
-        {/* Close Button */}
         <button
           onClick={handleClose}
           disabled={isSubmitting || isSuccess}
@@ -110,7 +115,6 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
           </div>
         ) : (
           <>
-            {/* User Info */}
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D9FF3D] to-[#a8cc2d] flex items-center justify-center flex-shrink-0">
@@ -142,7 +146,6 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
               </div>
             )}
 
-            {/* Message Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm text-[#F6FFF2] mb-3 font-medium">
@@ -152,20 +155,19 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                   <p className="text-xs text-[#D9FF3D] flex items-start gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#D9FF3D] mt-0.5 flex-shrink-0" />
                     <span>
-                      <strong>Minimum 120 characters required.</strong> This helps ensure that conversations stay meaningful and allow you to connect on a deeper level.
+                      <strong>Minimum 120 characters required.</strong> This helps keep replies thoughtful and intentional.
                     </span>
                   </p>
                 </div>
                 {senderUser.alignmentScore && (
                   <p className="text-xs text-[#D9FF3D] mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#D9FF3D]" />
-                    You share {senderUser.alignmentScore}% alignment — lean into that.
+                    You share {senderUser.alignmentScore}% alignment - lean into that.
                   </p>
                 )}
 
-                {/* Conversation Starters */}
                 <div className="mb-4 space-y-2">
-                  <p className="text-xs text-[#A9B5AA] font-medium mb-2">💡 Conversation starters:</p>
+                  <p className="text-xs text-[#A9B5AA] font-medium mb-2">Conversation starters:</p>
                   <div className="space-y-2">
                     {conversationStarters.map((starter, idx) => (
                       <button
@@ -178,7 +180,9 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-[#A9B5AA]/50 mt-2">Personalize any of these starters to make them your own and create a more unique conversation.</p>
+                  <p className="text-xs text-[#A9B5AA]/50 mt-2">
+                    Personalize any of these starters to make them your own and create a more unique conversation.
+                  </p>
                 </div>
 
                 <textarea
@@ -201,20 +205,26 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                 </div>
               )}
 
-              {/* Character Count */}
               <div className="flex justify-between items-center text-xs">
                 <div className="flex items-center gap-2">
                   {messageLength < minLength ? (
                     <>
                       <div className="w-2 h-2 rounded-full bg-red-500" />
                       <span className="text-red-400">
-                        Minimum 120 characters — meaningful responses only.
+                        Minimum 120 characters - meaningful responses only.
+                      </span>
+                    </>
+                  ) : messageQualityError ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                      <span className="text-red-400">
+                        Use real words and respond to what they shared.
                       </span>
                     </>
                   ) : (
                     <>
                       <div className="w-2 h-2 rounded-full bg-[#D9FF3D]" />
-                      <span className="text-[#D9FF3D]">Good to go!</span>
+                      <span className="text-[#D9FF3D]">Looks good. Ready for message review.</span>
                     </>
                   )}
                 </div>
@@ -223,7 +233,6 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                 </span>
               </div>
 
-              {/* Background Check Info */}
               {isBackgroundCheckMessage && (
                 <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
                   <p className="text-xs text-emerald-300 mb-3 flex items-center gap-2">
@@ -243,7 +252,6 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
                 </div>
               )}
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={!isReady}
@@ -263,7 +271,6 @@ const ResponseModal: React.FC<ResponseModalProps> = ({
               </button>
             </form>
 
-            {/* Helper Text */}
             <p className="text-center text-[#A9B5AA]/50 text-xs mt-4">
               Be genuine and authentic. Good conversations build real connections.
             </p>
