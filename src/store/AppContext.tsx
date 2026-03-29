@@ -23,7 +23,11 @@ import {
   type MilestoneAction,
 } from '@/services/relationshipMilestoneService';
 import { PATH_LABELS } from '@/lib/pathways';
-import { isEmailConfirmationRedirect, primeEmailConfirmationNotice } from '@/services/authService';
+import {
+  clearLocalCurrentUser,
+  isEmailConfirmationRedirect,
+  primeEmailConfirmationNotice,
+} from '@/services/authService';
 import {
   buildAssessmentAbandonmentData,
   clearAssessmentInProgress,
@@ -135,6 +139,7 @@ const isUserLike = (value: unknown): value is User =>
 
 const normalizeUser = (user: User): User => applyRelationshipModeToUser(normalizeUserProfile(user));
 const SEEDED_USER_IDS = new Set(sampleUsers.map((user) => user.id));
+const ADMIN_USERS_STORAGE_KEY = 'rooted-admin-users';
 
 const upsertUserById = (existingUsers: User[], user: User): User[] => {
   const normalizedUser = normalizeUser(user);
@@ -167,6 +172,21 @@ const reconcileUsersWithRemote = (
   );
 
   return mergeUsersById(retainedUsers, remoteUsers);
+};
+
+const removeUserFromPersistedAdminCache = (userId: string) => {
+  try {
+    const raw = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
+    if (!raw) return;
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return;
+
+    const nextUsers = parsed.filter((entry) => !isUserLike(entry) || entry.id !== userId);
+    localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(nextUsers));
+  } catch (error) {
+    console.warn('Failed to prune deleted user from cached user list:', error);
+  }
 };
 
 const CONCIERGE_AUTO_REPORTS_KEY = 'rooted_concierge_auto_reports';
@@ -460,10 +480,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const syncUsersFromSupabase = async () => {
       try {
         const remoteUsers = await userService.getAllUsers();
-        if (cancelled || remoteUsers.length === 0) return;
+        if (cancelled) return;
 
         const normalizedRemoteUsers = remoteUsers.map((user) => normalizeUser(user));
-        remoteUserIdsRef.current = new Set(normalizedRemoteUsers.map((user) => user.id));
+        const remoteUserIds = new Set(normalizedRemoteUsers.map((user) => user.id));
+        remoteUserIdsRef.current = remoteUserIds;
 
         let persistedCurrentUserId: string | undefined;
         try {
@@ -475,8 +496,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           console.warn('Failed to read current user during remote user sync:', error);
         }
 
+        const currentUserMissingRemotely = Boolean(
+          persistedCurrentUserId &&
+          persistedCurrentUserId !== defaultUser.id &&
+          !remoteUserIds.has(persistedCurrentUserId)
+        );
+
+        if (currentUserMissingRemotely && persistedCurrentUserId) {
+          removeUserFromPersistedAdminCache(persistedCurrentUserId);
+          setSelectedUser((prev) => (prev?.id === persistedCurrentUserId ? null : prev));
+          setInteractions((prev) =>
+            appendProfileUnavailableMessageForMatches(prev, persistedCurrentUserId)
+          );
+          clearLocalCurrentUser();
+          toast.info('That account is no longer available. Please sign in again.');
+        }
+
         setUsers((prev) =>
-          reconcileUsersWithRemote(prev, normalizedRemoteUsers, persistedCurrentUserId)
+          reconcileUsersWithRemote(
+            prev,
+            normalizedRemoteUsers,
+            currentUserMissingRemotely ? undefined : persistedCurrentUserId
+          )
         );
       } catch (error) {
         console.warn('Failed to sync users from Supabase:', error);
@@ -485,8 +526,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     void syncUsersFromSupabase();
 
+    const handleFocus = () => {
+      void syncUsersFromSupabase();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void syncUsersFromSupabase();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       cancelled = true;
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
@@ -600,6 +656,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const deletedUserId = (event as CustomEvent<{ userId?: string }>).detail?.userId;
       if (!deletedUserId) return;
 
+      removeUserFromPersistedAdminCache(deletedUserId);
       remoteUserIdsRef.current?.delete(deletedUserId);
       setUsers((prev) => prev.filter((user) => user.id !== deletedUserId));
       setSelectedUser((prev) => (prev?.id === deletedUserId ? null : prev));
@@ -622,8 +679,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   useEffect(() => {
+    const remoteUserIds = remoteUserIdsRef.current;
+    const shouldKeepCurrentUserVisible =
+      currentUser.id === defaultUser.id ||
+      !isUserAuthenticated ||
+      !remoteUserIds ||
+      remoteUserIds.has(currentUser.id);
+
+    if (!shouldKeepCurrentUserVisible) return;
+
     setUsers((prev) => upsertUserById(prev, currentUser));
-  }, [currentUser]);
+  }, [currentUser, isUserAuthenticated]);
 
   useEffect(() => {
     if (!selectedUser) return;
