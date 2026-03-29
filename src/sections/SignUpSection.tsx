@@ -4,6 +4,7 @@ import AuthPoolTabs from '@/components/AuthPoolTabs';
 import { communityIdToPoolId, persistUserPoolMembership, useCommunity } from '@/modules';
 import { authService, signOutSupabaseSession } from '@/services/authService';
 import { userService } from '@/services/userService';
+import { accountEnforcementService } from '@/services/accountEnforcementService';
 import { pendingSignupService } from '@/services/pendingSignupService';
 import { moderateProfileQuality } from '@/services/profileQualityService';
 import {
@@ -383,9 +384,17 @@ const SignUpSection: React.FC = () => {
 
   const showDuplicateEmailError = () => {
     const message =
-      'This email is already in use. If an account was blocked, it cannot be recreated with the same email.';
+      'This email already has an account. Sign in instead, or use Forgot Password if you need to reset it.';
     setErrors({ submit: message });
-    toast.error('Email already in use. Please use a different email.');
+    toast.error('This email already has an account. Try signing in instead.');
+  };
+
+  const showBlockedEmailError = (reason?: string | null) => {
+    const message =
+      reason?.trim() ||
+      'This email is blocked from creating a new account. Contact support if you believe this is a mistake.';
+    setErrors({ submit: message });
+    toast.error(message);
   };
 
   const stripInlinePhotoPayloads = (photoUrl?: string) => {
@@ -500,6 +509,12 @@ const SignUpSection: React.FC = () => {
       }
 
       clearStepFiveErrors();
+
+      const eligibility = await accountEnforcementService.checkSignupEmail(normalizedEmail);
+      if (eligibility.blocked) {
+        showBlockedEmailError(eligibility.reason);
+        return;
+      }
 
       const { data: signUpData, error: signUpError } = await authService.signUpWithPassword(
         normalizedEmail,
