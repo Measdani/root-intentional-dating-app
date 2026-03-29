@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import { SUPPORT_EMAIL } from '@/constants/support';
 
 type FirstMessageSafetyAction =
@@ -80,6 +81,14 @@ const FALLBACK_FAILURE_RESULT: ModerateFirstMessageResult = {
   resetMessage: null,
 };
 
+const publicFunctionsClient = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+});
+
 const toAction = (value: unknown): FirstMessageSafetyAction => {
   if (
     value === 'approve' ||
@@ -105,7 +114,7 @@ export const moderateFirstMessage = async (
   input: ModerateFirstMessageInput
 ): Promise<ModerateFirstMessageResult> => {
   try {
-    const { data, error } = await supabase.functions.invoke('first-message-safety', {
+    const { data, error } = await publicFunctionsClient.functions.invoke('first-message-safety', {
       body: {
         sender_app_user_id: input.senderAppUserId,
         recipient_app_user_id: input.recipientAppUserId,
@@ -118,6 +127,7 @@ export const moderateFirstMessage = async (
     });
 
     if (error || !data || typeof data !== 'object') {
+      console.warn('First-message safety moderation invoke failed:', error);
       return FALLBACK_FAILURE_RESULT;
     }
 
