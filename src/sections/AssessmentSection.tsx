@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { signOutAndClearLocalUser } from '@/services/authService';
+import {
+  buildAssessmentAbandonmentData,
+  clearAssessmentInProgress,
+  writeAssessmentInProgress,
+} from '@/services/assessmentSessionService';
 import { useCommunity } from '@/modules';
 import { assessmentQuestions as defaultAssessmentQuestions, calculateAssessmentResult } from '@/data/assessment';
 import type { AssessmentQuestion } from '@/types';
@@ -145,9 +150,27 @@ const AssessmentSection: React.FC = () => {
     return () => clearTimeout(fallback);
   }, []);
 
+  useEffect(() => {
+    if (!currentUser.id || !assessmentStartTime || !showQuestions || showAssessmentStatement) return;
+
+    writeAssessmentInProgress(currentUser.id, {
+      startedAt: new Date(assessmentStartTime).toISOString(),
+      questionIndex: currentQuestionIndex,
+      answerCount: assessmentAnswers.length,
+    });
+  }, [
+    assessmentAnswers.length,
+    assessmentStartTime,
+    currentQuestionIndex,
+    currentUser.id,
+    showAssessmentStatement,
+    showQuestions,
+  ]);
+
   // Prevent users who have already passed from retaking the assessment
   useEffect(() => {
     if (currentUser.assessmentPassed === true && currentUser.userStatus === 'active') {
+      clearAssessmentInProgress(currentUser.id);
       console.log('[AssessmentSection] User has already passed - redirecting to browse');
       setCurrentView('browse');
     }
@@ -194,6 +217,7 @@ const AssessmentSection: React.FC = () => {
         // Store in localStorage for later analysis
         localStorage.setItem('assessmentLog', JSON.stringify(assessmentLog));
         console.log('Assessment completed:', assessmentLog);
+        clearAssessmentInProgress(currentUser.id);
 
         const result = calculateAssessmentResult(finalAnswers, assessmentQuestions);
         setAssessmentResult(result);
@@ -219,13 +243,9 @@ const AssessmentSection: React.FC = () => {
   };
 
   const handleLogoutFromAssessment = async () => {
-    // Record that assessment was abandoned
-    const abandonmentData = {
-      abandonedAt: new Date().toISOString(),
-      coolingPeriodUntil: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(), // 6 months
-      canRetakeAssessment: false
-    };
+    const abandonmentData = buildAssessmentAbandonmentData(currentUser.id);
     localStorage.setItem('assessmentAbandonment', JSON.stringify(abandonmentData));
+    clearAssessmentInProgress(currentUser.id);
 
       // Clear current user and log out
       await signOutAndClearLocalUser();
@@ -235,13 +255,9 @@ const AssessmentSection: React.FC = () => {
   };
 
   const handleConfirmExit = () => {
-    // Record that assessment was abandoned
-    const abandonmentData = {
-      abandonedAt: new Date().toISOString(),
-      coolingPeriodUntil: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(), // 6 months
-      canRetakeAssessment: false
-    };
+    const abandonmentData = buildAssessmentAbandonmentData(currentUser.id);
     localStorage.setItem('assessmentAbandonment', JSON.stringify(abandonmentData));
+    clearAssessmentInProgress(currentUser.id);
 
     // Navigate away
     window.location.href = '/';

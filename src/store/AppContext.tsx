@@ -24,6 +24,11 @@ import {
 } from '@/services/relationshipMilestoneService';
 import { PATH_LABELS } from '@/lib/pathways';
 import { isEmailConfirmationRedirect, primeEmailConfirmationNotice } from '@/services/authService';
+import {
+  buildAssessmentAbandonmentData,
+  clearAssessmentInProgress,
+  readAssessmentInProgress,
+} from '@/services/assessmentSessionService';
 
 interface AppState {
   currentView: AppView;
@@ -570,7 +575,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser.id === defaultUser.id) return; // Skip for default user
 
     try {
-      const abandonmentData = JSON.parse(localStorage.getItem('assessmentAbandonment') || '{}');
+      let abandonmentRaw = localStorage.getItem('assessmentAbandonment');
+      const inProgressAssessment = readAssessmentInProgress(currentUser.id);
+
+      if (inProgressAssessment) {
+        let hasStoredAssessmentResult = false;
+        const scopedResult = localStorage.getItem(`assessmentResult_${currentUser.id}`);
+        if (scopedResult) {
+          hasStoredAssessmentResult = true;
+        } else {
+          const legacyResult = localStorage.getItem('assessmentResult');
+          if (legacyResult) {
+            const parsedLegacyResult = JSON.parse(legacyResult);
+            hasStoredAssessmentResult =
+              !parsedLegacyResult?.userId || parsedLegacyResult.userId === currentUser.id;
+          }
+        }
+
+        if (currentUser.assessmentPassed === true || hasStoredAssessmentResult) {
+          clearAssessmentInProgress(currentUser.id);
+        } else {
+          const abandonmentData = buildAssessmentAbandonmentData(currentUser.id);
+          abandonmentRaw = JSON.stringify(abandonmentData);
+          localStorage.setItem('assessmentAbandonment', abandonmentRaw);
+          clearAssessmentInProgress(currentUser.id);
+        }
+      }
+
+      const abandonmentData = JSON.parse(abandonmentRaw || '{}');
+      if (abandonmentData.userId && abandonmentData.userId !== currentUser.id) {
+        return;
+      }
+
       if (abandonmentData.coolingPeriodUntil) {
         const coolingPeriodEndTime = new Date(abandonmentData.coolingPeriodUntil).getTime();
         const currentTime = Date.now();
@@ -596,7 +632,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (error) {
       console.error('Failed to check assessment abandonment:', error);
     }
-  }, [currentUser.id]);
+  }, [currentUser.assessmentPassed, currentUser.id]);
 
   const [hasJoinedList, setHasJoinedList] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
