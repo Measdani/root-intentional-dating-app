@@ -2,7 +2,14 @@ import { supabase } from '@/lib/supabase'
 
 export interface SignupEligibilityResult {
   blocked: boolean
+  existingAccount: boolean
   reason: string | null
+}
+
+type SignupEligibilityResponse = {
+  blocked?: unknown
+  existing_account?: unknown
+  reason?: unknown
 }
 
 export interface AdminBanResult {
@@ -54,13 +61,17 @@ export const accountEnforcementService = {
       throw new Error('Account enforcement response was invalid.')
     }
 
-    const response = data as Partial<SignupEligibilityResult>
-    if (typeof response.blocked !== 'boolean') {
+    const response = data as SignupEligibilityResponse
+    if (
+      typeof response.blocked !== 'boolean' ||
+      typeof response.existing_account !== 'boolean'
+    ) {
       throw new Error('Account enforcement response was invalid.')
     }
 
     return {
       blocked: response.blocked,
+      existingAccount: response.existing_account,
       reason: typeof response.reason === 'string' ? response.reason : null,
     }
   },

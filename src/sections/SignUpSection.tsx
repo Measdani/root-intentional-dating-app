@@ -343,6 +343,30 @@ const SignUpSection: React.FC = () => {
       setErrors(validationErrors);
       return;
     }
+
+    if (step === 1) {
+      const normalizedEmail = email.trim().toLowerCase();
+      try {
+        const eligibility = await accountEnforcementService.checkSignupEmail(normalizedEmail);
+        if (eligibility.blocked) {
+          showBlockedEmailError(eligibility.reason);
+          return;
+        }
+        if (eligibility.existingAccount) {
+          showDuplicateEmailError();
+          return;
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Unable to validate this email right now. Please try again.';
+        setErrors({ submit: message });
+        toast.error(message);
+        return;
+      }
+    }
+
     setErrors({});
     setStep((prev) => (prev + 1) as typeof step);
   };

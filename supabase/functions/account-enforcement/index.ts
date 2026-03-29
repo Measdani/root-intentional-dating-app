@@ -17,6 +17,12 @@ type CheckSignupEmailPayload = {
   email: string;
 };
 
+type SignupEmailLookupResult = {
+  blocked: boolean;
+  existing_account: boolean;
+  reason: string | null;
+};
+
 type AdminBanUserPayload = {
   action: "admin_ban_user";
   target_user_id: string;
@@ -38,6 +44,36 @@ const isAdminBanUserPayload = (value: unknown): value is AdminBanUserPayload => 
     typeof payload.target_user_id === "string" &&
     typeof payload.reason === "string"
   );
+};
+
+const doesAuthUserExist = async (
+  adminClient: ReturnType<typeof createClient>,
+  email: string,
+): Promise<boolean> => {
+  let page = 1;
+
+  while (true) {
+    const { data, error } = await adminClient.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+
+    if (error) {
+      throw new Error(`Unable to validate this email right now: ${error.message}`);
+    }
+
+    const users = Array.isArray(data?.users) ? data.users : [];
+    if (users.some((user) => normalizeEmail(user.email ?? "") === email)) {
+      return true;
+    }
+
+    const lastPage = typeof data?.lastPage === "number" ? data.lastPage : page;
+    if (page >= lastPage || users.length === 0) {
+      return false;
+    }
+
+    page += 1;
+  }
 };
 
 serve(async (request) => {
@@ -90,10 +126,29 @@ serve(async (request) => {
       return jsonResponse(500, { error: "Unable to validate this email right now" });
     }
 
-    return jsonResponse(200, {
+    let existingAccount = false;
+    try {
+      existingAccount = await doesAuthUserExist(adminClient, email);
+    } catch (error) {
+      return jsonResponse(500, {
+        error: error instanceof Error ? error.message : "Unable to validate this email right now",
+      });
+    }
+
+    const response: SignupEmailLookupResult = {
       blocked: Boolean(data),
-      reason: data ? "This email is blocked from creating a new account." : null,
-    });
+      existing_account: existingAccount,
+      reason: null,
+    };
+
+    if (response.blocked) {
+      response.reason = "This email is blocked from creating a new account.";
+    } else if (response.existing_account) {
+      response.reason =
+        "This email already has an account. Sign in instead, or use Forgot Password if you need to reset it.";
+    }
+
+    return jsonResponse(200, response);
   }
 
   try {
