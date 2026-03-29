@@ -436,6 +436,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setUsers((prev) => prev.filter((u) => u.id !== userId));
       setSelectedUser((prev) => (prev?.id === userId ? null : prev));
+      window.dispatchEvent(new CustomEvent('user-deleted', { detail: { userId } }));
       return true
     },
     []

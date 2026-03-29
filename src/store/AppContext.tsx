@@ -134,6 +134,7 @@ const isUserLike = (value: unknown): value is User =>
   Boolean(value && typeof value === 'object' && typeof (value as { id?: unknown }).id === 'string');
 
 const normalizeUser = (user: User): User => applyRelationshipModeToUser(normalizeUserProfile(user));
+const SEEDED_USER_IDS = new Set(sampleUsers.map((user) => user.id));
 
 const upsertUserById = (existingUsers: User[], user: User): User[] => {
   const normalizedUser = normalizeUser(user);
@@ -151,6 +152,22 @@ const upsertUserById = (existingUsers: User[], user: User): User[] => {
 
 const mergeUsersById = (existingUsers: User[], usersToMerge: User[]): User[] =>
   usersToMerge.reduce((nextUsers, user) => upsertUserById(nextUsers, user), existingUsers);
+
+const reconcileUsersWithRemote = (
+  existingUsers: User[],
+  remoteUsers: User[],
+  pinnedUserId?: string
+): User[] => {
+  const remoteUserIds = new Set(remoteUsers.map((user) => user.id));
+  const retainedUsers = existingUsers.filter(
+    (user) =>
+      SEEDED_USER_IDS.has(user.id) ||
+      user.id === pinnedUserId ||
+      remoteUserIds.has(user.id)
+  );
+
+  return mergeUsersById(retainedUsers, remoteUsers);
+};
 
 const CONCIERGE_AUTO_REPORTS_KEY = 'rooted_concierge_auto_reports';
 const SYSTEM_CONCIERGE_REPORTER_ID = 'system-concierge';
@@ -446,7 +463,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (cancelled || remoteUsers.length === 0) return;
 
         const normalizedRemoteUsers = remoteUsers.map((user) => normalizeUser(user));
-        setUsers((prev) => mergeUsersById(prev, normalizedRemoteUsers));
+        remoteUserIdsRef.current = new Set(normalizedRemoteUsers.map((user) => user.id));
+
+        let persistedCurrentUserId: string | undefined;
+        try {
+          const savedCurrentUser = localStorage.getItem('currentUser');
+          if (savedCurrentUser) {
+            persistedCurrentUserId = (JSON.parse(savedCurrentUser) as Partial<User>).id;
+          }
+        } catch (error) {
+          console.warn('Failed to read current user during remote user sync:', error);
+        }
+
+        setUsers((prev) =>
+          reconcileUsersWithRemote(prev, normalizedRemoteUsers, persistedCurrentUserId)
+        );
       } catch (error) {
         console.warn('Failed to sync users from Supabase:', error);
       }
@@ -472,7 +503,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const persistedUsers = parsedUsers
           .filter(isUserLike)
           .map((user) => normalizeUser(user));
-        setUsers((prev) => mergeUsersById(prev, persistedUsers));
+        const remoteUserIds = remoteUserIdsRef.current;
+        const filteredPersistedUsers = remoteUserIds
+          ? persistedUsers.filter(
+              (user) => SEEDED_USER_IDS.has(user.id) || remoteUserIds.has(user.id)
+            )
+          : persistedUsers;
+
+        setUsers((prev) => {
+          if (!remoteUserIds) {
+            return mergeUsersById(prev, filteredPersistedUsers);
+          }
+
+          const retainedUsers = prev.filter(
+            (user) => SEEDED_USER_IDS.has(user.id) || remoteUserIds.has(user.id)
+          );
+          return mergeUsersById(retainedUsers, filteredPersistedUsers);
+        });
       } catch (error) {
         console.warn('Failed to sync users from localStorage:', error);
       }
@@ -536,16 +583,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
+    const handleUserDeleted = (event: Event) => {
+      const deletedUserId = (event as CustomEvent<{ userId?: string }>).detail?.userId;
+      if (!deletedUserId) return;
+
+      remoteUserIdsRef.current?.delete(deletedUserId);
+      setUsers((prev) => prev.filter((user) => user.id !== deletedUserId));
+      setSelectedUser((prev) => (prev?.id === deletedUserId ? null : prev));
+      setInteractions((prev) => appendProfileUnavailableMessageForMatches(prev, deletedUserId));
+    };
+
     // Listen for both storage events (from other tabs) and custom user-login event (same tab)
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('user-login', handleStorageChange);
     window.addEventListener('new-user', handleStorageChange as EventListener);
     window.addEventListener('relationship-mode-updated', handleStorageChange as EventListener);
+    window.addEventListener('user-deleted', handleUserDeleted);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('user-login', handleStorageChange);
       window.removeEventListener('new-user', handleStorageChange as EventListener);
       window.removeEventListener('relationship-mode-updated', handleStorageChange as EventListener);
+      window.removeEventListener('user-deleted', handleUserDeleted);
     };
   }, []);
 
@@ -646,6 +705,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
   const suspensionProcessedRef = useRef<string | null>(null);
+  const remoteUserIdsRef = useRef<Set<string> | null>(null);
   const interactionsHydratedRef = useRef(false);
 
   // Load interactions from localStorage on mount

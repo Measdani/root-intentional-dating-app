@@ -254,6 +254,7 @@ const BrowseSection: React.FC = () => {
     if (!viewerCommunityMatches) return false;
     if (!isUserInPool(user, viewerPool)) return false;
     if (!isUserAvailableForNewMatches(user.id)) return false;
+    if (user.userStatus === 'removed') return false;
 
     // Exclude current user from browse list
     if (user.id === currentUser.id) return false;
