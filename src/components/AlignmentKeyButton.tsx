@@ -28,7 +28,7 @@ const AlignmentKeyButton: React.FC<AlignmentKeyButtonProps> = ({
         >
           <p className="text-sm font-semibold text-[#F6FFF2]">🔑 The Alignment Key (Optional)</p>
           <p className="mt-1 text-xs leading-relaxed text-[#A9B5AA]">
-            For those seeking a deeper, spiritual perspective on their journey.
+            Click to open a message from Forest with a deeper, spiritual perspective on your journey.
           </p>
         </button>
       </DialogTrigger>
