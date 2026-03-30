@@ -61,6 +61,29 @@ export const tokenizeForestValue = (value: string): string[] =>
     .map((token) => token.trim())
     .filter((token) => token.length >= 3 && !LOW_SIGNAL_TOKENS.has(token));
 
+export const getForestMatchLabel = (
+  match: Pick<ForestKnowledgeEntry, 'category' | 'topic'>,
+): string => {
+  const category = match.category.trim();
+  const topic = match.topic.trim();
+
+  if (!category) return topic;
+  if (!topic) return category;
+
+  const normalizedCategory = normalizeForestValue(category);
+  const normalizedTopic = normalizeForestValue(topic);
+
+  if (
+    !normalizedTopic ||
+    normalizedCategory === normalizedTopic ||
+    normalizedCategory.endsWith(normalizedTopic)
+  ) {
+    return topic;
+  }
+
+  return `${category} - ${topic}`;
+};
+
 const expandQuestionTokens = (question: string): Set<string> => {
   const expanded = new Set(tokenizeForestValue(question));
 
@@ -133,6 +156,33 @@ const buildForestAction = (match: ForestKnowledgeMatch): string => {
   }
 };
 
+const buildPrimaryResponse = (question: string, match: ForestKnowledgeMatch): string => {
+  const label = getForestMatchLabel(match);
+  const normalizedQuestion = normalizeForestValue(question);
+  const normalizedTopic = normalizeForestValue(match.topic);
+  const normalizedLabel = normalizeForestValue(label);
+
+  if (
+    (normalizedTopic && normalizedQuestion.includes(normalizedTopic)) ||
+    (normalizedLabel && normalizedQuestion.includes(normalizedLabel))
+  ) {
+    return `On ${label}: ${match.content}`;
+  }
+
+  return `Forest grounds this in ${label}: ${match.content}`;
+};
+
+const buildSecondaryResponse = (match: ForestKnowledgeMatch): string =>
+  `This also connects to ${getForestMatchLabel(match)}. ${match.content}`;
+
+const needsQuestionRefinement = (question: string): boolean => {
+  const normalizedQuestion = normalizeForestValue(question);
+  return (
+    /^(what is|whats|what s|define|tell me about)\s+/.test(normalizedQuestion) ||
+    tokenizeForestValue(question).length <= 1
+  );
+};
+
 export const askForest = async (question: string): Promise<ForestResponse> => {
   const trimmedQuestion = question.trim();
   if (!trimmedQuestion) {
@@ -157,11 +207,14 @@ export const askForest = async (question: string): Promise<ForestResponse> => {
 
   const [primaryMatch, secondaryMatch] = matches;
   const answerParts = [
-    `Forest hears this most clearly through ${primaryMatch.topic}. ${primaryMatch.content}`,
+    buildPrimaryResponse(trimmedQuestion, primaryMatch),
     secondaryMatch
-      ? `Hold it alongside ${secondaryMatch.topic}. ${secondaryMatch.content}`
+      ? buildSecondaryResponse(secondaryMatch)
       : null,
     buildForestAction(primaryMatch),
+    needsQuestionRefinement(trimmedQuestion)
+      ? 'If you want a clearer answer, ask Forest about a specific tension or pattern, like love vs urgency, peace vs chemistry, or covenant vs contract.'
+      : null,
   ].filter((part): part is string => Boolean(part));
 
   return {

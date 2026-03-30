@@ -8,7 +8,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { askForest, type ForestResponse } from '@/services/forestRagService';
+import {
+  askForest,
+  getForestMatchLabel,
+  type ForestResponse,
+} from '@/services/forestRagService';
 import { logForestUnmatchedQuery } from '@/services/forestTelemetryService';
 
 const ForestFloatingAssistant: React.FC = () => {
@@ -128,7 +132,7 @@ const ForestFloatingAssistant: React.FC = () => {
                         key={`${match.category}-${match.topic}`}
                         className="rounded-full border border-[#D9FF3D]/25 px-3 py-1 text-xs font-medium text-[#D9FF3D]"
                       >
-                        {match.category} - {match.topic}
+                        {getForestMatchLabel(match)}
                       </span>
                     ))}
                   </div>
