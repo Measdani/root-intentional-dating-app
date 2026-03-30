@@ -82,13 +82,14 @@ const BrowseSection: React.FC = () => {
     () => getRelationshipModeSnapshot(currentUser.id),
     [currentUser.id, currentUser.mode]
   );
+  const isExclusiveMode = relationshipModeSnapshot.mode === 'exclusive';
   const canReceiveNewMatches = isUserAvailableForNewMatches(currentUser.id);
   const modeStatusMessage = useMemo(() => {
     if (relationshipModeSnapshot.mode === 'break') {
       return "You're now in Break Mode. You can exit anytime from Settings.";
     }
 
-    if (relationshipModeSnapshot.mode === 'exclusive') {
+    if (isExclusiveMode) {
       return 'Exclusive Mode is active. Search is paused and messaging is limited to your exclusive partner.';
     }
 
@@ -97,7 +98,7 @@ const BrowseSection: React.FC = () => {
     }
 
     return null;
-  }, [relationshipModeSnapshot]);
+  }, [isExclusiveMode, relationshipModeSnapshot]);
 
   // Reload notifications when browse section loads
   useEffect(() => {
@@ -152,6 +153,7 @@ const BrowseSection: React.FC = () => {
     }
     return exclusivePartner ?? null;
   }, [featuredGameConversation, currentUser.id, users, exclusivePartner]);
+  const canShowRelationshipRoomShortcut = isExclusiveMode && Boolean(featuredGamePartner);
 
   const launchRelationshipGames = () => {
     if (!featuredGameConversation) {
@@ -393,7 +395,7 @@ const BrowseSection: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
-        {featuredGamePartner && (
+        {canShowRelationshipRoomShortcut && featuredGamePartner && (
           <div className="mb-6 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-5">
             <p className="text-[11px] font-medium uppercase tracking-wider text-sky-200">Relationship Room</p>
             <h3 className="mt-1 text-lg font-semibold text-[#F6FFF2]">Couple Milestones Ready with {featuredGamePartner.name}</h3>
@@ -444,7 +446,7 @@ const BrowseSection: React.FC = () => {
           </div>
         ))}
 
-        {relationshipModeSnapshot.mode === 'exclusive' ? (
+        {isExclusiveMode ? (
           <div className="py-10 space-y-8">
             <div className="text-center">
               <p className="text-[#A9B5AA] text-lg">

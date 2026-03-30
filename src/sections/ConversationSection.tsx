@@ -119,11 +119,7 @@ const ConversationSection: React.FC = () => {
     .sort((a, b) => a.createdAt - b.createdAt);
   const latestPrivateSnapshot = privateSnapshots[privateSnapshots.length - 1];
   const isExclusiveMode = currentUser.mode === 'exclusive';
-  const canShowMilestones =
-    isExclusiveMode ||
-    (selectedConversation.status === 'both_messaged' && hasUserMadeChoice) ||
-    (selectedConversation.status === 'awaiting_consent' && hasUserMadeChoice) ||
-    selectedConversation.status === 'photos_unlocked';
+  const canShowMilestones = isExclusiveMode;
 
   // Show prompt if showConsentPrompt is true AND they haven't made a choice
   // (Clicking Photo Consent resets hasUserMadeChoice to false, which reopens the prompt)
