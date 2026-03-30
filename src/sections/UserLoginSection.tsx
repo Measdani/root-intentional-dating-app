@@ -36,6 +36,9 @@ import {
   isAssessmentCoreStyle,
   normalizeStyleScores,
 } from '@/services/assessmentStyleService';
+import type { AppView } from '@/types';
+
+const GROWTH_MODE_TAB_STORAGE_KEY = 'rooted_growth_mode_active_tab';
 
 const UserLoginSection: React.FC = () => {
   const { setCurrentView, setAssessmentResult } = useApp();
@@ -209,6 +212,17 @@ const UserLoginSection: React.FC = () => {
     return sessionUser;
   };
 
+  const getPostLoginHomeView = (passedAssessment: boolean): AppView =>
+    passedAssessment ? 'paid-growth-mode' : 'growth-mode';
+
+  const primeGardenLanding = () => {
+    try {
+      localStorage.setItem(GROWTH_MODE_TAB_STORAGE_KEY, 'resources');
+    } catch (error) {
+      console.warn('Failed to prime Garden landing tab:', error);
+    }
+  };
+
   useEffect(() => {
     const shouldShowConfirmationNotice =
       consumeEmailConfirmationNotice() || isEmailConfirmationRedirect();
@@ -259,7 +273,8 @@ const UserLoginSection: React.FC = () => {
     if (effectiveUser.isAdmin && !hasDatingProfile(effectiveUser)) {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, true, false);
       refreshSession(effectiveUser);
-      setCurrentView('browse');
+      primeGardenLanding();
+      setCurrentView(getPostLoginHomeView(true));
       return;
     }
 
@@ -267,21 +282,24 @@ const UserLoginSection: React.FC = () => {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);
       refreshSession(effectiveUser);
       toast.info('Your account is currently under suspension. Please review the growth resources.');
-      setCurrentView('growth-mode');
+      primeGardenLanding();
+      setCurrentView(getPostLoginHomeView(false));
       return;
     }
 
     if (effectiveUser.userStatus === 'needs-growth') {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);
       refreshSession(effectiveUser);
-      setCurrentView('growth-mode');
+      primeGardenLanding();
+      setCurrentView(getPostLoginHomeView(false));
       return;
     }
 
     if (effectiveUser.assessmentPassed === true) {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, true, persistRemote);
       refreshSession(effectiveUser);
-      setCurrentView('browse');
+      primeGardenLanding();
+      setCurrentView(getPostLoginHomeView(true));
       return;
     }
 
@@ -341,7 +359,8 @@ const UserLoginSection: React.FC = () => {
       }
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, resolvedPassed, persistRemote);
       refreshSession(effectiveUser);
-      setCurrentView(resolvedPassed ? 'browse' : 'growth-mode');
+      primeGardenLanding();
+      setCurrentView(getPostLoginHomeView(resolvedPassed));
       return;
     }
 

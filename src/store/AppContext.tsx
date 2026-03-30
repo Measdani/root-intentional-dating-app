@@ -140,6 +140,15 @@ const isUserLike = (value: unknown): value is User =>
 const normalizeUser = (user: User): User => applyRelationshipModeToUser(normalizeUserProfile(user));
 const SEEDED_USER_IDS = new Set(sampleUsers.map((user) => user.id));
 const ADMIN_USERS_STORAGE_KEY = 'rooted-admin-users';
+const GROWTH_MODE_TAB_STORAGE_KEY = 'rooted_growth_mode_active_tab';
+
+const primeGardenLandingTab = () => {
+  try {
+    localStorage.setItem(GROWTH_MODE_TAB_STORAGE_KEY, 'resources');
+  } catch (error) {
+    console.warn('Failed to prime Garden landing tab:', error);
+  }
+};
 
 const upsertUserById = (existingUsers: User[], user: User): User[] => {
   const normalizedUser = normalizeUser(user);
@@ -1033,25 +1042,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sessionStorage.removeItem('showAssessmentNotCompleted');
       } else {
         // Route to growth-mode
+        primeGardenLandingTab();
         setPreviousView(currentView);
         setCurrentViewState('growth-mode');
       }
     }
   }, [currentUser.userStatus, currentUser.assessmentPassed, currentView, isUserAuthenticated]);
 
-  // Auto-redirect users who passed assessment to browse view
-  // This prevents users from being re-presented with the assessment they've already passed
-  useEffect(() => {
-    if (
-      isUserAuthenticated &&
-      currentUser.assessmentPassed === true &&
-      currentUser.userStatus === 'active' &&
-      currentView === 'landing'
-    ) {
-      setPreviousView(currentView);
-      setCurrentViewState('browse');
-    }
-  }, [currentUser.assessmentPassed, currentUser.userStatus, currentView, isUserAuthenticated]);
+// Auto-redirect users who passed assessment to their Garden home
+useEffect(() => {
+  if (
+    isUserAuthenticated &&
+    currentUser.assessmentPassed === true &&
+    currentUser.userStatus === 'active' &&
+    currentView === 'landing'
+  ) {
+    primeGardenLandingTab();
+    setPreviousView(currentView);
+    setCurrentViewState('paid-growth-mode');
+  }
+}, [currentUser.assessmentPassed, currentUser.userStatus, currentView, isUserAuthenticated]);
 
   // Wrapper function to track previous view when changing views
   const setCurrentView = useCallback((view: AppView) => {
