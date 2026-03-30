@@ -156,24 +156,9 @@ const buildForestAction = (match: ForestKnowledgeMatch): string => {
   }
 };
 
-const buildPrimaryResponse = (question: string, match: ForestKnowledgeMatch): string => {
-  const label = getForestMatchLabel(match);
-  const normalizedQuestion = normalizeForestValue(question);
-  const normalizedTopic = normalizeForestValue(match.topic);
-  const normalizedLabel = normalizeForestValue(label);
+const buildPrimaryResponse = (match: ForestKnowledgeMatch): string => match.content;
 
-  if (
-    (normalizedTopic && normalizedQuestion.includes(normalizedTopic)) ||
-    (normalizedLabel && normalizedQuestion.includes(normalizedLabel))
-  ) {
-    return `On ${label}: ${match.content}`;
-  }
-
-  return `Forest grounds this in ${label}: ${match.content}`;
-};
-
-const buildSecondaryResponse = (match: ForestKnowledgeMatch): string =>
-  `This also connects to ${getForestMatchLabel(match)}. ${match.content}`;
+const buildSecondaryResponse = (match: ForestKnowledgeMatch): string => match.content;
 
 const needsQuestionRefinement = (question: string): boolean => {
   const normalizedQuestion = normalizeForestValue(question);
@@ -207,7 +192,7 @@ export const askForest = async (question: string): Promise<ForestResponse> => {
 
   const [primaryMatch, secondaryMatch] = matches;
   const answerParts = [
-    buildPrimaryResponse(trimmedQuestion, primaryMatch),
+    buildPrimaryResponse(primaryMatch),
     secondaryMatch
       ? buildSecondaryResponse(secondaryMatch)
       : null,
