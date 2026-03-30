@@ -853,9 +853,7 @@ const GrowthModeSection: React.FC = () => {
           <div className="mb-5">
             <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Partner Journey</p>
             <h3 className="mt-2 font-display text-2xl text-[#F6FFF2]">Resource Area Sections</h3>
-            <p className="mt-2 max-w-3xl text-sm text-[#A9B5AA]">
-              Choose a section below. The Aware Partner now opens its own page so the path navigation has a dedicated space.
-            </p>
+            <p className="mt-2 max-w-3xl text-sm text-[#A9B5AA]">Choose a section below.</p>
           </div>
 
           <div className="space-y-4">
