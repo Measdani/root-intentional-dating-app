@@ -63,7 +63,7 @@ const ProblemSection: React.FC = () => {
             </div>
           </div>
 
-          <div className="mx-auto mt-5 w-fit rounded-full border border-white/15 bg-[#0B0F0C]/55 px-4 py-2 text-center text-xs uppercase tracking-[0.28em] text-[#F6FFF2]/80 backdrop-blur-sm">
+          <div className="mx-auto mt-5 w-fit rounded-full border border-white/15 bg-[#0B0F0C]/55 px-4 py-2 text-center text-[10px] uppercase tracking-[0.18em] text-[#F6FFF2]/80 backdrop-blur-sm sm:text-xs sm:tracking-[0.24em]">
             Founder of Rooted Hearts
           </div>
         </div>
@@ -73,26 +73,26 @@ const ProblemSection: React.FC = () => {
             isVisible ? 'translate-x-0 opacity-100' : 'translate-x-16 opacity-0'
           }`}
         >
-          <div className="rounded-[30px] border border-white/20 bg-[#0B0F0C]/50 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.32)] backdrop-blur-md sm:p-8 lg:p-10">
+          <div className="rounded-[30px] border border-white/20 bg-[#0B0F0C]/50 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.32)] backdrop-blur-md sm:p-7 lg:p-8">
             <p className="font-mono-label mb-4 text-[#D9FF3D]">Founder Note</p>
 
-            <h2 className="font-display mb-6 text-[clamp(34px,5vw,64px)] leading-[0.95] text-[#F6FFF2] drop-shadow-[0_3px_14px_rgba(0,0,0,0.45)]">
+            <h2 className="font-display mb-5 max-w-[12ch] text-[clamp(24px,3.3vw,42px)] leading-[1.04] text-[#F6FFF2] drop-shadow-[0_3px_14px_rgba(0,0,0,0.45)] sm:mb-6">
               This Was Built With Intention.
             </h2>
 
-            <div className="space-y-5 text-base leading-relaxed text-[#F6FFF2] sm:text-lg">
+            <div className="space-y-4 text-[14px] leading-relaxed text-[#F6FFF2] sm:space-y-5 sm:text-base">
               {founderMessage.map((paragraph) => (
                 <p key={paragraph} className="max-w-[34rem] text-[#F6FFF2]/94">
                   {paragraph}
                 </p>
               ))}
 
-              <div className="rounded-[22px] border border-[#D9FF3D]/20 bg-white/5 px-5 py-4 text-[#F6FFF2]">
+              <div className="rounded-[22px] border border-[#D9FF3D]/20 bg-white/5 px-5 py-4 text-[14px] text-[#F6FFF2] sm:text-base">
                 This isn&apos;t about perfect people. It&apos;s about intentional ones.
               </div>
             </div>
 
-            <p className="mt-8 border-t border-white/10 pt-5 text-base text-[#F6FFF2] sm:text-lg">
+            <p className="mt-7 border-t border-white/10 pt-5 text-[14px] text-[#F6FFF2] sm:mt-8 sm:text-base">
               -- Meashia, Founder of Rooted Hearts
             </p>
           </div>
