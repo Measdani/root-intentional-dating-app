@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import founderPortrait from '../assets/meashia-founder.jpeg';
+
+const founderMessage = [
+  'Most apps train you to keep searching. We built something for people who are ready to stop.',
+  "I'm rooting for you - in how you grow, how you choose, and how you love. Not just here, but in every connection you step into.",
+];
+
 const ProblemSection: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
@@ -26,54 +33,69 @@ const ProblemSection: React.FC = () => {
     <section
       ref={sectionRef}
       id="section-problem"
-      className="section-pinned bg-[#0B0F0C] flex items-center"
+      className="section-pinned h-auto min-h-[100svh] bg-[#0B0F0C] py-16 sm:py-20 lg:h-screen lg:py-0"
     >
-      {/* Background */}
       <div className="absolute inset-0">
         <img
           src="https://images.unsplash.com/photo-1511497584788-876760111969?w=1920&q=80"
           alt="Misty forest"
-          className="w-full h-full object-cover opacity-90 brightness-110 contrast-105"
+          className="h-full w-full object-cover opacity-90 brightness-110 contrast-105"
         />
         <div className="absolute inset-0 gradient-vignette opacity-8" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0B0F0C]/8 via-transparent to-[#0B0F0C]/8" />
-        <div className="absolute inset-y-0 right-0 w-[55vw] bg-gradient-to-l from-[#0B0F0C]/25 via-[#0B0F0C]/12 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/6 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B0F0C]/15 via-[#0B0F0C]/5 to-[#0B0F0C]/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[#0B0F0C]/35" />
       </div>
 
-      {/* Left Circle */}
-      <div
-        className={`absolute left-[5vw] top-1/2 -translate-y-1/2 transition-all duration-1000 ease-out ${
-          isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-[50vw]'
-        }`}
-      >
-        <div className="w-[45vw] h-[45vw] max-w-[520px] max-h-[520px] circle-frame">
-          <div className="absolute inset-3 rounded-full overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1511497584788-876760111969?w=600&q=80"
-              alt=""
-              className="w-full h-full object-cover opacity-50"
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0B0F0C]/60 to-transparent" />
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-10 px-6 sm:px-8 lg:flex-row lg:justify-between lg:gap-16 lg:px-16">
+        <div
+          className={`w-full max-w-[520px] transition-all duration-1000 ease-out ${
+            isVisible ? 'translate-x-0 opacity-100' : '-translate-x-16 opacity-0'
+          }`}
+        >
+          <div className="circle-frame relative mx-auto aspect-square w-[82vw] max-w-[520px] overflow-hidden shadow-[0_24px_70px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-3 overflow-hidden rounded-full">
+              <img
+                src={founderPortrait}
+                alt="Meashia, founder of Rooted Hearts"
+                className="h-full w-full object-cover object-[center_18%]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F0C]/22 via-transparent to-white/12" />
+            </div>
+          </div>
+
+          <div className="mx-auto mt-5 w-fit rounded-full border border-white/15 bg-[#0B0F0C]/55 px-4 py-2 text-center text-xs uppercase tracking-[0.28em] text-[#F6FFF2]/80 backdrop-blur-sm">
+            Founder of Rooted Hearts
           </div>
         </div>
-      </div>
 
-      {/* Right Text Block */}
-      <div
-        className={`absolute right-[8vw] top-1/2 -translate-y-1/2 max-w-[420px] transition-all duration-1000 delay-200 ease-out ${
-          isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-[40vw]'
-        }`}
-      >
-        <div className="rounded-2xl border border-white/25 bg-[#0B0F0C]/35 backdrop-blur-[1px] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
-          <h2 className="font-display font-bold text-[clamp(36px,5vw,72px)] text-white mb-6 leading-none drop-shadow-[0_3px_14px_rgba(0,0,0,0.65)]">
-            SWIPE.<br />
-            MATCH.<br />
-            <span className="text-white">FORGET.</span>
-          </h2>
-          <p className="text-[#F6FFF2] text-lg font-medium leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]">
-            Most apps train you to keep searching. We built something for people who want to stop.
-          </p>
+        <div
+          className={`w-full max-w-[640px] transition-all duration-1000 delay-200 ease-out ${
+            isVisible ? 'translate-x-0 opacity-100' : 'translate-x-16 opacity-0'
+          }`}
+        >
+          <div className="rounded-[30px] border border-white/20 bg-[#0B0F0C]/50 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.32)] backdrop-blur-md sm:p-8 lg:p-10">
+            <p className="font-mono-label mb-4 text-[#D9FF3D]">Founder Note</p>
+
+            <h2 className="font-display mb-6 text-[clamp(34px,5vw,64px)] leading-[0.95] text-[#F6FFF2] drop-shadow-[0_3px_14px_rgba(0,0,0,0.45)]">
+              This Was Built With Intention.
+            </h2>
+
+            <div className="space-y-5 text-base leading-relaxed text-[#F6FFF2] sm:text-lg">
+              {founderMessage.map((paragraph) => (
+                <p key={paragraph} className="max-w-[34rem] text-[#F6FFF2]/94">
+                  {paragraph}
+                </p>
+              ))}
+
+              <div className="rounded-[22px] border border-[#D9FF3D]/20 bg-white/5 px-5 py-4 text-[#F6FFF2]">
+                This isn&apos;t about perfect people. It&apos;s about intentional ones.
+              </div>
+            </div>
+
+            <p className="mt-8 border-t border-white/10 pt-5 text-base text-[#F6FFF2] sm:text-lg">
+              -- Meashia, Founder of Rooted Hearts
+            </p>
+          </div>
         </div>
       </div>
     </section>
