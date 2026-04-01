@@ -9,10 +9,13 @@ import {
   getNewMatchBlockReason,
 } from '@/modules';
 import { toast } from 'sonner';
+import { signOutSupabaseSession } from '@/services/authService';
+import { accountDeletionService } from '@/services/accountDeletionService';
 import { reportService } from '@/services/reportService';
 import { triageReportIntake } from '@/services/reportIntakeService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
+import { removeUserSettingsForUser } from '@/services/userSettingsService';
 import { moderateFirstMessage } from '@/services/firstMessageSafetyService';
 import { evaluateConciergeForInteraction } from '@/services/conciergeService';
 import { enrichConciergeSnapshotWithAI } from '@/services/conciergeAiService';
@@ -23,16 +26,6 @@ import {
   type MilestoneAction,
 } from '@/services/relationshipMilestoneService';
 import { PATH_LABELS } from '@/lib/pathways';
-import {
-  clearLocalCurrentUser,
-  isEmailConfirmationRedirect,
-  primeEmailConfirmationNotice,
-} from '@/services/authService';
-import {
-  buildAssessmentAbandonmentData,
-  clearAssessmentInProgress,
-  readAssessmentInProgress,
-} from '@/services/assessmentSessionService';
 
 interface AppState {
   currentView: AppView;
@@ -94,7 +87,7 @@ interface AppContextType extends AppState {
   isBlockedByUser: (userId: string) => boolean;
   suspendUser: (userId: string, suspensionEndDate: number) => void;
   reinstateUser: (userId: string) => void;
-  removeUser: (userId: string) => void;
+  removeUser: (userId: string) => Promise<boolean>;
   showSupportModal: boolean;
   setShowSupportModal: (value: boolean) => void;
   submitSupportRequest: (category: SupportCategory, subject: string, message: string) => Promise<string>;
@@ -122,13 +115,11 @@ const getInitialAppView = (): AppView => {
   if (
     url.searchParams.get('view') === 'password-reset' ||
     url.searchParams.get('type') === 'recovery' ||
-    hashParams.get('type') === 'recovery'
+    url.searchParams.has('code') ||
+    hashParams.get('type') === 'recovery' ||
+    hashParams.has('access_token')
   ) {
     return 'password-reset';
-  }
-
-  if (isEmailConfirmationRedirect()) {
-    return 'user-login';
   }
 
   return 'landing';
@@ -138,17 +129,6 @@ const isUserLike = (value: unknown): value is User =>
   Boolean(value && typeof value === 'object' && typeof (value as { id?: unknown }).id === 'string');
 
 const normalizeUser = (user: User): User => applyRelationshipModeToUser(normalizeUserProfile(user));
-const SEEDED_USER_IDS = new Set(sampleUsers.map((user) => user.id));
-const ADMIN_USERS_STORAGE_KEY = 'rooted-admin-users';
-const GROWTH_MODE_TAB_STORAGE_KEY = 'rooted_growth_mode_active_tab';
-
-const primeGardenLandingTab = () => {
-  try {
-    localStorage.setItem(GROWTH_MODE_TAB_STORAGE_KEY, 'resources');
-  } catch (error) {
-    console.warn('Failed to prime Garden landing tab:', error);
-  }
-};
 
 const upsertUserById = (existingUsers: User[], user: User): User[] => {
   const normalizedUser = normalizeUser(user);
@@ -166,37 +146,6 @@ const upsertUserById = (existingUsers: User[], user: User): User[] => {
 
 const mergeUsersById = (existingUsers: User[], usersToMerge: User[]): User[] =>
   usersToMerge.reduce((nextUsers, user) => upsertUserById(nextUsers, user), existingUsers);
-
-const reconcileUsersWithRemote = (
-  existingUsers: User[],
-  remoteUsers: User[],
-  pinnedUserId?: string
-): User[] => {
-  const remoteUserIds = new Set(remoteUsers.map((user) => user.id));
-  const retainedUsers = existingUsers.filter(
-    (user) =>
-      SEEDED_USER_IDS.has(user.id) ||
-      user.id === pinnedUserId ||
-      remoteUserIds.has(user.id)
-  );
-
-  return mergeUsersById(retainedUsers, remoteUsers);
-};
-
-const removeUserFromPersistedAdminCache = (userId: string) => {
-  try {
-    const raw = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
-    if (!raw) return;
-
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return;
-
-    const nextUsers = parsed.filter((entry) => !isUserLike(entry) || entry.id !== userId);
-    localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(nextUsers));
-  } catch (error) {
-    console.warn('Failed to prune deleted user from cached user list:', error);
-  }
-};
 
 const CONCIERGE_AUTO_REPORTS_KEY = 'rooted_concierge_auto_reports';
 const SYSTEM_CONCIERGE_REPORTER_ID = 'system-concierge';
@@ -477,57 +426,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   useEffect(() => {
-    if (primeEmailConfirmationNotice()) {
-      setPreviousView('landing');
-      setCurrentViewState('user-login');
-    }
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
 
     const syncUsersFromSupabase = async () => {
       try {
         const remoteUsers = await userService.getAllUsers();
-        if (cancelled) return;
+        if (cancelled || remoteUsers.length === 0) return;
 
         const normalizedRemoteUsers = remoteUsers.map((user) => normalizeUser(user));
-        const remoteUserIds = new Set(normalizedRemoteUsers.map((user) => user.id));
-        remoteUserIdsRef.current = remoteUserIds;
-
-        let persistedCurrentUserId: string | undefined;
-        try {
-          const savedCurrentUser = localStorage.getItem('currentUser');
-          if (savedCurrentUser) {
-            persistedCurrentUserId = (JSON.parse(savedCurrentUser) as Partial<User>).id;
-          }
-        } catch (error) {
-          console.warn('Failed to read current user during remote user sync:', error);
-        }
-
-        const currentUserMissingRemotely = Boolean(
-          persistedCurrentUserId &&
-          persistedCurrentUserId !== defaultUser.id &&
-          !remoteUserIds.has(persistedCurrentUserId)
-        );
-
-        if (currentUserMissingRemotely && persistedCurrentUserId) {
-          removeUserFromPersistedAdminCache(persistedCurrentUserId);
-          setSelectedUser((prev) => (prev?.id === persistedCurrentUserId ? null : prev));
-          setInteractions((prev) =>
-            appendProfileUnavailableMessageForMatches(prev, persistedCurrentUserId)
-          );
-          clearLocalCurrentUser();
-          toast.info('That account is no longer available. Please sign in again.');
-        }
-
-        setUsers((prev) =>
-          reconcileUsersWithRemote(
-            prev,
-            normalizedRemoteUsers,
-            currentUserMissingRemotely ? undefined : persistedCurrentUserId
-          )
-        );
+        setUsers((prev) => mergeUsersById(prev, normalizedRemoteUsers));
       } catch (error) {
         console.warn('Failed to sync users from Supabase:', error);
       }
@@ -535,23 +442,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     void syncUsersFromSupabase();
 
-    const handleFocus = () => {
-      void syncUsersFromSupabase();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        void syncUsersFromSupabase();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
       cancelled = true;
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
@@ -568,23 +460,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const persistedUsers = parsedUsers
           .filter(isUserLike)
           .map((user) => normalizeUser(user));
-        const remoteUserIds = remoteUserIdsRef.current;
-        const filteredPersistedUsers = remoteUserIds
-          ? persistedUsers.filter(
-              (user) => SEEDED_USER_IDS.has(user.id) || remoteUserIds.has(user.id)
-            )
-          : persistedUsers;
-
-        setUsers((prev) => {
-          if (!remoteUserIds) {
-            return mergeUsersById(prev, filteredPersistedUsers);
-          }
-
-          const retainedUsers = prev.filter(
-            (user) => SEEDED_USER_IDS.has(user.id) || remoteUserIds.has(user.id)
-          );
-          return mergeUsersById(retainedUsers, filteredPersistedUsers);
-        });
+        setUsers((prev) => mergeUsersById(prev, persistedUsers));
       } catch (error) {
         console.warn('Failed to sync users from localStorage:', error);
       }
@@ -609,35 +485,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // Restore assessment result from persistent storage if user doesn't have it
           if (parsedUser.assessmentPassed === undefined) {
             try {
-              const scopedResult = parsedUser.id
-                ? localStorage.getItem(`assessmentResult_${parsedUser.id}`)
-                : null;
-              const legacyResult = localStorage.getItem('assessmentResult');
-              const savedResult = scopedResult ?? legacyResult;
-
+              const savedResult = localStorage.getItem('assessmentResult');
               if (savedResult) {
                 const result = JSON.parse(savedResult);
-                const belongsToParsedUser = !(
-                  parsedUser.id &&
-                  savedResult === legacyResult &&
-                  result?.userId !== parsedUser.id
-                );
-
-                if (belongsToParsedUser) {
-                  const passed =
-                    typeof result.passed === 'boolean'
-                      ? result.passed
-                      : Number(result.percentage ?? 0) >= 85;
-                  parsedUser.assessmentPassed = passed;
-                  parsedUser.alignmentScore = result.percentage;
-                  if (typeof result.primaryStyle === 'string') {
-                    parsedUser.primaryStyle = result.primaryStyle;
-                  }
-                  if (typeof result.secondaryStyle === 'string') {
-                    parsedUser.secondaryStyle = result.secondaryStyle;
-                  }
-                  parsedUser.userStatus = passed ? 'active' : 'needs-growth';
+                const passed =
+                  typeof result.passed === 'boolean'
+                    ? result.passed
+                    : Number(result.percentage ?? 0) >= 85;
+                parsedUser.assessmentPassed = passed;
+                parsedUser.alignmentScore = result.percentage;
+                if (typeof result.primaryStyle === 'string') {
+                  parsedUser.primaryStyle = result.primaryStyle;
                 }
+                if (typeof result.secondaryStyle === 'string') {
+                  parsedUser.secondaryStyle = result.secondaryStyle;
+                }
+                parsedUser.userStatus = passed ? 'active' : 'needs-growth';
               }
             } catch (err) {
               console.error('Failed to restore assessment result:', err);
@@ -661,58 +524,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
-    const handleUserDeleted = (event: Event) => {
-      const deletedUserId = (event as CustomEvent<{ userId?: string }>).detail?.userId;
-      if (!deletedUserId) return;
-
-      removeUserFromPersistedAdminCache(deletedUserId);
-      remoteUserIdsRef.current?.delete(deletedUserId);
-      setUsers((prev) => prev.filter((user) => user.id !== deletedUserId));
-      setSelectedUser((prev) => (prev?.id === deletedUserId ? null : prev));
-      setInteractions((prev) => appendProfileUnavailableMessageForMatches(prev, deletedUserId));
-    };
-
     // Listen for both storage events (from other tabs) and custom user-login event (same tab)
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('user-login', handleStorageChange);
     window.addEventListener('new-user', handleStorageChange as EventListener);
     window.addEventListener('relationship-mode-updated', handleStorageChange as EventListener);
-    window.addEventListener('user-deleted', handleUserDeleted);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('user-login', handleStorageChange);
       window.removeEventListener('new-user', handleStorageChange as EventListener);
       window.removeEventListener('relationship-mode-updated', handleStorageChange as EventListener);
-      window.removeEventListener('user-deleted', handleUserDeleted);
     };
   }, []);
 
   useEffect(() => {
-    const remoteUserIds = remoteUserIdsRef.current;
-    const shouldKeepCurrentUserVisible =
-      currentUser.id === defaultUser.id ||
-      !isUserAuthenticated ||
-      !remoteUserIds ||
-      remoteUserIds.has(currentUser.id);
-
-    if (!shouldKeepCurrentUserVisible) return;
-
     setUsers((prev) => upsertUserById(prev, currentUser));
-  }, [currentUser, isUserAuthenticated]);
-
-  useEffect(() => {
-    if (!selectedUser) return;
-
-    if (selectedUser.id === currentUser.id) {
-      setSelectedUser((prev) => (prev?.id === currentUser.id ? normalizeUser(currentUser) : prev));
-      return;
-    }
-
-    const syncedSelectedUser = users.find((user) => user.id === selectedUser.id);
-    if (syncedSelectedUser) {
-      setSelectedUser((prev) => (prev?.id === syncedSelectedUser.id ? syncedSelectedUser : prev));
-    }
-  }, [currentUser, selectedUser?.id, users]);
+  }, [currentUser]);
 
   // Apply stored suspensions when currentUser changes (e.g., on login)
   useEffect(() => {
@@ -736,37 +563,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (currentUser.id === defaultUser.id) return; // Skip for default user
 
     try {
-      let abandonmentRaw = localStorage.getItem('assessmentAbandonment');
-      const inProgressAssessment = readAssessmentInProgress(currentUser.id);
-
-      if (inProgressAssessment) {
-        let hasStoredAssessmentResult = false;
-        const scopedResult = localStorage.getItem(`assessmentResult_${currentUser.id}`);
-        if (scopedResult) {
-          hasStoredAssessmentResult = true;
-        } else {
-          const legacyResult = localStorage.getItem('assessmentResult');
-          if (legacyResult) {
-            const parsedLegacyResult = JSON.parse(legacyResult);
-            hasStoredAssessmentResult = parsedLegacyResult?.userId === currentUser.id;
-          }
-        }
-
-        if (currentUser.assessmentPassed === true || hasStoredAssessmentResult) {
-          clearAssessmentInProgress(currentUser.id);
-        } else {
-          const abandonmentData = buildAssessmentAbandonmentData(currentUser.id);
-          abandonmentRaw = JSON.stringify(abandonmentData);
-          localStorage.setItem('assessmentAbandonment', abandonmentRaw);
-          clearAssessmentInProgress(currentUser.id);
-        }
-      }
-
-      const abandonmentData = JSON.parse(abandonmentRaw || '{}');
-      if (abandonmentData.userId && abandonmentData.userId !== currentUser.id) {
-        return;
-      }
-
+      const abandonmentData = JSON.parse(localStorage.getItem('assessmentAbandonment') || '{}');
       if (abandonmentData.coolingPeriodUntil) {
         const coolingPeriodEndTime = new Date(abandonmentData.coolingPeriodUntil).getTime();
         const currentTime = Date.now();
@@ -792,7 +589,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (error) {
       console.error('Failed to check assessment abandonment:', error);
     }
-  }, [currentUser.assessmentPassed, currentUser.id]);
+  }, [currentUser.id]);
 
   const [hasJoinedList, setHasJoinedList] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -806,7 +603,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
   const suspensionProcessedRef = useRef<string | null>(null);
-  const remoteUserIdsRef = useRef<Set<string> | null>(null);
   const interactionsHydratedRef = useRef(false);
 
   // Load interactions from localStorage on mount
@@ -963,9 +759,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ...currentUser,
           userStatus: 'needs-growth' as const,
           suspensionEndDate: undefined,
+          assessmentPassed: false,
+          guidelinesAckRequired: true,
         });
         setCurrentUserState(updatedUser);
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+        const suspensions = JSON.parse(localStorage.getItem('rooted_suspensions') || '{}');
+        delete suspensions[currentUser.id];
+        localStorage.setItem('rooted_suspensions', JSON.stringify(suspensions));
+
+        userService.updateUser(currentUser.id, {
+          userStatus: 'needs-growth',
+          suspensionEndDate: null as any,
+          assessmentPassed: false,
+          guidelinesAckRequired: true,
+        }).catch((error) => {
+          console.warn('Failed to persist expired suspension state:', error);
+        });
 
         // Send notification about suspension ending and growth mode requirement
         const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
@@ -975,7 +786,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           userId: currentUser.id,
           type: 'warning',
           title: 'Suspension Period Ended',
-          message: `Your account suspension period has ended. You must now complete the ${PATH_LABELS.intentional} assessment to regain full access to browsing and matching.`,
+          message: `Your suspension period has ended. Review and acknowledge the community guidelines, then continue in ${PATH_LABELS.intentional} before regaining full access.`,
           createdAt: Date.now(),
           read: false,
         };
@@ -986,6 +797,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
   }, [currentUser.suspensionEndDate, currentUser.userStatus, currentUser.id]);
+
+  useEffect(() => {
+    if (!isUserAuthenticated || !currentUser.guidelinesAckRequired) return;
+    if (currentView === 'community-guidelines') return;
+    setCurrentView('community-guidelines');
+  }, [currentUser.guidelinesAckRequired, currentView, isUserAuthenticated]);
 
   // Auto-redirect suspended and needs-growth users to appropriate view
   // Also redirect users with failed assessments (assessmentPassed === false)
@@ -999,7 +816,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const legacyResult = localStorage.getItem('assessmentResult');
         if (legacyResult) {
           const parsed = JSON.parse(legacyResult);
-          hasStoredAssessmentResult = parsed?.userId === currentUser.id;
+          hasStoredAssessmentResult = !parsed?.userId || parsed.userId === currentUser.id;
         }
       }
     } catch (error) {
@@ -1042,26 +859,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sessionStorage.removeItem('showAssessmentNotCompleted');
       } else {
         // Route to growth-mode
-        primeGardenLandingTab();
         setPreviousView(currentView);
         setCurrentViewState('growth-mode');
       }
     }
   }, [currentUser.userStatus, currentUser.assessmentPassed, currentView, isUserAuthenticated]);
 
-// Auto-redirect users who passed assessment to their Garden home
-useEffect(() => {
-  if (
-    isUserAuthenticated &&
-    currentUser.assessmentPassed === true &&
-    currentUser.userStatus === 'active' &&
-    currentView === 'landing'
-  ) {
-    primeGardenLandingTab();
-    setPreviousView(currentView);
-    setCurrentViewState('paid-growth-mode');
-  }
-}, [currentUser.assessmentPassed, currentUser.userStatus, currentView, isUserAuthenticated]);
+  // Auto-redirect users who passed assessment to browse view
+  // This prevents users from being re-presented with the assessment they've already passed
+  useEffect(() => {
+    if (
+      isUserAuthenticated &&
+      currentUser.assessmentPassed === true &&
+      currentUser.userStatus === 'active' &&
+      currentView === 'landing'
+    ) {
+      setPreviousView(currentView);
+      setCurrentViewState('browse');
+    }
+  }, [currentUser.assessmentPassed, currentUser.userStatus, currentView, isUserAuthenticated]);
 
   // Wrapper function to track previous view when changing views
   const setCurrentView = useCallback((view: AppView) => {
@@ -2061,6 +1877,8 @@ useEffect(() => {
               ...user,
               userStatus: 'suspended',
               suspensionEndDate,
+              assessmentPassed: false,
+              guidelinesAckRequired: true,
             })
           : user
       )
@@ -2074,6 +1892,8 @@ useEffect(() => {
         ...currentUser,
         suspensionEndDate,
         userStatus: 'suspended' as const,
+        assessmentPassed: false,
+        guidelinesAckRequired: true,
       });
       setCurrentUserState(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
@@ -2101,38 +1921,68 @@ useEffect(() => {
   }, [currentUser]);
 
   // Remove a user permanently from the platform (irreversible)
-  const removeUser = useCallback((userId: string) => {
+  const removeUser = useCallback(async (userId: string): Promise<boolean> => {
+    try {
+      await accountDeletionService.adminDeleteUser(userId)
+    } catch (error) {
+      console.error('Failed to delete user account:', error)
+      return false
+    }
+
     const suspensions = JSON.parse(localStorage.getItem('rooted_suspensions') || '{}');
     if (suspensions[userId]) {
       delete suspensions[userId];
       localStorage.setItem('rooted_suspensions', JSON.stringify(suspensions));
     }
 
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === userId
-          ? applyRelationshipModeToUser({
-              ...user,
-              userStatus: 'removed',
-              suspensionEndDate: undefined,
-            })
-          : user
-      )
-    );
+    try {
+      const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
+      if (allNotifications[userId]) {
+        delete allNotifications[userId];
+        localStorage.setItem('rooted_notifications', JSON.stringify(allNotifications));
+      }
+    } catch (error) {
+      console.warn('Failed to clear notifications for deleted user:', error);
+    }
+
+    try {
+      const allBlocks = JSON.parse(localStorage.getItem('rooted_all_blocks') || '{}');
+      if (allBlocks[userId]) {
+        delete allBlocks[userId];
+        localStorage.setItem('rooted_all_blocks', JSON.stringify(allBlocks));
+      }
+    } catch (error) {
+      console.warn('Failed to clear block list for deleted user:', error);
+    }
+
+    removeUserSettingsForUser(userId);
+    localStorage.removeItem(`rooted_last_assessment_date_${userId}`);
+    localStorage.removeItem(`rooted_growth_module_progress_${userId}`);
+    localStorage.removeItem(`rooted_growth_path_reflections_${userId}`);
+    localStorage.removeItem(`rooted_growth_module_resource_completion_${userId}`);
+    localStorage.removeItem(`rooted_healthy_partner_pace_meter_${userId}`);
+    localStorage.removeItem(`rooted_intentional_partner_conflict_sandbox_${userId}`);
+
+    setUsers((prev) => prev.filter((user) => user.id !== userId));
+    setSelectedUser((prev) => (prev?.id === userId ? null : prev));
+    setSelectedConversation((prev) => (
+      prev && (prev.fromUserId === userId || prev.toUserId === userId)
+        ? null
+        : prev
+    ));
 
     setInteractions((prev) => appendProfileUnavailableMessageForMatches(prev, userId));
 
     // Log out the user if they're the one being removed
     if (currentUser.id === userId) {
+      await signOutSupabaseSession();
       localStorage.removeItem('currentUser');
       // Dispatch custom event to trigger logout
       window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
     }
 
-    // Block the user to prevent access
-    // TODO: Actually delete user from database (would require backend implementation)
-    // For now, we store them in the blocked list as a removed user
-  }, [currentUser.id]);
+    return true;
+  }, [currentUser.id, setSelectedConversation]);
 
   // Submit a support request message
   const submitSupportRequest = useCallback(async (
