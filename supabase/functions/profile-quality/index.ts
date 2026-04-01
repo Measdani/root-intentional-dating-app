@@ -40,10 +40,12 @@ type ProfileDecision = {
 };
 
 const AGENT_NAME = "profile_quality";
-const RULE_VERSION = "pq-rules-2026-03-28-lite";
+const RULE_VERSION = "pq-rules-2026-03-28";
 const MODEL_VERSION = "deterministic-rule-engine-v1";
 const SUPPORT_EMAIL = "support@rootedhearts.net";
-const MIN_BIO_CHAR_COUNT = 20;
+const MIN_BIO_CHAR_COUNT = 30;
+const MIN_BIO_WORD_COUNT = 6;
+const MIN_BIO_UNIQUE_WORD_COUNT = 4;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -258,16 +260,31 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
   const hasSuspiciousIdentity = matchesAny(combinedText, IDENTITY_SUSPICIOUS_PATTERNS);
   const hasIntentSignals = matchesAny(combinedText, INTENTIONALITY_PATTERNS);
 
+  const uniqueBioWordCount = new Set(bioWords).size;
   const hasMissingRequiredBio = safeBio.length === 0;
   const hasTooShortBio = safeBio.length > 0 && safeBio.length < MIN_BIO_CHAR_COUNT;
-  const hasNoRealBioWords = safeBio.length > 0 && bioWords.length === 0;
+  const hasTooFewBioWords = safeBio.length > 0 && bioWords.length < MIN_BIO_WORD_COUNT;
+  const hasTooFewUniqueBioWords = safeBio.length > 0 &&
+    uniqueBioWordCount < MIN_BIO_UNIQUE_WORD_COUNT;
   const hasGibberishBio = safeBio.length > 0 && looksLikeKeyboardSmash(safeBio);
-  const isLowEffortBio = safeBio.length > 0 && LOW_EFFORT_PATTERNS.some((pattern) => pattern.test(safeBio));
-  const needsBasicEdits =
+  const isLowEffortBio = safeBio.length > 0 &&
+    (
+      LOW_EFFORT_PATTERNS.some((pattern) => pattern.test(safeBio)) ||
+      hasTooShortBio ||
+      hasTooFewBioWords ||
+      hasTooFewUniqueBioWords
+    );
+  const hasBareMinimumText = (safeBio.length + promptText.length) < 60;
+  const hasVeryShortBio = safeBio.length > 0 && safeBio.length < 20;
+  const hasNoBioAndMinimalPrompts = hasMissingRequiredBio && promptSnippets.length < 2;
+  const isIncomplete =
     hasMissingRequiredBio ||
+    hasNoBioAndMinimalPrompts ||
+    hasBareMinimumText ||
+    hasVeryShortBio ||
     hasTooShortBio ||
-    hasNoRealBioWords ||
-    hasGibberishBio;
+    hasTooFewBioWords ||
+    hasTooFewUniqueBioWords;
 
   if (hasSexual) labels.push("sexual_explicit");
   if (hasAggressive) labels.push("aggressive_disrespectful");
@@ -276,8 +293,7 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
   if (hasExternalContact) labels.push("external_contact_pushing");
   if (hasSuspiciousIdentity) labels.push("suspicious_identity_claim");
   if (hasMissingRequiredBio) labels.push("bio_required");
-  if (hasTooShortBio) labels.push("bio_too_short");
-  if (hasNoRealBioWords) labels.push("bio_needs_real_words");
+  if (isIncomplete) labels.push("incomplete_too_vague");
   if (isLowEffortBio) labels.push("low_effort");
   if (hasGibberishBio) labels.push("gibberish_or_random_text");
   if (labels.length === 0) labels.push("clean_acceptable");
@@ -285,8 +301,8 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
   if (hasMissingRequiredBio) {
     improvementNotes.push("Add an About You section before submitting your profile.");
   }
-  if (hasTooShortBio) {
-    improvementNotes.push("Add a little more detail to About You before submitting your profile.");
+  if (isIncomplete) {
+    improvementNotes.push("Share specific details about who you are and what kind of relationship you want.");
   }
   if (!hasIntentSignals) {
     improvementNotes.push("Add one clear sentence about your relationship intentions.");
@@ -294,7 +310,7 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
   if (isLowEffortBio) {
     improvementNotes.push("Avoid generic lines like 'just ask' and include something concrete from your life.");
   }
-  if (hasNoRealBioWords || hasGibberishBio) {
+  if (hasGibberishBio) {
     improvementNotes.push("Replace random letters or keyboard-smash text with real words and clear sentences.");
   }
   if (hasExternalContact) {
@@ -304,37 +320,35 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
   let clarity = 100;
   let effort = 100;
   let warmthRespect = 100;
-  let intentionality = hasIntentSignals ? 90 : 75;
+  let intentionality = hasIntentSignals ? 90 : 65;
   let authenticity = 100;
   let safetyScore = 100;
 
   if (hasMissingRequiredBio) {
     clarity -= 35;
-    effort -= 35;
-    intentionality -= 20;
-  }
-  if (hasTooShortBio) {
-    clarity -= 20;
-    effort -= 20;
-  }
-  if (hasNoRealBioWords) {
-    clarity -= 35;
-    authenticity -= 35;
-  }
-  if (hasGibberishBio) {
-    clarity -= 45;
     effort -= 40;
-    authenticity -= 35;
+    intentionality -= 25;
   }
-  if (isLowEffortBio) effort -= 15;
+  if (safeBio.length < 30) clarity -= 30;
+  if (promptSnippets.length < 2) clarity -= 20;
+  if (isIncomplete) clarity -= 20;
+  if (hasGibberishBio) clarity -= 45;
+
+  if (safeBio.length < 20) effort -= 35;
+  if (promptSnippets.length < 2) effort -= 20;
+  if (isLowEffortBio) effort -= 25;
+  if (hasGibberishBio) effort -= 45;
 
   if (hasAggressive) warmthRespect -= 50;
   if (hasDiscriminatory) warmthRespect -= 60;
   if (hasSexual) warmthRespect -= 40;
 
+  if (isIncomplete) intentionality -= 15;
+
   if (hasScam) authenticity -= 60;
   if (hasSuspiciousIdentity) authenticity -= 45;
   if (hasExternalContact) authenticity -= 20;
+  if (hasGibberishBio) authenticity -= 35;
 
   if (hasSexual) safetyScore -= 40;
   if (hasAggressive) safetyScore -= 35;
@@ -386,12 +400,18 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
     };
   }
 
-  if (needsBasicEdits) {
+  if (
+    hasExternalContact ||
+    isIncomplete ||
+    isLowEffortBio ||
+    hasGibberishBio ||
+    qualityScore < 55
+  ) {
     const userFeedback = hasMissingRequiredBio
-      ? "About You is required before your profile can go live. Add a short description in real words."
-      : hasNoRealBioWords || hasGibberishBio
-      ? "Please replace random letters in About You with real words before submitting again."
-      : `About You needs a little more detail before your profile can go live. Add at least ${MIN_BIO_CHAR_COUNT} characters in real words.`;
+      ? "About You is required before your profile can go live. Add a few real sentences about who you are and what kind of relationship you want."
+      : hasGibberishBio
+      ? "Please replace random letters in About You with real words and a short description of yourself before submitting again."
+      : "Your profile needs a few updates before it can go live. Try sharing more about who you are, what you value, and what kind of relationship you're building toward.";
     return {
       labels,
       quality_score: qualityScore,
@@ -407,7 +427,7 @@ const evaluateProfile = (bio: string, promptsJson: Record<string, unknown> | nul
     };
   }
 
-  if (hasExternalContact || isLowEffortBio || !hasIntentSignals || qualityScore < 60) {
+  if (qualityScore < 75 || !hasIntentSignals) {
     return {
       labels,
       quality_score: qualityScore,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
 import { useAdmin } from '@/store/AdminContext';
@@ -23,22 +23,13 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { testUsers } from '@/data/testUsers';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import type { AssessmentResult } from '@/types';
-import {
-  authService,
-  clearAuthRedirectUrlState,
-  consumeEmailConfirmationNotice,
-  isEmailConfirmationRedirect,
-  signOutSupabaseSession,
-} from '@/services/authService';
+import { authService, signOutSupabaseSession } from '@/services/authService';
 import { pendingSignupService } from '@/services/pendingSignupService';
 import {
   buildEmptyStyleScores,
   isAssessmentCoreStyle,
   normalizeStyleScores,
 } from '@/services/assessmentStyleService';
-import type { AppView } from '@/types';
-
-const GROWTH_MODE_TAB_STORAGE_KEY = 'rooted_growth_mode_active_tab';
 
 const UserLoginSection: React.FC = () => {
   const { setCurrentView, setAssessmentResult } = useApp();
@@ -47,7 +38,6 @@ const UserLoginSection: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [infoMessage, setInfoMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [loginUser, setLoginUser] = useState<any>(null);
@@ -118,6 +108,11 @@ const UserLoginSection: React.FC = () => {
     return new Date().getTime() < user.suspensionEndDate;
   };
 
+  const hasExpiredSuspension = (user: any): boolean => {
+    if (!user?.suspensionEndDate) return false;
+    return new Date().getTime() >= user.suspensionEndDate;
+  };
+
   const getCanonicalTestUser = (userEmail: string, checkPassword?: string): any | null => {
     const tester = testUsers.find(
       (u) => u.email.toLowerCase() === userEmail.trim().toLowerCase()
@@ -154,8 +149,8 @@ const UserLoginSection: React.FC = () => {
         const saved = localStorage.getItem(key);
         if (!saved) continue;
         const parsed = JSON.parse(saved);
-        // Guard against cross-user leakage from the legacy global key.
-        if (userId && key === 'assessmentResult' && parsed?.userId !== userId) {
+        // Guard against cross-user leakage from legacy global key.
+        if (userId && parsed?.userId && parsed.userId !== userId) {
           continue;
         }
         const normalized = normalizeAssessmentResult(parsed);
@@ -212,29 +207,6 @@ const UserLoginSection: React.FC = () => {
     return sessionUser;
   };
 
-  const getPostLoginHomeView = (passedAssessment: boolean): AppView =>
-    passedAssessment ? 'paid-growth-mode' : 'growth-mode';
-
-  const primeGardenLanding = () => {
-    try {
-      localStorage.setItem(GROWTH_MODE_TAB_STORAGE_KEY, 'resources');
-    } catch (error) {
-      console.warn('Failed to prime Garden landing tab:', error);
-    }
-  };
-
-  useEffect(() => {
-    const shouldShowConfirmationNotice =
-      consumeEmailConfirmationNotice() || isEmailConfirmationRedirect();
-
-    if (!shouldShowConfirmationNotice) return;
-
-    clearAuthRedirectUrlState();
-    void signOutSupabaseSession();
-    setInfoMessage('Your email is confirmed. Sign in to finish setup.');
-    toast.success('Your email is confirmed. Sign in to finish setup.');
-  }, []);
-
   const restorePendingSignupProfile = async (
     normalizedEmail: string,
     authUserId: string
@@ -273,33 +245,55 @@ const UserLoginSection: React.FC = () => {
     if (effectiveUser.isAdmin && !hasDatingProfile(effectiveUser)) {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, true, false);
       refreshSession(effectiveUser);
-      primeGardenLanding();
-      setCurrentView(getPostLoginHomeView(true));
+      setCurrentView('browse');
       return;
+    }
+
+    if (effectiveUser.userStatus === 'suspended' && hasExpiredSuspension(effectiveUser)) {
+      effectiveUser = {
+        ...effectiveUser,
+        userStatus: 'needs-growth',
+        suspensionEndDate: undefined,
+        assessmentPassed: false,
+        guidelinesAckRequired: true,
+      };
+      if (persistRemote && effectiveUser.id) {
+        await userService.updateUser(effectiveUser.id, {
+          userStatus: 'needs-growth',
+          suspensionEndDate: null as any,
+          assessmentPassed: false,
+          guidelinesAckRequired: true,
+        });
+      }
     }
 
     if (isSuspended(effectiveUser)) {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);
       refreshSession(effectiveUser);
       toast.info('Your account is currently under suspension. Please review the growth resources.');
-      primeGardenLanding();
-      setCurrentView(getPostLoginHomeView(false));
+      setCurrentView('growth-mode');
+      return;
+    }
+
+    if (effectiveUser.guidelinesAckRequired) {
+      effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);
+      refreshSession(effectiveUser);
+      toast.info('Please review and acknowledge the community guidelines before returning.');
+      setCurrentView('community-guidelines');
       return;
     }
 
     if (effectiveUser.userStatus === 'needs-growth') {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);
       refreshSession(effectiveUser);
-      primeGardenLanding();
-      setCurrentView(getPostLoginHomeView(false));
+      setCurrentView('growth-mode');
       return;
     }
 
     if (effectiveUser.assessmentPassed === true) {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, true, persistRemote);
       refreshSession(effectiveUser);
-      primeGardenLanding();
-      setCurrentView(getPostLoginHomeView(true));
+      setCurrentView('browse');
       return;
     }
 
@@ -359,8 +353,7 @@ const UserLoginSection: React.FC = () => {
       }
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, resolvedPassed, persistRemote);
       refreshSession(effectiveUser);
-      primeGardenLanding();
-      setCurrentView(getPostLoginHomeView(resolvedPassed));
+      setCurrentView(resolvedPassed ? 'browse' : 'growth-mode');
       return;
     }
 
@@ -542,13 +535,6 @@ const UserLoginSection: React.FC = () => {
               {activeCommunity.loginSubtitle}
             </p>
           </div>
-
-          {infoMessage && (
-            <div className="flex gap-3 p-4 bg-[#D9FF3D]/10 border border-[#D9FF3D]/30 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-[#D9FF3D] flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-[#F6FFF2]">{infoMessage}</p>
-            </div>
-          )}
 
           {error && (
             <div className="flex gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
