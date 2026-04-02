@@ -165,6 +165,45 @@ const PaidGrowthModeSection: React.FC = () => {
           </div>
         ))}
 
+        {/* Tab Navigation */}
+        <div className="mb-10 flex gap-4 border-b border-emerald-500/20">
+          <button
+            onClick={() => setActiveTab('resources')}
+            className={`pb-3 px-4 font-medium transition-all ${
+              activeTab === 'resources'
+                ? 'text-emerald-400 border-b-2 border-emerald-400'
+                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Alignment Resources
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('blog')}
+            className={`pb-3 px-4 font-medium transition-all ${
+              activeTab === 'blog'
+                ? 'text-emerald-400 border-b-2 border-emerald-400'
+                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Blog
+            </div>
+          </button>
+          <button
+            onClick={() => setCurrentView('clarity-room')}
+            className="pb-3 px-4 font-medium transition-all text-[#A9B5AA] hover:text-emerald-400"
+          >
+            <div className="flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              Clarity Room
+            </div>
+          </button>
+        </div>
+
         {/* Hero Section */}
         <div className="text-center mb-12 pb-12 border-b border-emerald-500/20">
           <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
@@ -182,7 +221,7 @@ const PaidGrowthModeSection: React.FC = () => {
         </div>
 
         {/* Welcome Badge */}
-        <div className="bg-emerald-500/10 rounded-[24px] border border-emerald-500/30 p-6 md:p-8 mb-10">
+        <div className="hidden bg-emerald-500/10 rounded-[24px] border border-emerald-500/30 p-6 md:p-8 mb-10">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
               <CheckCircle className="w-6 h-6 text-emerald-400" />
@@ -200,7 +239,7 @@ const PaidGrowthModeSection: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="mb-10 flex gap-4 border-b border-emerald-500/20">
+        <div className="hidden mb-10 flex gap-4 border-b border-emerald-500/20">
           <button
             onClick={() => setActiveTab('resources')}
             className={`pb-3 px-4 font-medium transition-all ${
