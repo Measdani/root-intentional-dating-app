@@ -5,7 +5,7 @@ import type { BlogArticle } from '@/types';
 import { blogService } from '@/services/blogService';
 
 const CommunityBlogPage: React.FC = () => {
-  const { setCurrentView, currentUser, previousView } = useApp();
+  const { setCurrentView, currentUser, previousView, isUserAuthenticated } = useApp();
   const [blogs, setBlogs] = useState<BlogArticle[]>([]);
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,7 +47,7 @@ const CommunityBlogPage: React.FC = () => {
   };
 
   const handleProfileNavigation = () => {
-    setCurrentView(currentUser?.id ? 'profile' : 'user-login');
+    setCurrentView(isUserAuthenticated ? 'profile' : 'user-login');
   };
 
   if (selectedBlog) {
@@ -65,7 +65,7 @@ const CommunityBlogPage: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                if (currentUser?.id) {
+                if (isUserAuthenticated) {
                   // Determine target view based on user status or previous view
                   const safeViews = [
                     'browse',
@@ -93,7 +93,7 @@ const CommunityBlogPage: React.FC = () => {
                     }
                   }
 
-                  console.log('[BlogBack] Navigating from', previousView, 'to', targetView, 'userStatus:', currentUser.userStatus);
+                  console.log('[BlogBack] Navigating from', previousView, 'to', targetView, 'userStatus:', currentUser.userStatus, 'isUserAuthenticated:', isUserAuthenticated);
                   setCurrentView(targetView as any);
                 } else {
                   setCurrentView('user-login');
