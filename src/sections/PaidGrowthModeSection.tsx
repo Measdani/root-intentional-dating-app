@@ -3,6 +3,7 @@ import { useApp } from '@/store/AppContext';
 import { signOutAndClearLocalUser } from '@/services/authService';
 import { PATH_LABELS, readPathResourcesFromStorage, writePathResourcesToStorage } from '@/lib/pathways';
 import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Brain } from 'lucide-react';
+import CompatibilityMapLauncher from '@/components/CompatibilityMapLauncher';
 import type { BlogArticle, GrowthResource } from '@/types';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import PartnerJourneyCards from '@/components/PartnerJourneyCards';
@@ -240,6 +241,24 @@ const PaidGrowthModeSection: React.FC = () => {
         {/* Growth Resources */}
         {activeTab === 'resources' && (
         <div className="mb-12">
+          <div className="mb-8 rounded-[24px] border border-emerald-500/20 bg-emerald-500/5 p-6 md:p-7">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-xs uppercase tracking-[0.18em] text-emerald-300/80">Compatibility</p>
+                <h3 className="mt-2 font-display text-2xl text-[#F6FFF2]">Compatibility Map</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#A9B5AA]">
+                  Compare your relationship style with a prospective partner&apos;s style and see one focused
+                  compatibility insight before moving deeper into connection.
+                </p>
+              </div>
+
+              <CompatibilityMapLauncher
+                variant="alignment"
+                buttonClassName="mt-0 self-start md:self-auto"
+              />
+            </div>
+          </div>
+
           <div className="mb-12">
             <div className="mb-5">
               <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Partner Journey</p>
