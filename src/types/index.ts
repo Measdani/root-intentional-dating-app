@@ -47,6 +47,8 @@ export interface User {
   growthFocus: string;
   relationshipVision?: string;
   communicationStyle?: string;
+  financialMindset?: string;
+  lifestyleAlignment?: string;
   alignmentScore?: number;
   primaryStyle?: AssessmentCoreStyle;
   secondaryStyle?: AssessmentCoreStyle;

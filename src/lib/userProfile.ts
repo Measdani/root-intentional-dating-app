@@ -43,6 +43,8 @@ export const normalizeUserProfile = (user: Partial<User>): User => {
     growthFocus: user.growthFocus?.trim() || 'Profile setup in progress',
     relationshipVision: user.relationshipVision,
     communicationStyle: user.communicationStyle,
+    financialMindset: user.financialMindset,
+    lifestyleAlignment: user.lifestyleAlignment,
     alignmentScore: typeof user.alignmentScore === 'number' ? user.alignmentScore : undefined,
     primaryStyle: user.primaryStyle,
     secondaryStyle: user.secondaryStyle,

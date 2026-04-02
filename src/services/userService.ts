@@ -29,6 +29,8 @@ export const userService = {
       growth_focus: user.growthFocus,
       relationship_vision: user.relationshipVision,
       communication_style: user.communicationStyle,
+      financial_mindset: user.financialMindset,
+      lifestyle_alignment: user.lifestyleAlignment,
       photo_url: user.photoUrl,
       bio: bioValidation.normalizedBio,
       assessment_passed: user.assessmentPassed,
@@ -65,14 +67,22 @@ export const userService = {
 
     if (
       error &&
-      (user.poolId || user.primaryStyle || user.secondaryStyle) &&
-      (shouldRetryWithoutPoolId(error.message) || shouldRetryWithoutStyleColumns(error.message))
+      (user.poolId || user.primaryStyle || user.secondaryStyle || user.financialMindset || user.lifestyleAlignment) &&
+      (
+        shouldRetryWithoutPoolId(error.message) ||
+        shouldRetryWithoutStyleColumns(error.message) ||
+        shouldRetryWithoutProfilePreferenceColumns(error.message)
+      )
     ) {
-      // Backward-compatible retry for schemas that do not support pool/style columns yet.
+      // Backward-compatible retry for schemas that do not support newer optional columns yet.
       const fallbackPayload = { ...basePayload } as Record<string, unknown>
       if (shouldRetryWithoutStyleColumns(error.message)) {
         delete fallbackPayload.primary_style
         delete fallbackPayload.secondary_style
+      }
+      if (shouldRetryWithoutProfilePreferenceColumns(error.message)) {
+        delete fallbackPayload.financial_mindset
+        delete fallbackPayload.lifestyle_alignment
       }
       const retry = await supabase
         .from('users')
@@ -156,6 +166,8 @@ export const userService = {
     if (updates.growthFocus !== undefined) updateData.growth_focus = updates.growthFocus
     if (updates.relationshipVision !== undefined) updateData.relationship_vision = updates.relationshipVision
     if (updates.communicationStyle !== undefined) updateData.communication_style = updates.communicationStyle
+    if (updates.financialMindset !== undefined) updateData.financial_mindset = updates.financialMindset
+    if (updates.lifestyleAlignment !== undefined) updateData.lifestyle_alignment = updates.lifestyleAlignment
     if (updates.primaryStyle !== undefined) updateData.primary_style = updates.primaryStyle
     if (updates.secondaryStyle !== undefined) updateData.secondary_style = updates.secondaryStyle
     if (updates.photoUrl !== undefined) updateData.photo_url = updates.photoUrl
@@ -190,7 +202,8 @@ export const userService = {
       error &&
       (
         (updateData.pool_id !== undefined && shouldRetryWithoutPoolId(error.message)) ||
-        (hasStyleColumns(updateData) && shouldRetryWithoutStyleColumns(error.message))
+        (hasStyleColumns(updateData) && shouldRetryWithoutStyleColumns(error.message)) ||
+        (hasProfilePreferenceColumns(updateData) && shouldRetryWithoutProfilePreferenceColumns(error.message))
       )
     ) {
       if (shouldRetryWithoutPoolId(error.message)) {
@@ -199,6 +212,10 @@ export const userService = {
       if (shouldRetryWithoutStyleColumns(error.message)) {
         delete updateData.primary_style
         delete updateData.secondary_style
+      }
+      if (shouldRetryWithoutProfilePreferenceColumns(error.message)) {
+        delete updateData.financial_mindset
+        delete updateData.lifestyle_alignment
       }
       const retry = await supabase
         .from('users')
@@ -244,6 +261,8 @@ function mapRowToUser(row: any): User {
     growthFocus: row.growth_focus,
     relationshipVision: row.relationship_vision,
     communicationStyle: row.communication_style,
+    financialMindset: row.financial_mindset,
+    lifestyleAlignment: row.lifestyle_alignment,
     primaryStyle: row.primary_style,
     secondaryStyle: row.secondary_style,
     photoUrl: row.photo_url,
@@ -304,11 +323,28 @@ function hasStyleColumns(payload: Record<string, unknown>): boolean {
   return payload.primary_style !== undefined || payload.secondary_style !== undefined
 }
 
+function hasProfilePreferenceColumns(payload: Record<string, unknown>): boolean {
+  return payload.financial_mindset !== undefined || payload.lifestyle_alignment !== undefined
+}
+
 function shouldRetryWithoutStyleColumns(message: string): boolean {
   const normalized = (message || '').toLowerCase()
   const hasStyleColumnReference =
     normalized.includes('primary_style') || normalized.includes('secondary_style')
   if (!hasStyleColumnReference) return false
+
+  return (
+    normalized.includes('column') ||
+    normalized.includes('schema cache') ||
+    normalized.includes('does not exist')
+  )
+}
+
+function shouldRetryWithoutProfilePreferenceColumns(message: string): boolean {
+  const normalized = (message || '').toLowerCase()
+  const hasProfilePreferenceColumnReference =
+    normalized.includes('financial_mindset') || normalized.includes('lifestyle_alignment')
+  if (!hasProfilePreferenceColumnReference) return false
 
   return (
     normalized.includes('column') ||

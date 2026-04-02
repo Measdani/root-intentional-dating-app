@@ -10,8 +10,6 @@ import { moderateProfileQuality } from '@/services/profileQualityService';
 import {
   PROFILE_BIO_MIN_CHAR_COUNT,
   PROFILE_BIO_MIN_WORD_COUNT,
-  PROFILE_GROWTH_FOCUS_MIN_CHAR_COUNT,
-  validateGrowthFocusText,
   validateRequiredProfileBio,
 } from '@/lib/profileTextValidation';
 import { preloadUsPlaceIndex, validateUsCityState } from '@/lib/usLocationValidation';
@@ -31,6 +29,62 @@ const VALUES_BY_CATEGORY = {
   'Growth & Self-Awareness': ['Growth', 'Authenticity', 'Clarity'],
   'Lifestyle & Energy': ['Family', 'Adventure', 'Creativity', 'Humor'],
   'Spiritual Foundation': ['Faith'],
+};
+
+type CommunicationStyleOption =
+  | 'Direct & open'
+  | 'Reflect first, then respond'
+  | 'Avoid conflict'
+  | 'Shut down when overwhelmed';
+
+type FinancialMindsetOption =
+  | 'Plan, save, and budget'
+  | 'Balanced spending & saving'
+  | 'Live in the moment'
+  | 'Prefer privacy around finances';
+
+type LifestyleAlignmentOption =
+  | 'Structured and routine-based'
+  | 'Balanced (work + life)'
+  | 'Flexible and spontaneous'
+  | 'Busy and always moving';
+
+const COMMUNICATION_STYLE_OPTIONS: CommunicationStyleOption[] = [
+  'Direct & open',
+  'Reflect first, then respond',
+  'Avoid conflict',
+  'Shut down when overwhelmed',
+];
+
+const FINANCIAL_MINDSET_OPTIONS: FinancialMindsetOption[] = [
+  'Plan, save, and budget',
+  'Balanced spending & saving',
+  'Live in the moment',
+  'Prefer privacy around finances',
+];
+
+const LIFESTYLE_ALIGNMENT_OPTIONS: LifestyleAlignmentOption[] = [
+  'Structured and routine-based',
+  'Balanced (work + life)',
+  'Flexible and spontaneous',
+  'Busy and always moving',
+];
+
+const deriveGrowthFocusFromCommunicationStyle = (
+  communicationStyle: CommunicationStyleOption | ''
+): string => {
+  switch (communicationStyle) {
+    case 'Direct & open':
+      return 'Keeping direct communication grounded in care';
+    case 'Reflect first, then respond':
+      return 'Practicing clear communication after reflection';
+    case 'Avoid conflict':
+      return 'Practicing honest conversations instead of avoiding tension';
+    case 'Shut down when overwhelmed':
+      return 'Building steadiness during difficult conversations';
+    default:
+      return 'Intentional relationship growth';
+  }
 };
 
 const STEP_LABELS = [
@@ -137,7 +191,9 @@ const SignUpSection: React.FC = () => {
 
   // Step 5 - Values & Vision
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
-  const [growthFocus, setGrowthFocus] = useState('');
+  const [communicationStyle, setCommunicationStyle] = useState<CommunicationStyleOption | ''>('');
+  const [financialMindset, setFinancialMindset] = useState<FinancialMindsetOption | ''>('');
+  const [lifestyleAlignment, setLifestyleAlignment] = useState<LifestyleAlignmentOption | ''>('');
   const [bio, setBio] = useState('');
   const [communityBoundaries, setCommunityBoundaries] = useState('');
 
@@ -320,10 +376,12 @@ const SignUpSection: React.FC = () => {
       case 5:
         if (selectedValues.length < 3)
           errs.values = 'Select at least 3 values';
-        const growthFocusValidation = validateGrowthFocusText(growthFocus);
-        if (!growthFocusValidation.isValid && growthFocusValidation.error) {
-          errs.growthFocus = growthFocusValidation.error;
-        }
+        if (!communicationStyle)
+          errs.communicationStyle = 'Please choose how you communicate';
+        if (!financialMindset)
+          errs.financialMindset = 'Please choose your financial mindset';
+        if (!lifestyleAlignment)
+          errs.lifestyleAlignment = 'Please choose the lifestyle that fits you best';
         const bioValidation = validateRequiredProfileBio(bio);
         if (!bioValidation.isValid && bioValidation.error) {
           errs.bio = bioValidation.error;
@@ -356,7 +414,9 @@ const SignUpSection: React.FC = () => {
   const clearStepFiveErrors = () => {
     if (
       !errors.values &&
-      !errors.growthFocus &&
+      !errors.communicationStyle &&
+      !errors.financialMindset &&
+      !errors.lifestyleAlignment &&
       !errors.bio &&
       !errors.profileReview &&
       !errors.profileSuggestions
@@ -364,7 +424,9 @@ const SignUpSection: React.FC = () => {
     setErrors((prev) => {
       const next = { ...prev };
       delete next.values;
-      delete next.growthFocus;
+      delete next.communicationStyle;
+      delete next.financialMindset;
+      delete next.lifestyleAlignment;
       delete next.bio;
       delete next.profileReview;
       delete next.profileSuggestions;
@@ -465,7 +527,7 @@ const SignUpSection: React.FC = () => {
         toast.error(locationValidation.error);
         return;
       }
-      const trimmedGrowthFocus = growthFocus.trim();
+      const derivedGrowthFocus = deriveGrowthFocusFromCommunicationStyle(communicationStyle);
       const trimmedBio = bio.trim();
       const normalizedCommunityBoundaries =
         isLgbtqCommunity && communityBoundaries.trim()
@@ -484,7 +546,10 @@ const SignUpSection: React.FC = () => {
         bio: trimmedBio,
         promptsJson: {
           relationship_intent: partnershipIntent,
-          growth_focus: trimmedGrowthFocus,
+          growth_focus: derivedGrowthFocus,
+          communication_style: communicationStyle,
+          financial_mindset: financialMindset,
+          lifestyle_alignment: lifestyleAlignment,
           values: selectedValues,
           wants_children: wantsChildren,
           open_to_partner_with_parent: openToPartnerWithParent,
@@ -583,7 +648,10 @@ const SignUpSection: React.FC = () => {
             | 'prefers-child-free',
         },
         values: selectedValues,
-        growthFocus: trimmedGrowthFocus,
+        growthFocus: derivedGrowthFocus,
+        communicationStyle: communicationStyle || undefined,
+        financialMindset: financialMindset || undefined,
+        lifestyleAlignment: lifestyleAlignment || undefined,
         bio: trimmedBio,
         communityBoundaries: normalizedCommunityBoundaries,
         assessmentPassed: false,
@@ -1179,27 +1247,87 @@ const SignUpSection: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
-                Growth Focus
+              <label className="text-sm font-medium text-[#F6FFF2] block mb-3">
+                How You Communicate
               </label>
-              <input
-                type="text"
-                value={growthFocus}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {COMMUNICATION_STYLE_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => {
+                      setCommunicationStyle(option);
+                      clearStepFiveErrors();
+                    }}
+                    className={`py-2.5 px-3 rounded-full border text-sm text-center transition-all ${
+                      communicationStyle === option
+                        ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                        : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#D9FF3D]/50'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+              {errors.communicationStyle && (
+                <p className="text-xs text-red-300 mt-2">{errors.communicationStyle}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
+                Financial Mindset
+              </label>
+              <select
+                value={financialMindset}
                 onChange={(e) => {
-                  setGrowthFocus(e.target.value);
+                  setFinancialMindset(e.target.value as FinancialMindsetOption | '');
                   clearStepFiveErrors();
                 }}
-                placeholder="e.g. Building emotional resilience"
-                minLength={PROFILE_GROWTH_FOCUS_MIN_CHAR_COUNT}
-                className={`w-full px-4 py-2 bg-[#0B0F0C] border rounded-lg text-[#F6FFF2] placeholder-[#A9B5AA] focus:border-[#D9FF3D] focus:outline-none transition-colors ${
-                  errors.growthFocus ? 'border-red-500/50' : 'border-[#1A211A]'
+                className={`w-full px-4 py-2 bg-[#0B0F0C] border rounded-lg text-[#F6FFF2] focus:border-[#D9FF3D] focus:outline-none transition-colors ${
+                  errors.financialMindset ? 'border-red-500/50' : 'border-[#1A211A]'
                 }`}
-              />
+              >
+                <option value="">Select an option</option>
+                {FINANCIAL_MINDSET_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
               <p className="text-xs text-[#A9B5AA] mt-1">
-                Use a short real phrase, not random letters.
+                This helps us understand how you approach stability and long-term planning.
               </p>
-              {errors.growthFocus && (
-                <p className="text-xs text-red-300 mt-2">{errors.growthFocus}</p>
+              {errors.financialMindset && (
+                <p className="text-xs text-red-300 mt-2">{errors.financialMindset}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-[#F6FFF2] block mb-2">
+                Lifestyle Alignment
+              </label>
+              <p className="text-xs text-[#A9B5AA] mb-2">
+                Which best describes your lifestyle?
+              </p>
+              <select
+                value={lifestyleAlignment}
+                onChange={(e) => {
+                  setLifestyleAlignment(e.target.value as LifestyleAlignmentOption | '');
+                  clearStepFiveErrors();
+                }}
+                className={`w-full px-4 py-2 bg-[#0B0F0C] border rounded-lg text-[#F6FFF2] focus:border-[#D9FF3D] focus:outline-none transition-colors ${
+                  errors.lifestyleAlignment ? 'border-red-500/50' : 'border-[#1A211A]'
+                }`}
+              >
+                <option value="">Select an option</option>
+                {LIFESTYLE_ALIGNMENT_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              {errors.lifestyleAlignment && (
+                <p className="text-xs text-red-300 mt-2">{errors.lifestyleAlignment}</p>
               )}
             </div>
 
