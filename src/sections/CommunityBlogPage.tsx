@@ -46,6 +46,10 @@ const CommunityBlogPage: React.FC = () => {
     });
   };
 
+  const handleProfileNavigation = () => {
+    setCurrentView(currentUser?.id ? 'profile' : 'user-login');
+  };
+
   if (selectedBlog) {
     return (
       <div className="min-h-screen bg-[#0F140F] text-white">
@@ -92,13 +96,12 @@ const CommunityBlogPage: React.FC = () => {
                   console.log('[BlogBack] Navigating from', previousView, 'to', targetView, 'userStatus:', currentUser.userStatus);
                   setCurrentView(targetView as any);
                 } else {
-                  // If logged out, go to landing
-                  setCurrentView('landing');
+                  setCurrentView('user-login');
                 }
               }}
               className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
             >
-              <span className="text-sm font-medium">{currentUser?.id ? 'My Profile' : 'Home'}</span>
+              <span className="text-sm font-medium">My Profile</span>
               <ArrowLeft className="w-5 h-5 rotate-180" />
             </button>
           </div>
@@ -170,14 +173,11 @@ const CommunityBlogPage: React.FC = () => {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                const currentUser = localStorage.getItem('currentUser');
-                setCurrentView(currentUser ? 'profile' : 'landing');
-              }}
+              onClick={handleProfileNavigation}
               className="p-2 hover:bg-[#1A211A] rounded-lg transition flex items-center gap-2"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span className="text-sm font-medium">{localStorage.getItem('currentUser') ? 'My Profile' : 'Home'}</span>
+              <span className="text-sm font-medium">My Profile</span>
             </button>
           </div>
           <h1 className="text-2xl font-bold">Community Blog</h1>
