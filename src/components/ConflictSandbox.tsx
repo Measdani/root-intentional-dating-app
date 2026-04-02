@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, CheckCircle, MessageCircle, Sparkles, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
+import { returnToPartnerJourneyHub } from '@/lib/partnerJourney';
 import type { PartnerJourneyBadge } from '@/types';
 import {
   getPartnerJourneyBadgeLabel,
@@ -42,7 +43,6 @@ type ConflictSandboxProgress = {
 };
 
 const intentionalPartnerBadge: PartnerJourneyBadge = 'intentional-partner-badge';
-const growthModeTabStorageKey = 'rooted_growth_mode_active_tab';
 
 const normalizeInput = (value: string): string =>
   value.toLowerCase().replace(/[\u2019]/g, "'").replace(/\s+/g, ' ').trim();
@@ -410,8 +410,7 @@ const ConflictSandbox: React.FC = () => {
   }, [activeScenario.id]);
 
   const returnToResources = () => {
-    localStorage.setItem(growthModeTabStorageKey, 'resources');
-    setCurrentView('growth-mode');
+    returnToPartnerJourneyHub(setCurrentView);
   };
 
   const queueReturnToResources = () => {

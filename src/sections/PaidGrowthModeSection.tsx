@@ -5,6 +5,7 @@ import { PATH_LABELS, readPathResourcesFromStorage, writePathResourcesToStorage 
 import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Brain } from 'lucide-react';
 import type { BlogArticle, GrowthResource } from '@/types';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
+import PartnerJourneyCards from '@/components/PartnerJourneyCards';
 import { resourceService } from '@/services/resourceService';
 import { blogService } from '@/services/blogService';
 
@@ -239,6 +240,16 @@ const PaidGrowthModeSection: React.FC = () => {
         {/* Growth Resources */}
         {activeTab === 'resources' && (
         <div className="mb-12">
+          <div className="mb-12">
+            <div className="mb-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Partner Journey</p>
+              <h3 className="mt-2 font-display text-2xl text-[#F6FFF2]">Resource Area Sections</h3>
+              <p className="mt-2 max-w-3xl text-sm text-[#A9B5AA]">Choose a section below.</p>
+            </div>
+
+            <PartnerJourneyCards originView="paid-growth-mode" />
+          </div>
+
           <h3 className="font-mono-label text-[#F6FFF2] mb-2">Deepen Your Alignment</h3>
           <p className="text-[#A9B5AA] text-sm mb-6">These resources belong to {PATH_LABELS.alignment} and support partnership readiness, clarity, intimacy, and resilience.</p>
           <div className="grid md:grid-cols-2 gap-4">

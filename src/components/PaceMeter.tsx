@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, CheckCircle, Clock, Heart, Shield, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
+import { returnToPartnerJourneyHub } from '@/lib/partnerJourney';
 import type { PartnerJourneyBadge } from '@/types';
 import {
   getPartnerJourneyBadgeLabel,
@@ -35,7 +36,6 @@ type PaceMeterProgress = {
 };
 
 const healthyPartnerBadge: PartnerJourneyBadge = 'healthy-partner-badge';
-const growthModeTabStorageKey = 'rooted_growth_mode_active_tab';
 
 const PACE_METER_STAGES: PaceMeterStage[] = [
   {
@@ -218,8 +218,7 @@ const PaceMeter: React.FC = () => {
   };
 
   const returnToResources = () => {
-    localStorage.setItem(growthModeTabStorageKey, 'resources');
-    setCurrentView('growth-mode');
+    returnToPartnerJourneyHub(setCurrentView);
   };
 
   const queueReturnToResources = () => {

@@ -14,17 +14,14 @@ import {
   useCommunity,
 } from '@/modules';
 import { toast } from 'sonner';
-import { BookOpen, Clock, Sparkles, Brain, Target, Heart, Users, MessageCircle, Send, X } from 'lucide-react';
+import { BookOpen, Clock, Sparkles, Brain, Users, MessageCircle, Send, X } from 'lucide-react';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
+import PartnerJourneyCards from '@/components/PartnerJourneyCards';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
 import { blogService } from '@/services/blogService';
 import { ASSESSMENT_CORE_STYLES, ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
-import {
-  getPartnerJourneyBadgeLabel,
-  hasPartnerJourneyBadge,
-} from '@/services/partnerJourneyBadgeService';
-import type { AppView, User, AssessmentCoreStyle, PartnerJourneyBadge, BlogArticle } from '@/types';
+import type { User, AssessmentCoreStyle, BlogArticle } from '@/types';
 import { PATH_LABELS } from '@/lib/pathways';
 
 type ResourceProgressMap = Record<
@@ -39,15 +36,6 @@ type ResourceProgressMap = Record<
 type CompatibilityInsight = {
   howYouConnect: string;
   rootedRule: string;
-};
-
-type PartnerJourneySection = {
-  title: string;
-  badge: PartnerJourneyBadge;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  view?: AppView;
-  isPlaceholder?: boolean;
 };
 
 const STYLE_PAIR_INSIGHTS: Record<AssessmentCoreStyle, Record<AssessmentCoreStyle, CompatibilityInsight>> = {
@@ -215,30 +203,6 @@ const STYLE_PAIR_INSIGHTS: Record<AssessmentCoreStyle, Record<AssessmentCoreStyl
 
 const getDefaultPartnerStyle = (yourStyle: AssessmentCoreStyle): AssessmentCoreStyle =>
   ASSESSMENT_CORE_STYLES.find((style) => style !== yourStyle) ?? yourStyle;
-
-const PARTNER_JOURNEY_SECTIONS: PartnerJourneySection[] = [
-  {
-    title: 'The Aware Partner',
-    badge: 'aware-partner-badge',
-    description: 'This first section is in place and anchors the full relationship-growth journey.',
-    icon: Brain,
-    view: 'aware-partner',
-  },
-  {
-    title: 'The Intentional Partner',
-    badge: 'intentional-partner-badge',
-    description: 'Awareness without action keeps you stuck.',
-    icon: Target,
-    view: 'intentional-partner',
-  },
-  {
-    title: 'The Healthy Partner',
-    badge: 'healthy-partner-badge',
-    description: 'This is where growth becomes consistency.',
-    icon: Heart,
-    view: 'healthy-partner',
-  },
-];
 
 const GrowthModeSection: React.FC = () => {
   const growthModeTabStorageKey = 'rooted_growth_mode_active_tab';
@@ -856,107 +820,7 @@ const GrowthModeSection: React.FC = () => {
             <p className="mt-2 max-w-3xl text-sm text-[#A9B5AA]">Choose a section below.</p>
           </div>
 
-          <div className="space-y-4">
-            {PARTNER_JOURNEY_SECTIONS.map((section, index) => {
-              const Icon = section.icon;
-              const isInteractive = Boolean(section.view);
-              const cardActionCopy =
-                section.view === 'aware-partner'
-                  ? 'Open this section to enter Path Navigation.'
-                  : section.view === 'intentional-partner'
-                    ? 'Open this section to enter The Conflict Sandbox.'
-                    : 'Open this section to enter The Pace Meter.';
-              const sectionBadgeEarned = hasPartnerJourneyBadge(
-                currentUser.partnerJourneyBadges,
-                section.badge
-              );
-              const baseCardClassName = `rounded-2xl border p-5 ${
-                section.isPlaceholder
-                  ? 'border-[#2A312A] bg-[#111611]'
-                  : 'border-[#D9FF3D]/30 bg-[#D9FF3D]/10'
-              }`;
-
-              const cardBody = (
-                <>
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="flex items-start gap-4">
-                      <div
-                        className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${
-                          section.isPlaceholder
-                            ? 'bg-[#1A211A] text-[#A9B5AA]'
-                            : 'bg-[#D9FF3D]/20 text-[#D9FF3D]'
-                        }`}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
-
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Section {index + 1}</p>
-                        <h4 className="mt-1 text-xl font-semibold text-[#F6FFF2]">{section.title}</h4>
-                        <p className="mt-2 text-sm text-[#A9B5AA]">{section.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {sectionBadgeEarned && (
-                        <span className="rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium text-[#D9FF3D]">
-                          {getPartnerJourneyBadgeLabel(section.badge)}
-                        </span>
-                      )}
-                      <span
-                        className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                          section.isPlaceholder
-                            ? 'border-[#2A312A] text-[#A9B5AA]'
-                            : 'border-emerald-400/30 text-emerald-200'
-                        }`}
-                      >
-                        {section.isPlaceholder
-                          ? 'Frame ready'
-                          : sectionBadgeEarned
-                            ? 'Badge earned'
-                            : 'Ready to open'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {isInteractive ? (
-                    <div className="mt-4 flex items-center justify-between rounded-xl border border-[#D9FF3D]/20 bg-[#0B0F0C]/50 px-4 py-4">
-                      <p className="text-sm text-[#A9B5AA]">{cardActionCopy}</p>
-                      <span className="text-sm font-medium text-[#D9FF3D]">Open</span>
-                    </div>
-                  ) : (
-                    <div className="mt-4 flex min-h-[96px] items-center rounded-xl border border-dashed border-[#2E372E] bg-[#0B0F0C] px-4 py-5">
-                      <p className="text-sm text-[#A9B5AA]">
-                        Section frame added. Share the lesson structure and content for this section and I can build it next.
-                      </p>
-                    </div>
-                  )}
-                </>
-              );
-
-              if (section.view) {
-                return (
-                  <button
-                    key={section.title}
-                    type="button"
-                    onClick={() => {
-                      localStorage.setItem(growthModeTabStorageKey, 'resources');
-                      setCurrentView(section.view as AppView);
-                    }}
-                    className={`${baseCardClassName} w-full text-left transition hover:border-[#D9FF3D]/50 hover:bg-[#D9FF3D]/12`}
-                  >
-                    {cardBody}
-                  </button>
-                );
-              }
-
-              return (
-                <div key={section.title} className={baseCardClassName}>
-                  {cardBody}
-                </div>
-              );
-            })}
-          </div>
+          <PartnerJourneyCards originView="growth-mode" />
         </div>
           </div>
         )}
