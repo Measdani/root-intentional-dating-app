@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, Send, Sparkles } from 'lucide-react';
+import { MessageCircle, Sparkles } from 'lucide-react';
 
 import founderPortrait from '../assets/meashia-founder.jpeg';
 
@@ -16,10 +16,6 @@ const forestPromptSuggestions = [
 ];
 
 const ProblemSection: React.FC = () => {
-  const openForestAssistant = () => {
-    window.dispatchEvent(new Event('open-forest-assistant'));
-  };
-
   return (
     <section
       id="section-problem"
@@ -97,57 +93,45 @@ const ProblemSection: React.FC = () => {
             </div>
 
             <div className="relative mt-6 overflow-hidden rounded-[28px] border border-[#D9FF3D]/16 bg-[#111611]/45 p-5 sm:p-6">
-              <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_180px] md:items-center">
-                <div className="min-w-0">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[#D9FF3D]/18 bg-[#0B0F0C]/45 px-3 py-2 text-xs uppercase tracking-[0.18em] text-[#D9FF3D]">
+              <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_220px] md:items-start">
+                <div className="flex min-w-0 gap-4 sm:gap-5">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D9FF3D]/25 bg-[radial-gradient(circle_at_center,rgba(217,255,61,0.18),rgba(11,15,12,0.88)_72%)] text-[#D9FF3D] shadow-[0_0_28px_rgba(217,255,61,0.08)] sm:h-14 sm:w-14">
+                    <Sparkles className="h-6 w-6 sm:h-7 sm:w-7" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-[15px] leading-relaxed text-[#F6FFF2]/88 sm:text-base">
+                      <span className="font-semibold text-[#D9FF3D]">Forest</span> is designed to help
+                      you slow down, reflect, and make grounded decisions before emotion starts
+                      steering the story.
+                    </p>
+                    <p className="mt-4 text-[15px] leading-relaxed text-[#F6FFF2]/70 sm:text-base">
+                      Whether you&apos;re unsure about a connection, working through emotions, or trying
+                      to understand what feels right, Forest helps you stay aligned with who you are
+                      and what you&apos;re building.
+                    </p>
+                    <p className="mt-4 text-[15px] leading-relaxed text-[#F6FFF2]/70 sm:text-base">
+                      This isn&apos;t advice based on trends. It&apos;s guidance rooted in the same
+                      principles that shape this platform.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="min-w-0 rounded-[22px] border border-white/10 bg-[#0B0F0C]/45 p-4 sm:p-5">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#D9FF3D]/18 bg-[#111611]/70 px-3 py-2 text-xs uppercase tracking-[0.18em] text-[#D9FF3D]">
                     <Sparkles className="h-3.5 w-3.5" />
                     Objective Spiritual Observer
                   </div>
 
-                  <p className="mt-5 text-[15px] leading-relaxed text-[#F6FFF2]/88 sm:text-base">
-                    <span className="font-semibold text-[#D9FF3D]">Forest</span> is designed to help
-                    you slow down, reflect, and make grounded decisions before emotion starts
-                    steering the story.
-                  </p>
-                  <p className="mt-4 text-[15px] leading-relaxed text-[#F6FFF2]/70 sm:text-base">
-                    Whether you&apos;re unsure about a connection, working through emotions, or trying
-                    to understand what feels right, Forest helps you stay aligned with who you are
-                    and what you&apos;re building.
-                  </p>
-                  <p className="mt-4 text-[15px] leading-relaxed text-[#F6FFF2]/70 sm:text-base">
-                    This isn&apos;t advice based on trends. It&apos;s guidance rooted in the same
-                    principles that shape this platform.
-                  </p>
-
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <div className="mt-4 grid gap-3">
                     {forestPromptSuggestions.map((prompt) => (
                       <div
                         key={prompt}
-                        className="rounded-[20px] border border-white/10 bg-[#0B0F0C]/50 px-4 py-3 text-sm leading-snug text-[#F6FFF2]/72"
+                        className="rounded-[18px] border border-white/10 bg-[#111611]/80 px-4 py-3 text-sm leading-snug text-[#F6FFF2]/72"
                       >
                         {prompt}
                       </div>
                     ))}
-                  </div>
-
-                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-[#A9B5AA]">You can ask Forest whenever you need clarity.</p>
-                    <button
-                      type="button"
-                      onClick={openForestAssistant}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D9FF3D] px-6 py-3 text-sm font-semibold text-[#0B0F0C] transition-all hover:scale-[1.02] hover:brightness-95"
-                    >
-                      <Send className="h-4 w-4" />
-                      Ask Forest
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative hidden h-[180px] w-[180px] shrink-0 items-center justify-center justify-self-end rounded-full border border-[#D9FF3D]/28 bg-[radial-gradient(circle_at_center,rgba(217,255,61,0.2),rgba(11,15,12,0.76)_70%)] shadow-[0_0_40px_rgba(217,255,61,0.08)] md:flex">
-                  <div className="absolute inset-4 rounded-full border border-[#D9FF3D]/12" />
-                  <Sparkles className="h-14 w-14 text-[#D9FF3D]" />
-                  <div className="absolute bottom-5 left-5 flex h-10 w-10 items-center justify-center rounded-full border border-[#D9FF3D]/35 bg-[#263012] text-[#D9FF3D] shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
-                    <Sparkles className="h-4 w-4" />
                   </div>
                 </div>
               </div>
