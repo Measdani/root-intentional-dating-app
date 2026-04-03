@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { MessageCircle, Send, Sparkles } from 'lucide-react';
 
 import founderPortrait from '../assets/meashia-founder.jpeg';
@@ -16,34 +16,12 @@ const forestPromptSuggestions = [
 ];
 
 const ProblemSection: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.3 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
   const openForestAssistant = () => {
     window.dispatchEvent(new Event('open-forest-assistant'));
   };
 
   return (
     <section
-      ref={sectionRef}
       id="section-problem"
       className="section-pinned h-auto min-h-[100svh] overflow-visible bg-[#0B0F0C] py-16 sm:py-20 lg:h-auto lg:py-20"
     >
@@ -60,11 +38,7 @@ const ProblemSection: React.FC = () => {
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 sm:px-8 lg:gap-12 lg:px-16">
         <div className="flex w-full flex-col items-center gap-10 lg:flex-row lg:justify-between lg:gap-16">
-          <div
-            className={`w-full max-w-[520px] translate-y-4 sm:translate-y-6 transition-all duration-1000 ease-out ${
-              isVisible ? 'translate-x-0 opacity-100' : '-translate-x-16 opacity-0'
-            }`}
-          >
+          <div className="w-full max-w-[520px] translate-y-4 sm:translate-y-6">
             <div className="circle-frame relative mx-auto aspect-square w-[82vw] max-w-[520px] overflow-hidden shadow-[0_24px_70px_rgba(0,0,0,0.4)] lg:mx-0">
               <div className="absolute inset-3 overflow-hidden rounded-full">
                 <img
@@ -77,11 +51,7 @@ const ProblemSection: React.FC = () => {
             </div>
           </div>
 
-          <div
-            className={`w-full max-w-[640px] transition-all duration-1000 delay-200 ease-out ${
-              isVisible ? 'translate-x-0 opacity-100' : 'translate-x-16 opacity-0'
-            }`}
-          >
+          <div className="w-full max-w-[640px]">
             <div className="rounded-[30px] border border-white/20 bg-[#0B0F0C]/50 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.32)] backdrop-blur-md sm:p-7 lg:p-8">
               <p className="font-mono-label mb-4 text-[#D9FF3D]">Founder Note</p>
 
@@ -108,11 +78,7 @@ const ProblemSection: React.FC = () => {
           </div>
         </div>
 
-        <div
-          className={`flex w-full justify-center transition-all duration-1000 delay-300 ease-out lg:justify-end ${
-            isVisible ? 'translate-x-0 opacity-100' : 'translate-x-16 opacity-0'
-          }`}
-        >
+        <div className="flex w-full justify-center lg:justify-end">
           <div className="w-full max-w-[640px] rounded-[30px] border border-[#D9FF3D]/18 bg-[#0B0F0C]/45 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.28)] backdrop-blur-md sm:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
