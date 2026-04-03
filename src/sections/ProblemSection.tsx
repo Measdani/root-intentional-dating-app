@@ -48,7 +48,7 @@ const ProblemSection: React.FC = () => {
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-10 px-6 sm:px-8 lg:flex-row lg:justify-between lg:gap-16 lg:px-16">
         <div
-          className={`w-full max-w-[520px] transition-all duration-1000 ease-out ${
+          className={`w-full max-w-[520px] translate-y-4 sm:translate-y-6 transition-all duration-1000 ease-out ${
             isVisible ? 'translate-x-0 opacity-100' : '-translate-x-16 opacity-0'
           }`}
         >
@@ -57,14 +57,10 @@ const ProblemSection: React.FC = () => {
               <img
                 src={founderPortrait}
                 alt="Meashia, founder of Rooted Hearts"
-                className="h-full w-full object-cover object-[center_18%]"
+                className="h-full w-full object-cover object-[center_24%]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F0C]/22 via-transparent to-white/12" />
             </div>
-          </div>
-
-          <div className="mx-auto mt-5 w-fit rounded-full border border-white/15 bg-[#0B0F0C]/55 px-4 py-2 text-center text-[10px] uppercase tracking-[0.18em] text-[#F6FFF2]/80 backdrop-blur-sm sm:text-xs sm:tracking-[0.24em]">
-            Founder of Rooted Hearts
           </div>
         </div>
 
