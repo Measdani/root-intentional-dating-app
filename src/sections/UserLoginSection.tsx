@@ -118,6 +118,11 @@ const UserLoginSection: React.FC = () => {
     return new Date().getTime() < user.suspensionEndDate;
   };
 
+  const hasExpiredSuspension = (user: any): boolean => {
+    if (!user?.suspensionEndDate) return false;
+    return new Date().getTime() >= user.suspensionEndDate;
+  };
+
   const getCanonicalTestUser = (userEmail: string, checkPassword?: string): any | null => {
     const tester = testUsers.find(
       (u) => u.email.toLowerCase() === userEmail.trim().toLowerCase()
@@ -234,7 +239,6 @@ const UserLoginSection: React.FC = () => {
     setInfoMessage('Your email is confirmed. Sign in to finish setup.');
     toast.success('Your email is confirmed. Sign in to finish setup.');
   }, []);
-
   const restorePendingSignupProfile = async (
     normalizedEmail: string,
     authUserId: string
@@ -278,12 +282,38 @@ const UserLoginSection: React.FC = () => {
       return;
     }
 
+    if (effectiveUser.userStatus === 'suspended' && hasExpiredSuspension(effectiveUser)) {
+      effectiveUser = {
+        ...effectiveUser,
+        userStatus: 'needs-growth',
+        suspensionEndDate: undefined,
+        assessmentPassed: false,
+        guidelinesAckRequired: true,
+      };
+      if (persistRemote && effectiveUser.id) {
+        await userService.updateUser(effectiveUser.id, {
+          userStatus: 'needs-growth',
+          suspensionEndDate: null as any,
+          assessmentPassed: false,
+          guidelinesAckRequired: true,
+        });
+      }
+    }
+
     if (isSuspended(effectiveUser)) {
       effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);
       refreshSession(effectiveUser);
       toast.info('Your account is currently under suspension. Please review the growth resources.');
       primeGardenLanding();
       setCurrentView(getPostLoginHomeView(false));
+      return;
+    }
+
+    if (effectiveUser.guidelinesAckRequired) {
+      effectiveUser = await syncUserPoolForOutcome(effectiveUser, false, persistRemote);
+      refreshSession(effectiveUser);
+      toast.info('Please review and acknowledge the community guidelines before returning.');
+      setCurrentView('community-guidelines');
       return;
     }
 

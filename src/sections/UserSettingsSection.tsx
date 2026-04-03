@@ -13,8 +13,8 @@ import {
   Loader2,
   MessageSquare,
 } from 'lucide-react';
-import { userService } from '@/services/userService';
 import { supportService } from '@/services/supportService';
+import { accountDeletionService } from '@/services/accountDeletionService';
 import { SUPPORT_EMAIL } from '@/constants/support';
 import type { SupportCategory, SupportMessage } from '@/types';
 import { signOutAndClearLocalUser, authService } from '@/services/authService';
@@ -34,6 +34,7 @@ import {
   getCoreSettingUnlockDate,
   getUserSettingsForUser,
   isCoreSettingLocked,
+  removeUserSettingsForUser,
   saveUserSettingsForUser,
   type CoreSettingKey,
   type UserSettings,
@@ -782,24 +783,24 @@ const UserSettingsSection: React.FC = () => {
       try {
         await submitSupportRequest(
           'account',
-          '[Deactivation] Member feedback',
+          '[Account Deletion] Member feedback',
           `Reason: ${DEACTIVATION_REASON_LABELS[deactivationReason]}\nSubmitted at: ${new Date().toISOString()}\nUser ID: ${currentUser.id}`
         );
       } catch (error) {
         console.warn('Failed to log deactivation reason:', error);
       }
 
-      const nextSettings: UserSettings = {
-        ...settings,
-        visibility: { ...settings.visibility, profileVisibility: 'paused' },
-      };
-      persistSettings(nextSettings);
-      await userService.updateUser(currentUser.id, { membershipStatus: 'inactive' });
+      await accountDeletionService.deleteOwnAccount();
+      removeUserSettingsForUser(currentUser.id);
       setDeactivationStep('exit-message');
-      toast.success('Account deactivated.');
+      toast.success('Account deleted.');
     } catch (error) {
-      console.error('Failed to deactivate account:', error);
-      toast.error(`We couldn't deactivate your account right now. Contact ${SUPPORT_EMAIL}.`);
+      console.error('Failed to delete account:', error);
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : `We couldn't delete your account right now. Contact ${SUPPORT_EMAIL}.`
+      );
     } finally {
       setIsDeactivatingAccount(false);
     }
@@ -1077,7 +1078,7 @@ const UserSettingsSection: React.FC = () => {
               className="btn-outline w-full h-14 flex items-center justify-center gap-2"
             >
               <UserX className="w-4 h-4" />
-              Deactivate My Account
+              Delete My Account
             </button>
           </div>
           <p className="text-xs text-[#A9B5AA]">
@@ -1976,7 +1977,7 @@ const UserSettingsSection: React.FC = () => {
           <div className="max-w-2xl w-full bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5 max-h-[92vh] overflow-y-auto">
             {deactivationStep === 'reason' && (
               <>
-                <h3 className="font-display text-2xl text-[#F6FFF2]">Deactivate My Account</h3>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Delete My Account</h3>
                 <p className="text-sm text-[#A9B5AA]">
                   If you&apos;re leaving, we&apos;d appreciate knowing why so we can improve the platform.
                 </p>
@@ -2039,7 +2040,7 @@ const UserSettingsSection: React.FC = () => {
                     onClick={() => setDeactivationStep('billing-notice')}
                     className="flex-1 px-4 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
                   >
-                    Continue with Deactivation
+                    Continue with Account Deletion
                   </button>
                 </div>
               </>
@@ -2181,7 +2182,7 @@ const UserSettingsSection: React.FC = () => {
                   onClick={() => setDeactivationStep('billing-notice')}
                   className="w-full px-4 py-2 rounded-lg border border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20 transition-colors"
                 >
-                  Continue to Account Deactivation
+                  Continue to Account Deletion
                 </button>
                 <p className="text-xs text-[#A9B5AA]">
                   Entries are selected at random. Submission does not guarantee selection.
@@ -2217,7 +2218,7 @@ const UserSettingsSection: React.FC = () => {
                     onClick={() => setDeactivationStep('billing-notice')}
                     className="flex-1 px-4 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
                   >
-                    Continue to Deactivation
+                    Continue to Account Deletion
                   </button>
                 </div>
                 <button
@@ -2260,9 +2261,10 @@ const UserSettingsSection: React.FC = () => {
 
             {deactivationStep === 'final-confirmation' && (
               <>
-                <h3 className="font-display text-2xl text-[#F6FFF2]">Are you sure you want to deactivate?</h3>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Are you sure you want to delete your account?</h3>
                 <p className="text-sm text-[#A9B5AA]">
-                  Your profile will be hidden and your account will no longer appear in the dating pool.
+                  Your account, profile, and login access will be permanently deleted. You will need to create a new
+                  account if you return later.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
@@ -2279,9 +2281,9 @@ const UserSettingsSection: React.FC = () => {
                     {isDeactivatingAccount ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Deactivating...
+                        Deleting...
                       </>
-                    ) : 'Deactivate My Account'}
+                    ) : 'Delete My Account'}
                   </button>
                 </div>
               </>
@@ -2289,7 +2291,7 @@ const UserSettingsSection: React.FC = () => {
 
             {deactivationStep === 'exit-message' && (
               <>
-                <h3 className="font-display text-2xl text-[#F6FFF2]">Thank you for being part of Rooted Hearts.</h3>
+                <h3 className="font-display text-2xl text-[#F6FFF2]">Your account has been deleted.</h3>
                 <p className="text-sm text-[#A9B5AA]">
                   We wish you meaningful connections and happiness wherever your journey leads.
                 </p>
@@ -2297,7 +2299,7 @@ const UserSettingsSection: React.FC = () => {
                   onClick={handleFinishDeactivationExit}
                   className="text-xs text-[#A9B5AA] hover:text-[#D9FF3D] underline underline-offset-4 transition-colors"
                 >
-                  Return anytime by signing back in.
+                  Return to home
                 </button>
               </>
             )}
@@ -2352,7 +2354,9 @@ const UserSettingsSection: React.FC = () => {
               <p className="text-sm text-[#F6FFF2]">Returning to the Dating Pool:</p>
               <p className="text-sm text-[#A9B5AA]">• You may reactivate your profile</p>
               <p className="text-sm text-[#A9B5AA]">• A 24-hour cooldown period applies before becoming visible again</p>
-              <p className="text-sm text-[#A9B5AA]">• Your previous environment ({PATH_LABELS.intentional} or {PATH_LABELS.alignment}) will remain the same</p>
+              <p className="text-sm text-[#A9B5AA]">
+                • Your previous environment ({PATH_LABELS.intentional} or {PATH_LABELS.alignment}) will remain the same
+              </p>
             </div>
 
             <p className="text-sm text-[#A9B5AA]">Break Mode is about intentional pacing — not starting over.</p>
@@ -2379,5 +2383,6 @@ const UserSettingsSection: React.FC = () => {
 };
 
 export default UserSettingsSection;
+
 
 

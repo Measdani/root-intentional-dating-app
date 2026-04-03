@@ -122,15 +122,53 @@ const PaidGrowthModeSection: React.FC = () => {
     <div className="min-h-screen bg-[#0B0F0C]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-emerald-500/30">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button
-            onClick={handleBrowseProfiles}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors text-sm font-medium"
-          >
-            <span>Browse Profiles</span>
-          </button>
-          <h1 className="font-display text-xl text-[#F6FFF2]">{PATH_LABELS.alignment}</h1>
-          <div className="w-24" />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto">
+            <button
+              onClick={handleBrowseProfiles}
+              className="shrink-0 pb-4 pt-4 px-3 sm:px-4 font-medium text-[#A9B5AA] hover:text-[#F6FFF2] transition-all border-b-2 border-transparent"
+            >
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <Users className="w-4 h-4" />
+                Browse Profiles
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('resources')}
+              className={`shrink-0 pb-4 pt-4 px-3 sm:px-4 font-medium transition-all border-b-2 ${
+                activeTab === 'resources'
+                  ? 'text-emerald-400 border-emerald-400'
+                  : 'text-[#A9B5AA] border-transparent hover:text-[#F6FFF2]'
+              }`}
+            >
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <BookOpen className="w-4 h-4" />
+                Alignment Resources
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('blog')}
+              className={`shrink-0 pb-4 pt-4 px-3 sm:px-4 font-medium transition-all border-b-2 ${
+                activeTab === 'blog'
+                  ? 'text-emerald-400 border-emerald-400'
+                  : 'text-[#A9B5AA] border-transparent hover:text-[#F6FFF2]'
+              }`}
+            >
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <BookOpen className="w-4 h-4" />
+                Blog
+              </div>
+            </button>
+            <button
+              onClick={() => setCurrentView('clarity-room')}
+              className="shrink-0 pb-4 pt-4 px-3 sm:px-4 font-medium transition-all text-[#A9B5AA] hover:text-emerald-400 border-b-2 border-transparent"
+            >
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <Brain className="w-4 h-4" />
+                Clarity Room
+              </div>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -195,45 +233,6 @@ const PaidGrowthModeSection: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="mb-10 flex gap-4 border-b border-emerald-500/20">
-          <button
-            onClick={() => setActiveTab('resources')}
-            className={`pb-3 px-4 font-medium transition-all ${
-              activeTab === 'resources'
-                ? 'text-emerald-400 border-b-2 border-emerald-400'
-                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Alignment Resources
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('blog')}
-            className={`pb-3 px-4 font-medium transition-all ${
-              activeTab === 'blog'
-                ? 'text-emerald-400 border-b-2 border-emerald-400'
-                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Blog
-            </div>
-          </button>
-          <button
-            onClick={() => setCurrentView('clarity-room')}
-            className="pb-3 px-4 font-medium transition-all text-[#A9B5AA] hover:text-emerald-400"
-          >
-            <div className="flex items-center gap-2">
-              <Brain className="w-4 h-4" />
-              Clarity Room
-            </div>
-          </button>
         </div>
 
         {/* Growth Resources */}

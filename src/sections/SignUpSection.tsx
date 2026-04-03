@@ -9,6 +9,7 @@ import { pendingSignupService } from '@/services/pendingSignupService';
 import { moderateProfileQuality } from '@/services/profileQualityService';
 import {
   PROFILE_BIO_MIN_CHAR_COUNT,
+  PROFILE_BIO_MIN_WORD_COUNT,
   PROFILE_GROWTH_FOCUS_MIN_CHAR_COUNT,
   validateGrowthFocusText,
   validateRequiredProfileBio,
@@ -225,7 +226,7 @@ const SignUpSection: React.FC = () => {
         { heading: 'Background Check Requirements', content: 'You may choose to complete a background verification through our third-party provider to enhance trust and community safety.\n\nBackground verification is optional but strongly encouraged — particularly for members seeking to build deeper connections within The Alignment Path.\n\nBackground checks may include:\n\n• Identity verification\n• Screening of publicly available criminal records\n• Sex offender registry searches\n• National and county database searches\n\nVerification results remain confidential. Only verification status (not detailed results) may be displayed on your profile.\n\nRooted Hearts reserves the right to review background information if voluntarily submitted and may restrict access if safety concerns arise.' },
         { heading: 'Meeting Safety Guidelines', content: 'Rooted Hearts is an intentional dating ecosystem — and while we structure alignment carefully, meeting someone new always carries personal responsibility.\n\nYour safety matters. If you decide to meet someone in person:\n\n• Meet in a public location\n• Arrange your own transportation\n• Inform a trusted friend or family member of your plans\n\nIf you do not have someone to share plans with:\n\n• Email yourself the date details\n• Leave yourself a voicemail with the time and location\n• Create a documented record of your meeting plans\n\nMaintaining a safety trail is a simple but powerful precaution. Rooted Hearts provides structure, screening options, and safeguards — but your awareness and discernment are equally important. Safety is a shared responsibility.' },
         { heading: 'Report Mechanism', content: 'If you experience inappropriate behavior, you can report members directly through the app. Our safety team reviews all reports and takes action as needed. Include specific details and screenshots when reporting. Reports are investigated confidentially and seriously. We take every report seriously and respond promptly.' },
-        { heading: 'Moderation & Enforcement', content: 'Our moderation team monitors for violations 24/7. First violations may result in warnings. Repeated violations result in temporary suspension. Serious violations (harassment, abuse, illegal activity) result in permanent removal. Appeals can be submitted within 30 days of removal.' },
+        { heading: 'Moderation & Enforcement', content: 'Our moderation team monitors for violations 24/7. First violations may result in warnings. Repeated violations may result in temporary suspension or soft reset. Serious violations (harassment, abuse, illegal activity) result in permanent ban and blocked re-entry. Appeals can be submitted within 30 days of enforcement.' },
       ]
     },
     communityStandards: {
@@ -408,9 +409,9 @@ const SignUpSection: React.FC = () => {
 
   const showDuplicateEmailError = () => {
     const message =
-      'This email already has an account. Sign in instead, or use Forgot Password if you need to reset it.';
+      'This email is already in use. If an account was blocked, it cannot be recreated with the same email.';
     setErrors({ submit: message });
-    toast.error('This email already has an account. Try signing in instead.');
+    toast.error('Email already in use. Please use a different email.');
   };
 
   const showBlockedEmailError = (reason?: string | null) => {
@@ -1219,7 +1220,7 @@ const SignUpSection: React.FC = () => {
                 }`}
               />
               <p className="text-xs text-[#A9B5AA] mt-1">
-                Use a short real phrase in real words.
+                Use a short real phrase, not random letters.
               </p>
               {errors.growthFocus && (
                 <p className="text-xs text-red-300 mt-2">{errors.growthFocus}</p>
@@ -1245,7 +1246,7 @@ const SignUpSection: React.FC = () => {
                 }`}
               />
               <p className="text-xs text-[#A9B5AA] mt-1">
-                Required. Use real words and give a short description of yourself.
+                Required. Use real words and aim for at least {PROFILE_BIO_MIN_WORD_COUNT} words.
               </p>
               {errors.bio && (
                 <p className="text-xs text-red-300 mt-2">{errors.bio}</p>

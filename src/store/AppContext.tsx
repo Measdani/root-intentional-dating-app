@@ -9,10 +9,13 @@ import {
   getNewMatchBlockReason,
 } from '@/modules';
 import { toast } from 'sonner';
+import { signOutSupabaseSession } from '@/services/authService';
+import { accountDeletionService } from '@/services/accountDeletionService';
 import { reportService } from '@/services/reportService';
 import { triageReportIntake } from '@/services/reportIntakeService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
+import { removeUserSettingsForUser } from '@/services/userSettingsService';
 import { moderateFirstMessage } from '@/services/firstMessageSafetyService';
 import { evaluateConciergeForInteraction } from '@/services/conciergeService';
 import { enrichConciergeSnapshotWithAI } from '@/services/conciergeAiService';
@@ -94,7 +97,7 @@ interface AppContextType extends AppState {
   isBlockedByUser: (userId: string) => boolean;
   suspendUser: (userId: string, suspensionEndDate: number) => void;
   reinstateUser: (userId: string) => void;
-  removeUser: (userId: string) => void;
+  removeUser: (userId: string) => Promise<boolean>;
   showSupportModal: boolean;
   setShowSupportModal: (value: boolean) => void;
   submitSupportRequest: (category: SupportCategory, subject: string, message: string) => Promise<string>;
@@ -963,9 +966,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ...currentUser,
           userStatus: 'needs-growth' as const,
           suspensionEndDate: undefined,
+          assessmentPassed: false,
+          guidelinesAckRequired: true,
         });
         setCurrentUserState(updatedUser);
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+        const suspensions = JSON.parse(localStorage.getItem('rooted_suspensions') || '{}');
+        delete suspensions[currentUser.id];
+        localStorage.setItem('rooted_suspensions', JSON.stringify(suspensions));
+
+        userService.updateUser(currentUser.id, {
+          userStatus: 'needs-growth',
+          suspensionEndDate: null as any,
+          assessmentPassed: false,
+          guidelinesAckRequired: true,
+        }).catch((error) => {
+          console.warn('Failed to persist expired suspension state:', error);
+        });
 
         // Send notification about suspension ending and growth mode requirement
         const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
@@ -975,7 +993,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           userId: currentUser.id,
           type: 'warning',
           title: 'Suspension Period Ended',
-          message: `Your account suspension period has ended. You must now complete the ${PATH_LABELS.intentional} assessment to regain full access to browsing and matching.`,
+          message: `Your suspension period has ended. Review and acknowledge the community guidelines, then continue in ${PATH_LABELS.intentional} before regaining full access.`,
           createdAt: Date.now(),
           read: false,
         };
@@ -986,6 +1004,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
   }, [currentUser.suspensionEndDate, currentUser.userStatus, currentUser.id]);
+
+  useEffect(() => {
+    if (!isUserAuthenticated || !currentUser.guidelinesAckRequired) return;
+    if (currentView === 'community-guidelines') return;
+    setCurrentView('community-guidelines');
+  }, [currentUser.guidelinesAckRequired, currentView, isUserAuthenticated]);
 
   // Auto-redirect suspended and needs-growth users to appropriate view
   // Also redirect users with failed assessments (assessmentPassed === false)
@@ -2061,6 +2085,8 @@ useEffect(() => {
               ...user,
               userStatus: 'suspended',
               suspensionEndDate,
+              assessmentPassed: false,
+              guidelinesAckRequired: true,
             })
           : user
       )
@@ -2074,6 +2100,8 @@ useEffect(() => {
         ...currentUser,
         suspensionEndDate,
         userStatus: 'suspended' as const,
+        assessmentPassed: false,
+        guidelinesAckRequired: true,
       });
       setCurrentUserState(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
@@ -2101,38 +2129,68 @@ useEffect(() => {
   }, [currentUser]);
 
   // Remove a user permanently from the platform (irreversible)
-  const removeUser = useCallback((userId: string) => {
+  const removeUser = useCallback(async (userId: string): Promise<boolean> => {
+    try {
+      await accountDeletionService.adminDeleteUser(userId)
+    } catch (error) {
+      console.error('Failed to delete user account:', error)
+      return false
+    }
+
     const suspensions = JSON.parse(localStorage.getItem('rooted_suspensions') || '{}');
     if (suspensions[userId]) {
       delete suspensions[userId];
       localStorage.setItem('rooted_suspensions', JSON.stringify(suspensions));
     }
 
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === userId
-          ? applyRelationshipModeToUser({
-              ...user,
-              userStatus: 'removed',
-              suspensionEndDate: undefined,
-            })
-          : user
-      )
-    );
+    try {
+      const allNotifications = JSON.parse(localStorage.getItem('rooted_notifications') || '{}');
+      if (allNotifications[userId]) {
+        delete allNotifications[userId];
+        localStorage.setItem('rooted_notifications', JSON.stringify(allNotifications));
+      }
+    } catch (error) {
+      console.warn('Failed to clear notifications for deleted user:', error);
+    }
+
+    try {
+      const allBlocks = JSON.parse(localStorage.getItem('rooted_all_blocks') || '{}');
+      if (allBlocks[userId]) {
+        delete allBlocks[userId];
+        localStorage.setItem('rooted_all_blocks', JSON.stringify(allBlocks));
+      }
+    } catch (error) {
+      console.warn('Failed to clear block list for deleted user:', error);
+    }
+
+    removeUserSettingsForUser(userId);
+    localStorage.removeItem(`rooted_last_assessment_date_${userId}`);
+    localStorage.removeItem(`rooted_growth_module_progress_${userId}`);
+    localStorage.removeItem(`rooted_growth_path_reflections_${userId}`);
+    localStorage.removeItem(`rooted_growth_module_resource_completion_${userId}`);
+    localStorage.removeItem(`rooted_healthy_partner_pace_meter_${userId}`);
+    localStorage.removeItem(`rooted_intentional_partner_conflict_sandbox_${userId}`);
+
+    setUsers((prev) => prev.filter((user) => user.id !== userId));
+    setSelectedUser((prev) => (prev?.id === userId ? null : prev));
+    setSelectedConversation((prev) => (
+      prev && (prev.fromUserId === userId || prev.toUserId === userId)
+        ? null
+        : prev
+    ));
 
     setInteractions((prev) => appendProfileUnavailableMessageForMatches(prev, userId));
 
     // Log out the user if they're the one being removed
     if (currentUser.id === userId) {
+      await signOutSupabaseSession();
       localStorage.removeItem('currentUser');
       // Dispatch custom event to trigger logout
       window.dispatchEvent(new CustomEvent('user-login', { detail: null }));
     }
 
-    // Block the user to prevent access
-    // TODO: Actually delete user from database (would require backend implementation)
-    // For now, we store them in the blocked list as a removed user
-  }, [currentUser.id]);
+    return true;
+  }, [currentUser.id, setSelectedConversation]);
 
   // Submit a support request message
   const submitSupportRequest = useCallback(async (

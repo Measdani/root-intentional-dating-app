@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { accountDeletionService } from '@/services/accountDeletionService'
+import { validateRequiredProfileBio } from '@/lib/profileTextValidation'
 import { normalizeUserProfile } from '@/lib/userProfile'
 import { validateUsCityState } from '@/lib/usLocationValidation'
 import type { User } from '@/types'
@@ -9,6 +10,10 @@ export const userService = {
     const locationValidation = await validateUsCityState(user.city)
     if (!locationValidation.isValid) {
       return { error: locationValidation.error }
+    }
+    const bioValidation = validateRequiredProfileBio(user.bio ?? '')
+    if (!bioValidation.isValid) {
+      return { error: bioValidation.error ?? 'About You is required.' }
     }
 
     const basePayload = {
@@ -25,7 +30,7 @@ export const userService = {
       relationship_vision: user.relationshipVision,
       communication_style: user.communicationStyle,
       photo_url: user.photoUrl,
-      bio: user.bio,
+      bio: bioValidation.normalizedBio,
       assessment_passed: user.assessmentPassed,
       alignment_score: user.alignmentScore,
       membership_tier: user.membershipTier,
@@ -33,6 +38,9 @@ export const userService = {
       billing_period_end: user.billingPeriodEnd,
       consent_timestamp: user.consentTimestamp,
       consent_version: user.consentVersion,
+      guidelines_ack_required: user.guidelinesAckRequired,
+      guidelines_acknowledged_at: user.guidelinesAcknowledgedAt,
+      moderation_note: user.moderationNote,
       cancel_at_period_end: user.cancelAtPeriodEnd,
       user_status: user.userStatus,
       background_check_verified: user.backgroundCheckVerified,
@@ -168,7 +176,7 @@ export const userService = {
     if (updates.backgroundCheckVerified !== undefined) updateData.background_check_verified = updates.backgroundCheckVerified
     if (updates.backgroundCheckStatus !== undefined) updateData.background_check_status = updates.backgroundCheckStatus
     if (updates.backgroundCheckDate !== undefined) updateData.background_check_date = updates.backgroundCheckDate
-    if (updates.suspensionEndDate !== undefined) updateData.suspension_end_date = updates.suspensionEndDate
+    if ('suspensionEndDate' in updates) updateData.suspension_end_date = updates.suspensionEndDate ?? null
     if (updates.isAdmin !== undefined) updateData.is_admin = updates.isAdmin
 
     updateData.updated_at = Date.now()
