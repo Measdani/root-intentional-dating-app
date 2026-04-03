@@ -79,7 +79,7 @@ const ProblemSection: React.FC = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-mono-label text-[#A9B5AA]">In-App Guide</p>
-                <h3 className="mt-3 max-w-[12ch] font-display text-[clamp(22px,3vw,38px)] leading-[1.06] text-[#F6FFF2]">
+                <h3 className="mt-3 font-display text-[clamp(18px,2.2vw,34px)] leading-[1.06] text-[#F6FFF2] sm:whitespace-nowrap">
                   You&apos;re Not Navigating This Alone
                 </h3>
                 <p className="mt-3 max-w-[38rem] text-[15px] leading-relaxed text-[#F6FFF2]/82 sm:text-base">
