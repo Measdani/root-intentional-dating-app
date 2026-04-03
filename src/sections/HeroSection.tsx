@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useApp } from '@/store/AppContext';
 import CommunitySwitcher from '@/components/CommunitySwitcher';
 import { useCommunity } from '@/modules';
 import { lgbtqWaitlistService } from '@/services/lgbtqWaitlistService';
@@ -19,7 +18,6 @@ const emptyWaitlistForm = {
 };
 
 const HeroSection: React.FC = () => {
-  const { setCurrentView } = useApp();
   const { activeCommunity } = useCommunity();
   const [isVisible, setIsVisible] = useState(false);
   const [showWaitlistSurvey, setShowWaitlistSurvey] = useState(false);
@@ -263,19 +261,13 @@ const HeroSection: React.FC = () => {
         <ChevronDown className="w-5 h-5 text-[#A9B5AA] scroll-indicator" />
       </button>
 
-      {/* Top Right Login Button */}
+      {/* Top Right Community Switcher */}
       <div
-        className={`absolute top-8 right-8 z-20 transition-all duration-700 delay-600 ${
+        className={`absolute top-[5.5rem] right-8 z-20 transition-all duration-700 delay-600 ${
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        <button
-          onClick={() => setCurrentView('user-login')}
-          className="btn-primary text-xs py-2.5 px-5"
-        >
-          Login
-        </button>
-        <CommunitySwitcher className="mt-2 text-right" />
+        <CommunitySwitcher className="text-right" />
       </div>
 
       {/* Logo Top Left */}

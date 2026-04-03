@@ -228,7 +228,11 @@ const AppContent: React.FC = () => {
         <>
           <EmailModal />
           <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
-          <div className="fixed top-24 right-4 z-[115] flex flex-col items-end gap-3 sm:right-8">
+          <div
+            className={`fixed right-4 z-[115] flex flex-col items-end gap-3 sm:right-8 ${
+              currentView === 'landing' ? 'top-8' : 'top-24'
+            }`}
+          >
             <UserAccessButton />
             {currentView !== 'landing' && (
               <ForestFloatingAssistant />
