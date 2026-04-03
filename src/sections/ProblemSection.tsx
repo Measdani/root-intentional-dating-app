@@ -74,15 +74,15 @@ const ProblemSection: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex w-full justify-center lg:justify-end">
-          <div className="w-full max-w-[640px] rounded-[30px] border border-[#D9FF3D]/18 bg-[#0B0F0C]/45 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.28)] backdrop-blur-md sm:p-7">
+        <div className="w-full">
+          <div className="w-full rounded-[30px] border border-[#D9FF3D]/18 bg-[#0B0F0C]/45 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.28)] backdrop-blur-md sm:p-7 lg:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-mono-label text-[#A9B5AA]">In-App Guide</p>
-                <h3 className="mt-3 max-w-[12ch] font-display text-[clamp(22px,3vw,34px)] leading-[1.06] text-[#F6FFF2]">
+                <h3 className="mt-3 max-w-[12ch] font-display text-[clamp(22px,3vw,38px)] leading-[1.06] text-[#F6FFF2]">
                   You&apos;re Not Navigating This Alone
                 </h3>
-                <p className="mt-3 max-w-[28rem] text-[15px] leading-relaxed text-[#F6FFF2]/82 sm:text-base">
+                <p className="mt-3 max-w-[38rem] text-[15px] leading-relaxed text-[#F6FFF2]/82 sm:text-base">
                   Meet <span className="font-semibold text-[#D9FF3D]">Forest</span> - your in-app guide
                   for clarity, reflection, and grounded connection.
                 </p>
@@ -92,25 +92,25 @@ const ProblemSection: React.FC = () => {
               </div>
             </div>
 
-            <div className="relative mt-6 overflow-hidden rounded-[28px] border border-[#D9FF3D]/16 bg-[#111611]/45 p-5 sm:p-6">
-              <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_220px] md:items-start">
+            <div className="relative mt-6 overflow-hidden rounded-[28px] border border-[#D9FF3D]/16 bg-[#111611]/45 p-5 sm:p-6 lg:p-7">
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.8fr)] lg:items-start">
                 <div className="flex min-w-0 gap-4 sm:gap-5">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D9FF3D]/25 bg-[radial-gradient(circle_at_center,rgba(217,255,61,0.18),rgba(11,15,12,0.88)_72%)] text-[#D9FF3D] shadow-[0_0_28px_rgba(217,255,61,0.08)] sm:h-14 sm:w-14">
-                    <Sparkles className="h-6 w-6 sm:h-7 sm:w-7" />
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#D9FF3D]/25 bg-[radial-gradient(circle_at_center,rgba(217,255,61,0.18),rgba(11,15,12,0.88)_72%)] text-[#D9FF3D] shadow-[0_0_28px_rgba(217,255,61,0.08)] sm:h-16 sm:w-16">
+                    <Sparkles className="h-6 w-6 sm:h-8 sm:w-8" />
                   </div>
 
-                  <div className="min-w-0">
-                    <p className="text-[15px] leading-relaxed text-[#F6FFF2]/88 sm:text-base">
+                  <div className="min-w-0 max-w-[44rem]">
+                    <p className="text-[15px] leading-relaxed text-[#F6FFF2]/88 sm:text-base lg:text-[1.05rem]">
                       <span className="font-semibold text-[#D9FF3D]">Forest</span> is designed to help
                       you slow down, reflect, and make grounded decisions before emotion starts
                       steering the story.
                     </p>
-                    <p className="mt-4 text-[15px] leading-relaxed text-[#F6FFF2]/70 sm:text-base">
+                    <p className="mt-4 text-[15px] leading-relaxed text-[#F6FFF2]/70 sm:text-base lg:text-[1.05rem]">
                       Whether you&apos;re unsure about a connection, working through emotions, or trying
                       to understand what feels right, Forest helps you stay aligned with who you are
                       and what you&apos;re building.
                     </p>
-                    <p className="mt-4 text-[15px] leading-relaxed text-[#F6FFF2]/70 sm:text-base">
+                    <p className="mt-4 text-[15px] leading-relaxed text-[#F6FFF2]/70 sm:text-base lg:text-[1.05rem]">
                       This isn&apos;t advice based on trends. It&apos;s guidance rooted in the same
                       principles that shape this platform.
                     </p>
@@ -127,7 +127,7 @@ const ProblemSection: React.FC = () => {
                     {forestPromptSuggestions.map((prompt) => (
                       <div
                         key={prompt}
-                        className="rounded-[18px] border border-white/10 bg-[#111611]/80 px-4 py-3 text-sm leading-snug text-[#F6FFF2]/72"
+                        className="rounded-[18px] border border-white/10 bg-[#111611]/80 px-4 py-3 text-sm leading-snug text-[#F6FFF2]/72 sm:text-[15px]"
                       >
                         {prompt}
                       </div>
