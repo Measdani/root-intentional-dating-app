@@ -217,24 +217,6 @@ const PaidGrowthModeSection: React.FC = () => {
           </p>
         </div>
 
-        {/* Welcome Badge */}
-        <div className="bg-emerald-500/10 rounded-[24px] border border-emerald-500/30 p-6 md:p-8 mb-10">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-              <CheckCircle className="w-6 h-6 text-emerald-400" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-emerald-300 mb-2">Assessment Passed ✓</h3>
-              <p className="text-[#A9B5AA] text-sm mb-3">
-                You've shown the emotional stability, accountability, and self-awareness needed to build healthy relationships. Now it's time to go deeper.
-              </p>
-              <p className="text-xs text-[#D9FF3D]">
-                💚 Your alignment resources are now open.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Growth Resources */}
         {activeTab === 'resources' && (
         <div className="mb-12">
