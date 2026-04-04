@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useApp } from '@/store/AppContext';
+import { returnToResourceSpace } from '@/lib/resourceSpaceNavigation';
 
 type PartnerSectionIntroPageProps = {
   sectionNumber: number;
@@ -8,8 +9,6 @@ type PartnerSectionIntroPageProps = {
   children: React.ReactNode;
   afterHero?: React.ReactNode;
 };
-
-const growthModeTabStorageKey = 'rooted_growth_mode_active_tab';
 
 const PartnerSectionIntroPage: React.FC<PartnerSectionIntroPageProps> = ({
   sectionNumber,
@@ -20,8 +19,7 @@ const PartnerSectionIntroPage: React.FC<PartnerSectionIntroPageProps> = ({
   const { setCurrentView } = useApp();
 
   const handleBack = () => {
-    localStorage.setItem(growthModeTabStorageKey, 'resources');
-    setCurrentView('growth-mode');
+    returnToResourceSpace(setCurrentView);
   };
 
   return (

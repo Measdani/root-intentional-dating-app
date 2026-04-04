@@ -24,6 +24,7 @@ import {
   getPartnerJourneyBadgeLabel,
   hasPartnerJourneyBadge,
 } from '@/services/partnerJourneyBadgeService';
+import { rememberResourceSpaceOrigin } from '@/lib/resourceSpaceNavigation';
 import type { AppView, User, AssessmentCoreStyle, PartnerJourneyBadge, BlogArticle } from '@/types';
 import { PATH_LABELS } from '@/lib/pathways';
 
@@ -940,6 +941,7 @@ const GrowthModeSection: React.FC = () => {
                     key={section.title}
                     type="button"
                     onClick={() => {
+                      rememberResourceSpaceOrigin('growth-mode');
                       localStorage.setItem(growthModeTabStorageKey, 'resources');
                       setCurrentView(section.view as AppView);
                     }}

@@ -2,14 +2,57 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/store/AppContext';
 import { signOutAndClearLocalUser } from '@/services/authService';
 import { PATH_LABELS, readPathResourcesFromStorage, writePathResourcesToStorage } from '@/lib/pathways';
-import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Brain } from 'lucide-react';
-import type { BlogArticle, GrowthResource } from '@/types';
+import { BookOpen, Clock, CheckCircle, Heart, Sparkles, TrendingUp, Zap, Users, Brain, Target } from 'lucide-react';
+import type { AppView, BlogArticle, GrowthResource, PartnerJourneyBadge } from '@/types';
 import ModulesCarouselModal from '@/components/ModulesCarouselModal';
 import { resourceService } from '@/services/resourceService';
 import { blogService } from '@/services/blogService';
+import {
+  getPartnerJourneyBadgeLabel,
+  hasPartnerJourneyBadge,
+} from '@/services/partnerJourneyBadgeService';
+import { rememberResourceSpaceOrigin } from '@/lib/resourceSpaceNavigation';
+
+type PartnerJourneySection = {
+  title: string;
+  badge: PartnerJourneyBadge;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  view: Extract<AppView, 'aware-partner' | 'intentional-partner' | 'healthy-partner'>;
+};
+
+const PARTNER_JOURNEY_SECTIONS: PartnerJourneySection[] = [
+  {
+    title: 'The Aware Partner',
+    badge: 'aware-partner-badge',
+    description: 'This first section is in place and anchors the full relationship-growth journey.',
+    icon: Brain,
+    view: 'aware-partner',
+  },
+  {
+    title: 'The Intentional Partner',
+    badge: 'intentional-partner-badge',
+    description: 'Awareness without action keeps you stuck.',
+    icon: Target,
+    view: 'intentional-partner',
+  },
+  {
+    title: 'The Healthy Partner',
+    badge: 'healthy-partner-badge',
+    description: 'This is where growth becomes consistency.',
+    icon: Heart,
+    view: 'healthy-partner',
+  },
+];
 
 const PaidGrowthModeSection: React.FC = () => {
-  const { setCurrentView, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
+  const {
+    currentUser,
+    setCurrentView,
+    getUnreadNotifications,
+    markNotificationAsRead,
+    reloadNotifications,
+  } = useApp();
   const [activeResource, setActiveResource] = useState<string | null>(null);
   const [selectedResourceForModal, setSelectedResourceForModal] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'resources' | 'blog'>('resources');
@@ -219,6 +262,73 @@ const PaidGrowthModeSection: React.FC = () => {
 
         {/* Growth Resources */}
         {activeTab === 'resources' && (
+        <>
+        <div className="mb-12">
+          <div className="mb-5">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Partner Journey</p>
+            <h3 className="mt-2 font-display text-2xl text-[#F6FFF2]">Resource Area Sections</h3>
+            <p className="mt-2 max-w-3xl text-sm text-[#A9B5AA]">Choose a section below.</p>
+          </div>
+
+          <div className="space-y-4">
+            {PARTNER_JOURNEY_SECTIONS.map((section, index) => {
+              const Icon = section.icon;
+              const cardActionCopy =
+                section.view === 'aware-partner'
+                  ? 'Open this section to enter Path Navigation.'
+                  : section.view === 'intentional-partner'
+                    ? 'Open this section to enter The Conflict Sandbox.'
+                    : 'Open this section to enter The Pace Meter.';
+              const sectionBadgeEarned = hasPartnerJourneyBadge(
+                currentUser.partnerJourneyBadges,
+                section.badge
+              );
+
+              return (
+                <button
+                  key={section.title}
+                  type="button"
+                  onClick={() => {
+                    rememberResourceSpaceOrigin('paid-growth-mode');
+                    setCurrentView(section.view);
+                  }}
+                  className="w-full rounded-2xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5 text-left transition hover:border-[#D9FF3D]/50 hover:bg-[#D9FF3D]/12"
+                >
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-[#D9FF3D]/20 text-[#D9FF3D]">
+                        <Icon className="h-5 w-5" />
+                      </div>
+
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Section {index + 1}</p>
+                        <h4 className="mt-1 text-xl font-semibold text-[#F6FFF2]">{section.title}</h4>
+                        <p className="mt-2 text-sm text-[#A9B5AA]">{section.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {sectionBadgeEarned && (
+                        <span className="rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium text-[#D9FF3D]">
+                          {getPartnerJourneyBadgeLabel(section.badge)}
+                        </span>
+                      )}
+                      <span className="rounded-full border border-emerald-400/30 px-3 py-1 text-xs font-medium text-emerald-200">
+                        {sectionBadgeEarned ? 'Badge earned' : 'Ready to open'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between rounded-xl border border-[#D9FF3D]/20 bg-[#0B0F0C]/50 px-4 py-4">
+                    <p className="text-sm text-[#A9B5AA]">{cardActionCopy}</p>
+                    <span className="text-sm font-medium text-[#D9FF3D]">Open</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="mb-12">
           <h3 className="font-mono-label text-[#F6FFF2] mb-2">Deepen Your Alignment</h3>
           <p className="text-[#A9B5AA] text-sm mb-6">These resources belong to {PATH_LABELS.alignment} and support partnership readiness, clarity, intimacy, and resilience.</p>
@@ -324,6 +434,7 @@ const PaidGrowthModeSection: React.FC = () => {
             })}
           </div>
         </div>
+        </>
         )}
 
         {/* Blog View */}

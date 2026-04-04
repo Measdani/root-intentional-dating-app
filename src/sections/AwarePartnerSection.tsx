@@ -9,6 +9,7 @@ import {
 import { resourceService } from '@/services/resourceService';
 import { hasPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
 import AlignmentKeyButton from '@/components/AlignmentKeyButton';
+import { returnToResourceSpace } from '@/lib/resourceSpaceNavigation';
 import type { GrowthResource } from '@/types';
 import {
   ArrowLeft,
@@ -31,7 +32,6 @@ type ResourceProgressMap = Record<
   }
 >;
 
-const growthModeTabStorageKey = 'rooted_growth_mode_active_tab';
 const growthDetailOriginViewKey = 'rooted_growth_detail_origin_view';
 const growthDetailStartResourceKey = 'rooted_growth_detail_start_resource_id';
 
@@ -213,8 +213,7 @@ const AwarePartnerSection: React.FC = () => {
   );
 
   const handleBack = () => {
-    localStorage.setItem(growthModeTabStorageKey, 'resources');
-    setCurrentView('growth-mode');
+    returnToResourceSpace(setCurrentView);
   };
 
   return (
