@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import {
-  PATH_LABELS,
   getPathBucketForUser,
   readPathResourcesFromStorage,
   writePathResourcesToStorage,
@@ -69,7 +68,6 @@ const getPathStatus = (progress: number) => {
 const AwarePartnerSection: React.FC = () => {
   const { currentUser, setCurrentView } = useApp();
   const pathBucket = getPathBucketForUser(currentUser);
-  const activePathLabel = PATH_LABELS[pathBucket];
   const [resources, setResources] = useState<GrowthResource[]>(() =>
     loadStoredGrowthResources(pathBucket)
   );
@@ -328,10 +326,6 @@ const AwarePartnerSection: React.FC = () => {
           </div>
         </div>
 
-        <div className="mb-5 rounded-xl border border-[#D9FF3D]/20 bg-[#D9FF3D]/5 px-4 py-3 text-sm text-[#F6FFF2]">
-          This section is currently pulling from {activePathLabel}.
-        </div>
-
         <div className="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-4">
           <div className="rounded-2xl border border-[#1A211A] bg-[#111611] p-3 h-fit">
             <p className="text-xs uppercase tracking-wide text-[#A9B5AA] px-2 pb-2">Path Navigation</p>
@@ -514,7 +508,7 @@ const AwarePartnerSection: React.FC = () => {
               })()
             ) : (
               <p className="text-sm text-[#A9B5AA]">
-                No {activePathLabel.toLowerCase()} resources are available right now.
+                No resources are available right now.
               </p>
             )}
           </div>

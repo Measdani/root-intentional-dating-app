@@ -334,8 +334,6 @@ const PaidGrowthModeSection: React.FC = () => {
         </div>
 
         <div className="mb-12">
-          <h3 className="font-mono-label text-[#F6FFF2] mb-2">Deepen Your Alignment</h3>
-          <p className="text-[#A9B5AA] text-sm mb-6">These resources belong to {PATH_LABELS.alignment} and support partnership readiness, clarity, intimacy, and resilience.</p>
           <div className="grid md:grid-cols-2 gap-4">
             {visibleResources.map((resource: any) => {
               const status = getPathStatus(resource.id);
