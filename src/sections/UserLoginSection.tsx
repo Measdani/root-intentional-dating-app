@@ -76,13 +76,15 @@ const UserLoginSection: React.FC = () => {
       photoUrl: stripInlinePhotoPayloads(sessionUser.photoUrl),
     };
 
+    try {
+      localStorage.setItem('currentUser', JSON.stringify(lightweightUser));
+      return lightweightUser;
+    } catch (error) {
+      console.warn('Lightweight currentUser save failed, clearing low-priority caches and retrying:', error);
+    }
+
     const cacheKeysToPurge = [
       'assessmentLog',
-      'community-blogs',
-      'growth-resources',
-      'paid-growth-resources',
-      'intentional-path-resources',
-      'alignment-path-resources',
       'rooted-admin-data',
       'rooted-admin-users',
       'rooted-admin-reports',
@@ -106,6 +108,8 @@ const UserLoginSection: React.FC = () => {
       'intentional:lgbtq-test:rooted-admin-reports',
       'intentional:lgbtq-test:rooted-admin-support-messages',
     ];
+
+    // Preserve authored resources and blog content across tester/admin sign-ins.
     cacheKeysToPurge.forEach((key) => localStorage.removeItem(key));
 
     localStorage.setItem('currentUser', JSON.stringify(lightweightUser));
