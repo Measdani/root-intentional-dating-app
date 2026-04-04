@@ -3,8 +3,10 @@ import { useApp } from '@/store/AppContext';
 import { growthResources } from '@/data/assessment';
 import {
   PATH_LABELS,
+  getPathBucketForUser,
   readPathResourcesFromStorage,
   writePathResourcesToStorage,
+  type PathResourceBucket,
 } from '@/lib/pathways';
 import { resourceService } from '@/services/resourceService';
 import { hasPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
@@ -35,8 +37,8 @@ type ResourceProgressMap = Record<
 const growthDetailOriginViewKey = 'rooted_growth_detail_origin_view';
 const growthDetailStartResourceKey = 'rooted_growth_detail_start_resource_id';
 
-const loadStoredGrowthResources = (): GrowthResource[] => {
-  return readPathResourcesFromStorage('intentional', growthResources);
+const loadStoredGrowthResources = (bucket: PathResourceBucket): GrowthResource[] => {
+  return readPathResourcesFromStorage(bucket, bucket === 'intentional' ? growthResources : []);
 };
 
 const getCategoryIcon = (category: string) => {
@@ -66,7 +68,11 @@ const getPathStatus = (progress: number) => {
 
 const AwarePartnerSection: React.FC = () => {
   const { currentUser, setCurrentView } = useApp();
-  const [resources, setResources] = useState<GrowthResource[]>(loadStoredGrowthResources);
+  const pathBucket = getPathBucketForUser(currentUser);
+  const activePathLabel = PATH_LABELS[pathBucket];
+  const [resources, setResources] = useState<GrowthResource[]>(() =>
+    loadStoredGrowthResources(pathBucket)
+  );
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showSelectedResourceLearnMore, setShowSelectedResourceLearnMore] = useState(false);
   const [resourceProgress, setResourceProgress] = useState<ResourceProgressMap>({});
@@ -105,18 +111,18 @@ const AwarePartnerSection: React.FC = () => {
 
   const refreshGrowthResources = useCallback(async () => {
     try {
-      const supabaseResources = await resourceService.getResources('intentional');
+      const supabaseResources = await resourceService.getResources(pathBucket);
       if (Array.isArray(supabaseResources) && supabaseResources.length > 0) {
         setResources(supabaseResources);
-        writePathResourcesToStorage('intentional', supabaseResources);
+        writePathResourcesToStorage(pathBucket, supabaseResources);
         return;
       }
     } catch (error) {
       console.error('Failed to load growth resources from Supabase:', error);
     }
 
-    setResources(loadStoredGrowthResources());
-  }, []);
+    setResources(loadStoredGrowthResources(pathBucket));
+  }, [pathBucket]);
 
   useEffect(() => {
     refreshGrowthResources();
@@ -323,7 +329,7 @@ const AwarePartnerSection: React.FC = () => {
         </div>
 
         <div className="mb-5 rounded-xl border border-[#D9FF3D]/20 bg-[#D9FF3D]/5 px-4 py-3 text-sm text-[#F6FFF2]">
-          {PATH_LABELS.intentional} resources stay tied to the assessment-fail path.
+          This section is currently pulling from {activePathLabel}.
         </div>
 
         <div className="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-4">
@@ -507,7 +513,9 @@ const AwarePartnerSection: React.FC = () => {
                 );
               })()
             ) : (
-              <p className="text-sm text-[#A9B5AA]">No growth resources are available right now.</p>
+              <p className="text-sm text-[#A9B5AA]">
+                No {activePathLabel.toLowerCase()} resources are available right now.
+              </p>
             )}
           </div>
         </div>
