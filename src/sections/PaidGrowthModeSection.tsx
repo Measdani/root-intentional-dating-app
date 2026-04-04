@@ -92,12 +92,16 @@ const PaidGrowthModeSection: React.FC = () => {
     const loadAlignmentResources = async () => {
       try {
         const supabaseResources = await resourceService.getResources('alignment');
-        setResources(supabaseResources);
-        writePathResourcesToStorage('alignment', supabaseResources);
+        if (Array.isArray(supabaseResources) && supabaseResources.length > 0) {
+          setResources(supabaseResources);
+          writePathResourcesToStorage('alignment', supabaseResources);
+          return;
+        }
       } catch (error) {
         console.error('Failed to load alignment path resources from Supabase:', error);
-        setResources(readPathResourcesFromStorage('alignment', []));
       }
+
+      setResources(readPathResourcesFromStorage('alignment', []));
     };
 
     loadAlignmentResources();
