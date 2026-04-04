@@ -22,9 +22,17 @@ const readResourceRow = async (ids: string[]): Promise<{ id: string; data: Growt
   }
 
   const orderedIds = new Map(ids.map((id, index) => [id, index]));
-  const row = [...data].sort(
+  const orderedRows = [...data].sort(
     (a, b) => (orderedIds.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (orderedIds.get(b.id) ?? Number.MAX_SAFE_INTEGER)
   )[0];
+  const nonEmptyRow = [...data]
+    .sort(
+      (a, b) =>
+        (orderedIds.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+        (orderedIds.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+    )
+    .find((row) => Array.isArray(row.data) && row.data.length > 0);
+  const row = nonEmptyRow ?? orderedRows;
 
   return row
     ? {
