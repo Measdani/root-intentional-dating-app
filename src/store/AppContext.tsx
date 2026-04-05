@@ -118,9 +118,14 @@ const getInitialAppView = (): AppView => {
     ? window.location.hash.slice(1)
     : window.location.hash;
   const hashParams = new URLSearchParams(hash);
+  const requestedView = url.searchParams.get('view');
+
+  if (requestedView === 'launching-soon' || requestedView === 'launch-preview') {
+    return 'launching-soon-preview';
+  }
 
   if (
-    url.searchParams.get('view') === 'password-reset' ||
+    requestedView === 'password-reset' ||
     url.searchParams.get('type') === 'recovery' ||
     hashParams.get('type') === 'recovery'
   ) {

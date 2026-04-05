@@ -102,8 +102,10 @@ const AppContent: React.FC = () => {
     }
   }, [currentView, hasSitePreviewAccess, setCurrentView, siteLockEnabled]);
 
+  const showLaunchPreview = currentView === 'launching-soon-preview';
   const showLaunchHold = siteLockEnabled && !hasSitePreviewAccess && !session.isAuthenticated;
   const hideShellChrome =
+    showLaunchPreview ||
     showLaunchHold ||
     currentView.startsWith('admin-') ||
     currentView === 'user-login' ||
@@ -111,7 +113,7 @@ const AppContent: React.FC = () => {
     currentView === 'sign-up';
 
   const renderView = () => {
-    if (showLaunchHold) {
+    if (showLaunchPreview || showLaunchHold) {
       return <LaunchingSoonSection />;
     }
 

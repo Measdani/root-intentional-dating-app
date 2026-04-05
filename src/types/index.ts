@@ -158,6 +158,7 @@ export interface BlogArticle {
 
 export type AppView =
   | 'landing'
+  | 'launching-soon-preview'
   | 'assessment'
   | 'assessment-reflection'
   | 'assessment-result'
