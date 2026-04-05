@@ -1277,10 +1277,12 @@ const GrowthDetailSection: React.FC = () => {
                 <BookOpen className="w-6 h-6 text-[#D9FF3D]" />
                 Key Concepts
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {content?.keyPoints.map((point, idx) => (
-                  <div key={idx} className="flex gap-4">
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#D9FF3D] mt-2"></div>
+                  <div
+                    key={idx}
+                    className="rounded-lg border border-[#1A211A] bg-[#0B0F0C] px-4 py-3"
+                  >
                     <p className="text-gray-300 leading-relaxed">{point}</p>
                   </div>
                 ))}
@@ -1293,10 +1295,13 @@ const GrowthDetailSection: React.FC = () => {
                 <CheckCircle className="w-6 h-6 text-amber-500" />
                 This Week's Practice
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {content?.exercise.map((ex, idx) => (
-                  <div key={idx} className="flex gap-4">
-                    <div className="flex-shrink-0 font-bold text-[#D9FF3D]">{idx + 1}.</div>
+                  <div
+                    key={idx}
+                    className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start gap-3 rounded-lg border border-[#1A211A] bg-[#0B0F0C] px-4 py-3"
+                  >
+                    <div className="pt-0.5 font-bold text-[#D9FF3D]">{idx + 1}.</div>
                     <p className="text-gray-300 leading-relaxed">{ex}</p>
                   </div>
                 ))}
