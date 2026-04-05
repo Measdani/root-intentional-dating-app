@@ -138,7 +138,7 @@ const buildBlogKnowledgeEntries = (blogs: BlogArticle[]): ForestKnowledgeEntry[]
   blogs
     .filter((blog) => blog.published)
     .map((blog) => ({
-      category: blog.moduleOnly ? 'Resource Area Blog' : 'Community Blog',
+      category: blog.moduleOnly ? 'Resource Area Blog' : 'Rooted Insights Blog',
       topic: blog.title,
       content: blog.excerpt || blog.content,
       searchText: [blog.title, blog.category, blog.excerpt, blog.content, blog.author].filter(Boolean).join(' '),

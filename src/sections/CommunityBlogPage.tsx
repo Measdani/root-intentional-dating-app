@@ -180,7 +180,7 @@ const CommunityBlogPage: React.FC = () => {
               <span className="text-sm font-medium">{localStorage.getItem('currentUser') ? 'My Profile' : 'Home'}</span>
             </button>
           </div>
-          <h1 className="text-2xl font-bold">Community Blog</h1>
+          <h1 className="text-2xl font-bold">Rooted Insights Blog</h1>
         </div>
       </div>
 

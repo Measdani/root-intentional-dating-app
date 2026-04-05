@@ -967,7 +967,7 @@ const GrowthModeSection: React.FC = () => {
         {activeTab === 'blog' && (
           <div>
             <div className="text-center mb-10">
-              <h2 className="font-display text-3xl text-[#F6FFF2] mb-4">Community Blog</h2>
+              <h2 className="font-display text-3xl text-[#F6FFF2] mb-4">Rooted Insights Blog</h2>
               <p className="text-[#A9B5AA] max-w-2xl mx-auto">
                 Read articles from our community about growth, relationships, and intentional living.
               </p>

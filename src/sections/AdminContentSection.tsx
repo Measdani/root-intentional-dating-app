@@ -443,7 +443,7 @@ const AdminContentSection: React.FC = () => {
           <TabsTrigger value="intentional" onClick={() => setActiveTab('intentional')}>{PATH_LABELS.intentional}</TabsTrigger>
           <TabsTrigger value="alignment" onClick={() => setActiveTab('alignment')}>{PATH_LABELS.alignment}</TabsTrigger>
           <TabsTrigger value="membership" onClick={() => setActiveTab('membership')}>Membership Tiers</TabsTrigger>
-          <TabsTrigger value="blogs" onClick={() => setActiveTab('blogs')}>Community Blog</TabsTrigger>
+          <TabsTrigger value="blogs" onClick={() => setActiveTab('blogs')}>Rooted Insights Blog</TabsTrigger>
           <TabsTrigger value="forest" onClick={() => setActiveTab('forest')}>Forest Knowledge</TabsTrigger>
         </TabsList>
 
@@ -630,7 +630,7 @@ const AdminContentSection: React.FC = () => {
 
         <TabsContent value="blogs" className="space-y-4">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Community Blog Articles ({blogs.length})</h3>
+            <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Rooted Insights Blog Articles ({blogs.length})</h3>
             <div className="flex items-center gap-2">
               <Button onClick={() => {
                 setBlogFormData({
@@ -1070,7 +1070,7 @@ const AdminContentSection: React.FC = () => {
                 />
                 <label className="text-sm text-[#F6FFF2]">
                   <span className="font-medium">Module-Only Article</span>
-                  <p className="text-xs text-[#A9B5AA]">If checked: only visible in modules, not on community blog</p>
+                  <p className="text-xs text-[#A9B5AA]">If checked: only visible in modules, not on Rooted Insights Blog</p>
                 </label>
               </div>
 

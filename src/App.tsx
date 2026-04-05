@@ -41,16 +41,24 @@ import UserSettingsSection from '@/sections/UserSettingsSection';
 import PrivacyPolicySection from '@/sections/PrivacyPolicySection';
 import TermsOfServiceSection from '@/sections/TermsOfServiceSection';
 import CommunityGuidelinesSection from '@/sections/CommunityGuidelinesSection';
+import LaunchingSoonSection from '@/sections/LaunchingSoonSection';
 import EmailModal from '@/components/EmailModal';
 import ContactSupportModal from '@/components/ContactSupportModal';
 import Footer from '@/components/Footer';
 import UserAccessButton from '@/components/UserAccessButton';
 import ForestFloatingAssistant from '@/components/ForestFloatingAssistant';
+import {
+  getStoredSitePreviewAccess,
+  isSiteLockEnabled,
+  resolveSitePreviewStateFromUrl,
+} from '@/lib/siteLock';
 
 const AppContent: React.FC = () => {
-  const { currentView, showSupportModal, setShowSupportModal, currentUser, isUserAuthenticated } = useApp();
+  const { currentView, setCurrentView, showSupportModal, setShowSupportModal, currentUser, isUserAuthenticated } = useApp();
   const { session } = useAdmin();
   const [authPoolBanner, setAuthPoolBanner] = React.useState<string | null>(null);
+  const [hasSitePreviewAccess, setHasSitePreviewAccess] = React.useState<boolean>(() => getStoredSitePreviewAccess());
+  const siteLockEnabled = isSiteLockEnabled();
 
   React.useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -76,7 +84,37 @@ const AppContent: React.FC = () => {
     };
   }, []);
 
+  React.useEffect(() => {
+    const { hasPreviewAccess, requestedAdminAccess } = resolveSitePreviewStateFromUrl();
+
+    if (hasPreviewAccess !== hasSitePreviewAccess) {
+      setHasSitePreviewAccess(hasPreviewAccess);
+    }
+
+    if (
+      siteLockEnabled &&
+      hasPreviewAccess &&
+      requestedAdminAccess &&
+      currentView !== 'admin-login' &&
+      !currentView.startsWith('admin-')
+    ) {
+      setCurrentView('admin-login');
+    }
+  }, [currentView, hasSitePreviewAccess, setCurrentView, siteLockEnabled]);
+
+  const showLaunchHold = siteLockEnabled && !hasSitePreviewAccess && !session.isAuthenticated;
+  const hideShellChrome =
+    showLaunchHold ||
+    currentView.startsWith('admin-') ||
+    currentView === 'user-login' ||
+    currentView === 'password-reset' ||
+    currentView === 'sign-up';
+
   const renderView = () => {
+    if (showLaunchHold) {
+      return <LaunchingSoonSection />;
+    }
+
     if (currentView === 'user-login') {
       return <UserLoginSection />;
     }
@@ -221,10 +259,10 @@ const AppContent: React.FC = () => {
       <div className="flex-1">
         {renderView()}
       </div>
-      {!currentView.startsWith('admin-') && currentView !== 'user-login' && currentView !== 'password-reset' && currentView !== 'sign-up' && (
+      {!hideShellChrome && (
         <Footer />
       )}
-      {!currentView.startsWith('admin-') && currentView !== 'user-login' && currentView !== 'password-reset' && currentView !== 'sign-up' && (
+      {!hideShellChrome && (
         <>
           <EmailModal />
           <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
@@ -234,7 +272,7 @@ const AppContent: React.FC = () => {
             }`}
           >
             <UserAccessButton />
-            {currentView !== 'landing' && (
+            {currentView !== 'landing' && currentView !== 'community-blog' && (
               <ForestFloatingAssistant />
             )}
           </div>

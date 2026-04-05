@@ -254,7 +254,7 @@ const PaidGrowthModeSection: React.FC = () => {
 
         {activeTab === 'blog' && (
           <div className="mb-12">
-            <h3 className="text-2xl font-bold text-[#F6FFF2] mb-6">Community Blog</h3>
+            <h3 className="text-2xl font-bold text-[#F6FFF2] mb-6">Rooted Insights Blog</h3>
             {publicBlogs.length === 0 ? (
               <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 text-emerald-500/30 mx-auto mb-4" />
