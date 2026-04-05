@@ -62,14 +62,14 @@ const CommunityBlogPreviewSection: React.FC = () => {
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
-            Community<br />Blog
+            Rooted Insights<br />Blog
           </h2>
           <p
             className={`text-[#A9B5AA] text-base md:text-lg max-w-2xl mx-auto transition-all duration-700 delay-500 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
           >
-            Insights, stories, and guidance from our community exploring intentional relationships.
+            More than advice - the why, the how, and the work behind real relationships.
           </p>
         </div>
 
