@@ -14,7 +14,7 @@ const CommunityBlogPreviewSection: React.FC = () => {
     const loadBlogs = async () => {
       try {
         const publicBlogs = await blogService.getPublicBlogsWithFallback();
-        setBlogs(publicBlogs.slice(0, 6));
+        setBlogs(publicBlogs.slice(0, 3));
         return;
       } catch (error) {
         console.error('Error loading blogs from Supabase:', error);
