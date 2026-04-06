@@ -47,6 +47,7 @@ import ContactSupportModal from '@/components/ContactSupportModal';
 import Footer from '@/components/Footer';
 import UserAccessButton from '@/components/UserAccessButton';
 import ForestFloatingAssistant from '@/components/ForestFloatingAssistant';
+import MeetingSafetyButton from '@/components/MeetingSafetyButton';
 import {
   getStoredSitePreviewAccess,
   isSiteLockEnabled,
@@ -104,6 +105,7 @@ const AppContent: React.FC = () => {
 
   const showLaunchPreview = currentView === 'launching-soon-preview';
   const showLaunchHold = siteLockEnabled && !hasSitePreviewAccess && !session.isAuthenticated;
+  const showForestAssistant = currentView !== 'landing' && currentView !== 'community-blog';
   const hideShellChrome =
     showLaunchPreview ||
     showLaunchHold ||
@@ -274,9 +276,10 @@ const AppContent: React.FC = () => {
             }`}
           >
             <UserAccessButton />
-            {currentView !== 'landing' && currentView !== 'community-blog' && (
-              <ForestFloatingAssistant />
-            )}
+            <div className="flex items-center gap-3">
+              <MeetingSafetyButton />
+              {showForestAssistant && <ForestFloatingAssistant />}
+            </div>
           </div>
         </>
       )}
