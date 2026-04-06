@@ -43,16 +43,16 @@ const MeetingSafetyButton: React.FC<MeetingSafetyButtonProps> = ({ variant = 'fl
 
       <DialogContent
         overlayClassName="bg-[#0B0F0C]/75 backdrop-blur-sm"
-        className="max-w-xl border border-[#D9FF3D]/20 bg-[#111611] p-0 text-[#F6FFF2]"
+        className="w-[calc(100vw-1.5rem)] max-w-md overflow-hidden border border-[#D9FF3D]/20 bg-[#111611] p-0 text-[#F6FFF2] sm:max-w-lg"
       >
-        <DialogHeader className="border-b border-[#1A211A] px-6 py-5 pr-12">
+        <DialogHeader className="border-b border-[#1A211A] px-5 py-4 pr-12">
           <div className="flex items-center gap-3 text-[#D9FF3D]">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D9FF3D]/15">
               <Shield className="h-5 w-5" />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em]">Trust Protocol</p>
-              <DialogTitle className="font-display text-2xl text-[#F6FFF2]">The Rooted Hearts Trust Protocol</DialogTitle>
+              <DialogTitle className="font-display text-xl text-[#F6FFF2] sm:text-2xl">The Rooted Hearts Trust Protocol</DialogTitle>
             </div>
           </div>
           <DialogDescription className="pt-3 text-sm leading-relaxed text-[#A9B5AA]">
@@ -61,8 +61,8 @@ const MeetingSafetyButton: React.FC<MeetingSafetyButtonProps> = ({ variant = 'fl
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 px-6 py-6 text-sm">
-          <div className="rounded-2xl border border-[#D9FF3D]/15 bg-[#0B0F0C] p-5">
+        <div className="max-h-[60vh] space-y-4 overflow-y-auto px-5 py-4 text-sm sm:max-h-[65vh]">
+          <div className="rounded-2xl border border-[#D9FF3D]/15 bg-[#0B0F0C] p-4">
             <p className="mb-2 font-medium text-[#D9FF3D]">1. Verified Identity (Included for All Members)</p>
             <p className="leading-relaxed text-[#A9B5AA]">
               Every member must pass a real-time Identity Match. We use AI to pair a live selfie
@@ -71,7 +71,7 @@ const MeetingSafetyButton: React.FC<MeetingSafetyButtonProps> = ({ variant = 'fl
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-5">
+          <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-4">
             <p className="mb-2 font-medium text-[#D9FF3D]">2. National Safety Screening (Available Option)</p>
             <p className="leading-relaxed text-[#A9B5AA]">
               For those seeking the highest level of transparency, we offer a National Criminal &
@@ -92,7 +92,7 @@ const MeetingSafetyButton: React.FC<MeetingSafetyButtonProps> = ({ variant = 'fl
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#D9FF3D]/15 bg-[#0B0F0C] p-5">
+          <div className="rounded-2xl border border-[#D9FF3D]/15 bg-[#0B0F0C] p-4">
             <p className="mb-2 font-medium text-[#D9FF3D]">3. Sovereign Safety (Your Responsibility)</p>
             <p className="leading-relaxed text-[#A9B5AA]">
               A background check is a snapshot of the past, not a guarantee of the future. We provide
