@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import { getMessageBlockReason } from '@/modules';
-import { ArrowLeft, MessageCircle, Lock, Flag, Image, Shield } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Lock, Flag, Image } from 'lucide-react';
 import PhotoConsentPrompt from '@/components/PhotoConsentPrompt';
 import ResponseModal from '@/components/ResponseModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import RelationshipMilestonesPanel from '@/components/RelationshipMilestonesPanel';
+import MeetingSafetyButton from '@/components/MeetingSafetyButton';
 
 const ConversationSection: React.FC = () => {
   const { selectedConversation, setCurrentView, respondToInterest, markMessagesAsRead, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked, applyMilestoneAction } = useApp();
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [showSafetyModal, setShowSafetyModal] = useState(false);
   const [showConsentPrompt, setShowConsentPrompt] = useState(true);
 
   // Mark messages as read when conversation is opened
@@ -181,13 +181,7 @@ const ConversationSection: React.FC = () => {
                 <Image className="w-4 h-4" />
               </button>
             )}
-            <button
-              onClick={() => setShowSafetyModal(true)}
-              className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
-              title="Meeting Safety Tips"
-            >
-              <Shield className="w-4 h-4" />
-            </button>
+            <MeetingSafetyButton variant="icon" />
             <button
               onClick={() => setShowReportModal(true)}
               className="text-[#A9B5AA] hover:text-red-400 transition-colors"
@@ -417,71 +411,10 @@ const ConversationSection: React.FC = () => {
           setShowReportModal(false);
         }}
       />
-
-      {/* Safety Tips Modal */}
-      {showSafetyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111611] rounded-2xl border border-[#1A211A] max-w-md w-full p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-[#D9FF3D]/20 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[#D9FF3D]" />
-              </div>
-              <h2 className="font-display text-xl text-[#F6FFF2]">Meeting Safely</h2>
-            </div>
-
-            <div className="space-y-6 text-[#F6FFF2] text-sm mb-8">
-              <div>
-                <p className="font-medium text-[#D9FF3D] mb-3">If you're planning to meet:</p>
-                <ul className="space-y-2 text-[#A9B5AA]">
-                  <li className="flex gap-2">
-                    <span>•</span>
-                    <span>Meet in a public place</span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span>•</span>
-                    <span>Arrange your own transportation</span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span>•</span>
-                    <span>Avoid sharing your home address</span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span>•</span>
-                    <span>Trust your instincts</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="font-medium text-[#D9FF3D] mb-3">If you don't have someone to share plans with:</p>
-                <ul className="space-y-2 text-[#A9B5AA]">
-                  <li className="flex gap-2">
-                    <span>•</span>
-                    <span>Email yourself the date details</span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span>•</span>
-                    <span>Leave yourself a voicemail</span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span>•</span>
-                    <span>Screenshot the conversation between you and the person you're meeting</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowSafetyModal(false)}
-              className="w-full py-3 bg-[#D9FF3D] text-[#0B0F0C] rounded-xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 export default ConversationSection;
+
+

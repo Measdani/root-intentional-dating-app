@@ -23,8 +23,8 @@ const MeetingSafetyButton: React.FC<MeetingSafetyButtonProps> = ({ variant = 'fl
           <button
             type="button"
             className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
-            title="Meeting Safety Tips"
-            aria-label="Open meeting safety tips"
+            title="Open Rooted Hearts Trust Protocol"
+            aria-label="Open Rooted Hearts Trust Protocol"
           >
             <Shield className="w-4 h-4" />
           </button>
@@ -32,11 +32,11 @@ const MeetingSafetyButton: React.FC<MeetingSafetyButtonProps> = ({ variant = 'fl
           <button
             type="button"
             className="flex items-center gap-2 rounded-full border border-[#D9FF3D]/35 bg-[#0B0F0C] px-4 py-2 text-[#F6FFF2] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
-            title="Meeting Safety Tips"
-            aria-label="Open meeting safety tips"
+            title="Open Rooted Hearts Trust Protocol"
+            aria-label="Open Rooted Hearts Trust Protocol"
           >
             <Shield className="h-4 w-4 text-[#D9FF3D]" />
-            <span className="text-sm font-semibold">Safety</span>
+            <span className="text-sm font-semibold">Trust Protocol</span>
           </button>
         )}
       </DialogTrigger>
@@ -51,55 +51,71 @@ const MeetingSafetyButton: React.FC<MeetingSafetyButtonProps> = ({ variant = 'fl
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em]">Safety Reminder</p>
-              <DialogTitle className="font-display text-2xl text-[#F6FFF2]">Meet With Care</DialogTitle>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em]">Trust Protocol</p>
+              <DialogTitle className="font-display text-2xl text-[#F6FFF2]">The Rooted Hearts Trust Protocol</DialogTitle>
             </div>
           </div>
           <DialogDescription className="pt-3 text-sm leading-relaxed text-[#A9B5AA]">
-            Rooted Hearts can encourage safer connections, but we cannot provide complete protection.
-            Your awareness, preparation, and discernment still matter every time you meet someone.
+            Our community is built on the principle of Sovereignty. We provide the gate; you provide
+            the wisdom.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 px-6 py-6 text-sm">
           <div className="rounded-2xl border border-[#D9FF3D]/15 bg-[#0B0F0C] p-5">
-            <p className="mb-3 font-medium text-[#D9FF3D]">Before or during an in-person date:</p>
-            <ul className="space-y-2 text-[#A9B5AA]">
-              <li className="flex gap-2">
-                <span className="text-[#D9FF3D]">-</span>
-                <span>Meet in a public place.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-[#D9FF3D]">-</span>
-                <span>Use your own transportation.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-[#D9FF3D]">-</span>
-                <span>Do not share your home address too early.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-[#D9FF3D]">-</span>
-                <span>Trust discomfort. You do not owe anyone continued access.</span>
-              </li>
-            </ul>
+            <p className="mb-2 font-medium text-[#D9FF3D]">1. Verified Identity (Included for All Members)</p>
+            <p className="leading-relaxed text-[#A9B5AA]">
+              Every member must pass a real-time Identity Match. We use AI to pair a live selfie
+              with a government-issued ID to ensure every "Tribe Member" is exactly who they claim
+              to be. No bots, no fakes.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-5">
-            <p className="mb-3 font-medium text-[#D9FF3D]">If you do not have someone to update:</p>
-            <ul className="space-y-2 text-[#A9B5AA]">
-              <li className="flex gap-2">
-                <span className="text-[#D9FF3D]">-</span>
-                <span>Email yourself the date details.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-[#D9FF3D]">-</span>
-                <span>Leave yourself a voicemail with the location and time.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-[#D9FF3D]">-</span>
-                <span>Keep screenshots of your conversation and plans.</span>
-              </li>
-            </ul>
+            <p className="mb-2 font-medium text-[#D9FF3D]">2. National Safety Screening (Available Option)</p>
+            <p className="leading-relaxed text-[#A9B5AA]">
+              For those seeking the highest level of transparency, we offer a National Criminal &
+              Sex Offender screening.
+            </p>
+            <div className="mt-4 space-y-3 text-[#A9B5AA]">
+              <div>
+                <p className="font-medium text-[#F6FFF2]">Annual Members</p>
+                <p>This comprehensive check is included in your membership.</p>
+              </div>
+              <div>
+                <p className="font-medium text-[#F6FFF2]">Monthly Members</p>
+                <p>
+                  You can choose to add this "Trust Badge" to your profile at any time for a one-time
+                  verification fee.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#D9FF3D]/15 bg-[#0B0F0C] p-5">
+            <p className="mb-2 font-medium text-[#D9FF3D]">3. Sovereign Safety (Your Responsibility)</p>
+            <p className="leading-relaxed text-[#A9B5AA]">
+              A background check is a snapshot of the past, not a guarantee of the future. We provide
+              the tools, but you stay the protector of your own journey. Always follow our Safe-Meet
+              Protocols:
+            </p>
+            <div className="mt-4 space-y-3 text-[#A9B5AA]">
+              <div>
+                <p className="font-medium text-[#F6FFF2]">Public Only</p>
+                <p>Always host your first three meetings in well-lit, public spaces.</p>
+              </div>
+              <div>
+                <p className="font-medium text-[#F6FFF2]">Own the Road</p>
+                <p>Arrange your own transportation to and from every meeting.</p>
+              </div>
+              <div>
+                <p className="font-medium text-[#F6FFF2]">The Voice Memo</p>
+                <p>
+                  Always leave a voicemail for yourself or a friend with the time, location, and
+                  name of the person you are meeting.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>
