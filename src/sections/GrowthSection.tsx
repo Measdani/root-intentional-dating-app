@@ -105,7 +105,7 @@ const GrowthSection: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setCurrentView('growth-mode')}
+              onClick={() => setCurrentView('community-blog')}
               className={`btn-primary transition-all duration-700 delay-700 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
