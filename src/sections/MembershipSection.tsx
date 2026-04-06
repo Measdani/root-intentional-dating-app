@@ -102,13 +102,13 @@ const MembershipSection: React.FC = () => {
                     : 'bg-[#D9FF3D] text-[#0B0F0C] hover:scale-105'
                 }`}
               >
-                {hasJoinedList ? 'You are on the list' : 'Join the list'}
+                {hasJoinedList ? 'You are on the list' : `Purchase ${tier.name}`}
               </button>
             </div>
           ))}
         </div>
 
-        <div className="max-w-4xl mb-16 space-y-3 text-sm leading-6 text-[#0B0F0C]/62">
+        <div className="max-w-4xl mb-16 space-y-3 text-sm leading-6 text-[#0B0F0C]">
           <p>
             *Identity verification is required for all users. Rooted Hearts covers the cost of standard ID
             verification. Profiles remain hidden until verification is complete.

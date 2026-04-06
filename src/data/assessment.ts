@@ -401,8 +401,8 @@ export const membershipTiers: MembershipTier[] = [
     badge: 'Best value',
     bestFor: 'Serious, long-term alignment',
     features: [
+      'Everything in Monthly',
       'Everything in Quarterly',
-      'Quarterly relationship check-ins',
       'Enhanced Verification (background check included)*',
       'Priority access to new features',
     ],
