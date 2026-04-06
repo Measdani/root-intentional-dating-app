@@ -106,6 +106,7 @@ const AppContent: React.FC = () => {
   const showLaunchPreview = currentView === 'launching-soon-preview';
   const showLaunchHold = siteLockEnabled && !hasSitePreviewAccess && !session.isAuthenticated;
   const showForestAssistant = currentView !== 'landing' && currentView !== 'community-blog';
+  const showMeetingSafetyButton = isUserAuthenticated && currentView !== 'landing';
   const hideShellChrome =
     showLaunchPreview ||
     showLaunchHold ||
@@ -276,10 +277,12 @@ const AppContent: React.FC = () => {
             }`}
           >
             <UserAccessButton />
-            <div className="flex items-center gap-3">
-              <MeetingSafetyButton />
-              {showForestAssistant && <ForestFloatingAssistant />}
-            </div>
+            {(showMeetingSafetyButton || showForestAssistant) && (
+              <div className="flex items-center gap-3">
+                {showMeetingSafetyButton && <MeetingSafetyButton />}
+                {showForestAssistant && <ForestFloatingAssistant />}
+              </div>
+            )}
           </div>
         </>
       )}
