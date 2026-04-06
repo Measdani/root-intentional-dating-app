@@ -198,6 +198,7 @@ export interface MembershipTier {
   price: string;
   period: string;
   badge?: string;
+  bestFor?: string;
   features: string[];
 }
 

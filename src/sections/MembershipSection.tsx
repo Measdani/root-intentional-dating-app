@@ -62,7 +62,7 @@ const MembershipSection: React.FC = () => {
           {membershipTiers.map((tier, idx) => (
             <div
               key={tier.id}
-              className={`bg-[#0B0F0C] rounded-[28px] p-6 md:p-8 relative transition-all duration-700 ${
+              className={`bg-[#0B0F0C] rounded-[28px] p-6 md:p-8 relative flex flex-col transition-all duration-700 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
               }`}
               style={{ transitionDelay: `${200 + idx * 100}ms` }}
@@ -75,16 +75,21 @@ const MembershipSection: React.FC = () => {
               )}
 
               <h3 className="text-[#F6FFF2] font-semibold text-xl mb-2">{tier.name}</h3>
+              {tier.bestFor && (
+                <p className="text-[#A9B5AA] text-sm mb-4">
+                  <span className="text-[#F6FFF2] font-medium">Best for:</span> {tier.bestFor}
+                </p>
+              )}
               <div className="flex items-baseline gap-1 mb-6">
                 <span className="text-[#F6FFF2] font-display text-4xl">{tier.price}</span>
                 <span className="text-[#A9B5AA] text-sm">{tier.period}</span>
               </div>
 
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-1">
                 {tier.features.map((feature, fidx) => (
-                  <li key={fidx} className="flex items-center gap-3 text-[#A9B5AA] text-sm">
-                    <Check className="w-4 h-4 text-[#D9FF3D]" />
-                    {feature}
+                  <li key={fidx} className="flex items-start gap-3 text-[#A9B5AA] text-sm leading-6">
+                    <Check className="w-4 h-4 text-[#D9FF3D] mt-1 shrink-0" />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -101,6 +106,17 @@ const MembershipSection: React.FC = () => {
               </button>
             </div>
           ))}
+        </div>
+
+        <div className="max-w-4xl mb-16 space-y-3 text-sm leading-6 text-[#0B0F0C]/62">
+          <p>
+            *Identity verification is required for all users. Rooted Hearts covers the cost of standard ID
+            verification. Profiles remain hidden until verification is complete.
+          </p>
+          <p>
+            *Enhanced verification (background check) is included for annual members. This service is optional
+            for other plans and may require an additional fee.
+          </p>
         </div>
 
         {/* Footer */}
