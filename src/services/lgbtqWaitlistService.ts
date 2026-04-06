@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
+export type LgbtqIdentityResponse = 'heterosexual' | 'lgbtq' | 'prefer_not_to_say';
+
 export interface LgbtqWaitlistSurveyInput {
   name: string;
   email: string;
@@ -12,6 +14,7 @@ export interface LgbtqWaitlistSurveyInput {
 export interface LgbtqWaitlistServiceResult {
   status: 'verification_sent' | 'verified' | 'already_verified';
   message: string;
+  identityResponse?: LgbtqIdentityResponse | null;
 }
 
 const toMessage = async (fallback: string, error: unknown): Promise<string> => {
@@ -77,6 +80,12 @@ export const lgbtqWaitlistService = {
     return {
       status: response.status,
       message: response.message,
+      identityResponse:
+        response.identityResponse === 'heterosexual' ||
+        response.identityResponse === 'lgbtq' ||
+        response.identityResponse === 'prefer_not_to_say'
+          ? response.identityResponse
+          : null,
     };
   },
 
@@ -107,6 +116,52 @@ export const lgbtqWaitlistService = {
     return {
       status: response.status,
       message: response.message,
+      identityResponse:
+        response.identityResponse === 'heterosexual' ||
+        response.identityResponse === 'lgbtq' ||
+        response.identityResponse === 'prefer_not_to_say'
+          ? response.identityResponse
+          : null,
+    };
+  },
+
+  async submitIdentityResponse(
+    token: string,
+    identityResponse: LgbtqIdentityResponse
+  ): Promise<LgbtqWaitlistServiceResult> {
+    const { data, error } = await supabase.functions.invoke('lgbtq-waitlist', {
+      body: {
+        action: 'submit_identity_response',
+        token,
+        identity_response: identityResponse,
+      },
+    });
+
+    if (error) {
+      throw new Error(await toMessage('Unable to save your response right now.', error));
+    }
+
+    if (!data || typeof data !== 'object') {
+      throw new Error('Waitlist verification response was invalid.');
+    }
+
+    const response = data as Partial<LgbtqWaitlistServiceResult>;
+    if (
+      (response.status !== 'verified' && response.status !== 'already_verified') ||
+      typeof response.message !== 'string'
+    ) {
+      throw new Error('Waitlist verification response was invalid.');
+    }
+
+    return {
+      status: response.status,
+      message: response.message,
+      identityResponse:
+        response.identityResponse === 'heterosexual' ||
+        response.identityResponse === 'lgbtq' ||
+        response.identityResponse === 'prefer_not_to_say'
+          ? response.identityResponse
+          : null,
     };
   },
 };

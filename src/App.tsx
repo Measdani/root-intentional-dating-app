@@ -42,6 +42,7 @@ import PrivacyPolicySection from '@/sections/PrivacyPolicySection';
 import TermsOfServiceSection from '@/sections/TermsOfServiceSection';
 import CommunityGuidelinesSection from '@/sections/CommunityGuidelinesSection';
 import LaunchingSoonSection from '@/sections/LaunchingSoonSection';
+import LgbtqEmailConfirmationSection from '@/sections/LgbtqEmailConfirmationSection';
 import EmailModal from '@/components/EmailModal';
 import ContactSupportModal from '@/components/ContactSupportModal';
 import Footer from '@/components/Footer';
@@ -104,12 +105,18 @@ const AppContent: React.FC = () => {
   }, [currentView, hasSitePreviewAccess, setCurrentView, siteLockEnabled]);
 
   const showLaunchPreview = currentView === 'launching-soon-preview';
-  const showLaunchHold = siteLockEnabled && !hasSitePreviewAccess && !session.isAuthenticated;
+  const showWaitlistConfirmation = currentView === 'lgbtq-email-confirmation';
+  const showLaunchHold =
+    siteLockEnabled &&
+    !hasSitePreviewAccess &&
+    !session.isAuthenticated &&
+    !showWaitlistConfirmation;
   const showForestAssistant = currentView !== 'landing' && currentView !== 'community-blog';
   const showMeetingSafetyButton = isUserAuthenticated && currentView !== 'landing';
   const hideShellChrome =
     showLaunchPreview ||
     showLaunchHold ||
+    showWaitlistConfirmation ||
     currentView.startsWith('admin-') ||
     currentView === 'user-login' ||
     currentView === 'password-reset' ||
@@ -118,6 +125,10 @@ const AppContent: React.FC = () => {
   const renderView = () => {
     if (showLaunchPreview || showLaunchHold) {
       return <LaunchingSoonSection />;
+    }
+
+    if (currentView === 'lgbtq-email-confirmation') {
+      return <LgbtqEmailConfirmationSection />;
     }
 
     if (currentView === 'user-login') {

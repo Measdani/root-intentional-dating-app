@@ -159,6 +159,7 @@ export interface BlogArticle {
 export type AppView =
   | 'landing'
   | 'launching-soon-preview'
+  | 'lgbtq-email-confirmation'
   | 'assessment'
   | 'assessment-reflection'
   | 'assessment-result'

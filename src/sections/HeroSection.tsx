@@ -5,8 +5,6 @@ import { lgbtqWaitlistService } from '@/services/lgbtqWaitlistService';
 import { toast } from 'sonner';
 import { ChevronDown, X } from 'lucide-react';
 
-const WAITLIST_TOKEN_PARAM = 'waitlistToken';
-
 type WaitlistSurveyStatus = 'form' | 'verification-sent' | 'verified';
 
 const emptyWaitlistForm = {
@@ -26,7 +24,6 @@ const HeroSection: React.FC = () => {
   const [waitlistForm, setWaitlistForm] = useState(emptyWaitlistForm);
   const [waitlistErrors, setWaitlistErrors] = useState<Record<string, string>>({});
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
-  const [isVerifyingWaitlistToken, setIsVerifyingWaitlistToken] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -67,55 +64,10 @@ const HeroSection: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const url = new URL(window.location.href);
-    const token = url.searchParams.get(WAITLIST_TOKEN_PARAM);
-    if (!token) return;
-
-    url.searchParams.delete(WAITLIST_TOKEN_PARAM);
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-
-    let isCancelled = false;
-    setShowWaitlistSurvey(true);
-    setWaitlistErrors({});
-    setWaitlistStatus('verification-sent');
-    setWaitlistStatusMessage('Verifying your email...');
-    setIsVerifyingWaitlistToken(true);
-
-    void lgbtqWaitlistService
-      .verifyEmail(token)
-      .then((result) => {
-        if (isCancelled) return;
-        setWaitlistStatus('verified');
-        setWaitlistStatusMessage(result.message);
-        toast.success('Your waitlist email has been verified.');
-      })
-      .catch((error) => {
-        if (isCancelled) return;
-        const message =
-          error instanceof Error ? error.message : 'This verification link could not be completed.';
-        setWaitlistStatus('form');
-        setWaitlistStatusMessage('');
-        setWaitlistErrors({ submit: message });
-        toast.error(message);
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsVerifyingWaitlistToken(false);
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
-
   const getWaitlistRedirectUrl = () => {
     const url = new URL(window.location.href);
     url.hash = '';
-    url.searchParams.delete(WAITLIST_TOKEN_PARAM);
+    url.search = '';
     return url.toString();
   };
 
@@ -298,14 +250,7 @@ const HeroSection: React.FC = () => {
               </button>
             </div>
 
-            {isVerifyingWaitlistToken ? (
-              <div className="rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5 text-center">
-                <p className="text-lg font-medium text-[#F6FFF2]">Verifying your email...</p>
-                <p className="mt-2 text-sm text-[#A9B5AA]">
-                  Hold on while I confirm your waitlist email.
-                </p>
-              </div>
-            ) : waitlistStatus === 'verified' ? (
+            {waitlistStatus === 'verified' ? (
               <div className="rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-5 text-center">
                 <p className="text-lg font-medium text-[#F6FFF2]">
                   {waitlistStatusMessage ||

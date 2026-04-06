@@ -16,7 +16,18 @@ type VerifyEmailPayload = {
   token: string;
 };
 
-type WaitlistRequest = RequestVerificationPayload | VerifyEmailPayload;
+type SubmitIdentityResponsePayload = {
+  action: "submit_identity_response";
+  token: string;
+  identity_response: WaitlistIdentityResponse;
+};
+
+type WaitlistRequest =
+  | RequestVerificationPayload
+  | VerifyEmailPayload
+  | SubmitIdentityResponsePayload;
+
+type WaitlistIdentityResponse = "heterosexual" | "lgbtq" | "prefer_not_to_say";
 
 type WaitlistRow = {
   id: string;
@@ -32,13 +43,16 @@ type WaitlistRow = {
   verification_email_sent_at: string | null;
   verified_at: string | null;
   thank_you_email_sent_at: string | null;
+  self_identification: WaitlistIdentityResponse | null;
+  self_identification_recorded_at: string | null;
 };
 
 const TABLE_NAME = "rh_lgbtq_waitlist_submissions";
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const VERIFICATION_RESEND_COOLDOWN_MS = 5 * 60 * 1000;
-const VERIFIED_MESSAGE =
-  "Thank you for your survey. Your email has been verified. We will contact you when we launch.";
+const EMAIL_VERIFIED_MESSAGE = "Your email has been verified successfully.";
+const FOLLOW_UP_COMPLETE_MESSAGE =
+  "Thank you for your response. You'll be notified when this experience becomes available.";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,6 +89,21 @@ const isVerifyEmailPayload = (value: unknown): value is VerifyEmailPayload => {
   return payload.action === "verify_email" && typeof payload.token === "string";
 };
 
+const isWaitlistIdentityResponse = (value: unknown): value is WaitlistIdentityResponse =>
+  value === "heterosexual" || value === "lgbtq" || value === "prefer_not_to_say";
+
+const isSubmitIdentityResponsePayload = (
+  value: unknown,
+): value is SubmitIdentityResponsePayload => {
+  if (!value || typeof value !== "object") return false;
+  const payload = value as Partial<SubmitIdentityResponsePayload>;
+  return (
+    payload.action === "submit_identity_response" &&
+    typeof payload.token === "string" &&
+    isWaitlistIdentityResponse(payload.identity_response)
+  );
+};
+
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 
 const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
@@ -107,6 +136,7 @@ const sha256Hex = async (value: string): Promise<string> => {
 const buildVerificationUrl = (baseUrl: string, token: string): string => {
   const url = new URL(baseUrl);
   url.hash = "";
+  url.searchParams.set("view", "lgbtq-email-confirmation");
   url.searchParams.set("waitlistToken", token);
   return url.toString();
 };
@@ -118,6 +148,7 @@ const sendResendEmail = async ({
   subject,
   html,
   text,
+  replyTo,
 }: {
   apiKey: string;
   from: string;
@@ -125,6 +156,7 @@ const sendResendEmail = async ({
   subject: string;
   html: string;
   text: string;
+  replyTo?: string;
 }) => {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -138,12 +170,95 @@ const sendResendEmail = async ({
       subject,
       html,
       text,
+      ...(replyTo ? { reply_to: replyTo } : {}),
     }),
   });
 
   if (!response.ok) {
-    throw new Error(await response.text());
+    const errorText = await response.text();
+    console.error("Resend email send failed", {
+      status: response.status,
+      from,
+      to,
+      subject,
+      replyTo: replyTo ?? null,
+      errorText,
+    });
+    throw new Error(`Resend ${response.status}: ${errorText}`);
   }
+};
+
+const sendWaitlistSubmissionNotification = async ({
+  apiKey,
+  from,
+  to,
+  submittedAtIso,
+  statusLabel,
+  name,
+  email,
+  safetyFeature,
+  identityPreferences,
+  personalWork,
+}: {
+  apiKey: string;
+  from: string;
+  to: string;
+  submittedAtIso: string;
+  statusLabel: string;
+  name: string;
+  email: string;
+  safetyFeature: string;
+  identityPreferences: string;
+  personalWork: string;
+}) => {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeStatusLabel = escapeHtml(statusLabel);
+  const safeSubmittedAt = escapeHtml(submittedAtIso);
+  const safeSafetyFeature = escapeHtml(safetyFeature).replaceAll("\n", "<br />");
+  const safeIdentityPreferences = escapeHtml(identityPreferences).replaceAll("\n", "<br />");
+  const safePersonalWork = escapeHtml(personalWork).replaceAll("\n", "<br />");
+
+  await sendResendEmail({
+    apiKey,
+    from,
+    to,
+    replyTo: email,
+    subject: `New LGBTQ+ survey submission: ${name}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6;">
+        <h2 style="margin-bottom: 16px;">New Rooted Hearts LGBTQ+ survey submission</h2>
+        <p><strong>Status:</strong> ${safeStatusLabel}</p>
+        <p><strong>Submitted:</strong> ${safeSubmittedAt}</p>
+        <p><strong>Name:</strong> ${safeName}</p>
+        <p><strong>Email:</strong> ${safeEmail}</p>
+        <hr style="margin: 24px 0; border: 0; border-top: 1px solid #d1d5db;" />
+        <p><strong>1. What safety feature would help you feel most protected on a dating platform?</strong></p>
+        <p>${safeSafetyFeature}</p>
+        <p><strong>2. What should Rooted Hearts understand about identity, matching, or preferences to build this space well?</strong></p>
+        <p>${safeIdentityPreferences}</p>
+        <p><strong>3. What kind of personal work, values, or accountability matter most in a healthy LGBTQ+ dating space?</strong></p>
+        <p>${safePersonalWork}</p>
+      </div>
+    `,
+    text: [
+      "New Rooted Hearts LGBTQ+ survey submission",
+      "",
+      `Status: ${statusLabel}`,
+      `Submitted: ${submittedAtIso}`,
+      `Name: ${name}`,
+      `Email: ${email}`,
+      "",
+      "1. What safety feature would help you feel most protected on a dating platform?",
+      safetyFeature,
+      "",
+      "2. What should Rooted Hearts understand about identity, matching, or preferences to build this space well?",
+      identityPreferences,
+      "",
+      "3. What kind of personal work, values, or accountability matter most in a healthy LGBTQ+ dating space?",
+      personalWork,
+    ].join("\n"),
+  });
 };
 
 serve(async (request) => {
@@ -159,6 +274,7 @@ serve(async (request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   const waitlistFromEmail = Deno.env.get("WAITLIST_FROM_EMAIL");
+  const waitlistNotificationEmail = Deno.env.get("WAITLIST_NOTIFICATION_EMAIL")?.trim() ?? "";
 
   if (!supabaseUrl || !serviceRoleKey) {
     return jsonResponse(503, { error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not configured" });
@@ -175,7 +291,11 @@ serve(async (request) => {
     return jsonResponse(400, { error: "Invalid JSON body" });
   }
 
-  if (!isRequestVerificationPayload(rawPayload) && !isVerifyEmailPayload(rawPayload)) {
+  if (
+    !isRequestVerificationPayload(rawPayload) &&
+    !isVerifyEmailPayload(rawPayload) &&
+    !isSubmitIdentityResponsePayload(rawPayload)
+  ) {
     return jsonResponse(400, { error: "Invalid waitlist payload" });
   }
 
@@ -184,6 +304,12 @@ serve(async (request) => {
   });
 
   if (isRequestVerificationPayload(rawPayload)) {
+    if (!waitlistNotificationEmail || !isValidEmail(waitlistNotificationEmail)) {
+      return jsonResponse(503, {
+        error: "WAITLIST_NOTIFICATION_EMAIL is not configured",
+      });
+    }
+
     const name = trimTo(rawPayload.name, 120);
     const email = normalizeEmail(rawPayload.email);
     const safetyFeature = trimTo(rawPayload.safety_feature, 2000);
@@ -230,7 +356,9 @@ serve(async (request) => {
         verification_expires_at,
         verification_email_sent_at,
         verified_at,
-        thank_you_email_sent_at
+        thank_you_email_sent_at,
+        self_identification,
+        self_identification_recorded_at
       `)
       .eq("email_normalized", email)
       .maybeSingle<WaitlistRow>();
@@ -262,9 +390,30 @@ serve(async (request) => {
         });
       }
 
+      try {
+        await sendWaitlistSubmissionNotification({
+          apiKey: resendApiKey,
+          from: waitlistFromEmail,
+          to: waitlistNotificationEmail,
+          submittedAtIso: nowIso,
+          statusLabel: "Email already verified",
+          name,
+          email,
+          safetyFeature,
+          identityPreferences,
+          personalWork,
+        });
+      } catch (error) {
+        return jsonResponse(502, {
+          error: "Failed to send internal waitlist notification",
+          details: error instanceof Error ? error.message : "unknown error",
+        });
+      }
+
       return jsonResponse(200, {
         status: "already_verified",
-        message: VERIFIED_MESSAGE,
+        message: EMAIL_VERIFIED_MESSAGE,
+        identityResponse: existingRow.self_identification,
       });
     }
 
@@ -291,6 +440,26 @@ serve(async (request) => {
         return jsonResponse(500, {
           error: "Failed to update waitlist record",
           details: recentUpdateError.message,
+        });
+      }
+
+      try {
+        await sendWaitlistSubmissionNotification({
+          apiKey: resendApiKey,
+          from: waitlistFromEmail,
+          to: waitlistNotificationEmail,
+          submittedAtIso: nowIso,
+          statusLabel: "Verification email already sent recently",
+          name,
+          email,
+          safetyFeature,
+          identityPreferences,
+          personalWork,
+        });
+      } catch (error) {
+        return jsonResponse(502, {
+          error: "Failed to send internal waitlist notification",
+          details: error instanceof Error ? error.message : "unknown error",
         });
       }
 
@@ -375,6 +544,26 @@ serve(async (request) => {
       });
     }
 
+    try {
+      await sendWaitlistSubmissionNotification({
+        apiKey: resendApiKey,
+        from: waitlistFromEmail,
+        to: waitlistNotificationEmail,
+        submittedAtIso: nowIso,
+        statusLabel: "Verification email sent",
+        name,
+        email,
+        safetyFeature,
+        identityPreferences,
+        personalWork,
+      });
+    } catch (error) {
+      return jsonResponse(502, {
+        error: "Failed to send internal waitlist notification",
+        details: error instanceof Error ? error.message : "unknown error",
+      });
+    }
+
     const { error: sentStampError } = await adminClient
       .from(TABLE_NAME)
       .update({
@@ -400,6 +589,57 @@ serve(async (request) => {
   }
 
   const tokenHash = await sha256Hex(token);
+
+  if (isSubmitIdentityResponsePayload(rawPayload)) {
+    const identityRecordedAt = new Date().toISOString();
+    const { data: submissionRow, error: identityLookupError } = await adminClient
+      .from(TABLE_NAME)
+      .select(`
+        id,
+        verified_at,
+        self_identification
+      `)
+      .eq("verification_token_hash", tokenHash)
+      .maybeSingle<Pick<WaitlistRow, "id" | "verified_at" | "self_identification">>();
+
+    if (identityLookupError) {
+      return jsonResponse(500, {
+        error: "Failed to look up waitlist confirmation",
+        details: identityLookupError.message,
+      });
+    }
+
+    if (!submissionRow) {
+      return jsonResponse(400, { error: "This confirmation link is invalid or has expired." });
+    }
+
+    if (!submissionRow.verified_at) {
+      return jsonResponse(400, { error: "Please verify your email before continuing." });
+    }
+
+    const { error: identityUpdateError } = await adminClient
+      .from(TABLE_NAME)
+      .update({
+        self_identification: rawPayload.identity_response,
+        self_identification_recorded_at: identityRecordedAt,
+        updated_at: identityRecordedAt,
+      })
+      .eq("id", submissionRow.id);
+
+    if (identityUpdateError) {
+      return jsonResponse(500, {
+        error: "Failed to save your response",
+        details: identityUpdateError.message,
+      });
+    }
+
+    return jsonResponse(200, {
+      status: "verified",
+      message: FOLLOW_UP_COMPLETE_MESSAGE,
+      identityResponse: rawPayload.identity_response,
+    });
+  }
+
   const { data: waitlistRow, error: waitlistLookupError } = await adminClient
     .from(TABLE_NAME)
     .select(`
@@ -415,7 +655,9 @@ serve(async (request) => {
       verification_expires_at,
       verification_email_sent_at,
       verified_at,
-      thank_you_email_sent_at
+      thank_you_email_sent_at,
+      self_identification,
+      self_identification_recorded_at
     `)
     .eq("verification_token_hash", tokenHash)
     .maybeSingle<WaitlistRow>();
@@ -431,7 +673,8 @@ serve(async (request) => {
   if (waitlistRow.verified_at) {
     return jsonResponse(200, {
       status: "already_verified",
-      message: VERIFIED_MESSAGE,
+      message: EMAIL_VERIFIED_MESSAGE,
+      identityResponse: waitlistRow.self_identification,
     });
   }
 
@@ -462,10 +705,10 @@ serve(async (request) => {
       html: `
         <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6;">
           <p>Hi ${safeName},</p>
-          <p>${escapeHtml(VERIFIED_MESSAGE)}</p>
+          <p>${escapeHtml(EMAIL_VERIFIED_MESSAGE)}</p>
         </div>
       `,
-      text: `Hi ${waitlistRow.name},\n\n${VERIFIED_MESSAGE}`,
+      text: `Hi ${waitlistRow.name},\n\n${EMAIL_VERIFIED_MESSAGE}`,
     });
 
     const { error: thankYouUpdateError } = await adminClient
@@ -485,6 +728,7 @@ serve(async (request) => {
 
   return jsonResponse(200, {
     status: "verified",
-    message: VERIFIED_MESSAGE,
+    message: EMAIL_VERIFIED_MESSAGE,
+    identityResponse: waitlistRow.self_identification,
   });
 });

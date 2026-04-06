@@ -124,6 +124,10 @@ const getInitialAppView = (): AppView => {
     return 'launching-soon-preview';
   }
 
+  if (requestedView === 'lgbtq-email-confirmation' || url.searchParams.get('waitlistToken')) {
+    return 'lgbtq-email-confirmation';
+  }
+
   if (
     requestedView === 'password-reset' ||
     url.searchParams.get('type') === 'recovery' ||
