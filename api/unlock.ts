@@ -6,7 +6,7 @@ import {
   isPreviewLockEnabled,
   isSubmittedPasswordValid,
   normalizeNextPath,
-} from '../preview-lock';
+} from '../preview-lock.ts';
 
 const pageHeaders = (setCookie?: string): Headers => {
   const headers = new Headers({

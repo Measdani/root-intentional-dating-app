@@ -4,7 +4,7 @@ import {
   isPreviewLockBypassPath,
   isPreviewLockEnabled,
   normalizeNextPath,
-} from './preview-lock';
+} from './preview-lock.ts';
 
 export default async function middleware(request: Request): Promise<Response | undefined> {
   if (!isPreviewLockEnabled()) {
