@@ -114,8 +114,9 @@ const MembershipSection: React.FC = () => {
             verification. Profiles remain hidden until verification is complete.
           </p>
           <p>
-            *Enhanced verification (background check) is included for annual members. This service is optional
-            for other plans and may require an additional fee.
+            *Enhanced verification (background check) is included for annual members who purchase at full
+            price. Promotional or discounted plans do not include this benefit. This service is optional for
+            other plans and may require an additional fee.
           </p>
         </div>
 
