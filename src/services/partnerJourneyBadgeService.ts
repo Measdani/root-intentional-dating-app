@@ -11,8 +11,8 @@ export const PARTNER_JOURNEY_BADGE_META: Record<PartnerJourneyBadge, PartnerJour
     sectionTitle: 'The Aware Partner',
   },
   'intentional-partner-badge': {
-    label: 'The Intentional Partner Badge',
-    sectionTitle: 'The Intentional Partner',
+    label: 'The Aligned Partner Badge',
+    sectionTitle: 'The Aligned Partner',
   },
   'healthy-partner-badge': {
     label: 'The Healthy Partner Badge',

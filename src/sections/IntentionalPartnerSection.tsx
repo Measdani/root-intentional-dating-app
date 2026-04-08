@@ -15,27 +15,30 @@ const IntentionalPartnerSection: React.FC = () => {
   return (
     <PartnerSectionIntroPage
       sectionNumber={2}
-      title="The Intentional Partner"
+      title="The Aligned Partner"
       afterHero={<ConflictSandbox />}
     >
-      <p>Awareness without action keeps you stuck.</p>
-      <p>Intention is what changes how you show up when it matters most.</p>
+      <p>Awareness got you here. Alignment is what keeps you here.</p>
       <p>
-        The Intentional Partner is about applying what you&apos;ve learned: making conscious choices in
-        how you communicate, set boundaries, and show up for others.
+        The Aligned Partner is about consistency &mdash; applying what you&apos;ve learned in real
+        time, with another person.
       </p>
-      <p>This is where you move with purpose instead of reacting from habit.</p>
-      <p>This is where you stop reacting... and start choosing.</p>
-      <p>You begin to:</p>
+      <p>
+        This is where communication stays clear, boundaries stay respected, and connection is built
+        with intention &mdash; not assumption.
+      </p>
+      <p>This is no longer about reacting.</p>
+      <p>This is about sustaining something real.</p>
+      <p>In alignment, you:</p>
       <ul className="space-y-1 pl-5 list-disc">
-        <li>Communicate clearly</li>
-        <li>Set and respect boundaries</li>
-        <li>Choose alignment over convenience</li>
+        <li>Communicate with clarity, not assumption</li>
+        <li>Maintain boundaries without creating distance</li>
+        <li>Address conflict early, not after it builds</li>
+        <li>Choose connection without losing yourself</li>
       </ul>
       <p>
-        Intentional dating means you&apos;re no longer just hoping for a good relationship...
-        <br />
-        you&apos;re actively building one through your decisions.
+        Alignment means you&apos;re no longer trying to figure love out &mdash; you&apos;re actively
+        maintaining it through your actions.
       </p>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div
@@ -46,8 +49,8 @@ const IntentionalPartnerSection: React.FC = () => {
           }`}
         >
           {badgeEarned
-            ? 'The Intentional Partner Badge earned'
-            : 'Complete The Conflict Sandbox to unlock The Intentional Partner Badge'}
+            ? 'The Aligned Partner Badge earned'
+            : 'Complete all scenarios to unlock The Aligned Partner Badge'}
         </div>
 
         <AlignmentKeyButton

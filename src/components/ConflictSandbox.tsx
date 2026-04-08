@@ -492,9 +492,10 @@ const ConflictSandbox: React.FC = () => {
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-emerald-200">Section Complete</p>
-            <h3 className="mt-2 font-display text-3xl text-[#F6FFF2]">The Conflict Sandbox</h3>
+            <h3 className="mt-2 font-display text-3xl text-[#F6FFF2]">Alignment Achieved</h3>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-emerald-100">
-              Forest cleared every conflict test in this section. The Intentional Partner Badge is now tied to your profile.
+              You completed every scenario and demonstrated your ability to maintain a healthy,
+              intentional relationship in real situations.
             </p>
           </div>
           <button
@@ -528,21 +529,25 @@ const ConflictSandbox: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-[#D9FF3D]">
               <Sparkles className="h-3.5 w-3.5" />
-              The Conflict Sandbox
+              Practice Maintaining Alignment in Real Moments
             </div>
-            <h3 className="mt-4 font-display text-3xl text-[#F6FFF2]">Practice the new move before real conflict asks for it</h3>
+            <h3 className="mt-4 font-display text-3xl text-[#F6FFF2]">
+              Practice the aligned response before real moments require it
+            </h3>
             <p className="mt-2 text-sm font-medium text-[#D9FF3D]">
-              You&apos;re not being tested - you&apos;re being prepared.
+              You&apos;re not being tested &mdash; you&apos;re strengthening how you show up in a
+              real relationship.
             </p>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#A9B5AA]">
-              Forest will walk you through 8 conflict triggers. Answer with your first instinct, let him show you the chain reaction, then prove the healthier move in writing.
+              Forest will guide you through real-life scenarios that challenge communication, trust,
+              and emotional stability &mdash; so you can respond with alignment, not instinct.
             </p>
           </div>
 
           <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] px-4 py-4 min-w-[220px]">
             <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Section Progress</p>
             <p className="mt-2 text-3xl font-semibold text-[#F6FFF2]">{progress.completedScenarioIds.length}/{CONFLICT_SANDBOX_SCENARIOS.length}</p>
-            <p className="mt-1 text-sm text-[#A9B5AA]">Complete every scenario to earn the badge.</p>
+            <p className="mt-1 text-sm text-[#A9B5AA]">Complete every scenario to demonstrate alignment.</p>
             <div className="mt-4 h-2 rounded-full bg-[#1A211A] overflow-hidden">
               <div
                 className="h-full rounded-full bg-[#D9FF3D] transition-all"
@@ -659,30 +664,29 @@ const ConflictSandbox: React.FC = () => {
 
         <div className="space-y-4">
           <div className="rounded-3xl border border-[#1A211A] bg-[#111611] p-5">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Forest&apos;s Rule</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Forest&apos;s Role</p>
             <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
-              Awareness isn&apos;t enough here.
+              Forest doesn&apos;t choose for you &mdash; he reflects what alignment looks like.
               <br />
-              Every response must reflect the partner you&apos;re becoming.
-              <br />
-              Choose words that create clarity, safety, and respect.
+              Every response should reflect the partner you are committed to being.
             </p>
           </div>
 
           <div className="rounded-3xl border border-[#1A211A] bg-[#111611] p-5">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">How You Pass This Stage</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">What Alignment Looks Like</p>
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[#A9B5AA]">
-              <li>- First-person ownership over accusation</li>
-              <li>- Clarity over guessing</li>
-              <li>- Boundaries without threats</li>
-              <li>- Support without control</li>
+              <li>Ownership without defensiveness</li>
+              <li>Clarity instead of assumption</li>
+              <li>Boundaries without control</li>
+              <li>Consistency over intensity</li>
             </ul>
           </div>
 
           <div className="rounded-3xl border border-[#1A211A] bg-[#111611] p-5">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Badge Unlock</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Alignment Achieved</p>
             <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
-              Complete all {CONFLICT_SANDBOX_SCENARIOS.length} scenarios to unlock {getPartnerJourneyBadgeLabel(intentionalPartnerBadge)}.
+              Complete all scenarios to demonstrate your ability to maintain a healthy,
+              intentional relationship in real situations.
             </p>
           </div>
         </div>

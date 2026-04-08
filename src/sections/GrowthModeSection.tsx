@@ -226,9 +226,9 @@ const PARTNER_JOURNEY_SECTIONS: PartnerJourneySection[] = [
     view: 'aware-partner',
   },
   {
-    title: 'The Intentional Partner',
+    title: 'The Aligned Partner',
     badge: 'intentional-partner-badge',
-    description: 'Awareness without action keeps you stuck.',
+    description: 'Awareness got you here. Alignment is what keeps you here.',
     icon: Target,
     view: 'intentional-partner',
   },
@@ -862,11 +862,11 @@ const GrowthModeSection: React.FC = () => {
               const Icon = section.icon;
               const isInteractive = Boolean(section.view);
               const cardActionCopy =
-                section.view === 'aware-partner'
-                  ? 'Open this section to enter Path Navigation.'
-                  : section.view === 'intentional-partner'
-                    ? 'Open this section to enter The Conflict Sandbox.'
-                    : 'Open this section to enter The Pace Meter.';
+                  section.view === 'aware-partner'
+                    ? 'Open this section to enter Path Navigation.'
+                    : section.view === 'intentional-partner'
+                      ? 'Open this section to practice maintaining alignment.'
+                      : 'Open this section to enter The Pace Meter.';
               const sectionBadgeEarned = hasPartnerJourneyBadge(
                 currentUser.partnerJourneyBadges,
                 section.badge
