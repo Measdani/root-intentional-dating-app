@@ -37,7 +37,7 @@ const PARTNER_JOURNEY_SECTIONS: PartnerJourneySection[] = [
   {
     title: 'The Healthy Partner',
     badge: 'healthy-partner-badge',
-    description: 'This is where growth becomes consistency.',
+    description: 'This is where growth becomes lived consistency.',
     icon: Heart,
     view: 'healthy-partner',
   },
