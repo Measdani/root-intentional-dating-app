@@ -40,78 +40,78 @@ const PACE_METER_STAGES: PaceMeterStage[] = [
   {
     id: 'week-1',
     title: 'The First Meet & Week 1',
-    phase: 'The "Spark" vs. The "Burn"',
+    phase: 'Calm Interest vs. Fast Attachment',
     supportingText:
-      'People often mistake high anxiety for "butterflies." Forest helps them recalibrate.',
+      'Early connection sets the tone. Alignment begins with how pace, interest, and presence are maintained - not rushed.',
     healthyTitle: 'The Healthy Experience',
     healthyExperience:
-      'You feel curious and energized. They ask questions about your life. You leave the date feeling "seen," not "swept away."',
+      'You feel present and engaged - not overwhelmed.\n\nConversation flows with curiosity, not performance.\n\nYou leave feeling clear, not consumed.',
     healthyBehavior:
-      'They text the next day to say they had a good time. No pressure.',
-    unhealthyTitle: 'The Unhealthy (Lovebombing) Experience',
+      'They follow up with intention, not urgency.\n\nCommunication is consistent, but not overwhelming.\n\nThere is space for the connection to develop naturally.',
+    unhealthyTitle: 'The Misaligned (Rushed Attachment) Experience',
     unhealthyExperience:
-      'You feel intoxicated or "chosen." They tell you you are "perfect" or "unlike anyone they have ever met."',
+      'You feel pulled in quickly - like something is moving faster than you can process.\n\nThe attention feels intense, but not grounded.\n\nYou feel "chosen" before being fully known.',
     unhealthyDanger:
-      'If it feels like a movie, remember that movies are scripted. They are falling in love with a projection, not you.',
+      'Fast attachment creates emotional pressure before clarity exists.\n\nWhen pace is rushed, you are responding to intensity - not alignment.',
     forestAdvice:
-      'In Week 1, a healthy partner is a stranger you are enjoying. An unhealthy partner is a stranger acting like your soulmate.',
+      'In the beginning, alignment feels calm - not consuming.\n\nA healthy partner allows space for you to be known over time.\n\nIf it feels like it\'s moving faster than clarity, it\'s not depth - it\'s acceleration.',
   },
   {
     id: 'week-2-to-4',
     title: 'Week 2 to Week 4',
-    phase: 'The "Pattern" Phase',
+    phase: 'Building Rhythm & Consistency',
     supportingText:
-      'This is where the "3-Week Consistency Check" happens.',
-    healthyTitle: 'The Healthy Experience',
+      'This is where consistency begins to reveal itself.\n\nAlignment is no longer about first impressions - it\'s about whether a steady rhythm can be maintained.',
+    healthyTitle: 'The Aligned Experience',
     healthyExperience:
-      'A rhythm develops. You know when you will hear from them. They respect your schedule and do not get moody if you have plans with friends.',
+      'A natural rhythm develops.\n\nYou know when you\'ll hear from each other - not because it\'s scheduled, but because it\'s consistent.\n\nThere is no guessing, no spikes - just steady presence.',
     healthyBehavior:
-      'They suggest a second or third date a few days in advance.',
-    unhealthyTitle: 'The Unhealthy (Narc/Control) Experience',
+      'Plans are made with intention.\n\nCommunication is consistent, not overwhelming.\n\nBoth people maintain their lives while building together.',
+    unhealthyTitle: 'The Misaligned (Inconsistent Energy) Experience',
     unhealthyExperience:
-      'They start testing you. They might go silent for two days to see if you will chase them, or they get passive-aggressive if you do not respond immediately.',
+      'The connection feels uneven.\n\nStrong one moment, distant the next.\n\nYou start adjusting yourself to keep the connection stable.',
     unhealthyDanger:
-      'This is the start of Intermittent Reinforcement. They are training you to crave their validation.',
+      'Inconsistency creates emotional instability.\n\nWhen you have to adapt to the rhythm instead of co-creating it, alignment begins to break.',
     forestAdvice:
-      'Consistency is the only factual proof of interest. If the energy is spiky, your nervous system will stay on high alert. That is not passion; it is instability.',
+      'Consistency is the clearest form of interest.\n\nIf the connection feels unstable, your nervous system will stay alert - not at peace.\n\nAlignment does not spike. It stabilizes.',
   },
   {
     id: 'month-2',
     title: 'Month 2',
-    phase: 'The "Integration" Phase',
+    phase: 'Integration & Real-Life Alignment',
     supportingText:
-      'This is the middle of the 333 Rule. You are moving past the surface.',
-    healthyTitle: 'The Healthy Experience',
+      'You are now seeing how the connection holds in real life.\n\nAlignment is revealed in how both people handle stress, responsibility, and accountability.',
+    healthyTitle: 'The Aligned Experience',
     healthyExperience:
-      'You start seeing their real life. You meet a friend or two. You see how they handle stress like a traffic jam or a late waiter.',
+      'You begin to see their real life - not just curated moments.\n\nThere is honesty in how they show up, even when things aren\'t perfect.',
     healthyBehavior:
-      'They share small vulnerabilities. They do not have a perfect story for everything.',
-    unhealthyTitle: 'The Unhealthy (The Mask) Experience',
+      'They acknowledge mistakes without deflecting.\n\nVulnerability feels natural, not forced or overwhelming.\n\nYou feel more grounded, not more confused.',
+    unhealthyTitle: 'The Misaligned (Avoidance or Imbalance) Experience',
     unhealthyExperience:
-      'They still feel too good to be true. Or they start sharing trauma stories too early to make you feel bad for them.',
+      'Something feels slightly off, but hard to name.\n\nAccountability is inconsistent, or vulnerability feels unbalanced.',
     unhealthyDanger:
-      'If they are always the victim in their past stories, they will eventually make you the villain in their current one.',
+      'Without accountability, connection cannot stabilize.\n\nAlignment requires both people to take responsibility for how they show up.',
     forestAdvice:
-      'By Month 2, look for accountability. Do they apologize when they are wrong? Or do they twist the story?',
+      'By this stage, look for accountability - not perfection.\n\nAlignment is not about never getting it wrong.\n\nIt\'s about how quickly and clearly someone returns to truth.',
   },
   {
     id: 'month-3',
     title: 'Month 3',
-    phase: 'The "Mask-Off" Milestone',
+    phase: 'Stability & Emotional Safety',
     supportingText:
-      'The 333 Rule says the mask falls off here. This is the "Truth" month.',
-    healthyTitle: 'The Healthy Experience',
+      'This is where the connection proves whether it can be sustained.\n\nAlignment is no longer about attraction - it\'s about safety, stability, and consistency through conflict.',
+    healthyTitle: 'The Aligned Experience',
     healthyExperience:
-      'You have had your first real disagreement. You both used the tools from Layer 2. You feel safer after the fight because you handled it well.',
+      'You\'ve experienced disagreement - and the connection held.\n\nYou feel safer after conflict, not more uncertain.',
     healthyBehavior:
-      'You feel comfortable being un-glamorous around them.',
-    unhealthyTitle: 'The Unhealthy (The Devaluation) Experience',
+      'Both of you repair quickly and clearly.\n\nYou feel comfortable being fully yourself - not performing or managing perception.',
+    unhealthyTitle: 'The Misaligned (Instability After Conflict) Experience',
     unhealthyExperience:
-      'Now that they have you, the compliments stop. They start making jokes at your expense or comparing you to others.',
+      'Conflict creates distance instead of clarity.\n\nThe connection feels weaker after tension, not stronger.',
     unhealthyDanger:
-      'The narcissistic cycle moves from idealization to devaluation. If they hit the 3-month mark and suddenly become cold, believe the coldness, not the initial heat.',
+      'If conflict breaks safety, the foundation is unstable.\n\nAlignment strengthens through conflict - it does not collapse under it.',
     forestAdvice:
-      'The 90-day mark is the factual truth. If you do not like who they are today, do not stay for who they were in Week 1.',
+      'The 90-day mark reveals consistency.\n\nDo not stay for how it started.\n\nStay for how it is sustained.',
   },
 ];
 
@@ -154,14 +154,22 @@ const loadProgress = (storageKey: string): PaceMeterProgress => {
 
 const recognizesBoundaryTruth = (value: string): boolean => {
   const normalized = value.toLowerCase();
-  const mentionsPace = normalized.includes('pace') || normalized.includes('wait') || normalized.includes('month 3') || normalized.includes('timeline');
-  const mentionsRespectOrBoundary =
+  const mentionsPaceOrBoundary =
+    normalized.includes('pace') ||
+    normalized.includes('wait') ||
+    normalized.includes('month 3') ||
+    normalized.includes('timeline') ||
     normalized.includes('boundary') ||
-    normalized.includes('boundaries') ||
+    normalized.includes('boundaries');
+  const mentionsAlignmentOrRespect =
+    normalized.includes('alignment') ||
+    normalized.includes('align') ||
+    normalized.includes('consistent') ||
+    normalized.includes('consistency') ||
     normalized.includes('respect') ||
-    normalized.includes('standard') ||
-    normalized.includes('pressure');
-  return mentionsPace && mentionsRespectOrBoundary;
+    normalized.includes('partnership') ||
+    normalized.includes('partner');
+  return mentionsPaceOrBoundary && mentionsAlignmentOrRespect;
 };
 
 const PaceMeter: React.FC = () => {
@@ -235,7 +243,7 @@ const PaceMeter: React.FC = () => {
 
     if (!recognizesBoundaryTruth(progress.graduationAnswer)) {
       setFeedback(
-        'Forest is listening for the boundary truth here: if they cannot respect your pace, they cannot respect your standards.'
+        'Forest is listening for the alignment truth here: if they cannot meet you in consistency, they cannot meet you in partnership.'
       );
       return;
     }
@@ -298,11 +306,17 @@ const PaceMeter: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-[#D9FF3D]">
               <Sparkles className="h-3.5 w-3.5" />
-              The Pace Meter
+              The Alignment Pace Meter
             </div>
-            <h3 className="mt-4 font-display text-3xl text-[#F6FFF2]">Slow the fantasy down until the facts can speak</h3>
+            <h3 className="mt-4 font-display text-3xl text-[#F6FFF2]">
+              Stay grounded in consistency so the truth can reveal itself
+            </h3>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#A9B5AA]">
-              Forest walks through the first 90 days and helps you compare healthy pacing with the patterns that create confusion, control, or false intensity.
+              Forest walks you through real relationship moments and helps you compare aligned
+              consistency with patterns that create confusion, pressure, or instability.
+            </p>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#A9B5AA]">
+              This is where pacing becomes presence &mdash; and consistency becomes the standard.
             </p>
           </div>
 
@@ -414,13 +428,14 @@ const PaceMeter: React.FC = () => {
 
       <section className="rounded-3xl border border-[#D9FF3D]/25 bg-[#111611] p-6 md:p-7">
         <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">The Graduation Moment</p>
-        <h3 className="mt-2 font-display text-3xl text-[#F6FFF2]">Forest&apos;s Final Prompt</h3>
+        <h3 className="mt-2 font-display text-3xl text-[#F6FFF2]">Forest&apos;s Final Alignment Check</h3>
         <p className="mt-4 text-sm leading-relaxed text-[#F6FFF2]">
-          If a partner gets angry because you want to wait until Month 3 to move in together,
-          what does that tell you about their respect for The Standard?
+          If your partner becomes frustrated because you maintain your pace or boundaries, what does that reveal about their ability to sustain alignment?
         </p>
         <p className="mt-3 text-sm leading-relaxed text-[#A9B5AA]">
-          Forest is listening for the truth: if they cannot handle your pace, they cannot handle your boundaries.
+          Alignment respects pace.
+          <br />
+          If someone cannot meet you in consistency, they cannot meet you in partnership.
         </p>
         <textarea
           value={progress.graduationAnswer}
@@ -432,7 +447,7 @@ const PaceMeter: React.FC = () => {
             });
           }}
           rows={4}
-          placeholder="Type what their reaction tells you about respect, pace, and boundaries..."
+          placeholder="Describe what their response reveals about consistency, respect, and alignment..."
           className="mt-5 w-full rounded-2xl border border-[#1A211A] bg-[#0B0F0C] px-4 py-3 text-sm text-[#F6FFF2] placeholder:text-[#738073] focus:border-[#D9FF3D] focus:outline-none resize-none"
         />
         {feedback && <p className="mt-3 text-sm text-amber-300">{feedback}</p>}
@@ -442,7 +457,7 @@ const PaceMeter: React.FC = () => {
             onClick={handleGraduate}
             className="inline-flex items-center gap-2 rounded-full bg-[#D9FF3D] px-5 py-2.5 text-sm font-semibold text-[#0B0F0C] hover:brightness-95 transition"
           >
-            Unlock The Healthy Partner Badge
+            Confirm Your Alignment
             <ArrowRight className="h-4 w-4" />
           </button>
           {!allCardsViewed && (
