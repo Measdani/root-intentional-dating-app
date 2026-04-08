@@ -56,22 +56,34 @@ const HealthyPartnerSection: React.FC = () => {
         </div>
 
         <AlignmentKeyButton
-          title="Self-Awareness (The Final Check)"
-          prompt="The Spirit vs. The Flesh"
+          title="Self-Awareness (The Alignment Check)"
+          prompt="Staying Aligned Within the Relationship"
           forestMessage={[
             "You've done the work.",
-            'Now comes the moment that matters most - discernment.',
-            'Because not everything that feels strong is aligned.',
-            'What many people call "chemistry" is often just familiarity meeting emotion.',
-            'Your Spirit is quiet. Your Flesh is loud.',
-            "The rush. The urgency. The pull to move faster than clarity allows - that's not always connection. Sometimes, it's habit.",
+            'Now comes what matters most - staying aligned in real time.',
+            "Because alignment is not proven in who you choose... it's revealed in how you show up once you've chosen.",
+            'Not every feeling means something is wrong.',
+            'And not every moment of discomfort means something is misaligned.',
+            "Sometimes, it's simply the moment asking you to respond differently.",
+            'Your Spirit remains steady.',
+            'Your instincts may still try to move fast.',
+            'The urge to react.',
+            'The urge to withdraw.',
+            'The urge to protect yourself before seeking clarity.',
+            'But this is where alignment holds.',
             'So pause and ask yourself:',
-            'Who is leading right now?',
-            "If it's your Flesh, it will feel urgent, fast, and consuming. If it's your Spirit, it will feel steady, clear, and at peace.",
-            "Alignment doesn't feel chaotic. It feels grounded.",
-            "Don't confuse a racing heart with a divine sign.",
-            "Alignment is not just about who you meet... it's about who you allow access to your life.",
+            'Am I responding from clarity...',
+            'or from habit?',
+            'Am I protecting the connection...',
+            'or protecting my reaction?',
+            'Alignment does not feel chaotic.',
+            'It does not require urgency.',
+            'It feels steady - even when it is uncomfortable.',
+            'You do not need to rush to fix the moment.',
+            'You need to stay grounded within it.',
+            'Because alignment is not just about who you chose... it\'s about how you continue choosing - in every moment that follows.',
           ]}
+          scrollableMessage
         />
       </div>
 
