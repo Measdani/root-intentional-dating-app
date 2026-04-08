@@ -82,27 +82,38 @@ const validateClarityRequest = (value: string): ScenarioValidationResult => {
   return { passed: true };
 };
 
-const validateFactualStrengths = (value: string): ScenarioValidationResult => {
+const validateCurrentConnectionTruths = (value: string): ScenarioValidationResult => {
   if (parseListItems(value).length < 3) {
-    return { passed: false, feedback: 'List 3 strengths you bring to a relationship.' };
+    return { passed: false, feedback: 'Write 3 things that are true about your current connection.' };
   }
-  if (containsAnyPhrase(value, ['pretty', 'beautiful', 'hot', 'sexy', 'body', 'face', 'cute', 'looks', 'my ex', 'past relationship'])) {
-    return { passed: false, feedback: 'Use inner strengths, not looks or past comparisons.' };
+  if (containsAnyPhrase(value, ['my ex', 'their ex', 'past relationship', 'used to'])) {
+    return { passed: false, feedback: 'Keep this grounded in what is true now, not past comparison.' };
   }
   return { passed: true };
 };
 
-const validateValueStatement = (value: string): ScenarioValidationResult => {
-  if (!hasMinimumWords(value, 8)) return { passed: false, feedback: 'Explain why the behavior matters to you.' };
-  if (/\byou\b/i.test(value)) return { passed: false, feedback: 'Rewrite it without using the word "you."' };
+const validateClearExpectation = (value: string): ScenarioValidationResult => {
+  if (!hasMinimumWords(value, 8)) return { passed: false, feedback: 'Name the expectation clearly.' };
+  if (containsAnyPhrase(value, ['you should know', 'you always', 'you never', 'obvious'])) {
+    return { passed: false, feedback: 'State the expectation directly instead of blaming.' };
+  }
   if (!hasFirstPersonLanguage(value)) return { passed: false, feedback: 'Use first-person language.' };
+  if (!containsAnyPhrase(value, ['moving forward', 'next time', 'i need', 'i would like', 'i would appreciate', 'it helps me'])) {
+    return { passed: false, feedback: 'Make the expectation concrete for the future.' };
+  }
   return { passed: true };
 };
 
-const validateValueVsPreference = (value: string): ScenarioValidationResult => {
-  if (!hasMinimumWords(value, 12)) return { passed: false, feedback: 'Name 1 value, 1 preference, and the difference.' };
-  if (!containsAnyPhrase(value, ['value', 'non-negotiable']) || !containsAnyPhrase(value, ['preference', 'flexible']) || !containsAnyPhrase(value, ['difference', 'because', 'means'])) {
-    return { passed: false, feedback: 'Label the value, label the preference, then explain the difference.' };
+const validateBuildAnyway = (value: string): ScenarioValidationResult => {
+  if (!hasMinimumWords(value, 12)) {
+    return { passed: false, feedback: 'Name the non-negotiable, the flexible preference, and one way to build anyway.' };
+  }
+  if (
+    !containsAnyPhrase(value, ['non-negotiable', 'value']) ||
+    !containsAnyPhrase(value, ['preference', 'flexible']) ||
+    !containsAnyPhrase(value, ['build anyway', 'shared', 'together', 'way to build'])
+  ) {
+    return { passed: false, feedback: 'Label all 3 parts so the direction is clear.' };
   }
   return { passed: true };
 };
@@ -112,7 +123,7 @@ const validateSupportivePause = (value: string): ScenarioValidationResult => {
   if (containsAnyPhrase(value, ['you should', 'let me fix', 'i will fix', 'here is the solution', 'apply for'])) {
     return { passed: false, feedback: 'Offer empathy, not problem-solving.' };
   }
-  if (!containsAnyPhrase(value, ["i'm here for you", 'i am here for you', 'that sounds hard', 'i hear you', 'i care about you', 'how can i support'])) {
+  if (!containsAnyPhrase(value, ["i'm here for you", 'i am here for you', "i'm here with you", 'i am here with you', "i'm with you", 'i am with you', 'that sounds hard', 'i hear you', 'i care about you', 'how can i support'])) {
     return { passed: false, feedback: 'Lead with warmth and support.' };
   }
   return { passed: true };
@@ -123,17 +134,21 @@ const validateAnchorStatement = (value: string): ScenarioValidationResult => {
   if (containsAnyPhrase(value, ['i am leaving', "i'm leaving", 'break up', 'we are done', "we're done", 'fine, leave'])) {
     return { passed: false, feedback: 'Threat language breaks safety. Try again.' };
   }
-  if (!containsAnyPhrase(value, ['frustrated', 'upset', 'hurt', 'angry']) || !containsAnyPhrase(value, ['not going anywhere', 'still here', 'want to solve this', "let's solve this", 'work through this'])) {
+  if (!containsAnyPhrase(value, ['frustrated', 'upset', 'hurt', 'angry']) || !containsAnyPhrase(value, ['not going anywhere', 'still here', 'want to solve this', "let's solve this", 'work through this', 'care about us', 'stay connected'])) {
     return { passed: false, feedback: 'Include both the emotion and the commitment to stay engaged.' };
   }
   return { passed: true };
 };
 
-const validateConfessionOfIntent = (value: string): ScenarioValidationResult => {
-  if (!hasMinimumWords(value, 12)) return { passed: false, feedback: 'Go deeper and admit the real motive.' };
-  if (!hasFirstPersonLanguage(value)) return { passed: false, feedback: 'Keep the confession in first person.' };
-  if (!containsAnyPhrase(value, ['win', 'control', 'power', 'fear', 'afraid', 'defensive', 'hurt', 'protect', 'shame', 'lose'])) {
-    return { passed: false, feedback: 'Name the fear, shame, or control underneath the urge to win.' };
+const validateTrustPreservingResponse = (value: string): ScenarioValidationResult => {
+  if (!hasMinimumWords(value, 10)) {
+    return { passed: false, feedback: 'Write what you would say to protect trust in the moment.' };
+  }
+  if (containsAnyPhrase(value, ['use this against', 'weapon', 'win this', 'hurt you back'])) {
+    return { passed: false, feedback: 'Keep the response focused on protecting trust, not scoring a point.' };
+  }
+  if (!containsAnyPhrase(value, ['trust', 'respect', 'pause', 'stay respectful', 'care about us', 'come back', 'protect'])) {
+    return { passed: false, feedback: 'Make it clear that you are protecting trust in this moment.' };
   }
   return { passed: true };
 };
@@ -141,163 +156,163 @@ const validateConfessionOfIntent = (value: string): ScenarioValidationResult => 
 const CONFLICT_SANDBOX_SCENARIOS: ConflictScenario[] = [
   {
     id: 'unknown-name',
-    title: 'Jealousy',
+    title: 'Maintaining Trust',
     trigger:
-      'Forest: "Scenario time. You are cuddling on the couch, and your partner\'s phone lights up. It is a text from Alex saying, \'That was fun today!\'. You do not know an Alex. What is your first move?"',
+      'You are spending time together and notice something that could easily trigger insecurity. Nothing is confirmed - just a moment where trust is tested.',
     oldSelfPrompt:
-      'Type the first move your old self would want to make in that moment.',
+      'What assumption could create distance if you act on it instead of addressing it?',
     oldSelfPlaceholder:
-      'Example: I would want to check the phone the second they look away...',
+      'Example: I could assume something is wrong and shut down before I ask about it.',
     whatIf:
-      'Forest: "Okay, let\'s play that out. You spy. You find out Alex is just a coworker, but now you are carrying a secret.\n\nThe Chain Reaction: Next week, when they mention Alex, you act weird. They feel your tension and start closing off to protect themselves. You just traded trust for a temporary hit of certainty.\n\nThe Truth: Feeling threatened by outside friends usually means you are looking for safety in control rather than connection. If you cannot trust them to have a life outside of you, this is not a match. It is a hostage situation."',
-    actionTitle: 'Transparency Prompt',
+      '"In alignment, trust is maintained through clarity, not control.\nIf something feels off, the goal is not to investigate - it\'s to understand."',
+    actionTitle: 'Aligned Response',
     actionPrompt:
-      'Draft what you would actually say to invite honesty without accusation.',
+      'Write how you would invite clarity without accusation.',
     actionPlaceholder:
-      'Hey, I saw a name pop up and felt a little spark of insecurity. Who is Alex?',
+      'I noticed something stirred insecurity in me, and I want to stay open instead of assuming. Can we talk about it?',
     actionHint:
-      'Use first-person language, name the feeling, and ask with curiosity.',
+      'Lead with honesty, not control.',
     validator: validateTransparencyPrompt,
   },
   {
     id: 'slow-fade',
-    title: 'The Slow Fade',
+    title: 'Maintaining Consistency',
     trigger:
-      'Forest: "You have been on three great dates. Suddenly, the person you are seeing takes 24 hours to text back and the energy feels off. What does your old self want to do next?"',
+      'Communication slows down between you. The connection is not gone, but the rhythm has shifted.',
     oldSelfPrompt:
-      'Type the reaction your nervous system wants to reach for first.',
+      'What story could you tell yourself that would cause you to withdraw instead of check in?',
     oldSelfPlaceholder:
-      'Example: I would pull back, act cold, and make them wonder where I went...',
+      'Example: I could tell myself they are losing interest and pull back before I ask what changed.',
     whatIf:
-      'Forest: "If you ghost them now to win, you are teaching your nervous system that running away is safer than asking for clarity. What if they just had a family emergency? By cutting them off, you killed a potential connection over a story you made up in your head."',
-    actionTitle: 'Clarity Request',
+      '"Alignment doesn\'t disappear in uncertainty. It communicates through it."',
+    actionTitle: 'Aligned Response',
     actionPrompt:
-      'Write the message that asks for clarity instead of disappearing.',
+      'Write a message that checks in without pressure or assumption.',
     actionPlaceholder:
-      'Hey, I noticed the energy shifted. Is everything okay, or are we moving in different directions?',
+      'Hey, I noticed our rhythm shifted a bit. I care about staying clear with you - how are you feeling lately?',
     actionHint:
-      'Lead with observation, then ask for clarity instead of assuming the ending.',
+      'Check in gently and leave room for honesty.',
     validator: validateClarityRequest,
   },
   {
     id: 'comparison-trap',
-    title: 'The Comparison Trap',
+    title: 'Staying Present in Your Connection',
     trigger:
-      'Forest: "You are scrolling through your match\'s social media and see they still have photos up with an ex from two years ago. What story does your old self start telling?"',
+      'You notice something from your partner\'s past that could pull your focus away from what is being built now.',
     oldSelfPrompt:
-      'Type the first insecure conclusion that starts forming in your head.',
+      'What comparison could weaken your presence in the relationship?',
     oldSelfPlaceholder:
-      'Example: I would assume they are not over their ex and start comparing myself...',
+      'Example: I could compare myself to their past and miss what we are actually creating together.',
     whatIf:
-      'Forest: "Comparing your Day 1 to their Year 2 with someone else is factual self-sabotage. What if those photos are just markers of their history, not a threat to your future? If you act out now, you are competing with a ghost instead of building with the person in front of you."',
-    actionTitle: '3 Factual Strengths',
+      '"Alignment stays grounded in what is real, not what once was."',
+    actionTitle: 'Aligned Response',
     actionPrompt:
-      'List 3 factual strengths you bring to a relationship that have nothing to do with your looks or your past.',
+      'Write 3 things that are true about your current connection.',
     actionPlaceholder:
-      '1. I stay consistent when things get hard.\n2. I communicate directly instead of hinting.\n3. I take accountability when I miss the mark.',
+      '1. We are building trust in real time.\n2. We communicate more clearly each week.\n3. What we have now deserves my full presence.',
     actionHint:
-      'Keep this grounded in character, values, and behavior.',
-    validator: validateFactualStrengths,
+      'Keep this focused on what is true now.',
+    validator: validateCurrentConnectionTruths,
   },
   {
     id: 'mind-reader',
-    title: 'The Mind Reader',
+    title: 'Choosing Clarity Over Assumption',
     trigger:
-      'Forest: "Your partner said they would call at 8:00 PM. It is 9:30 PM. They have not called. What is the story your old self wants to believe?"',
+      'Something does not happen the way you expected. You are left filling in the blanks.',
     oldSelfPrompt:
-      'Type the assumption you would usually make before speaking up.',
+      'What assumption could you make that creates unnecessary tension?',
     oldSelfPlaceholder:
-      'Example: I would decide they do not respect me and then go silent...',
+      'Example: I could assume they do not care instead of naming what I expected.',
     whatIf:
-      'Forest: "You are punishing them for a boundary you never set. What if you just told them, \'I value punctuality because it makes me feel respected\'? Silence does not teach people how to love you. It just teaches them how to fear your moods."',
-    actionTitle: 'Value Statement',
+      '"Unspoken expectations create silent distance."',
+    actionTitle: 'Aligned Response',
     actionPrompt:
-      'Write a value statement that explains why the behavior matters to you without using the word "you."',
+      'Write how you would express your expectation clearly moving forward.',
     actionPlaceholder:
-      'Punctuality matters to me because consistency helps me feel respected and settled.',
+      'Moving forward, I would like us to let each other know if plans change because clear communication helps me stay grounded.',
     actionHint:
-      'Stay out of blame. Make the value clear in first-person language.',
-    validator: validateValueStatement,
+      'Name the expectation directly and respectfully.',
+    validator: validateClearExpectation,
   },
   {
     id: 'checklist',
-    title: 'The Checklist',
+    title: 'Aligning Values in Real Life',
     trigger:
-      'Forest: "You meet someone amazing, but they do not share one of your must-have hobbies. What does your old self want to do with that difference?"',
+      'You discover a difference between you and your partner that challenges your expectations.',
     oldSelfPrompt:
-      'Type the rigid thought that shows up first.',
+      'What rigid expectation could limit your ability to build with this person?',
     oldSelfPlaceholder:
-      'Example: I would take it as proof we are not compatible and move on...',
+      'Example: I could treat one difference as proof we cannot work instead of looking at our shared direction.',
     whatIf:
-      'Forest: "You are looking for a twin, not a partner. What if their different interests are exactly what you need to grow? A healthy partner complements you. They do not mirror you. If you keep looking for a clone, you will stay single and bored."',
-    actionTitle: 'Value vs Preference',
+      '"Alignment is not sameness. It is shared direction."',
+    actionTitle: 'Aligned Response',
     actionPrompt:
-      'Identify 1 non-negotiable value, 1 flexible preference, and explain the difference.',
+      'Identify:\n1 non-negotiable\n1 flexible preference\n1 way to build anyway',
     actionPlaceholder:
-      'Value: Integrity\nPreference: Hiking\nDifference: Integrity shapes how trust works in the relationship, while hobbies can differ without breaking the foundation.',
+      'Non-negotiable: Integrity\nFlexible preference: Shared hobbies\nBuild anyway: We can stay connected by honoring our values and creating rituals we both enjoy.',
     actionHint:
-      'Name all 3 parts clearly so Forest can see the difference.',
-    validator: validateValueVsPreference,
+      'Name all 3 clearly so the foundation stays visible.',
+    validator: validateBuildAnyway,
   },
   {
     id: 'over-functioner',
-    title: 'The Over-Functioner',
+    title: 'Supporting Without Overstepping',
     trigger:
-      'Forest: "You are dating someone who is going through a rough patch at work. You start booking their appointments, sending job listings, and trying to fix their life. What makes your old self reach for control?"',
+      'Your partner is going through something difficult.',
     oldSelfPrompt:
-      'Type the first justification that shows up for over-helping.',
+      'What urge could cause you to take control instead of support?',
     oldSelfPlaceholder:
-      'Example: I would tell myself I am just being supportive, even if I am taking over...',
+      'Example: I could rush in to manage everything so I do not have to sit with their discomfort.',
     whatIf:
-      'Forest: "You are trying to earn love by being useful. What if they just need a partner, not a project manager? By fixing them, you are creating an imbalance where they feel inadequate and you feel exhausted. That is a recipe for resentment, not harmony."',
-    actionTitle: 'Supportive Pause',
+      '"Support builds connection. Control creates imbalance."',
+    actionTitle: 'Aligned Response',
     actionPrompt:
-      'Draft a message that offers empathy without offering a solution.',
+      'Write a response that offers presence without solving.',
     actionPlaceholder:
-      'That sounds like a heavy week. I am here for you, and I care about how you are carrying it. Let me know how I can support you.',
+      'I am here with you. I do not need to fix this right now - I want to support you in the way that feels best for you.',
     actionHint:
-      'Offer warmth and presence. Do not manage the problem for them.',
+      'Offer steadiness, not management.',
     validator: validateSupportivePause,
   },
   {
     id: 'emotional-hostage',
-    title: 'The Emotional Hostage',
+    title: 'Maintaining Emotional Safety',
     trigger:
-      'Forest: "You have a small disagreement about weekend plans. What threat or dramatic move does your old self want to reach for?"',
+      'A disagreement happens and emotions rise.',
     oldSelfPrompt:
-      'Type the escalation your old self would be tempted to use.',
+      'What reaction could make the space feel unsafe instead of stable?',
     oldSelfPlaceholder:
-      'Example: I would say maybe we should just cancel everything and leave it there...',
+      'Example: I could threaten distance or shut down instead of staying honest and steady.',
     whatIf:
-      'Forest: "You are using the relationship as a weapon. What if they finally say, \'Okay, leave\'? You created an environment where your partner is constantly walking on eggshells. You cannot build a home on a foundation of threats. This is emotional volatility, and it is a slow-acting poison. It is not passion. It is a lack of safety."',
-    actionTitle: 'Anchor Statement',
+      '"Alignment protects the connection even during conflict."',
+    actionTitle: 'Aligned Response',
     actionPrompt:
-      'Write a response that names the frustration and explicitly reaffirms the commitment.',
+      'Write a response that expresses emotion without threatening the relationship.',
     actionPlaceholder:
-      'I am frustrated right now, but I am not going anywhere. I want to solve this with you once we both settle down.',
+      'I am upset right now, but I care about us and want to work through this without turning against each other.',
     actionHint:
-      'The relationship must feel safe even while conflict is happening.',
+      'Let the emotion be real while keeping the relationship safe.',
     validator: validateAnchorStatement,
   },
   {
     id: 'vulnerability-weaponizer',
-    title: 'The Vulnerability Weaponizer',
+    title: 'Protecting Vulnerability',
     trigger:
-      'Forest: "You are in a heated argument, and you are losing. What does your old self want to pull from your partner\'s deepest vulnerability?"',
+      'You are in a tense moment and feel the urge to use something personal shared with you.',
     oldSelfPrompt:
-      'Type the temptation your old self feels in that heated moment.',
+      'What impulse could damage trust in this moment?',
     oldSelfPlaceholder:
-      'Example: I would want to bring up something painful they trusted me with...',
+      'Example: I could reach for something personal to protect myself instead of protecting the connection.',
     whatIf:
-      'Forest: "You just committed the ultimate sin of intimacy. You took their blueprint and used it to burn them. What if they never tell you the truth again? You just traded soul-level trust for a five-minute victory. In a healthy relationship, secrets are sacred ground, not ammunition. This behavior is deadly because it kills the safe space required for love to survive."',
-    actionTitle: 'Confession of Intent',
+      '"In alignment, vulnerability is protected - never used as leverage."',
+    actionTitle: 'Aligned Response',
     actionPrompt:
-      'Admit to Forest why you feel the need to win at the cost of the other person\'s heart.',
+      'Write what you would say instead that preserves trust.',
     actionPlaceholder:
-      'I want to win when I feel hurt and powerless. Using their vulnerability gives me a sense of control, but it damages the trust I actually want.',
+      'I want to stay respectful here. I am hurt, and I need a pause before I say something that damages the trust between us.',
     actionHint:
-      'Own the fear, shame, or control under the behavior.',
-    validator: validateConfessionOfIntent,
+      'Protect what was shared, even while you are hurt.',
+    validator: validateTrustPreservingResponse,
   },
 ];
 
@@ -439,7 +454,7 @@ const ConflictSandbox: React.FC = () => {
 
   const handleRevealWhatIf = () => {
     if (!hasMinimumWords(activeDraft.firstMove, 5)) {
-      setFirstMoveFeedback('Forest wants your honest first move before opening the chain reaction.');
+      setFirstMoveFeedback('Forest wants your honest first reaction before reflecting the aligned path.');
       return;
     }
     setFirstMoveFeedback(null);
@@ -529,7 +544,7 @@ const ConflictSandbox: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#D9FF3D]/30 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-[#D9FF3D]">
               <Sparkles className="h-3.5 w-3.5" />
-              Practice Maintaining Alignment in Real Moments
+              The Alignment Practice
             </div>
             <h3 className="mt-4 font-display text-3xl text-[#F6FFF2]">
               Practice the aligned response before real moments require it
@@ -600,12 +615,12 @@ const ConflictSandbox: React.FC = () => {
 
           <div className="mt-6 space-y-5">
             <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-5">
-              <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Step 1 - The Trigger</p>
+              <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Step 1 - The Moment</p>
               <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-[#F6FFF2]">{activeScenario.trigger}</p>
             </div>
 
             <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-5">
-              <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Step 2 - Your Old Self</p>
+              <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Step 2 - Drift Risk</p>
               <p className="mt-3 text-sm leading-relaxed text-[#A9B5AA]">{activeScenario.oldSelfPrompt}</p>
               <textarea
                 value={activeDraft.firstMove}
@@ -623,7 +638,7 @@ const ConflictSandbox: React.FC = () => {
                   onClick={handleRevealWhatIf}
                   className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D9FF3D]/30 px-4 py-2 text-sm font-medium text-[#D9FF3D] hover:bg-[#D9FF3D]/10 transition"
                 >
-                  Let Forest play out the chain reaction
+                  Let Forest reflect the aligned path
                   <ArrowRight className="h-4 w-4" />
                 </button>
               )}
@@ -632,7 +647,7 @@ const ConflictSandbox: React.FC = () => {
             {activeDraft.whatIfUnlocked && (
               <>
                 <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-5">
-                  <p className="text-xs uppercase tracking-wide text-amber-200">Step 3 - Forest&apos;s What If Chain</p>
+                  <p className="text-xs uppercase tracking-wide text-amber-200">Step 3 - Forest Reflection</p>
                   <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-amber-50">{activeScenario.whatIf}</p>
                 </div>
 
