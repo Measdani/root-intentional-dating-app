@@ -12,12 +12,14 @@ type AlignmentKeyButtonProps = {
   title: string;
   prompt: string;
   forestMessage: string[];
+  scrollableMessage?: boolean;
 };
 
 const AlignmentKeyButton: React.FC<AlignmentKeyButtonProps> = ({
   title,
   prompt,
   forestMessage,
+  scrollableMessage = false,
 }) => {
   return (
     <Dialog>
@@ -47,7 +49,11 @@ const AlignmentKeyButton: React.FC<AlignmentKeyButtonProps> = ({
 
         <div className="rounded-2xl border border-[#1A211A] bg-[#0B0F0C] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[#A9B5AA]">Forest</p>
-          <div className="mt-4 space-y-4 text-sm leading-relaxed text-[#F6FFF2]">
+          <div
+            className={`mt-4 space-y-4 text-sm leading-relaxed text-[#F6FFF2] ${
+              scrollableMessage ? 'max-h-[48vh] overflow-y-auto pr-3' : ''
+            }`}
+          >
             {forestMessage.map((paragraph, index) => (
               <p key={`${title}-forest-line-${index}`}>{paragraph}</p>
             ))}

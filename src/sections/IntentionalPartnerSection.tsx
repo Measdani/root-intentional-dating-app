@@ -54,23 +54,33 @@ const IntentionalPartnerSection: React.FC = () => {
         </div>
 
         <AlignmentKeyButton
-          title="The Detox & Aligned Mastery"
-          prompt="Identifying the Counterfeit"
+          title="The Alignment & Sustained Mastery"
+          prompt="Maintaining What Is Real"
           forestMessage={[
-            'As you grow, you will attract attention.',
-            'And this is often when the Counterfeit appears.',
-            'Not as a villain - but as someone who feels almost right.',
-            'They may speak like your vision. They may move like your dream.',
-            'But watch closely.',
-            'Are they trying to secure your loyalty too quickly? With gifts, money, intense emotions, or "deep" conversations before time has revealed their consistency?',
-            "That's not alignment. That's acceleration.",
-            "It's an attempt to create an emotional agreement before you've had the space to choose clearly.",
-            'A Counterfeit can mimic the walk - but it cannot sustain the consistency.',
-            'And when the mask starts to slip...',
-            "Don't fix it. Don't explain it away.",
-            'Let it fall.',
-            "Alignment is not just about who you meet... it's about who you allow access to your life.",
+            'As you build something real, the challenge shifts.',
+            'It is no longer about identifying what does not belong - it is about maintaining what does.',
+            'In alignment, not every moment will feel perfect.',
+            'Not every day will feel effortless.',
+            'But consistency is what reveals truth now.',
+            'Watch closely - not for red flags, but for patterns.',
+            'Do both of you return to clarity after tension?',
+            'Do both of you choose honesty when it would be easier to withdraw?',
+            'Do both of you maintain respect, even when emotions rise?',
+            'Alignment is not proven in ease.',
+            'It is revealed in how you both handle disruption.',
+            'There will be moments where old instincts try to re-enter - assumptions, silence, control, distance.',
+            'But this is where alignment holds.',
+            'Not by reacting...',
+            'but by choosing again.',
+            'You do not need to test the relationship.',
+            'You need to stay consistent within it.',
+            'And when something feels off...',
+            "Don't ignore it.",
+            "Don't escalate it.",
+            'Bring clarity to it.',
+            "Alignment is not just about who you chose - it's about how you continue choosing each other.",
           ]}
+          scrollableMessage
         />
       </div>
     </PartnerSectionIntroPage>
