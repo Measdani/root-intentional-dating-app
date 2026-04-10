@@ -231,4 +231,28 @@ export const forestKnowledgeAdminService = {
       return [];
     }
   },
+
+  async removeUnmatchedQueries(normalizedQuery: string): Promise<{ error: string | null }> {
+    try {
+      const nextQuery = normalizedQuery.trim();
+      if (!nextQuery) {
+        return { error: 'A normalized query is required.' };
+      }
+
+      const { error } = await supabase
+        .from('rh_forest_unmatched_queries')
+        .delete()
+        .eq('normalized_query', nextQuery);
+
+      if (error) {
+        console.warn('Failed to delete unmatched Forest queries:', error.message);
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      console.error('Unexpected error deleting unmatched Forest queries:', error);
+      return { error: error?.message || 'Unknown error' };
+    }
+  },
 };

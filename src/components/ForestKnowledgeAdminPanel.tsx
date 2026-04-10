@@ -269,6 +269,27 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
     toast.success('Forest knowledge entry deleted.');
   };
 
+  const handleDeleteUnmatchedGroup = async (group: ForestUnmatchedQueryGroup) => {
+    if (
+      !window.confirm(
+        `Delete ${group.totalCount} logged unmatched quer${group.totalCount === 1 ? 'y' : 'ies'} for "${group.latestQuery}"?`,
+      )
+    ) {
+      return;
+    }
+
+    const result = await forestKnowledgeAdminService.removeUnmatchedQueries(group.normalizedQuery);
+    if (result.error) {
+      toast.error(`Forest unmatched delete failed: ${result.error}`);
+      return;
+    }
+
+    setUnmatchedQueries((previous) =>
+      previous.filter((query) => query.normalizedQuery !== group.normalizedQuery),
+    );
+    toast.success('Forest unmatched question log deleted.');
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -345,9 +366,19 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
                       Search key: <span className="text-[#F6FFF2]">{group.normalizedQuery}</span>
                     </p>
                   </div>
-                  <Badge className="w-fit border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 text-[#D9FF3D]">
-                    {group.totalCount} miss{group.totalCount === 1 ? '' : 'es'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge className="w-fit border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 text-[#D9FF3D]">
+                      {group.totalCount} miss{group.totalCount === 1 ? '' : 'es'}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void handleDeleteUnmatchedGroup(group)}
+                      className="text-red-400 hover:bg-[#1A211A] hover:text-red-300"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 {(group.uncertaintyLabel || group.uncertaintyReason) ? (
