@@ -99,12 +99,28 @@ const GENERIC_KNOWLEDGE_TOKENS = new Set([
 const STRICT_RESOURCE_TAGS = new Set(['oak', 'willow', 'fern', 'gardener', 'wildflower']);
 
 const FOREST_QUERY_EXPANSIONS: Record<string, string[]> = {
+  argue: ['arguing', 'argument', 'arguments', 'fight', 'fighting', 'conflict', 'disagreement'],
+  arguing: ['argue', 'argument', 'arguments', 'fight', 'fighting', 'conflict', 'disagreement'],
+  argument: ['argue', 'arguing', 'arguments', 'fight', 'fighting', 'conflict', 'disagreement'],
+  arguments: ['argue', 'arguing', 'argument', 'fight', 'fighting', 'conflict', 'disagreement'],
   gaslighting: ['gaslight', 'manipulation', 'control', 'confusion', 'distortion', 'lies'],
   abuse: ['control', 'fear', 'punishment', 'coercion', 'manipulation'],
   chemistry: ['attraction', 'impulse', 'flesh', 'peace', 'discernment'],
   counterfeit: ['mask', 'fake', 'inconsistency', 'lovebombing', 'acceleration'],
+  fight: ['argue', 'arguing', 'argument', 'arguments', 'fighting', 'conflict', 'disagreement'],
+  fighting: ['fight', 'argue', 'arguing', 'argument', 'arguments', 'conflict', 'disagreement'],
   pressure: ['control', 'fear', 'guilt', 'urgency', 'submission'],
 };
+
+const FOREST_TOKEN_FAMILIES = [
+  ['argue', 'argues', 'argued', 'arguing', 'argument', 'arguments'],
+  ['fight', 'fights', 'fighting'],
+  ['disagree', 'disagrees', 'disagreed', 'disagreeing', 'disagreement', 'disagreements'],
+];
+
+const FOREST_TOKEN_ALIAS_MAP = new Map<string, string[]>(
+  FOREST_TOKEN_FAMILIES.flatMap((family) => family.map((token) => [token, family] as const)),
+);
 
 export const normalizeForestValue = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -116,6 +132,28 @@ export const tokenizeForestValue = (value: string): string[] =>
     .filter((token) => token.length >= 3 && !LOW_SIGNAL_TOKENS.has(token));
 
 const uniqueForestValues = (values: string[]): string[] => Array.from(new Set(values));
+
+const expandForestTokens = (tokens: string[]): Set<string> => {
+  const expanded = new Set<string>();
+
+  tokens.forEach((token) => {
+    expanded.add(token);
+    (FOREST_TOKEN_ALIAS_MAP.get(token) ?? []).forEach((alias) => expanded.add(alias));
+  });
+
+  return expanded;
+};
+
+const tokenMatchesExpandedSet = (token: string, expandedTokenSet: Set<string>): boolean => {
+  if (expandedTokenSet.has(token)) return true;
+  return Array.from(expandForestTokens([token])).some((expandedToken) => expandedTokenSet.has(expandedToken));
+};
+
+const expandedSetsOverlap = (left: Set<string>, right: Set<string>): boolean =>
+  Array.from(left).some((token) => right.has(token));
+
+const matchesStrictResourceTag = (token: string): boolean =>
+  Array.from(expandForestTokens([token])).some((expandedToken) => STRICT_RESOURCE_TAGS.has(expandedToken));
 
 export const getForestMatchLabel = (
   match: Pick<ForestKnowledgeEntry, 'category' | 'topic'>,
@@ -160,19 +198,31 @@ type ForestEntryEvaluation = ForestKnowledgeMatch & {
 };
 
 const getEntryPhraseCandidates = (entry: ForestKnowledgeEntry): string[] =>
-  uniqueForestValues([entry.topic, ...entry.keywords])
+  uniqueForestValues([
+    entry.topic,
+    entry.starterLabel ?? '',
+    entry.starterPrompt ?? '',
+    ...entry.keywords,
+  ])
     .map((value) => normalizeForestValue(value))
     .filter((value) => tokenizeForestValue(value).length > 0);
 
 const getEntryAnchorTokens = (entry: ForestKnowledgeEntry): string[] =>
   uniqueForestValues(
-    [entry.topic, entry.category, ...entry.keywords].flatMap((value) => tokenizeForestValue(value)),
+    [
+      entry.topic,
+      entry.category,
+      entry.starterLabel ?? '',
+      entry.starterPrompt ?? '',
+      ...entry.keywords,
+    ].flatMap((value) => tokenizeForestValue(value)),
   ).filter((token) => !GENERIC_KNOWLEDGE_TOKENS.has(token));
 
 const getEntryContextTokens = (entry: ForestKnowledgeEntry): string[] =>
   uniqueForestValues(
     tokenizeForestValue(entry.content)
       .concat(tokenizeForestValue(entry.searchText ?? ''))
+      .concat(tokenizeForestValue(entry.starterPrompt ?? ''))
       .filter((token) => token.length >= 5 && !GENERIC_KNOWLEDGE_TOKENS.has(token)),
   );
 
@@ -181,18 +231,24 @@ const evaluateKnowledgeEntry = (
   entry: ForestKnowledgeEntry,
 ): ForestEntryEvaluation => {
   const normalizedQuestion = normalizeForestValue(question);
-  const questionTokens = new Set(tokenizeForestValue(question));
+  const rawQuestionTokens = uniqueForestValues(tokenizeForestValue(question));
+  const questionTokens = expandForestTokens(rawQuestionTokens);
   const expandedQuestionTokens = expandQuestionTokens(question);
-  const topicTokens = new Set(tokenizeForestValue(entry.topic));
-  const keywordTokens = new Set(entry.keywords.flatMap((keyword) => tokenizeForestValue(keyword)));
-  const categoryTokens = new Set(tokenizeForestValue(entry.category));
+  const topicTokens = expandForestTokens(tokenizeForestValue(entry.topic));
+  const keywordTokens = expandForestTokens(entry.keywords.flatMap((keyword) => tokenizeForestValue(keyword)));
+  const categoryTokens = expandForestTokens(tokenizeForestValue(entry.category));
+  const starterTokens = expandForestTokens(
+    tokenizeForestValue(entry.starterLabel ?? '').concat(tokenizeForestValue(entry.starterPrompt ?? '')),
+  );
   const phraseCandidates = getEntryPhraseCandidates(entry);
   const anchorTokens = getEntryAnchorTokens(entry);
+  const expandedAnchorTokens = expandForestTokens(anchorTokens);
   const contextTokens = getEntryContextTokens(entry);
-  const matchedTerms = anchorTokens.filter((token) => questionTokens.has(token));
+  const matchedTerms = rawQuestionTokens.filter((token) => tokenMatchesExpandedSet(token, expandedAnchorTokens));
   const phraseMatches = phraseCandidates.filter((phrase) => normalizedQuestion.includes(phrase));
   const contextualHits = contextTokens.filter((token) => expandedQuestionTokens.has(token));
-  const strictTags = anchorTokens.filter((token) => STRICT_RESOURCE_TAGS.has(token));
+  const strictTags = Array.from(expandedAnchorTokens).filter((token) => STRICT_RESOURCE_TAGS.has(token));
+  const matchedStrictTags = strictTags.filter((tag) => questionTokens.has(tag));
   const strictTagMisses = strictTags.filter((tag) => !questionTokens.has(tag));
   const strictGateFailed = strictTags.length > 0 && strictTagMisses.length === strictTags.length;
   const hasDirectCorrelation = matchedTerms.length > 0 || phraseMatches.length > 0;
@@ -204,19 +260,30 @@ const evaluateKnowledgeEntry = (
   });
 
   matchedTerms.forEach((token) => {
-    if (topicTokens.has(token)) {
+    const expandedMatchedToken = expandForestTokens([token]);
+
+    if (expandedSetsOverlap(expandedMatchedToken, topicTokens)) {
       directScore += 6;
       return;
     }
 
-    if (keywordTokens.has(token)) {
+    if (expandedSetsOverlap(expandedMatchedToken, starterTokens)) {
       directScore += 5;
       return;
     }
 
-    if (categoryTokens.has(token)) {
+    if (expandedSetsOverlap(expandedMatchedToken, keywordTokens)) {
+      directScore += 5;
+      return;
+    }
+
+    if (expandedSetsOverlap(expandedMatchedToken, categoryTokens)) {
       directScore += 3;
     }
+  });
+
+  matchedStrictTags.forEach(() => {
+    directScore += 3;
   });
 
   const contextualScore = Math.min(contextualHits.length, 4);
@@ -397,13 +464,17 @@ export const askForest = async (question: string): Promise<ForestResponse> => {
   const knowledgeBase = await getForestKnowledgeBase();
   const { matches, rejectedTopics } = getTopMatches(trimmedQuestion, knowledgeBase);
   const questionTerms = getForestQuestionTerms(trimmedQuestion);
+  const topMatchHasStrictIdentityTerm =
+    matches[0]?.matchedTerms.some((term) => matchesStrictResourceTag(term)) ?? false;
   const isAmbiguousLowSignalMatch =
+    !topMatchHasStrictIdentityTerm &&
     matches.length > 1 &&
     matches[0].score - matches[1].score <= 2 &&
     matches[0].matchedTerms.length <= 1 &&
     questionTerms.length <= 3;
+  const minimumScore = topMatchHasStrictIdentityTerm ? 6 : 8;
 
-  if (matches.length === 0 || matches[0].score < 8 || isAmbiguousLowSignalMatch) {
+  if (matches.length === 0 || matches[0].score < minimumScore || isAmbiguousLowSignalMatch) {
     return {
       rawQuestion: trimmedQuestion,
       answer: FOREST_FALLBACK_ANSWER,
