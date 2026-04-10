@@ -39,6 +39,11 @@ type ForestUnmatchedQueryGroup = {
   pageContexts: string[];
   tokenSnapshot: string[];
   topTopics: string[];
+  uncertaintyLabel: string;
+  uncertaintyReason: string;
+  uncertaintyConfidence: number;
+  directTerms: string[];
+  rejectedTopics: string[];
 };
 
 const formatTimestamp = (value?: string): string => {
@@ -51,6 +56,11 @@ const formatTimestamp = (value?: string): string => {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+};
+
+const formatUncertaintyLabel = (value: string): string => {
+  if (!value) return 'Unspecified';
+  return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
 const ForestKnowledgeAdminPanel: React.FC = () => {
@@ -79,6 +89,11 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
           pageContexts: query.pageContext ? [query.pageContext] : [],
           tokenSnapshot: query.tokenSnapshot.slice(0, 8),
           topTopics: query.topTopics.slice(0, 3),
+          uncertaintyLabel: query.uncertaintyLabel,
+          uncertaintyReason: query.uncertaintyReason,
+          uncertaintyConfidence: query.uncertaintyConfidence,
+          directTerms: query.directTerms.slice(0, 6),
+          rejectedTopics: query.rejectedTopics.slice(0, 4),
         });
         return;
       }
@@ -90,6 +105,9 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
       if (queryTime >= existingTime) {
         existing.latestQuery = query.queryText;
         existing.lastSeenAt = query.createdAt;
+        existing.uncertaintyLabel = query.uncertaintyLabel;
+        existing.uncertaintyReason = query.uncertaintyReason;
+        existing.uncertaintyConfidence = query.uncertaintyConfidence;
       }
 
       if (query.pageContext && !existing.pageContexts.includes(query.pageContext)) {
@@ -105,6 +123,18 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
       query.topTopics.forEach((topic) => {
         if (!existing.topTopics.includes(topic) && existing.topTopics.length < 4) {
           existing.topTopics.push(topic);
+        }
+      });
+
+      query.directTerms.forEach((term) => {
+        if (!existing.directTerms.includes(term) && existing.directTerms.length < 6) {
+          existing.directTerms.push(term);
+        }
+      });
+
+      query.rejectedTopics.forEach((topic) => {
+        if (!existing.rejectedTopics.includes(topic) && existing.rejectedTopics.length < 4) {
+          existing.rejectedTopics.push(topic);
         }
       });
     });
@@ -283,8 +313,9 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
               Unmatched Forest Questions ({unmatchedGroups.length} unique / {unmatchedQueries.length} total)
             </h4>
             <p className="text-sm text-[#A9B5AA]">
-              These are prompts Forest could not match strongly enough to answer. Use them to spot
-              missing keywords, new doctrine needs, or Resource Area gaps.
+              These are prompts Forest redirected because the wording did not correlate directly
+              enough. Use the raw input plus the uncertainty notes to see where new doctrine,
+              keywords, or modules are still missing.
             </p>
           </div>
         </div>
@@ -319,6 +350,18 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
                   </Badge>
                 </div>
 
+                {(group.uncertaintyLabel || group.uncertaintyReason) ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Badge className="border border-amber-500/30 bg-amber-500/10 text-amber-300">
+                      {formatUncertaintyLabel(group.uncertaintyLabel)} confidence
+                      {group.uncertaintyConfidence > 0 ? ` ${group.uncertaintyConfidence}` : ''}
+                    </Badge>
+                    {group.uncertaintyReason ? (
+                      <p className="text-sm text-[#A9B5AA]">{group.uncertaintyReason}</p>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {group.pageContexts.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {group.pageContexts.map((pageContext) => (
@@ -345,10 +388,35 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
                   </div>
                 ) : null}
 
+                {group.directTerms.length > 0 ? (
+                  <div className="mt-3">
+                    <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">
+                      Direct Terms Captured
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {group.directTerms.map((term) => (
+                        <Badge
+                          key={`${group.normalizedQuery}-${term}-direct`}
+                          className="border border-[#D9FF3D]/25 bg-[#111611] text-[#D9FF3D]"
+                        >
+                          {term}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 {group.topTopics.length > 0 ? (
                   <p className="mt-3 text-sm text-[#A9B5AA]">
                     Closest topics seen before fallback:{' '}
                     <span className="text-[#F6FFF2]">{group.topTopics.join(', ')}</span>
+                  </p>
+                ) : null}
+
+                {group.rejectedTopics.length > 0 ? (
+                  <p className="mt-3 text-sm text-[#A9B5AA]">
+                    Rejected because the wording did not directly line up:{' '}
+                    <span className="text-[#F6FFF2]">{group.rejectedTopics.join(', ')}</span>
                   </p>
                 ) : null}
               </div>

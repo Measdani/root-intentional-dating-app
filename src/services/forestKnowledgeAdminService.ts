@@ -37,6 +37,11 @@ export type ForestUnmatchedQueryRecord = {
   matchCount: number;
   topScore: number;
   topTopics: string[];
+  uncertaintyLabel: string;
+  uncertaintyReason: string;
+  uncertaintyConfidence: number;
+  directTerms: string[];
+  rejectedTopics: string[];
   pageContext: string;
   createdAt?: string;
 };
@@ -65,6 +70,11 @@ type ForestUnmatchedQueryRow = {
   match_count: number | null;
   top_score: number | null;
   top_topics: string[] | null;
+  uncertainty_label?: string | null;
+  uncertainty_reason?: string | null;
+  uncertainty_confidence?: number | null;
+  direct_terms?: string[] | null;
+  rejected_topics?: string[] | null;
   page_context: string | null;
   created_at: string | null;
 };
@@ -108,6 +118,12 @@ const mapRowToForestUnmatchedQueryRecord = (
   matchCount: typeof row.match_count === 'number' ? row.match_count : 0,
   topScore: typeof row.top_score === 'number' ? row.top_score : 0,
   topTopics: Array.isArray(row.top_topics) ? row.top_topics : [],
+  uncertaintyLabel: row.uncertainty_label ?? '',
+  uncertaintyReason: row.uncertainty_reason ?? '',
+  uncertaintyConfidence:
+    typeof row.uncertainty_confidence === 'number' ? row.uncertainty_confidence : 0,
+  directTerms: Array.isArray(row.direct_terms) ? row.direct_terms : [],
+  rejectedTopics: Array.isArray(row.rejected_topics) ? row.rejected_topics : [],
   pageContext: row.page_context ?? '',
   createdAt: row.created_at ?? undefined,
 });
