@@ -14,6 +14,7 @@ import {
   type ForestResponse,
 } from '@/services/forestRagService';
 import { logForestUnmatchedQuery } from '@/services/forestTelemetryService';
+import { FOREST_SYSTEM_PROMPT } from '@/data/forestKnowledgeBase';
 
 const ForestFloatingAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,6 +43,23 @@ const ForestFloatingAssistant: React.FC = () => {
         question: nextQuestion,
         response: nextResponse,
         pageContext: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      });
+    } catch (error) {
+      console.warn('Forest ask failed:', error);
+      setResponse({
+        rawQuestion: nextQuestion,
+        answer:
+          'Forest hit a temporary issue while checking the knowledge base. Reword your question and try again in a moment.',
+        matches: [],
+        redirectUsed: true,
+        systemPrompt: FOREST_SYSTEM_PROMPT,
+        uncertainty: {
+          confidence: 0,
+          label: 'low',
+          reason: 'Forest could not complete the lookup, so it returned a safe fallback.',
+          directTerms: [],
+          rejectedTopics: [],
+        },
       });
     } finally {
       setIsLoadingResponse(false);

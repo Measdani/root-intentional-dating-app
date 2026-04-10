@@ -1,5 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import { supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { createPublicFunctionsClient } from '@/lib/supabase';
 import { SUPPORT_EMAIL } from '@/constants/support';
 
 type ProfileQualityAction =
@@ -64,13 +63,7 @@ const FALLBACK_FAILURE_RESULT: ModerateProfileQualityResult = {
   escalate: true,
 };
 
-const publicFunctionsClient = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
-  },
-});
+const publicFunctionsClient = createPublicFunctionsClient('rh-profile-quality-client');
 
 const toAction = (value: unknown): ProfileQualityAction => {
   if (

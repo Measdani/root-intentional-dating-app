@@ -20,6 +20,13 @@ const isForestUncertaintySchemaError = (error: { code?: string; message?: string
   );
 };
 
+const isForestInsertBlockedByPolicy = (error: { code?: string; message?: string; details?: string } | null): boolean => {
+  if (!error) return false;
+
+  const errorText = `${error.message ?? ''} ${error.details ?? ''}`.toLowerCase();
+  return error.code === '42501' || errorText.includes('row-level security');
+};
+
 export const logForestUnmatchedQuery = async ({
   question,
   response,
@@ -56,6 +63,10 @@ export const logForestUnmatchedQuery = async ({
   if (isForestUncertaintySchemaError(error)) {
     const retry = await supabase.from('rh_forest_unmatched_queries').insert(baseInsert);
     error = retry.error;
+  }
+
+  if (isForestInsertBlockedByPolicy(error)) {
+    return;
   }
 
   if (error) {
