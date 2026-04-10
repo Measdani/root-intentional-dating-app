@@ -2,6 +2,13 @@ import { supabase } from '@/lib/supabase'
 import { sampleBlogs } from '@/data/blogs'
 import type { BlogArticle } from '@/types'
 
+type SupabaseWriteError = {
+  code?: string | null
+  details?: string | null
+  hint?: string | null
+  message?: string
+}
+
 function toBoolean(value: unknown): boolean {
   if (typeof value === 'boolean') return value
   if (typeof value === 'number') return value === 1
@@ -14,6 +21,35 @@ function toBoolean(value: unknown): boolean {
 
 function isModuleOnly(value: unknown): boolean {
   return toBoolean(value)
+}
+
+function normalizeBlogWriteError(error: SupabaseWriteError): string {
+  const details = [error.message, error.details, error.hint]
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .join(' ')
+    .toLowerCase()
+
+  if (
+    error.code === '42501' ||
+    details.includes('row-level security') ||
+    details.includes('permission denied')
+  ) {
+    return 'Admin write access is not reaching Supabase yet. Sign out and back in, then apply the latest Supabase migrations if the problem continues.'
+  }
+
+  const looksLikeSchemaMismatch =
+    details.includes('schema cache') ||
+    details.includes('does not exist') ||
+    details.includes('column') ||
+    details.includes('module_only') ||
+    details.includes('read_time') ||
+    details.includes('updated_at')
+
+  if (looksLikeSchemaMismatch) {
+    return 'The blogs table is missing the latest columns. Apply the latest Supabase migrations and try again.'
+  }
+
+  return error.message || 'Unknown error'
 }
 
 function getStoredPublicBlogs(): BlogArticle[] {
@@ -59,8 +95,9 @@ export const blogService = {
           code: error.code,
           message: error.message,
           details: error.details,
+          hint: error.hint,
         })
-        return { error: error.message }
+        return { error: normalizeBlogWriteError(error) }
       }
       console.log('Blog successfully saved to Supabase:', blog.id)
       return { error: null }
@@ -179,7 +216,7 @@ export const blogService = {
       .eq('id', blogId)
 
     if (error) {
-      console.warn('Failed to update blog:', error.message)
+      console.warn('Failed to update blog:', normalizeBlogWriteError(error))
       return false
     }
     return true
