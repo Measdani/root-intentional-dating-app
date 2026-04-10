@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Send, Sparkles } from 'lucide-react';
 import {
   Dialog,
@@ -21,6 +21,7 @@ const ForestFloatingAssistant: React.FC = () => {
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<ForestResponse | null>(null);
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+  const activeRequestRef = useRef(0);
 
   useEffect(() => {
     const handleOpenForest = () => setIsOpen(true);
@@ -32,11 +33,15 @@ const ForestFloatingAssistant: React.FC = () => {
     const nextQuestion = (questionOverride ?? question).trim();
     if (!nextQuestion) return;
 
-    setQuestion(nextQuestion);
+    const requestId = activeRequestRef.current + 1;
+    activeRequestRef.current = requestId;
+    setQuestion('');
+    setResponse(null);
     setIsLoadingResponse(true);
 
     try {
       const nextResponse = await askForest(nextQuestion);
+      if (activeRequestRef.current !== requestId) return;
       setResponse(nextResponse);
 
       void logForestUnmatchedQuery({
@@ -45,6 +50,7 @@ const ForestFloatingAssistant: React.FC = () => {
         pageContext: `${window.location.pathname}${window.location.search}${window.location.hash}`,
       });
     } catch (error) {
+      if (activeRequestRef.current !== requestId) return;
       console.warn('Forest ask failed:', error);
       setResponse({
         rawQuestion: nextQuestion,
@@ -62,6 +68,7 @@ const ForestFloatingAssistant: React.FC = () => {
         },
       });
     } finally {
+      if (activeRequestRef.current !== requestId) return;
       setIsLoadingResponse(false);
     }
   };
@@ -101,7 +108,12 @@ const ForestFloatingAssistant: React.FC = () => {
           <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-4">
             <textarea
               value={question}
-              onChange={(event) => setQuestion(event.target.value)}
+              onChange={(event) => {
+                setQuestion(event.target.value);
+                if (!isLoadingResponse && response) {
+                  setResponse(null);
+                }
+              }}
               rows={4}
               placeholder="Ask about covenant, counterfeits, chemistry, peace, or whether something feels Spirit-led..."
               className="mt-3 w-full rounded-xl border border-[#1A211A] bg-[#111611] px-4 py-3 text-sm text-[#F6FFF2] placeholder:text-[#738073] focus:border-[#D9FF3D] focus:outline-none resize-none"
