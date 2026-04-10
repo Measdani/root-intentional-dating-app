@@ -1,5 +1,6 @@
 // Force Vercel rebuild - lorelei avatars + new login profile (alex@test.com)
 import React from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { AppProvider, useApp } from '@/store/AppContext';
 import { AdminProvider, useAdmin } from '@/store/AdminContext';
 import { Toaster } from 'sonner';
@@ -307,6 +308,7 @@ function App() {
     <AdminProvider>
       <AppProvider>
         <AppContent />
+        <Analytics />
       </AppProvider>
     </AdminProvider>
   );
