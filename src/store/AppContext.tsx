@@ -140,6 +140,17 @@ const getInitialAppView = (): AppView => {
     return 'user-login';
   }
 
+  try {
+    if (localStorage.getItem('currentUser')) {
+      const storedView = readStoredAppView();
+      if (storedView) {
+        return storedView;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to restore initial app view:', error);
+  }
+
   return 'landing';
 };
 
@@ -150,6 +161,113 @@ const normalizeUser = (user: User): User => applyRelationshipModeToUser(normaliz
 const SEEDED_USER_IDS = new Set(sampleUsers.map((user) => user.id));
 const ADMIN_USERS_STORAGE_KEY = 'rooted-admin-users';
 const GROWTH_MODE_TAB_STORAGE_KEY = 'rooted_growth_mode_active_tab';
+const LAST_APP_VIEW_STORAGE_KEY = 'rooted_last_app_view';
+const LAST_SELECTED_USER_ID_STORAGE_KEY = 'rooted_last_selected_user_id';
+const LAST_SELECTED_CONVERSATION_ID_STORAGE_KEY = 'rooted_last_selected_conversation_id';
+const RESTORABLE_APP_VIEWS = new Set<AppView>([
+  'assessment',
+  'assessment-reflection',
+  'assessment-result',
+  'assessment-not-completed',
+  'growth-mode',
+  'aware-partner',
+  'intentional-partner',
+  'healthy-partner',
+  'paid-growth-mode',
+  'growth-detail',
+  'community-blog',
+  'browse',
+  'profile',
+  'inbox',
+  'conversation',
+  'clarity-room',
+  'user-settings',
+  'privacy-policy',
+  'terms-of-service',
+  'community-guidelines',
+]);
+
+const isRestorableAppView = (value: string | null): value is AppView =>
+  Boolean(value && RESTORABLE_APP_VIEWS.has(value as AppView));
+
+const readStoredAppView = (): AppView | null => {
+  try {
+    const storedView = localStorage.getItem(LAST_APP_VIEW_STORAGE_KEY);
+    return isRestorableAppView(storedView) ? storedView : null;
+  } catch (error) {
+    console.warn('Failed to read stored app view:', error);
+    return null;
+  }
+};
+
+const readStoredSelectedUserId = (): string | null => {
+  try {
+    const storedUserId = localStorage.getItem(LAST_SELECTED_USER_ID_STORAGE_KEY)?.trim();
+    return storedUserId ? storedUserId : null;
+  } catch (error) {
+    console.warn('Failed to read stored selected user id:', error);
+    return null;
+  }
+};
+
+const readStoredSelectedConversationId = (): string | null => {
+  try {
+    const storedConversationId = localStorage.getItem(LAST_SELECTED_CONVERSATION_ID_STORAGE_KEY)?.trim();
+    return storedConversationId ? storedConversationId : null;
+  } catch (error) {
+    console.warn('Failed to read stored selected conversation id:', error);
+    return null;
+  }
+};
+
+const persistAppView = (view: AppView, isAuthenticated: boolean) => {
+  try {
+    if (!isAuthenticated || !isRestorableAppView(view)) {
+      localStorage.removeItem(LAST_APP_VIEW_STORAGE_KEY);
+      return;
+    }
+
+    localStorage.setItem(LAST_APP_VIEW_STORAGE_KEY, view);
+  } catch (error) {
+    console.warn('Failed to persist app view:', error);
+  }
+};
+
+const persistSelectedUserId = (user: User | null, isAuthenticated: boolean) => {
+  try {
+    if (!isAuthenticated || !user?.id) {
+      localStorage.removeItem(LAST_SELECTED_USER_ID_STORAGE_KEY);
+      return;
+    }
+
+    localStorage.setItem(LAST_SELECTED_USER_ID_STORAGE_KEY, user.id);
+  } catch (error) {
+    console.warn('Failed to persist selected user id:', error);
+  }
+};
+
+const persistSelectedConversationId = (conversation: UserInteraction | null, isAuthenticated: boolean) => {
+  try {
+    if (!isAuthenticated || !conversation?.conversationId) {
+      localStorage.removeItem(LAST_SELECTED_CONVERSATION_ID_STORAGE_KEY);
+      return;
+    }
+
+    localStorage.setItem(LAST_SELECTED_CONVERSATION_ID_STORAGE_KEY, conversation.conversationId);
+  } catch (error) {
+    console.warn('Failed to persist selected conversation id:', error);
+  }
+};
+
+const clearPersistedNavigationState = () => {
+  try {
+    localStorage.removeItem(LAST_APP_VIEW_STORAGE_KEY);
+    localStorage.removeItem(LAST_SELECTED_USER_ID_STORAGE_KEY);
+    localStorage.removeItem(LAST_SELECTED_CONVERSATION_ID_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear persisted navigation state:', error);
+  }
+};
 
 const primeGardenLandingTab = () => {
   try {
@@ -365,6 +483,54 @@ const findConversationById = (
   return matches.sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
 };
 
+const getInitialSelectedUser = (): User | null => {
+  if (typeof window === 'undefined') return null;
+
+  const storedUserId = readStoredSelectedUserId();
+  if (!storedUserId) return null;
+
+  try {
+    const currentUserRaw = localStorage.getItem('currentUser');
+    if (currentUserRaw) {
+      const parsedCurrentUser = JSON.parse(currentUserRaw);
+      if (isUserLike(parsedCurrentUser) && parsedCurrentUser.id === storedUserId) {
+        return normalizeUser(parsedCurrentUser);
+      }
+    }
+
+    const savedUsersRaw = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
+    if (savedUsersRaw) {
+      const parsedUsers = JSON.parse(savedUsersRaw);
+      if (Array.isArray(parsedUsers)) {
+        const storedUser = parsedUsers.find((entry) => isUserLike(entry) && entry.id === storedUserId);
+        if (storedUser && isUserLike(storedUser)) {
+          return normalizeUser(storedUser);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to restore selected user:', error);
+  }
+
+  const seededUser = sampleUsers.find((user) => user.id === storedUserId);
+  return seededUser ? normalizeUser(seededUser) : null;
+};
+
+const getInitialSelectedConversation = (): UserInteraction | null => {
+  if (typeof window === 'undefined') return null;
+
+  const storedConversationId = readStoredSelectedConversationId();
+  if (!storedConversationId) return null;
+
+  try {
+    const savedInteractions = localStorage.getItem('rooted_shared_interactions');
+    return findConversationById(parseStoredInteractionState(savedInteractions), storedConversationId);
+  } catch (error) {
+    console.warn('Failed to restore selected conversation:', error);
+    return null;
+  }
+};
+
 const PROFILE_NO_LONGER_AVAILABLE_MESSAGE = 'This user profile is no longer available.';
 
 const appendProfileUnavailableMessageForMatches = (
@@ -439,8 +605,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [previousView, setPreviousView] = useState<AppView>(() => getInitialAppView());
   const [assessmentAnswers, setAssessmentAnswers] = useState<AssessmentAnswer[]>([]);
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [selectedConversation, setSelectedConversation] = useState<UserInteraction | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(() => getInitialSelectedUser());
+  const [selectedConversation, setSelectedConversation] = useState<UserInteraction | null>(() =>
+    getInitialSelectedConversation(),
+  );
   const [isUserAuthenticated, setIsUserAuthenticated] = useState<boolean>(() => {
     try {
       return Boolean(localStorage.getItem('currentUser'));
@@ -491,6 +659,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentViewState('user-login');
     }
   }, []);
+
+  useEffect(() => {
+    persistAppView(currentView, isUserAuthenticated);
+  }, [currentView, isUserAuthenticated]);
+
+  useEffect(() => {
+    persistSelectedUserId(selectedUser, isUserAuthenticated);
+  }, [selectedUser, isUserAuthenticated]);
+
+  useEffect(() => {
+    persistSelectedConversationId(selectedConversation, isUserAuthenticated);
+  }, [selectedConversation, isUserAuthenticated]);
+
+  useEffect(() => {
+    if (!isUserAuthenticated) {
+      clearPersistedNavigationState();
+    }
+  }, [isUserAuthenticated]);
 
   useEffect(() => {
     let cancelled = false;
@@ -720,8 +906,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const syncedSelectedUser = users.find((user) => user.id === selectedUser.id);
     if (syncedSelectedUser) {
       setSelectedUser((prev) => (prev?.id === syncedSelectedUser.id ? syncedSelectedUser : prev));
+      return;
     }
-  }, [currentUser, selectedUser?.id, users]);
+
+    if (currentView === 'profile' && remoteUserIdsRef.current) {
+      setSelectedUser(null);
+    }
+  }, [currentUser, currentView, selectedUser?.id, users]);
 
   // Apply stored suspensions when currentUser changes (e.g., on login)
   useEffect(() => {
@@ -946,13 +1137,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser.id]);
 
+  useEffect(() => {
+    if (currentView !== 'profile' || selectedUser) return;
+
+    const storedUserId = readStoredSelectedUserId();
+    if (!storedUserId) {
+      if (isUserAuthenticated) {
+        setCurrentViewState('browse');
+      }
+      return;
+    }
+
+    const restoredUser = users.find((user) => user.id === storedUserId);
+    if (restoredUser) {
+      setSelectedUser(restoredUser);
+      return;
+    }
+
+    if (remoteUserIdsRef.current) {
+      setCurrentViewState('browse');
+    }
+  }, [currentView, selectedUser, users, isUserAuthenticated]);
+
+  useEffect(() => {
+    if (currentView !== 'conversation' || selectedConversation) return;
+
+    const storedConversationId = readStoredSelectedConversationId();
+    if (!storedConversationId) {
+      if (isUserAuthenticated) {
+        setCurrentViewState('inbox');
+      }
+      return;
+    }
+
+    const restoredConversation = findConversationById(interactions, storedConversationId);
+    if (restoredConversation) {
+      setSelectedConversation(restoredConversation);
+      return;
+    }
+
+    if (interactionsHydratedRef.current) {
+      setCurrentViewState('inbox');
+    }
+  }, [currentView, selectedConversation, interactions, isUserAuthenticated]);
+
   // Keep selected conversation aligned to the canonical interaction state.
   useEffect(() => {
     setSelectedConversation((prev) => {
       if (!prev) return prev;
 
       const refreshedConversation = findConversationById(interactions, prev.conversationId);
-      return refreshedConversation ?? prev;
+      return refreshedConversation ?? null;
     });
   }, [interactions]);
 
