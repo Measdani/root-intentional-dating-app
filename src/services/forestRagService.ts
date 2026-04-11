@@ -218,6 +218,11 @@ const getEntryAnchorTokens = (entry: ForestKnowledgeEntry): string[] =>
     ].flatMap((value) => tokenizeForestValue(value)),
   ).filter((token) => !GENERIC_KNOWLEDGE_TOKENS.has(token));
 
+const getEntryStrictTags = (entry: ForestKnowledgeEntry): string[] =>
+  Array.from(expandForestTokens(getEntryAnchorTokens(entry))).filter((token) =>
+    STRICT_RESOURCE_TAGS.has(token),
+  );
+
 const getEntryContextTokens = (entry: ForestKnowledgeEntry): string[] =>
   uniqueForestValues(
     tokenizeForestValue(entry.content)
@@ -303,6 +308,43 @@ const evaluateKnowledgeEntry = (
 const getForestQuestionTerms = (question: string): string[] =>
   uniqueForestValues(tokenizeForestValue(question));
 
+const getQuestionStrictTags = (question: string): string[] =>
+  Array.from(expandForestTokens(getForestQuestionTerms(question))).filter((token) =>
+    STRICT_RESOURCE_TAGS.has(token),
+  );
+
+const filterKnowledgeByStrictIdentity = (
+  question: string,
+  knowledgeBase: ForestKnowledgeEntry[],
+): { entries: ForestKnowledgeEntry[]; excludedTopics: string[] } => {
+  const mentionedIdentityTags = new Set(getQuestionStrictTags(question));
+  const excludedTopics: string[] = [];
+
+  const entries = knowledgeBase.filter((entry) => {
+    const entryStrictTags = getEntryStrictTags(entry);
+
+    if (entryStrictTags.length === 0) {
+      return true;
+    }
+
+    const allowsEntry =
+      mentionedIdentityTags.size === 0
+        ? false
+        : entryStrictTags.some((tag) => mentionedIdentityTags.has(tag));
+
+    if (!allowsEntry) {
+      excludedTopics.push(entry.topic);
+    }
+
+    return allowsEntry;
+  });
+
+  return {
+    entries,
+    excludedTopics: uniqueForestValues(excludedTopics).slice(0, 4),
+  };
+};
+
 const buildRejectedTopics = (evaluations: ForestEntryEvaluation[]): string[] =>
   evaluations
     .filter(
@@ -329,7 +371,11 @@ const getTopMatches = (
   question: string,
   knowledgeBase: ForestKnowledgeEntry[],
 ): { matches: ForestKnowledgeMatch[]; rejectedTopics: string[] } => {
-  const evaluations = knowledgeBase
+  const { entries: filteredKnowledgeBase, excludedTopics } = filterKnowledgeByStrictIdentity(
+    question,
+    knowledgeBase,
+  );
+  const evaluations = filteredKnowledgeBase
     .map((entry) => evaluateKnowledgeEntry(question, entry))
     .sort((a, b) => b.score - a.score);
 
@@ -352,7 +398,7 @@ const getTopMatches = (
 
   return {
     matches,
-    rejectedTopics: buildRejectedTopics(evaluations),
+    rejectedTopics: uniqueForestValues(excludedTopics.concat(buildRejectedTopics(evaluations))).slice(0, 4),
   };
 };
 
