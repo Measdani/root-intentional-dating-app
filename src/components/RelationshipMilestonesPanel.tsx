@@ -1,7 +1,6 @@
 ﻿import React, { useMemo, useState } from 'react';
 import type { User, UserInteraction } from '@/types';
 import {
-  TRUTH_DARE_PROMPTS,
   VALUE_DEEP_DIVE_OPTIONS,
   createInitialMilestones,
   type MilestoneAction,
@@ -24,10 +23,8 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
 }) => {
   const milestones = conversation.milestones ?? createInitialMilestones();
   const [dragItem, setDragItem] = useState<string | null>(null);
-  const [promptType, setPromptType] = useState<'truth' | 'dare'>('truth');
-  const [promptLevel, setPromptLevel] = useState<1 | 2 | 3>(1);
-  const [selectedPromptId, setSelectedPromptId] = useState<string>('');
-  const [truthDareResponse, setTruthDareResponse] = useState('');
+  const [selectedRoundOptionId, setSelectedRoundOptionId] = useState('');
+  const [oppositePromptResponse, setOppositePromptResponse] = useState('');
   const [mirrorInput, setMirrorInput] = useState('');
   const [valueSelections, setValueSelections] = useState<string[]>([]);
   const [tempCheck, setTempCheck] = useState({ feelsHeard: 7, goalsAligned: 7, readiness: 7 });
@@ -55,27 +52,65 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
     safetyNotes: '',
   });
 
-  const participants = [conversation.fromUserId, conversation.toUserId];
+  const participants = useMemo(
+    () => [conversation.fromUserId, conversation.toUserId] as const,
+    [conversation.fromUserId, conversation.toUserId]
+  );
   const myPicks = milestones.sharedVibe.picksByUser[currentUser.id] ?? [];
   const otherPicks = milestones.sharedVibe.picksByUser[otherUser.id] ?? [];
   const sharedItems = milestones.sharedVibe.sharedItems;
   const canUnlockTruthDare = myPicks.length >= 3 && otherPicks.length >= 3;
 
-  const truthDareResponsesByUser = useMemo(() => {
+  const oppositePromptResponsesByUser = useMemo(() => {
     const byCurrent = milestones.truthOrDare.responses.filter((item) => item.userId === currentUser.id);
     const byOther = milestones.truthOrDare.responses.filter((item) => item.userId === otherUser.id);
     return { byCurrent, byOther };
   }, [milestones.truthOrDare.responses, currentUser.id, otherUser.id]);
-  const myTruthDareResponseCount = truthDareResponsesByUser.byCurrent.length;
-  const myTruthResponseCount = truthDareResponsesByUser.byCurrent.filter((item) => item.type === 'truth').length;
+  const oppositePromptProgress = useMemo(() => {
+    return milestones.truthOrDare.rounds.map((round) => {
+      const responses = milestones.truthOrDare.responses.filter((item) => item.roundId === round.id);
+      const myResponse = responses.find((item) => item.userId === currentUser.id) ?? null;
+      const otherResponse = responses.find((item) => item.userId === otherUser.id) ?? null;
+      const myOption = myResponse
+        ? round.options.find((option) => option.id === myResponse.optionId) ?? null
+        : null;
+      const otherOption = otherResponse
+        ? round.options.find((option) => option.id === otherResponse.optionId) ?? null
+        : null;
 
-  const truthOrDareComplete = useMemo(() => {
-    return participants.every((userId) => {
-      const responses = milestones.truthOrDare.responses.filter((item) => item.userId === userId);
-      const truthCount = responses.filter((item) => item.type === 'truth').length;
-      return responses.length >= 2 && truthCount >= 1;
+      return {
+        round,
+        myResponse,
+        otherResponse,
+        myOption,
+        otherOption,
+        isComplete: participants.every((userId) => responses.some((item) => item.userId === userId)),
+      };
     });
-  }, [milestones.truthOrDare.responses, participants]);
+  }, [milestones.truthOrDare.responses, milestones.truthOrDare.rounds, currentUser.id, otherUser.id, participants]);
+  const myTruthDareResponseCount = oppositePromptResponsesByUser.byCurrent.length;
+  const truthOrDareComplete = oppositePromptProgress.length > 0 && oppositePromptProgress.every((entry) => entry.isComplete);
+  const currentOppositePrompt = oppositePromptProgress.find((entry) => !entry.isComplete) ?? null;
+  const completedOppositePrompts = oppositePromptProgress.filter((entry) => entry.isComplete);
+  const forcedAssignedOption = currentOppositePrompt?.otherOption
+    ? currentOppositePrompt.round.options.find((option) => option.id !== currentOppositePrompt.otherOption?.id) ?? null
+    : null;
+  const effectiveSelectedRoundOptionId = currentOppositePrompt?.myResponse?.optionId
+    ?? forcedAssignedOption?.id
+    ?? (currentOppositePrompt?.round.options.some((option) => option.id === selectedRoundOptionId) ? selectedRoundOptionId : '');
+  const selectedRoundOption = currentOppositePrompt?.round.options.find((option) => option.id === effectiveSelectedRoundOptionId) ?? null;
+  const currentRoundNumber = currentOppositePrompt
+    ? oppositePromptProgress.findIndex((entry) => entry.round.id === currentOppositePrompt.round.id) + 1
+    : oppositePromptProgress.length;
+  const canSubmitOppositePrompt = Boolean(
+    currentOppositePrompt &&
+    !currentOppositePrompt.myResponse &&
+    selectedRoundOption &&
+    oppositePromptResponse.trim().length >= 10
+  );
+  const oppositePromptPlaceholder = selectedRoundOption?.responseKind === 'ask'
+    ? 'Type the question you want to ask your partner...'
+    : 'Share your answer here...';
 
   const myTempCheck = milestones.tempCheck.answers.find((item) => item.userId === currentUser.id);
   const otherTempCheck = milestones.tempCheck.answers.find((item) => item.userId === otherUser.id);
@@ -100,10 +135,6 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
     : milestones.rhythmRisk.eagerUserId === currentUser.id
       ? 'eager'
       : undefined;
-
-  const visiblePrompts = TRUTH_DARE_PROMPTS.filter(
-    (prompt) => prompt.type === promptType && prompt.level === promptLevel
-  );
 
   const bridgeProgressComplete = milestones.mirror.revealed &&
     participants.every((userId) => Boolean(milestones.valueDeepDive.picksByUser[userId]?.length));
@@ -135,15 +166,16 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
   };
 
   const submitTruthDare = () => {
-    if (!selectedPromptId || truthDareResponse.trim().length < 10) return;
+    if (!currentOppositePrompt || !selectedRoundOption || oppositePromptResponse.trim().length < 10) return;
     pushAction({
-      type: 'submit-truth-dare',
+      type: 'submit-opposite-prompt',
       userId: currentUser.id,
-      promptId: selectedPromptId,
-      response: truthDareResponse.trim(),
+      roundId: currentOppositePrompt.round.id,
+      optionId: selectedRoundOption.id,
+      response: oppositePromptResponse.trim(),
     });
-    setTruthDareResponse('');
-    setSelectedPromptId('');
+    setOppositePromptResponse('');
+    setSelectedRoundOptionId('');
   };
 
   const submitTempCheck = () => {
@@ -262,12 +294,12 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
     'date-offer': 4,
     'resource-path': 4,
   };
-  const stepLabels = ['Shared Vibe', 'Truth or Dare', 'Temp Check', 'Bridge', 'Decision'];
+  const stepLabels = ['Shared Vibe', 'Root / Reveal', 'Temp Check', 'Bridge', 'Decision'];
   const currentStepIndex = stageToStepIndex[milestones.stage] ?? 0;
   const currentStepLabel = stepLabels[currentStepIndex] ?? 'Shared Vibe';
   const stageTitleMap: Record<string, string> = {
     'shared-vibe': 'Shared Vibe',
-    'truth-or-dare': 'Truth or Dare',
+    'truth-or-dare': 'Root / Reveal',
     'temp-check': 'Temp Check',
     'bridge': 'Bridge Activities',
     'final-check': 'Final Check-In',
@@ -277,7 +309,9 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
   const isCurrentUserReadyForHandoff = milestones.stage === 'shared-vibe'
     ? myPicks.length >= 3
     : milestones.stage === 'truth-or-dare'
-      ? myTruthDareResponseCount >= 2 && myTruthResponseCount >= 1
+      ? milestones.truthOrDare.rounds.every((round) => (
+          milestones.truthOrDare.responses.some((item) => item.roundId === round.id && item.userId === currentUser.id)
+        ))
       : true;
   const stageHandoff = milestones.handoff && milestones.handoff.fromStage === milestones.stage
     ? milestones.handoff
@@ -325,12 +359,12 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
           <h3 className="font-display text-xl text-[#F6FFF2]">Couple Milestones</h3>
           <p className="text-xs text-[#A9B5AA]">Build chemistry with structure before moving to date offers.</p>
         </div>
-        <span className="text-xs uppercase tracking-wider text-[#D9FF3D]">{milestones.stage.replace(/-/g, ' ')}</span>
+        <span className="text-xs uppercase tracking-wider text-[#D9FF3D]">{stageTitleMap[milestones.stage] ?? milestones.stage.replace(/-/g, ' ')}</span>
       </div>
 
       <div className="grid gap-2 text-xs md:grid-cols-5">
         <div className={`rounded-lg border px-3 py-2 ${getStepClassName(0, canUnlockTruthDare)}`}>Shared Vibe</div>
-        <div className={`rounded-lg border px-3 py-2 ${getStepClassName(1, truthOrDareComplete)}`}>Truth or Dare</div>
+        <div className={`rounded-lg border px-3 py-2 ${getStepClassName(1, truthOrDareComplete)}`}>Root / Reveal</div>
         <div className={`rounded-lg border px-3 py-2 ${getStepClassName(2, milestones.tempCheck.outcome !== 'pending')}`}>Temp Check</div>
         <div className={`rounded-lg border px-3 py-2 ${getStepClassName(3, bridgeProgressComplete)}`}>Bridge</div>
         <div className={`rounded-lg border px-3 py-2 ${getStepClassName(4, milestones.stage === 'date-offer')}`}>Decision</div>
@@ -368,7 +402,7 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
             Your choice: <span className="text-[#F6FFF2]">{myHandoffChoice ?? 'not selected'}</span> • {otherUser.name}: <span className="text-[#F6FFF2]">{otherHandoffChoice ?? 'not selected'}</span>
           </p>
           <p className="text-xs text-[#6E7A6F]">
-            The next game starts only after both of you choose <span className="text-green-300">Continue</span>.
+            The next milestone starts only after both of you choose <span className="text-green-300">Continue</span>.
           </p>
         </div>
       )}
@@ -437,7 +471,7 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
               Progress to next stage: You {myPicks.length}/3 • {otherUser.name} {otherPicks.length}/3.
             </p>
             {canUnlockTruthDare && (
-              <p className="mt-1 text-xs text-green-300">Both of you contributed enough signal. Truth or Dare is unlocked.</p>
+              <p className="mt-1 text-xs text-green-300">Both of you contributed enough signal. Root / Reveal is unlocked.</p>
             )}
           </div>
 
@@ -451,67 +485,178 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
 
       {showTruthOrDare && (
         <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C]/70 p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-[#F6FFF2]">Truth or Dare: Vulnerability Test</h4>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h4 className="text-sm font-medium text-[#F6FFF2]">Root / Reveal Rounds</h4>
+              <p className="mt-1 text-xs text-[#A9B5AA]">
+                Choose one side, answer it, and your partner automatically gets the opposite side.
+              </p>
+            </div>
             <p className="text-xs text-[#A9B5AA]">
-              You: {truthDareResponsesByUser.byCurrent.length} • {otherUser.name}: {truthDareResponsesByUser.byOther.length}
+              You: {myTruthDareResponseCount}/{milestones.truthOrDare.rounds.length} • {otherUser.name}: {oppositePromptResponsesByUser.byOther.length}/{milestones.truthOrDare.rounds.length}
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPromptType('truth')}
-              className={`rounded-full px-3 py-1.5 text-xs border ${promptType === 'truth' ? 'border-[#D9FF3D] text-[#D9FF3D]' : 'border-[#1A211A] text-[#A9B5AA]'}`}
-            >
-              Truth
-            </button>
-            <button
-              onClick={() => setPromptType('dare')}
-              className={`rounded-full px-3 py-1.5 text-xs border ${promptType === 'dare' ? 'border-[#D9FF3D] text-[#D9FF3D]' : 'border-[#1A211A] text-[#A9B5AA]'}`}
-            >
-              Dare
-            </button>
-            {[1, 2, 3].map((level) => (
-              <button
-                key={level}
-                onClick={() => setPromptLevel(level as 1 | 2 | 3)}
-                className={`rounded-full px-3 py-1.5 text-xs border ${promptLevel === level ? 'border-[#D9FF3D] text-[#D9FF3D]' : 'border-[#1A211A] text-[#A9B5AA]'}`}
-              >
-                L{level}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid gap-2">
-            {visiblePrompts.map((prompt) => (
-              <button
-                key={prompt.id}
-                onClick={() => setSelectedPromptId(prompt.id)}
-                className={`text-left rounded-lg border px-3 py-2 text-xs ${
-                  selectedPromptId === prompt.id
-                    ? 'border-[#D9FF3D] text-[#F6FFF2]'
-                    : 'border-[#1A211A] text-[#A9B5AA]'
+          <div className="grid gap-2 md:grid-cols-5">
+            {oppositePromptProgress.map((entry, index) => (
+              <div
+                key={entry.round.id}
+                className={`rounded-lg border px-3 py-3 text-xs ${
+                  entry.isComplete
+                    ? 'border-green-500/40 bg-green-500/10 text-green-300'
+                    : currentOppositePrompt?.round.id === entry.round.id
+                      ? 'border-[#D9FF3D]/50 bg-[#D9FF3D]/10 text-[#F6FFF2]'
+                      : 'border-[#1A211A] text-[#6E7A6F]'
                 }`}
               >
-                {prompt.text}
-              </button>
+                <p className="uppercase tracking-wider text-[10px]">Round {index + 1}</p>
+                <p className="mt-1 font-medium">{entry.round.title}</p>
+                <p className="mt-2 text-[11px]">
+                  {entry.isComplete ? 'Complete' : currentOppositePrompt?.round.id === entry.round.id ? 'In progress' : 'Locked'}
+                </p>
+              </div>
             ))}
           </div>
 
-          <textarea
-            value={truthDareResponse}
-            onChange={(event) => setTruthDareResponse(event.target.value)}
-            rows={3}
-            placeholder="Share your response or completion note..."
-            className="w-full rounded-lg border border-[#1A211A] bg-[#111611] px-3 py-2 text-sm text-[#F6FFF2] placeholder:text-[#6E7A6F] focus:outline-none focus:border-[#D9FF3D]"
-          />
-          <button
-            onClick={submitTruthDare}
-            className="rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm text-[#0B0F0C] font-medium disabled:opacity-50"
-            disabled={!selectedPromptId || truthDareResponse.trim().length < 10}
-          >
-            Submit Response
-          </button>
+          {currentOppositePrompt ? (
+            <div className="rounded-lg border border-[#1A211A] bg-[#111611] p-4 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-[#D9FF3D]">Round {currentRoundNumber}</p>
+                  <h5 className="mt-1 text-base font-medium text-[#F6FFF2]">{currentOppositePrompt.round.title}</h5>
+                  <p className="mt-1 text-xs text-[#A9B5AA]">
+                    Step 1 choose. Step 2 answer. Step 3 {otherUser.name} automatically gets the opposite prompt.
+                  </p>
+                </div>
+                <span className="rounded-full border border-[#1A211A] px-3 py-1 text-[11px] text-[#A9B5AA]">
+                  {currentOppositePrompt.myResponse
+                    ? 'Waiting on partner'
+                    : currentOppositePrompt.otherResponse
+                      ? 'Opposite assigned'
+                      : 'Choose a side'}
+                </span>
+              </div>
+
+              {!currentOppositePrompt.myResponse && (
+                <>
+                  {currentOppositePrompt.otherResponse && forcedAssignedOption ? (
+                    <div className="rounded-lg border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 p-3 text-sm text-[#F6FFF2]">
+                      {otherUser.name} answered <span className="text-[#D9FF3D]">{currentOppositePrompt.otherOption?.label}</span>.
+                      Your prompt is automatically <span className="text-[#D9FF3D]">{forcedAssignedOption.label}</span>.
+                    </div>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {currentOppositePrompt.round.options.map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => setSelectedRoundOptionId(option.id)}
+                          className={`rounded-lg border px-3 py-3 text-left ${
+                            effectiveSelectedRoundOptionId === option.id
+                              ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#F6FFF2]'
+                              : 'border-[#1A211A] text-[#A9B5AA]'
+                          }`}
+                        >
+                          <p className="text-[11px] uppercase tracking-wider">{option.label}</p>
+                          <p className="mt-2 text-sm">{option.prompt}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {selectedRoundOption && (
+                    <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C] p-3">
+                      <p className="text-[11px] uppercase tracking-wider text-[#D9FF3D]">{selectedRoundOption.label}</p>
+                      <p className="mt-2 text-sm text-[#F6FFF2]">{selectedRoundOption.prompt}</p>
+                    </div>
+                  )}
+
+                  <textarea
+                    value={oppositePromptResponse}
+                    onChange={(event) => setOppositePromptResponse(event.target.value)}
+                    rows={3}
+                    placeholder={selectedRoundOption ? oppositePromptPlaceholder : 'Choose a side first...'}
+                    className="w-full rounded-lg border border-[#1A211A] bg-[#0B0F0C] px-3 py-2 text-sm text-[#F6FFF2] placeholder:text-[#6E7A6F] focus:outline-none focus:border-[#D9FF3D]"
+                  />
+                  <button
+                    onClick={submitTruthDare}
+                    className="rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm text-[#0B0F0C] font-medium disabled:opacity-50"
+                    disabled={!canSubmitOppositePrompt}
+                  >
+                    {selectedRoundOption?.responseKind === 'ask' ? 'Send Question' : 'Submit Answer'}
+                  </button>
+                </>
+              )}
+
+              {currentOppositePrompt.myResponse && currentOppositePrompt.myOption && (
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2">
+                  <p className="text-[11px] uppercase tracking-wider text-emerald-200">
+                    Your {currentOppositePrompt.myOption.responseKind === 'ask' ? 'question' : 'answer'}
+                  </p>
+                  <p className="text-sm text-[#F6FFF2]">
+                    {currentOppositePrompt.myOption.label}: {currentOppositePrompt.myOption.prompt}
+                  </p>
+                  <p className="text-xs text-emerald-100">{currentOppositePrompt.myResponse.response}</p>
+                </div>
+              )}
+
+              {currentOppositePrompt.otherResponse && currentOppositePrompt.otherOption && (
+                <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C] p-3 space-y-2">
+                  <p className="text-[11px] uppercase tracking-wider text-[#A9B5AA]">
+                    {otherUser.name}'s {currentOppositePrompt.otherOption.responseKind === 'ask' ? 'question' : 'answer'}
+                  </p>
+                  <p className="text-sm text-[#F6FFF2]">
+                    {currentOppositePrompt.otherOption.label}: {currentOppositePrompt.otherOption.prompt}
+                  </p>
+                  <p className="text-xs text-[#A9B5AA]">{currentOppositePrompt.otherResponse.response}</p>
+                </div>
+              )}
+
+              {currentOppositePrompt.myResponse && !currentOppositePrompt.otherResponse && (
+                <p className="text-xs text-[#A9B5AA]">
+                  Waiting for {otherUser.name} to answer the opposite side before the next round unlocks.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-4 text-sm text-green-200">
+              All five opposite-prompt rounds are complete. You can keep talking here or continue to Temp Check whenever you are both ready.
+            </div>
+          )}
+
+          {completedOppositePrompts.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-wider text-[#A9B5AA]">Completed rounds</p>
+              <div className="grid gap-3">
+                {completedOppositePrompts.map((entry) => (
+                  <div key={entry.round.id} className="rounded-lg border border-[#1A211A] bg-[#111611] p-3 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wider text-[#D9FF3D]">
+                          Round {oppositePromptProgress.findIndex((item) => item.round.id === entry.round.id) + 1}
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-[#F6FFF2]">{entry.round.title}</p>
+                      </div>
+                      <span className="rounded-full border border-green-500/40 bg-green-500/10 px-3 py-1 text-[11px] text-green-300">
+                        Complete
+                      </span>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2">
+                        <p className="text-[11px] uppercase tracking-wider text-emerald-200">You</p>
+                        <p className="text-sm text-[#F6FFF2]">{entry.myOption?.label}: {entry.myOption?.prompt}</p>
+                        <p className="text-xs text-emerald-100">{entry.myResponse?.response}</p>
+                      </div>
+                      <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C] p-3 space-y-2">
+                        <p className="text-[11px] uppercase tracking-wider text-[#A9B5AA]">{otherUser.name}</p>
+                        <p className="text-sm text-[#F6FFF2]">{entry.otherOption?.label}: {entry.otherOption?.prompt}</p>
+                        <p className="text-xs text-[#A9B5AA]">{entry.otherResponse?.response}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

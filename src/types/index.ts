@@ -253,8 +253,6 @@ export type MilestoneStage =
   | 'date-offer'
   | 'resource-path';
 
-export type TruthDareType = 'truth' | 'dare';
-
 export interface SharedVibeState {
   prompt: string;
   catalog: string[];
@@ -264,26 +262,34 @@ export interface SharedVibeState {
   unlockedAt?: number;
 }
 
-export interface TruthDarePrompt {
+export type OppositePromptResponseKind = 'answer' | 'ask';
+
+export interface OppositePromptOption {
   id: string;
-  type: TruthDareType;
-  level: 1 | 2 | 3;
-  text: string;
+  label: string;
+  prompt: string;
+  responseKind: OppositePromptResponseKind;
 }
 
-export interface TruthDareResponse {
+export interface OppositePromptRound {
   id: string;
-  promptId: string;
-  type: TruthDareType;
-  level: 1 | 2 | 3;
+  emoji: string;
+  title: string;
+  options: [OppositePromptOption, OppositePromptOption];
+}
+
+export interface OppositePromptResponse {
+  id: string;
+  roundId: string;
+  optionId: string;
   userId: string;
   response: string;
   completedAt: number;
 }
 
-export interface TruthDareState {
-  prompts: TruthDarePrompt[];
-  responses: TruthDareResponse[];
+export interface OppositePromptState {
+  rounds: OppositePromptRound[];
+  responses: OppositePromptResponse[];
   unlockedAt?: number;
 }
 
@@ -373,7 +379,7 @@ export interface DateOfferState {
 export interface RelationshipMilestones {
   stage: MilestoneStage;
   sharedVibe: SharedVibeState;
-  truthOrDare: TruthDareState;
+  truthOrDare: OppositePromptState;
   tempCheck: TempCheckState;
   mirror: MirrorState;
   valueDeepDive: ValueDeepDiveState;

@@ -1,11 +1,11 @@
 import type {
   DateOfferResponse,
   MilestoneStage,
+  OppositePromptRound,
+  OppositePromptResponse,
   RelationshipMilestones,
   TempCheckAnswer,
   TempCheckOutcome,
-  TruthDarePrompt,
-  TruthDareResponse,
   UserInteraction,
 } from '@/types';
 
@@ -24,16 +24,54 @@ export const SHARED_VIBE_CATALOG = [
   'Late-Night Dessert',
 ];
 
-export const TRUTH_DARE_PROMPTS: TruthDarePrompt[] = [
-  { id: 'truth_l1_1', type: 'truth', level: 1, text: 'What is your most useless talent?' },
-  { id: 'truth_l1_2', type: 'truth', level: 1, text: 'What song do you overplay when no one is around?' },
-  { id: 'truth_l2_1', type: 'truth', level: 2, text: 'What is a mistake you learned the most from?' },
-  { id: 'truth_l2_2', type: 'truth', level: 2, text: 'What does feeling emotionally safe look like for you?' },
-  { id: 'truth_l3_1', type: 'truth', level: 3, text: 'What pattern are you actively working to unlearn in love?' },
-  { id: 'dare_1', type: 'dare', level: 1, text: 'Send a voice note of you singing 10 seconds of your favorite song.' },
-  { id: 'dare_2', type: 'dare', level: 1, text: 'Take a photo of the messiest corner of your room right now.' },
-  { id: 'dare_3', type: 'dare', level: 2, text: 'Record a 15-second “day in the life” voice update right now.' },
+export const OPPOSITE_PROMPT_ROUNDS: OppositePromptRound[] = [
+  {
+    id: 'root-reveal',
+    emoji: '🌳',
+    title: 'Root or Reveal',
+    options: [
+      { id: 'root', label: 'Root', prompt: 'What does commitment mean to you?', responseKind: 'answer' },
+      { id: 'reveal', label: 'Reveal', prompt: 'Share something people misunderstand about you.', responseKind: 'answer' },
+    ],
+  },
+  {
+    id: 'depth-light',
+    emoji: '🌿',
+    title: 'Depth or Light',
+    options: [
+      { id: 'depth', label: 'Depth', prompt: 'What’s a fear you don’t say out loud often?', responseKind: 'answer' },
+      { id: 'light', label: 'Light', prompt: 'What does consistency mean to you?', responseKind: 'answer' },
+    ],
+  },
+  {
+    id: 'open-explore',
+    emoji: '🌻',
+    title: 'Open or Explore',
+    options: [
+      { id: 'open', label: 'Open', prompt: 'Answer something honestly.', responseKind: 'answer' },
+      { id: 'explore', label: 'Explore', prompt: 'Ask your partner something new.', responseKind: 'ask' },
+    ],
+  },
+  {
+    id: 'stay-share',
+    emoji: '🌼',
+    title: 'Stay or Share',
+    options: [
+      { id: 'stay', label: 'Stay', prompt: 'What does trust look like to you?', responseKind: 'answer' },
+      { id: 'share', label: 'Share', prompt: 'What kind of life are you building?', responseKind: 'answer' },
+    ],
+  },
+  {
+    id: 'align-ask',
+    emoji: '🌱',
+    title: 'Align or Ask',
+    options: [
+      { id: 'align', label: 'Align', prompt: 'What makes you feel most like yourself?', responseKind: 'answer' },
+      { id: 'ask', label: 'Ask', prompt: 'What makes you feel appreciated?', responseKind: 'answer' },
+    ],
+  },
 ];
+
 
 export const VALUE_DEEP_DIVE_OPTIONS = [
   'Personal Space',
@@ -50,7 +88,7 @@ export const VALUE_DEEP_DIVE_OPTIONS = [
 
 type MilestoneAction =
   | { type: 'toggle-vibe-card'; userId: string; item: string }
-  | { type: 'submit-truth-dare'; userId: string; promptId: string; response: string }
+  | { type: 'submit-opposite-prompt'; userId: string; roundId: string; optionId: string; response: string }
   | { type: 'submit-temp-check'; userId: string; feelsHeard: number; goalsAligned: number; readiness: number }
   | { type: 'submit-mirror'; userId: string; reflection: string }
   | { type: 'submit-value-deep-dive'; userId: string; picks: string[] }
@@ -314,6 +352,38 @@ const createInitialDateOfferState = () => ({
   responsesByUser: {},
 });
 
+const createInitialOppositePromptState = () => ({
+  rounds: OPPOSITE_PROMPT_ROUNDS,
+  responses: [] as OppositePromptResponse[],
+});
+
+const normalizeOppositePromptState = (
+  state: RelationshipMilestones['truthOrDare'] | undefined
+): RelationshipMilestones['truthOrDare'] => {
+  const rounds = Array.isArray(state?.rounds) && state.rounds.length > 0
+    ? state.rounds
+        .filter((round): round is OppositePromptRound => Boolean(round?.id) && Array.isArray(round?.options) && round.options.length === 2)
+        .slice(0, OPPOSITE_PROMPT_ROUNDS.length)
+    : [];
+
+  const responses = Array.isArray(state?.responses)
+    ? state.responses.filter(
+        (response): response is OppositePromptResponse =>
+          Boolean(response?.id) &&
+          Boolean(response?.roundId) &&
+          Boolean(response?.optionId) &&
+          Boolean(response?.userId) &&
+          typeof response?.response === 'string'
+      )
+    : [];
+
+  return {
+    rounds: rounds.length === OPPOSITE_PROMPT_ROUNDS.length ? rounds : OPPOSITE_PROMPT_ROUNDS,
+    responses,
+    unlockedAt: state?.unlockedAt,
+  };
+};
+
 export const normalizeMilestones = (
   milestones?: RelationshipMilestones
 ): RelationshipMilestones => {
@@ -321,6 +391,7 @@ export const normalizeMilestones = (
   return {
     ...milestones,
     handoff: milestones.handoff ?? null,
+    truthOrDare: normalizeOppositePromptState(milestones.truthOrDare),
     dateOffer: {
       ...createInitialDateOfferState(),
       ...milestones.dateOffer,
@@ -342,24 +413,50 @@ const getSharedItems = (picksByUser: Record<string, string[]>, users: [string, s
   return [...a].filter((item) => b.has(item));
 };
 
+const getRoundResponses = (
+  responses: OppositePromptResponse[],
+  roundId: string
+): OppositePromptResponse[] => responses.filter((response) => response.roundId === roundId);
+
+const getRoundOption = (
+  round: OppositePromptRound,
+  optionId: string
+) => round.options.find((option) => option.id === optionId) ?? null;
+
+const getOppositeOption = (
+  round: OppositePromptRound,
+  optionId: string
+) => round.options.find((option) => option.id !== optionId) ?? null;
+
+const isRoundComplete = (
+  round: OppositePromptRound,
+  responses: OppositePromptResponse[],
+  users: [string, string]
+): boolean => users.every((userId) => getRoundResponses(responses, round.id).some((response) => response.userId === userId));
+
+const getCurrentIncompleteRound = (
+  rounds: OppositePromptRound[],
+  responses: OppositePromptResponse[],
+  users: [string, string]
+): OppositePromptRound | null => rounds.find((round) => !isRoundComplete(round, responses, users)) ?? null;
+
 const isTruthOrDareCompleteForUser = (
-  responses: TruthDareResponse[],
+  rounds: OppositePromptRound[],
+  responses: OppositePromptResponse[],
   userId: string
-): boolean => {
-  const byUser = responses.filter((response) => response.userId === userId);
-  const truthCount = byUser.filter((response) => response.type === 'truth').length;
-  return byUser.length >= 2 && truthCount >= 1;
-};
+): boolean => rounds.every((round) => getRoundResponses(responses, round.id).some((response) => response.userId === userId));
 
 const hasAnyTruthOrDareComplete = (
-  responses: TruthDareResponse[],
+  rounds: OppositePromptRound[],
+  responses: OppositePromptResponse[],
   users: [string, string]
-): boolean => users.some((userId) => isTruthOrDareCompleteForUser(responses, userId));
+): boolean => users.some((userId) => isTruthOrDareCompleteForUser(rounds, responses, userId));
 
 const evaluateTruthOrDareUnlock = (
-  responses: TruthDareResponse[],
+  rounds: OppositePromptRound[],
+  responses: OppositePromptResponse[],
   users: [string, string]
-): boolean => users.every((userId) => isTruthOrDareCompleteForUser(responses, userId));
+): boolean => users.every((userId) => isTruthOrDareCompleteForUser(rounds, responses, userId));
 
 const getDefaultHandoffToStage = (stage: MilestoneStage): MilestoneStage | null => {
   if (stage === 'shared-vibe') return 'truth-or-dare';
@@ -376,7 +473,7 @@ const canAdvanceFromHandoff = (
     return evaluateSharedVibeUnlock(milestones.sharedVibe.picksByUser, users);
   }
   if (fromStage === 'truth-or-dare') {
-    return evaluateTruthOrDareUnlock(milestones.truthOrDare.responses, users);
+    return evaluateTruthOrDareUnlock(milestones.truthOrDare.rounds, milestones.truthOrDare.responses, users);
   }
   return true;
 };
@@ -397,7 +494,10 @@ const ensureHandoffForCurrentStage = (
     return milestones;
   }
 
-  if (milestones.stage === 'truth-or-dare' && !isTruthOrDareCompleteForUser(milestones.truthOrDare.responses, userId)) {
+  if (
+    milestones.stage === 'truth-or-dare' &&
+    !isTruthOrDareCompleteForUser(milestones.truthOrDare.rounds, milestones.truthOrDare.responses, userId)
+  ) {
     return milestones;
   }
 
@@ -436,8 +536,7 @@ export const createInitialMilestones = (): RelationshipMilestones => ({
     sharedItems: [],
   },
   truthOrDare: {
-    prompts: TRUTH_DARE_PROMPTS,
-    responses: [],
+    ...createInitialOppositePromptState(),
   },
   tempCheck: {
     answers: [],
@@ -511,37 +610,42 @@ export const applyMilestoneAction = (
       return nextMilestones;
     }
 
-    case 'submit-truth-dare': {
-      const prompt = milestones.truthOrDare.prompts.find((item) => item.id === action.promptId);
-      if (!prompt) return milestones;
+    case 'submit-opposite-prompt': {
+      if (!users.includes(action.userId)) return milestones;
+
+      const round = milestones.truthOrDare.rounds.find((item) => item.id === action.roundId);
+      if (!round) return milestones;
+
+      const currentRound = getCurrentIncompleteRound(milestones.truthOrDare.rounds, milestones.truthOrDare.responses, users);
+      if (!currentRound || currentRound.id !== round.id) return milestones;
 
       const sanitized = action.response.trim();
       if (!sanitized) return milestones;
 
-      const existingIndex = milestones.truthOrDare.responses.findIndex(
-        (response) => response.userId === action.userId && response.promptId === action.promptId
-      );
+      const roundResponses = getRoundResponses(milestones.truthOrDare.responses, round.id);
+      const existingResponse = roundResponses.find((response) => response.userId === action.userId);
+      if (existingResponse) return milestones;
 
-      const nextResponse: TruthDareResponse = {
-        id: existingIndex === -1
-          ? `td_${now}_${Math.random().toString(36).slice(2, 8)}`
-          : milestones.truthOrDare.responses[existingIndex].id,
-        promptId: prompt.id,
-        type: prompt.type,
-        level: prompt.level,
+      const otherResponse = roundResponses.find((response) => response.userId !== action.userId);
+      const assignedOption = otherResponse
+        ? getOppositeOption(round, otherResponse.optionId)
+        : getRoundOption(round, action.optionId);
+
+      if (!assignedOption || assignedOption.id !== action.optionId) return milestones;
+
+      const nextResponse: OppositePromptResponse = {
+        id: `orp_${now}_${Math.random().toString(36).slice(2, 8)}`,
+        roundId: round.id,
+        optionId: assignedOption.id,
         userId: action.userId,
         response: sanitized,
         completedAt: now,
       };
 
-      const responses = existingIndex === -1
-        ? [...milestones.truthOrDare.responses, nextResponse]
-        : milestones.truthOrDare.responses.map((response, index) => (
-            index === existingIndex ? nextResponse : response
-          ));
+      const responses = [...milestones.truthOrDare.responses, nextResponse];
 
-      const unlocked = evaluateTruthOrDareUnlock(responses, users);
-      const anyUserReady = hasAnyTruthOrDareComplete(responses, users);
+      const unlocked = evaluateTruthOrDareUnlock(milestones.truthOrDare.rounds, responses, users);
+      const anyUserReady = hasAnyTruthOrDareComplete(milestones.truthOrDare.rounds, responses, users);
       const nextMilestones: RelationshipMilestones = {
         ...milestones,
         truthOrDare: {

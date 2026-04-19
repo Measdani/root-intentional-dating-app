@@ -410,7 +410,7 @@ const BrowseSection: React.FC = () => {
             <h3 className="mt-1 text-lg font-semibold text-[#F6FFF2]">Couple Milestones Ready with {featuredGamePartner.name}</h3>
             <p className="mt-1 text-sm text-sky-100">
               {featuredGameConversation
-                ? 'Launch Shared Vibe, Truth or Dare, Temp Check, and Date Offer directly from here.'
+                ? 'Launch Shared Vibe, Root / Reveal, Temp Check, and Date Offer directly from here.'
                 : 'Open your couple thread first, then milestones will start immediately.'}
             </p>
             <button
