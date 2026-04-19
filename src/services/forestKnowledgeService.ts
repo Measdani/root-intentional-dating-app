@@ -34,6 +34,15 @@ type BlogRow = {
 
 let knowledgeCache: ForestKnowledgeEntry[] | null = null;
 let knowledgeRequest: Promise<ForestKnowledgeEntry[]> | null = null;
+let knowledgeCacheFetchedAt = 0;
+
+const FOREST_KNOWLEDGE_CACHE_TTL_MS = 30_000;
+
+export const invalidateForestKnowledgeCache = (): void => {
+  knowledgeCache = null;
+  knowledgeRequest = null;
+  knowledgeCacheFetchedAt = 0;
+};
 
 const orderModules = (modules: GrowthResourceModule[] | undefined): GrowthResourceModule[] => {
   if (!Array.isArray(modules)) return [];
@@ -196,7 +205,10 @@ const normalizeForestKnowledgeRow = (row: ForestKnowledgeRow): ForestKnowledgeEn
 };
 
 export const getForestKnowledgeBase = async (): Promise<ForestKnowledgeEntry[]> => {
-  if (knowledgeCache) return knowledgeCache;
+  if (knowledgeCache && Date.now() - knowledgeCacheFetchedAt < FOREST_KNOWLEDGE_CACHE_TTL_MS) {
+    return knowledgeCache;
+  }
+
   if (knowledgeRequest) return knowledgeRequest;
 
   knowledgeRequest = (async () => {
@@ -241,9 +253,11 @@ export const getForestKnowledgeBase = async (): Promise<ForestKnowledgeEntry[]> 
       ...alignmentResourceEntries,
       ...blogKnowledgeEntries,
     ];
+    knowledgeCacheFetchedAt = Date.now();
 
     if (knowledgeCache.length === 0) {
       knowledgeCache = FOREST_KNOWLEDGE_BASE;
+      knowledgeCacheFetchedAt = Date.now();
     }
 
     return knowledgeCache;

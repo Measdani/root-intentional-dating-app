@@ -7,6 +7,7 @@ import { getForestKnowledgeBase } from '@/services/forestKnowledgeService';
 export type ForestKnowledgeMatch = ForestKnowledgeEntry & {
   score: number;
   matchedTerms: string[];
+  contextOnlyEligible?: boolean;
 };
 
 export type ForestUncertainty = {
@@ -27,7 +28,7 @@ export type ForestResponse = {
 };
 
 const FOREST_FALLBACK_ANSWER =
-  'Forest could not find a direct terminology match. Reword your question with the exact pattern, style, or module name you mean.';
+  'Forest could not ground this clearly enough yet. Reword the question with the behavior, feeling, pattern, or module you want him to search.';
 
 const LOW_SIGNAL_TOKENS = new Set([
   'about',
@@ -99,11 +100,28 @@ const GENERIC_KNOWLEDGE_TOKENS = new Set([
 const STRICT_RESOURCE_TAGS = new Set(['oak', 'willow', 'fern', 'gardener', 'wildflower']);
 
 const FOREST_QUERY_EXPANSIONS: Record<string, string[]> = {
+  answer: ['clarity', 'truth', 'honesty', 'direct'],
+  answers: ['clarity', 'truth', 'honesty', 'direct'],
   argue: ['arguing', 'argument', 'arguments', 'fight', 'fighting', 'conflict', 'disagreement'],
   arguing: ['argue', 'argument', 'arguments', 'fight', 'fighting', 'conflict', 'disagreement'],
   argument: ['argue', 'arguing', 'arguments', 'fight', 'fighting', 'conflict', 'disagreement'],
   arguments: ['argue', 'arguing', 'argument', 'fight', 'fighting', 'conflict', 'disagreement'],
   gaslighting: ['gaslight', 'manipulation', 'control', 'confusion', 'distortion', 'lies'],
+  direct: ['clarity', 'truth', 'honesty', 'clear', 'straightforward'],
+  honest: ['honesty', 'truth', 'clarity', 'direct'],
+  honesty: ['honest', 'truth', 'clarity', 'direct'],
+  unclear: ['confusion', 'clarity', 'fog', 'truth'],
+  confusing: ['confusion', 'gaslighting', 'fog', 'unclear'],
+  confused: ['confusion', 'gaslighting', 'fog', 'unclear'],
+  confusion: ['confused', 'gaslighting', 'fog', 'unclear'],
+  indirect: ['avoidance', 'clarity', 'truth', 'honesty'],
+  vague: ['clarity', 'unclear', 'truth', 'confusion'],
+  avoid: ['avoidance', 'withdrawal', 'deflection', 'conflict'],
+  avoiding: ['avoidance', 'withdrawal', 'deflection', 'conflict'],
+  avoidance: ['avoid', 'avoiding', 'withdrawal', 'deflection', 'conflict'],
+  inconsistent: ['consistency', 'pattern', 'mask', 'counterfeit'],
+  inconsistency: ['consistency', 'pattern', 'mask', 'counterfeit'],
+  mixed: ['inconsistency', 'pattern', 'confusion'],
   abuse: ['control', 'fear', 'punishment', 'coercion', 'manipulation'],
   chemistry: ['attraction', 'impulse', 'flesh', 'peace', 'discernment'],
   counterfeit: ['mask', 'fake', 'inconsistency', 'lovebombing', 'acceleration'],
@@ -195,6 +213,7 @@ type ForestEntryEvaluation = ForestKnowledgeMatch & {
   contextualHits: string[];
   strictTagMisses: string[];
   directScore: number;
+  contextOnlyEligible: boolean;
 };
 
 const getEntryPhraseCandidates = (entry: ForestKnowledgeEntry): string[] =>
@@ -291,8 +310,14 @@ const evaluateKnowledgeEntry = (
     directScore += 3;
   });
 
-  const contextualScore = Math.min(contextualHits.length, 4);
-  const score = hasDirectCorrelation && !strictGateFailed ? directScore + contextualScore : 0;
+  const contextualScore = Math.min(contextualHits.length, 5);
+  const contextOnlyEligible =
+    !hasDirectCorrelation &&
+    (contextualHits.length >= 3 || (contextualHits.length >= 2 && rawQuestionTokens.length <= 5));
+  const score =
+    !strictGateFailed && (hasDirectCorrelation || contextOnlyEligible)
+      ? directScore + contextualScore + (contextOnlyEligible ? 4 : 0)
+      : 0;
 
   return {
     ...entry,
@@ -302,6 +327,7 @@ const evaluateKnowledgeEntry = (
     contextualHits,
     strictTagMisses,
     directScore,
+    contextOnlyEligible,
   };
 };
 
@@ -394,6 +420,7 @@ const getTopMatches = (
       displayOrder: entry.displayOrder,
       score: entry.score,
       matchedTerms: entry.matchedTerms,
+      contextOnlyEligible: entry.contextOnlyEligible,
     }));
 
   return {
@@ -402,30 +429,63 @@ const getTopMatches = (
   };
 };
 
+const getForestSourceLabel = (match: Pick<ForestKnowledgeEntry, 'category'>): string => {
+  if (match.category.startsWith('The Intentional Path Resource Area')) {
+    return 'the Intentional Path resources';
+  }
+
+  if (match.category.startsWith('The Alignment Path Resource Area')) {
+    return 'the Alignment Path resources';
+  }
+
+  if (match.category === 'Rooted Insights Blog' || match.category === 'Resource Area Blog') {
+    return 'the published resource library';
+  }
+
+  return 'Forest doctrine';
+};
+
+const buildDirectLead = (
+  primaryMatch: ForestKnowledgeMatch,
+  secondaryMatch?: ForestKnowledgeMatch,
+): string => {
+  const primaryLabel = getForestMatchLabel(primaryMatch);
+  const primarySource = getForestSourceLabel(primaryMatch);
+  const baseLead = `Forest's direct read: this is closest to ${primaryLabel} in ${primarySource}.`;
+
+  if (!secondaryMatch) return baseLead;
+
+  const secondaryLabel = getForestMatchLabel(secondaryMatch);
+  if (secondaryLabel === primaryLabel) return baseLead;
+
+  return `${baseLead} A supporting thread is ${secondaryLabel}.`;
+};
+
 const buildForestAction = (match: ForestKnowledgeMatch): string => {
   if (typeof match.actionText === 'string' && match.actionText.trim().length > 0) {
-    return match.actionText;
+    return `Next move: ${match.actionText}`;
   }
 
   switch (match.topic) {
     case 'Gaslighting and Reality Distortion':
-      return 'Do not argue with the distortion. Slow the connection down, document the pattern, and trust the difference between peace and confusion.';
+      return 'Next move: do not argue with the distortion. Slow the connection down, document the pattern, and trust the difference between peace and confusion.';
     case 'Pressure, Control, and False Peace':
-      return 'If peace only exists when you stay small, that is not peace. Step back from pressure and let their pattern reveal itself without your self-betrayal.';
+      return 'Next move: if peace only exists when you stay small, that is not peace. Step back from pressure and let their pattern reveal itself without your self-betrayal.';
     case 'Lovebombing and Acceleration':
-      return 'Refuse urgency. Let time, consistency, and peace do the testing before deeper access is given.';
+      return 'Next move: refuse urgency. Let time, consistency, and peace do the testing before deeper access is given.';
     case 'The Counterfeit and the Mask':
-      return "Do not explain away the mask. Watch consistency longer than chemistry and let what's false fall on its own.";
+      return "Next move: do not explain away the mask. Watch consistency longer than chemistry and let what's false fall on its own.";
     case 'Spirit vs. Flesh':
-      return 'Ask what is leading: peace or urgency. If peace is missing, slow down until discernment returns.';
+      return 'Next move: ask what is leading: peace or urgency. If peace is missing, slow down until discernment returns.';
     default:
-      return 'Let clarity, consistency, and peace speak before emotion takes the lead.';
+      return 'Next move: let clarity, consistency, and peace speak before emotion takes the lead.';
   }
 };
 
-const buildPrimaryResponse = (match: ForestKnowledgeMatch): string => match.content;
+const buildPrimaryResponse = (match: ForestKnowledgeMatch): string => `What that means here: ${match.content}`;
 
-const buildSecondaryResponse = (match: ForestKnowledgeMatch): string => match.content;
+const buildSecondaryResponse = (match: ForestKnowledgeMatch): string =>
+  `Supporting guidance from ${getForestMatchLabel(match)}: ${match.content}`;
 
 const needsQuestionRefinement = (question: string): boolean => {
   const normalizedQuestion = normalizeForestValue(question);
@@ -509,18 +569,10 @@ export const askForest = async (question: string): Promise<ForestResponse> => {
 
   const knowledgeBase = await getForestKnowledgeBase();
   const { matches, rejectedTopics } = getTopMatches(trimmedQuestion, knowledgeBase);
+  const [primaryMatch, secondaryMatch] = matches;
   const questionTerms = getForestQuestionTerms(trimmedQuestion);
-  const topMatchHasStrictIdentityTerm =
-    matches[0]?.matchedTerms.some((term) => matchesStrictResourceTag(term)) ?? false;
-  const isAmbiguousLowSignalMatch =
-    !topMatchHasStrictIdentityTerm &&
-    matches.length > 1 &&
-    matches[0].score - matches[1].score <= 2 &&
-    matches[0].matchedTerms.length <= 1 &&
-    questionTerms.length <= 3;
-  const minimumScore = topMatchHasStrictIdentityTerm ? 6 : 8;
 
-  if (matches.length === 0 || matches[0].score < minimumScore || isAmbiguousLowSignalMatch) {
+  if (!primaryMatch) {
     return {
       rawQuestion: trimmedQuestion,
       answer: FOREST_FALLBACK_ANSWER,
@@ -536,13 +588,45 @@ export const askForest = async (question: string): Promise<ForestResponse> => {
     };
   }
 
-  const [primaryMatch, secondaryMatch] = matches;
+  const topMatchHasStrictIdentityTerm =
+    primaryMatch?.matchedTerms.some((term) => matchesStrictResourceTag(term)) ?? false;
+  const isAmbiguousLowSignalMatch =
+    !topMatchHasStrictIdentityTerm &&
+    matches.length > 1 &&
+    primaryMatch.score - matches[1].score <= 2 &&
+    primaryMatch.matchedTerms.length <= 1 &&
+    !primaryMatch.contextOnlyEligible &&
+    questionTerms.length <= 3;
+  const minimumScore = topMatchHasStrictIdentityTerm ? 6 : 7;
+  const hasMeaningfulContextMatch =
+    Boolean(primaryMatch) && primaryMatch.matchedTerms.length === 0 && primaryMatch.score >= 7;
+
+  if (
+    matches.length === 0 ||
+    ((!hasMeaningfulContextMatch && primaryMatch.score < minimumScore) || isAmbiguousLowSignalMatch)
+  ) {
+    return {
+      rawQuestion: trimmedQuestion,
+      answer: FOREST_FALLBACK_ANSWER,
+      matches: matches.slice(0, 2),
+      redirectUsed: true,
+      systemPrompt: FOREST_SYSTEM_PROMPT,
+      uncertainty: getForestUncertainty({
+        rawQuestion: trimmedQuestion,
+        matches,
+        rejectedTopics,
+        redirectUsed: true,
+      }),
+    };
+  }
+
   const answerParts = [
+    buildDirectLead(primaryMatch, secondaryMatch),
     buildPrimaryResponse(primaryMatch),
     secondaryMatch ? buildSecondaryResponse(secondaryMatch) : null,
     buildForestAction(primaryMatch),
     needsQuestionRefinement(trimmedQuestion)
-      ? 'If you want a clearer answer, ask Forest about a specific tension or pattern, like love vs urgency, peace vs chemistry, or covenant vs contract.'
+      ? 'If you want Forest to narrow it further, ask about the exact tension or pattern you want him to search, like mixed signals, urgency, pressure, peace, chemistry, or repair after conflict.'
       : null,
   ].filter((part): part is string => Boolean(part));
 

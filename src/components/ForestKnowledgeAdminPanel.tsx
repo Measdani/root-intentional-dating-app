@@ -10,6 +10,7 @@ import {
   type ForestUnmatchedQueryRecord,
   type ForestKnowledgeUpsertInput,
 } from '@/services/forestKnowledgeAdminService';
+import { invalidateForestKnowledgeCache } from '@/services/forestKnowledgeService';
 
 const createEmptyForestEntry = (): ForestKnowledgeUpsertInput => ({
   slug: '',
@@ -148,8 +149,11 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
     });
   }, [unmatchedQueries]);
 
-  const loadEntries = async () => {
-    setIsLoading(true);
+  const loadEntries = async (showLoader = true) => {
+    if (showLoader) {
+      setIsLoading(true);
+    }
+
     const [nextEntries, nextUnmatchedQueries] = await Promise.all([
       forestKnowledgeAdminService.getAll(),
       forestKnowledgeAdminService.getUnmatchedQueries(),
@@ -160,7 +164,26 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
   };
 
   useEffect(() => {
-    void loadEntries();
+    let cancelled = false;
+
+    const loadInitialEntries = async () => {
+      const [nextEntries, nextUnmatchedQueries] = await Promise.all([
+        forestKnowledgeAdminService.getAll(),
+        forestKnowledgeAdminService.getUnmatchedQueries(),
+      ]);
+
+      if (cancelled) return;
+
+      setEntries(nextEntries);
+      setUnmatchedQueries(nextUnmatchedQueries);
+      setIsLoading(false);
+    };
+
+    void loadInitialEntries();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const openCreateForm = () => {
@@ -247,6 +270,7 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
         return a.topic.localeCompare(b.topic);
       });
     });
+    invalidateForestKnowledgeCache();
 
     toast.success(
       selectedEntry
@@ -266,6 +290,7 @@ const ForestKnowledgeAdminPanel: React.FC = () => {
     }
 
     setEntries((previous) => previous.filter((item) => item.id !== entry.id));
+    invalidateForestKnowledgeCache();
     toast.success('Forest knowledge entry deleted.');
   };
 

@@ -68,8 +68,9 @@ const ForestFloatingAssistant: React.FC = () => {
         },
       });
     } finally {
-      if (activeRequestRef.current !== requestId) return;
-      setIsLoadingResponse(false);
+      if (activeRequestRef.current === requestId) {
+        setIsLoadingResponse(false);
+      }
     }
   };
 
@@ -99,8 +100,8 @@ const ForestFloatingAssistant: React.FC = () => {
           <DialogTitle className="font-display text-3xl text-[#F6FFF2]">Forest</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-[#A9B5AA]">
             Forest is available from this icon on every user page. He reads from the Rooted Hearts
-            doctrine, Resource Area materials, and published resource blogs so the guidance stays
-            grounded in what is actually inside the app.
+            doctrine, the Intentional Path, the Alignment Path, and published resource blogs so the
+            guidance stays grounded in what is actually inside the app.
           </DialogDescription>
         </DialogHeader>
 
@@ -115,7 +116,7 @@ const ForestFloatingAssistant: React.FC = () => {
                 }
               }}
               rows={4}
-              placeholder="Ask about covenant, counterfeits, chemistry, peace, or whether something feels Spirit-led..."
+              placeholder="Ask what pattern you are seeing, what behavior means, or which resource area you want Forest to search..."
               className="mt-3 w-full rounded-xl border border-[#1A211A] bg-[#111611] px-4 py-3 text-sm text-[#F6FFF2] placeholder:text-[#738073] focus:border-[#D9FF3D] focus:outline-none resize-none"
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
@@ -147,7 +148,7 @@ const ForestFloatingAssistant: React.FC = () => {
           ) : response ? (
             <div className="rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-4">
               <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">
-                {response.redirectUsed ? 'Redirect' : 'Forest Response'}
+                {response.redirectUsed ? 'Need More Detail' : 'Forest Response'}
               </p>
               <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-[#F6FFF2]">
                 {response.answer}
@@ -155,7 +156,9 @@ const ForestFloatingAssistant: React.FC = () => {
 
               {response.matches.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Grounded In</p>
+                  <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">
+                    {response.redirectUsed ? 'Closest Grounded Topics' : 'Grounded In'}
+                  </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {response.matches.map((match) => (
                       <span
