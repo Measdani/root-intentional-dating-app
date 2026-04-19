@@ -283,7 +283,7 @@ const BrowseSection: React.FC = () => {
     return true;
   });
 
-  const handleBrowseAction = (user: User, conversation: UserInteraction | undefined) => {
+  const handleBrowseAction = (user: User, conversation: UserInteraction | null) => {
     const shouldOpenConversationDirectly = conversation && conversation.status !== 'pending_response';
 
     if (shouldOpenConversationDirectly) {
