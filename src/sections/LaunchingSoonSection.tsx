@@ -1,4 +1,5 @@
 import React from 'react';
+import BrandLogo from '@/components/BrandLogo';
 import { Compass, LockKeyhole, ShieldCheck } from 'lucide-react';
 
 const launchNotes = [
@@ -40,6 +41,7 @@ const LaunchingSoonSection: React.FC = () => {
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-16 sm:px-8 lg:px-10">
         <div className="max-w-4xl">
+          <BrandLogo className="mb-8" imageClassName="w-[118px] sm:w-[142px]" />
           <p className="font-mono-label text-[#D9FF3D]">Private Preview</p>
           <h1 className="mt-5 font-display text-[clamp(3.4rem,8vw,7rem)] leading-[0.9] tracking-[-0.05em] text-[#F6FFF2]">
             Rooted Hearts

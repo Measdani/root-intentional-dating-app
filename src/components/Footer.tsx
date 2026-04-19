@@ -1,4 +1,5 @@
 import React from 'react';
+import BrandLogo from '@/components/BrandLogo';
 import { useApp } from '@/store/AppContext';
 
 const Footer: React.FC = () => {
@@ -10,8 +11,8 @@ const Footer: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           {/* Brand */}
           <div className="text-center md:text-left">
-            <h3 className="font-display text-lg text-[#F6FFF2] mb-1">Rooted Hearts&trade;</h3>
-            <p className="text-sm text-[#A9B5AA]">Dating for people who are intentional.</p>
+            <BrandLogo className="mx-auto md:mx-0" imageClassName="w-[92px] sm:w-[108px]" />
+            <p className="mt-3 text-sm text-[#A9B5AA]">Dating for people who are intentional.</p>
           </div>
 
           {/* Links */}

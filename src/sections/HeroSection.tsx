@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import CommunitySwitcher from '@/components/CommunitySwitcher';
+import BrandLogo from '@/components/BrandLogo';
 import { useCommunity } from '@/modules';
 import { lgbtqWaitlistService } from '@/services/lgbtqWaitlistService';
 import { toast } from 'sonner';
@@ -228,7 +229,7 @@ const HeroSection: React.FC = () => {
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        <span className="font-display text-xl text-[#F6FFF2]">{activeCommunity.heroTitle}</span>
+        <BrandLogo imageClassName="w-[90px] sm:w-[108px]" />
       </div>
 
       {showWaitlistSurvey && (
