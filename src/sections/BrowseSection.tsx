@@ -159,6 +159,36 @@ const BrowseSection: React.FC = () => {
     return exclusivePartner ?? null;
   }, [featuredGameConversation, currentUser.id, users, exclusivePartner]);
   const canShowRelationshipRoomShortcut = isExclusiveMode && Boolean(featuredGamePartner);
+  const featuredDateOffer = featuredGameConversation?.milestones?.dateOffer;
+  const shouldShowFeaturedDateOffer = Boolean(
+    isExclusiveMode &&
+    featuredGamePartner &&
+    featuredDateOffer?.proposal &&
+    featuredDateOffer.status === 'confirmed'
+  );
+
+  const formatDateOfferDateTime = (value: string): string => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleString();
+  };
+
+  const featuredDateOfferTitle = useMemo(() => {
+    if (!shouldShowFeaturedDateOffer || !featuredDateOffer?.proposal || !featuredGamePartner) return '';
+
+    return `Date Confirmed with ${featuredGamePartner.name}`;
+  }, [shouldShowFeaturedDateOffer, featuredDateOffer, featuredGamePartner]);
+
+  const featuredDateOfferDescription = useMemo(() => {
+    if (!shouldShowFeaturedDateOffer || !featuredDateOffer?.proposal || !featuredGamePartner) return '';
+
+    return 'Your exclusive date plan is confirmed. Open the couple thread anytime to review the details together.';
+  }, [shouldShowFeaturedDateOffer, featuredDateOffer, featuredGamePartner]);
+
+  const featuredDateOfferCtaLabel = useMemo(() => {
+    if (!shouldShowFeaturedDateOffer || !featuredDateOffer?.proposal) return 'Open Couple Thread';
+    return 'View Confirmed Date';
+  }, [shouldShowFeaturedDateOffer, featuredDateOffer]);
 
   const launchRelationshipGames = () => {
     if (!featuredGameConversation) {
@@ -322,9 +352,13 @@ const BrowseSection: React.FC = () => {
           </button>
 
           <div className="text-center">
-            <h1 className="font-display text-xl text-[#F6FFF2]">Browse Profiles</h1>
+            <h1 className="font-display text-xl text-[#F6FFF2]">{isExclusiveMode ? 'Exclusive Mode' : 'Browse Profiles'}</h1>
             <p className="text-[#A9B5AA] text-xs">
-              {filteredUsers.length} curated matches
+              {isExclusiveMode
+                ? exclusivePartner
+                  ? `Exclusive connection with ${exclusivePartner.name}`
+                  : 'New matching is paused while exclusive mode is active.'
+                : `${filteredUsers.length} curated matches`}
             </p>
             {/* Current User Display */}
             <p className="text-[10px] text-[#D9FF3D] mt-1">Logged in as: <span className="font-semibold">{currentUser.name}</span></p>
@@ -361,13 +395,15 @@ const BrowseSection: React.FC = () => {
             >
               <HelpCircle className="w-4 h-4" />
             </button>
-            <button
-              onClick={() => setFilterOpen(!filterOpen)}
-              className={`flex items-center gap-2 text-sm ${filterOpen ? 'text-[#D9FF3D]' : 'text-[#A9B5AA]'}`}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Filter
-            </button>
+            {!isExclusiveMode && (
+              <button
+                onClick={() => setFilterOpen(!filterOpen)}
+                className={`flex items-center gap-2 text-sm ${filterOpen ? 'text-[#D9FF3D]' : 'text-[#A9B5AA]'}`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                Filter
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 text-sm text-[#A9B5AA] hover:text-red-400 transition-colors"
@@ -379,7 +415,7 @@ const BrowseSection: React.FC = () => {
         </div>
 
         {/* Filter Panel */}
-        {filterOpen && (
+        {!isExclusiveMode && filterOpen && (
           <div className="border-t border-[#1A211A] bg-[#111611]/50">
             <div className="max-w-6xl mx-auto px-6 py-4">
               <div className="flex flex-wrap gap-2">
@@ -445,6 +481,31 @@ const BrowseSection: React.FC = () => {
           </div>
         )}
 
+        {shouldShowFeaturedDateOffer && featuredDateOffer?.proposal && featuredGamePartner && (
+          <div className="mb-6 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-200">
+              {featuredDateOffer.status === 'confirmed' ? 'Confirmed Date' : 'Date Offer'}
+            </p>
+            <h3 className="mt-1 text-lg font-semibold text-[#F6FFF2]">{featuredDateOfferTitle}</h3>
+            <p className="mt-1 text-sm text-emerald-100">{featuredDateOfferDescription}</p>
+            <div className="mt-4 grid gap-2 text-sm text-[#F6FFF2] sm:grid-cols-2">
+              <p>Plan: <span className="text-emerald-100">{featuredDateOffer.proposal.title}</span></p>
+              <p>When: <span className="text-emerald-100">{formatDateOfferDateTime(featuredDateOffer.proposal.dateTime)}</span></p>
+              <p>Location: <span className="text-emerald-100">{featuredDateOffer.proposal.location}</span></p>
+              <p>Length: <span className="text-emerald-100">{featuredDateOffer.proposal.durationMinutes} minutes</span></p>
+            </div>
+            {featuredDateOffer.proposal.safetyNotes && (
+              <p className="mt-3 text-sm text-emerald-100">Safety notes: {featuredDateOffer.proposal.safetyNotes}</p>
+            )}
+            <button
+              onClick={launchRelationshipGames}
+              className="mt-4 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
+            >
+              {featuredDateOfferCtaLabel}
+            </button>
+          </div>
+        )}
+
         {/* Admin Notifications */}
         {getUnreadNotifications().map(notification => (
           <div
@@ -478,12 +539,14 @@ const BrowseSection: React.FC = () => {
               <p className="text-[#A9B5AA] text-lg">
                 New matching is paused while your current mode is active.
               </p>
-              <button
-                onClick={() => setSelectedFilter(null)}
-                className="mt-4 text-[#D9FF3D] text-sm hover:underline"
-              >
-                Clear filters
-              </button>
+              {selectedFilter && (
+                <button
+                  onClick={() => setSelectedFilter(null)}
+                  className="mt-4 text-[#D9FF3D] text-sm hover:underline"
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
 
             <div className="max-w-4xl mx-auto grid gap-6 md:grid-cols-2">
