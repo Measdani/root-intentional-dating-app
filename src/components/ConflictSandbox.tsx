@@ -461,7 +461,7 @@ const ConflictSandbox: React.FC = () => {
     updateDraft(activeScenario.id, { whatIfUnlocked: true });
   };
 
-  const handlePassScenario = () => {
+  const handlePassScenario = async () => {
     if (!activeDraft.whatIfUnlocked) {
       return;
     }
@@ -488,7 +488,7 @@ const ConflictSandbox: React.FC = () => {
     setFirstMoveFeedback(null);
 
     if (nextCompletedScenarioIds.length >= CONFLICT_SANDBOX_SCENARIOS.length) {
-      const badgeWasNew = persistPartnerJourneyBadge(intentionalPartnerBadge, currentUser.id);
+      const badgeWasNew = await persistPartnerJourneyBadge(intentionalPartnerBadge, currentUser.id);
       toast.success(
         badgeWasNew
           ? `You chose understanding over reaction. That's growth. ${getPartnerJourneyBadgeLabel(intentionalPartnerBadge)} unlocked. Returning to Resource Space.`
@@ -665,7 +665,7 @@ const ConflictSandbox: React.FC = () => {
                     className="mt-4 w-full rounded-2xl border border-[#1A211A] bg-[#111611] px-4 py-3 text-sm text-[#F6FFF2] placeholder:text-[#738073] focus:border-[#D9FF3D] focus:outline-none resize-none"
                   />
                   <button
-                    onClick={handlePassScenario}
+                    onClick={() => void handlePassScenario()}
                     className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#D9FF3D] px-5 py-2.5 text-sm font-semibold text-[#0B0F0C] hover:brightness-95 transition"
                   >
                     Next

@@ -235,7 +235,7 @@ const PaceMeter: React.FC = () => {
     redirectTimeoutRef.current = window.setTimeout(returnToResources, 1200);
   };
 
-  const handleGraduate = () => {
+  const handleGraduate = async () => {
     if (!allCardsViewed) {
       setFeedback('Review both cards in all 4 stages before the graduation moment unlocks.');
       return;
@@ -255,7 +255,7 @@ const PaceMeter: React.FC = () => {
     persistProgress(nextProgress);
     setFeedback(null);
 
-    const badgeWasNew = persistPartnerJourneyBadge(healthyPartnerBadge, currentUser.id);
+    const badgeWasNew = await persistPartnerJourneyBadge(healthyPartnerBadge, currentUser.id);
     toast.success(
       badgeWasNew
         ? `${getPartnerJourneyBadgeLabel(healthyPartnerBadge)} unlocked. Returning to Resource Space.`
@@ -454,7 +454,7 @@ const PaceMeter: React.FC = () => {
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={handleGraduate}
+            onClick={() => void handleGraduate()}
             className="inline-flex items-center gap-2 rounded-full bg-[#D9FF3D] px-5 py-2.5 text-sm font-semibold text-[#0B0F0C] hover:brightness-95 transition"
           >
             Confirm Your Alignment

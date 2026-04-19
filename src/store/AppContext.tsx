@@ -33,6 +33,12 @@ import {
   clearAssessmentInProgress,
   readAssessmentInProgress,
 } from '@/services/assessmentSessionService';
+import {
+  normalizeGrowthStyleBadges,
+  normalizePartnerJourneyBadges,
+  persistGrowthStyleBadge,
+  persistPartnerJourneyBadge,
+} from '@/services/partnerJourneyBadgeService';
 
 interface AppState {
   currentView: AppView;
@@ -914,6 +920,111 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser, currentView, selectedUser?.id, users]);
 
+  useEffect(() => {
+    if (!isUserAuthenticated || currentUser.id === defaultUser.id) return;
+    if (badgeRecoveryInFlightRef.current.has(currentUser.id)) return;
+
+    const currentJourneyBadges = normalizePartnerJourneyBadges(currentUser.partnerJourneyBadges);
+    const currentGrowthStyleBadges = new Set(normalizeGrowthStyleBadges(currentUser.growthStyleBadges));
+    const reflectionStorageKey = `rooted_growth_path_reflections_${currentUser.id}`;
+    const intentionalStorageKey = `rooted_intentional_partner_conflict_sandbox_${currentUser.id}`;
+    const healthyStorageKey = `rooted_healthy_partner_pace_meter_${currentUser.id}`;
+
+    let shouldRecoverAwareBadge = false;
+    let shouldRecoverIntentionalBadge = false;
+    let shouldRecoverHealthyBadge = false;
+    const recoveredStyleCandidates: string[] = [];
+
+    try {
+      const savedReflections = localStorage.getItem(reflectionStorageKey);
+      if (savedReflections) {
+        const parsedReflections = JSON.parse(savedReflections) as Record<string, unknown>;
+        if (parsedReflections && typeof parsedReflections === 'object') {
+          Object.values(parsedReflections).forEach((value) => {
+            if (!value || typeof value !== 'object') return;
+
+            const reflection = value as {
+              approvedAt?: unknown;
+              resourceStyle?: unknown;
+            };
+            const approvedAt = Number(reflection.approvedAt);
+            if (!Number.isFinite(approvedAt)) return;
+
+            shouldRecoverAwareBadge = true;
+            if (typeof reflection.resourceStyle === 'string') {
+              recoveredStyleCandidates.push(reflection.resourceStyle);
+            }
+          });
+        }
+      }
+
+      const savedIntentionalProgress = localStorage.getItem(intentionalStorageKey);
+      if (savedIntentionalProgress) {
+        const parsedIntentional = JSON.parse(savedIntentionalProgress) as { completedAt?: unknown };
+        shouldRecoverIntentionalBadge = Number.isFinite(Number(parsedIntentional?.completedAt));
+      }
+
+      const savedHealthyProgress = localStorage.getItem(healthyStorageKey);
+      if (savedHealthyProgress) {
+        const parsedHealthy = JSON.parse(savedHealthyProgress) as { completedAt?: unknown };
+        shouldRecoverHealthyBadge = Number.isFinite(Number(parsedHealthy?.completedAt));
+      }
+    } catch (error) {
+      console.warn('Failed to inspect stored badge recovery state:', error);
+      return;
+    }
+
+    const recoveredGrowthStyleBadges = normalizeGrowthStyleBadges(recoveredStyleCandidates).filter(
+      (style) => !currentGrowthStyleBadges.has(style)
+    );
+    const missingAwareBadge =
+      shouldRecoverAwareBadge && !currentJourneyBadges.includes('aware-partner-badge');
+    const missingIntentionalBadge =
+      shouldRecoverIntentionalBadge && !currentJourneyBadges.includes('intentional-partner-badge');
+    const missingHealthyBadge =
+      shouldRecoverHealthyBadge && !currentJourneyBadges.includes('healthy-partner-badge');
+
+    if (
+      !missingAwareBadge &&
+      !missingIntentionalBadge &&
+      !missingHealthyBadge &&
+      recoveredGrowthStyleBadges.length === 0
+    ) {
+      return;
+    }
+
+    badgeRecoveryInFlightRef.current.add(currentUser.id);
+
+    const recoverMissingBadges = async () => {
+      try {
+        if (missingAwareBadge) {
+          await persistPartnerJourneyBadge('aware-partner-badge', currentUser.id);
+        }
+
+        for (const style of recoveredGrowthStyleBadges) {
+          await persistGrowthStyleBadge(style, currentUser.id);
+        }
+
+        if (missingIntentionalBadge) {
+          await persistPartnerJourneyBadge('intentional-partner-badge', currentUser.id);
+        }
+
+        if (missingHealthyBadge) {
+          await persistPartnerJourneyBadge('healthy-partner-badge', currentUser.id);
+        }
+      } finally {
+        badgeRecoveryInFlightRef.current.delete(currentUser.id);
+      }
+    };
+
+    void recoverMissingBadges();
+  }, [
+    currentUser.growthStyleBadges,
+    currentUser.id,
+    currentUser.partnerJourneyBadges,
+    isUserAuthenticated,
+  ]);
+
   // Apply stored suspensions when currentUser changes (e.g., on login)
   useEffect(() => {
     try {
@@ -1008,6 +1119,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const suspensionProcessedRef = useRef<string | null>(null);
   const remoteUserIdsRef = useRef<Set<string> | null>(null);
   const interactionsHydratedRef = useRef(false);
+  const badgeRecoveryInFlightRef = useRef<Set<string>>(new Set());
 
   // Load interactions from localStorage on mount
   // Uses shared storage so all users can see each other's messages (for testing)

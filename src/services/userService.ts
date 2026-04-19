@@ -35,6 +35,8 @@ export const userService = {
       consent_version: user.consentVersion,
       cancel_at_period_end: user.cancelAtPeriodEnd,
       user_status: user.userStatus,
+      growth_style_badges: user.growthStyleBadges,
+      partner_journey_badges: user.partnerJourneyBadges,
       background_check_verified: user.backgroundCheckVerified,
       background_check_status: user.backgroundCheckStatus,
       background_check_date: user.backgroundCheckDate,
@@ -57,14 +59,22 @@ export const userService = {
 
     if (
       error &&
-      (user.poolId || user.primaryStyle || user.secondaryStyle) &&
-      (shouldRetryWithoutPoolId(error.message) || shouldRetryWithoutStyleColumns(error.message))
+      (user.poolId || user.primaryStyle || user.secondaryStyle || user.growthStyleBadges || user.partnerJourneyBadges) &&
+      (
+        shouldRetryWithoutPoolId(error.message) ||
+        shouldRetryWithoutStyleColumns(error.message) ||
+        shouldRetryWithoutBadgeColumns(error.message)
+      )
     ) {
       // Backward-compatible retry for schemas that do not support pool/style columns yet.
       const fallbackPayload = { ...basePayload } as Record<string, unknown>
       if (shouldRetryWithoutStyleColumns(error.message)) {
         delete fallbackPayload.primary_style
         delete fallbackPayload.secondary_style
+      }
+      if (shouldRetryWithoutBadgeColumns(error.message)) {
+        delete fallbackPayload.growth_style_badges
+        delete fallbackPayload.partner_journey_badges
       }
       const retry = await supabase
         .from('users')
@@ -165,6 +175,8 @@ export const userService = {
     if (updates.cancelAtPeriodEnd !== undefined) updateData.cancel_at_period_end = updates.cancelAtPeriodEnd
     if (updates.poolId !== undefined) updateData.pool_id = updates.poolId
     if (updates.userStatus !== undefined) updateData.user_status = updates.userStatus
+    if (updates.growthStyleBadges !== undefined) updateData.growth_style_badges = updates.growthStyleBadges
+    if (updates.partnerJourneyBadges !== undefined) updateData.partner_journey_badges = updates.partnerJourneyBadges
     if (updates.backgroundCheckVerified !== undefined) updateData.background_check_verified = updates.backgroundCheckVerified
     if (updates.backgroundCheckStatus !== undefined) updateData.background_check_status = updates.backgroundCheckStatus
     if (updates.backgroundCheckDate !== undefined) updateData.background_check_date = updates.backgroundCheckDate
@@ -182,7 +194,8 @@ export const userService = {
       error &&
       (
         (updateData.pool_id !== undefined && shouldRetryWithoutPoolId(error.message)) ||
-        (hasStyleColumns(updateData) && shouldRetryWithoutStyleColumns(error.message))
+        (hasStyleColumns(updateData) && shouldRetryWithoutStyleColumns(error.message)) ||
+        (hasBadgeColumns(updateData) && shouldRetryWithoutBadgeColumns(error.message))
       )
     ) {
       if (shouldRetryWithoutPoolId(error.message)) {
@@ -191,6 +204,10 @@ export const userService = {
       if (shouldRetryWithoutStyleColumns(error.message)) {
         delete updateData.primary_style
         delete updateData.secondary_style
+      }
+      if (shouldRetryWithoutBadgeColumns(error.message)) {
+        delete updateData.growth_style_badges
+        delete updateData.partner_journey_badges
       }
       const retry = await supabase
         .from('users')
@@ -253,6 +270,8 @@ function mapRowToUser(row: any): User {
     cancelAtPeriodEnd: row.cancel_at_period_end,
     poolId: toPoolId(row.pool_id),
     userStatus: row.user_status,
+    growthStyleBadges: row.growth_style_badges,
+    partnerJourneyBadges: row.partner_journey_badges,
     backgroundCheckVerified: row.background_check_verified,
     backgroundCheckStatus: row.background_check_status,
     backgroundCheckDate: row.background_check_date,
@@ -296,11 +315,28 @@ function hasStyleColumns(payload: Record<string, unknown>): boolean {
   return payload.primary_style !== undefined || payload.secondary_style !== undefined
 }
 
+function hasBadgeColumns(payload: Record<string, unknown>): boolean {
+  return payload.growth_style_badges !== undefined || payload.partner_journey_badges !== undefined
+}
+
 function shouldRetryWithoutStyleColumns(message: string): boolean {
   const normalized = (message || '').toLowerCase()
   const hasStyleColumnReference =
     normalized.includes('primary_style') || normalized.includes('secondary_style')
   if (!hasStyleColumnReference) return false
+
+  return (
+    normalized.includes('column') ||
+    normalized.includes('schema cache') ||
+    normalized.includes('does not exist')
+  )
+}
+
+function shouldRetryWithoutBadgeColumns(message: string): boolean {
+  const normalized = (message || '').toLowerCase()
+  const hasBadgeColumnReference =
+    normalized.includes('growth_style_badges') || normalized.includes('partner_journey_badges')
+  if (!hasBadgeColumnReference) return false
 
   return (
     normalized.includes('column') ||

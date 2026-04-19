@@ -6,8 +6,11 @@ import { ArrowLeft, BookOpen, CheckCircle, Clock, Sparkles, Users } from 'lucide
 import type { BlogArticle, AssessmentCoreStyle, GrowthResourceModule } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { resourceService } from '@/services/resourceService';
-import { ASSESSMENT_STYLE_META, ASSESSMENT_CORE_STYLES } from '@/services/assessmentStyleService';
-import { persistPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
+import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
+import {
+  persistGrowthStyleBadge,
+  persistPartnerJourneyBadge,
+} from '@/services/partnerJourneyBadgeService';
 import ModuleBlogModal from '@/components/ModuleBlogModal';
 import { toast } from 'sonner';
 
@@ -65,6 +68,17 @@ const buildFallbackModuleContent = (module: GrowthResourceModule): ModuleContent
     module.exercise,
     'Write one practical action you will apply this week based on this module.'
   ),
+});
+
+const createApprovedPathReflection = (
+  reflection: string,
+  moduleId: string | null,
+  resourceStyle?: AssessmentCoreStyle
+): PathReflectionRecord => ({
+  reflection: reflection.trim(),
+  approvedAt: Date.now(),
+  moduleId: moduleId || undefined,
+  resourceStyle: resourceStyle || undefined,
 });
 
 type PathReflectionRecord = {
@@ -956,51 +970,7 @@ const GrowthDetailSection: React.FC = () => {
     }
   };
 
-  const persistEarnedStyleBadge = (style: AssessmentCoreStyle) => {
-    const normalizeBadgeList = (value: unknown): AssessmentCoreStyle[] => {
-      if (!Array.isArray(value)) return [style];
-      const unique = new Set<AssessmentCoreStyle>();
-      value.forEach((entry) => {
-        if (typeof entry === 'string' && ASSESSMENT_CORE_STYLES.includes(entry as AssessmentCoreStyle)) {
-          unique.add(entry as AssessmentCoreStyle);
-        }
-      });
-      unique.add(style);
-      return Array.from(unique);
-    };
-
-    try {
-      const savedCurrent = localStorage.getItem('currentUser');
-      if (savedCurrent) {
-        const parsedCurrent = JSON.parse(savedCurrent);
-        parsedCurrent.growthStyleBadges = normalizeBadgeList(parsedCurrent.growthStyleBadges);
-        localStorage.setItem('currentUser', JSON.stringify(parsedCurrent));
-        window.dispatchEvent(new CustomEvent('user-login', { detail: parsedCurrent }));
-      }
-    } catch (error) {
-      console.warn('Failed to persist current user badge:', error);
-    }
-
-    try {
-      const savedUsers = localStorage.getItem('rooted-admin-users');
-      if (!savedUsers) return;
-      const parsedUsers = JSON.parse(savedUsers);
-      if (!Array.isArray(parsedUsers)) return;
-      const nextUsers = parsedUsers.map((user) => {
-        if (!user || typeof user !== 'object' || user.id !== currentUser.id) return user;
-        return {
-          ...user,
-          growthStyleBadges: normalizeBadgeList((user as { growthStyleBadges?: unknown }).growthStyleBadges),
-        };
-      });
-      localStorage.setItem('rooted-admin-users', JSON.stringify(nextUsers));
-      window.dispatchEvent(new Event('storage'));
-    } catch (error) {
-      console.warn('Failed to persist badge to user directory:', error);
-    }
-  };
-
-  const handleSubmitPathReflection = (
+  const handleSubmitPathReflection = async (
     resourceId: string,
     resourceTitle: string,
     topicText: string,
@@ -1016,21 +986,16 @@ const GrowthDetailSection: React.FC = () => {
     }
 
     const style = inferResourceStyle(resourceTitle);
-    const nextEntry: PathReflectionRecord = {
-      reflection: completionReflection.trim(),
-      approvedAt: Date.now(),
-      moduleId: moduleId || undefined,
-      resourceStyle: style || undefined,
-    };
+    const nextEntry = createApprovedPathReflection(completionReflection, moduleId, style || undefined);
     const nextMap = {
       ...pathReflections,
       [resourceId]: nextEntry,
     };
     persistPathReflections(nextMap);
-    const awareBadgeWasNew = persistPartnerJourneyBadge('aware-partner-badge', currentUser.id);
+    const awareBadgeWasNew = await persistPartnerJourneyBadge('aware-partner-badge', currentUser.id);
 
     if (style) {
-      persistEarnedStyleBadge(style);
+      await persistGrowthStyleBadge(style, currentUser.id);
       const meta = ASSESSMENT_STYLE_META[style];
       toast.success(
         awareBadgeWasNew
@@ -1510,7 +1475,7 @@ const GrowthDetailSection: React.FC = () => {
                         )}
                         <button
                           onClick={() =>
-                            handleSubmitPathReflection(
+                            void handleSubmitPathReflection(
                               selectedResourceId,
                               resource.title,
                               topicText,
