@@ -9,8 +9,8 @@ import { SUPPORT_EMAIL } from '@/constants/support';
 import type { UserGenderIdentity, UserIdentityExpression } from '@/types';
 import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
 import {
+  getRecoveredBadgeCollections,
   getPartnerJourneyBadgeLabel,
-  normalizePartnerJourneyBadges,
 } from '@/services/partnerJourneyBadgeService';
 import { PATH_LABELS } from '@/lib/pathways';
 
@@ -134,11 +134,16 @@ const ProfileDetailSection: React.FC = () => {
   const secondaryStyleMeta = selectedUser.secondaryStyle
     ? ASSESSMENT_STYLE_META[selectedUser.secondaryStyle]
     : null;
-  const growthStyleBadges = (selectedUser.growthStyleBadges || []).filter(
+  const recoveredBadgeCollections = getRecoveredBadgeCollections(
+    selectedUser.id,
+    selectedUser.partnerJourneyBadges,
+    selectedUser.growthStyleBadges
+  );
+  const growthStyleBadges = recoveredBadgeCollections.growthStyleBadges.filter(
     (style): style is keyof typeof ASSESSMENT_STYLE_META =>
       typeof style === 'string' && style in ASSESSMENT_STYLE_META
   );
-  const partnerJourneyBadges = normalizePartnerJourneyBadges(selectedUser.partnerJourneyBadges);
+  const partnerJourneyBadges = recoveredBadgeCollections.partnerJourneyBadges;
 
   const handleExpressInterest = async (
     message: string

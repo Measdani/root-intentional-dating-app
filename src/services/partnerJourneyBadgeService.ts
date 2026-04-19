@@ -62,6 +62,83 @@ export const hasPartnerJourneyBadge = (
 export const getPartnerJourneyBadgeLabel = (badge: PartnerJourneyBadge): string =>
   PARTNER_JOURNEY_BADGE_META[badge].label;
 
+const readStoredJson = <T>(key: string): T | null => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    console.warn(`Failed to read stored badge recovery state for ${key}:`, error);
+    return null;
+  }
+};
+
+export const getRecoveredBadgeCollections = (
+  userId: string,
+  currentPartnerJourneyBadges?: unknown,
+  currentGrowthStyleBadges?: unknown
+): {
+  partnerJourneyBadges: PartnerJourneyBadge[];
+  growthStyleBadges: AssessmentCoreStyle[];
+} => {
+  const partnerJourneyBadges = new Set<PartnerJourneyBadge>(
+    normalizePartnerJourneyBadges(currentPartnerJourneyBadges)
+  );
+  const growthStyleBadges = new Set<AssessmentCoreStyle>(
+    normalizeGrowthStyleBadges(currentGrowthStyleBadges)
+  );
+
+  const savedReflections = readStoredJson<Record<string, { approvedAt?: unknown; resourceStyle?: unknown }>>(
+    `rooted_growth_path_reflections_${userId}`
+  );
+  if (savedReflections && typeof savedReflections === 'object') {
+    Object.values(savedReflections).forEach((reflection) => {
+      if (!reflection || typeof reflection !== 'object') return;
+
+      const approvedAt = Number(reflection.approvedAt);
+      if (!Number.isFinite(approvedAt)) return;
+
+      partnerJourneyBadges.add('aware-partner-badge');
+
+      const resourceStyle = normalizeGrowthStyleBadges([reflection.resourceStyle])[0];
+      if (resourceStyle) {
+        growthStyleBadges.add(resourceStyle);
+      }
+    });
+  }
+
+  const intentionalProgress = readStoredJson<{ completedAt?: unknown }>(
+    `rooted_intentional_partner_conflict_sandbox_${userId}`
+  );
+  if (Number.isFinite(Number(intentionalProgress?.completedAt))) {
+    partnerJourneyBadges.add('intentional-partner-badge');
+  }
+
+  const healthyProgress = readStoredJson<{ completedAt?: unknown }>(
+    `rooted_healthy_partner_pace_meter_${userId}`
+  );
+  if (Number.isFinite(Number(healthyProgress?.completedAt))) {
+    partnerJourneyBadges.add('healthy-partner-badge');
+  }
+
+  return {
+    partnerJourneyBadges: Array.from(partnerJourneyBadges),
+    growthStyleBadges: Array.from(growthStyleBadges),
+  };
+};
+
+export const hasRecoveredPartnerJourneyBadge = (
+  userId: string,
+  currentPartnerJourneyBadges: unknown,
+  currentGrowthStyleBadges: unknown,
+  badge: PartnerJourneyBadge
+): boolean =>
+  getRecoveredBadgeCollections(
+    userId,
+    currentPartnerJourneyBadges,
+    currentGrowthStyleBadges
+  ).partnerJourneyBadges.includes(badge);
+
 type PersistUserBadgeConfig<T extends string> = {
   userId: string;
   badge: T;

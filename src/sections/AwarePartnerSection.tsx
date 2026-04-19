@@ -8,7 +8,7 @@ import {
   type PathResourceBucket,
 } from '@/lib/pathways';
 import { resourceService } from '@/services/resourceService';
-import { hasPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
+import { hasRecoveredPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
 import AlignmentKeyButton from '@/components/AlignmentKeyButton';
 import { returnToResourceSpace } from '@/lib/resourceSpaceNavigation';
 import type { GrowthResource } from '@/types';
@@ -78,8 +78,10 @@ const AwarePartnerSection: React.FC = () => {
     () => `rooted_growth_module_progress_${currentUser.id}`,
     [currentUser.id]
   );
-  const awareBadgeEarned = hasPartnerJourneyBadge(
+  const awareBadgeRecovered = hasRecoveredPartnerJourneyBadge(
+    currentUser.id,
     currentUser.partnerJourneyBadges,
+    currentUser.growthStyleBadges,
     'aware-partner-badge'
   );
 
@@ -267,12 +269,12 @@ const AwarePartnerSection: React.FC = () => {
           >
             <div
               className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${
-                awareBadgeEarned
+                awareBadgeRecovered
                   ? 'border-emerald-400/30 text-emerald-200'
                   : 'border-[#D9FF3D]/30 text-[#D9FF3D]'
               }`}
             >
-              {awareBadgeEarned
+              {awareBadgeRecovered
                 ? 'The Aware Partner Badge earned'
                 : 'Complete 1 of the 5 paths to unlock The Aware Partner Badge'}
             </div>

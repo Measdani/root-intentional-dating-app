@@ -3,12 +3,14 @@ import PaceMeter from '@/components/PaceMeter';
 import AlignmentKeyButton from '@/components/AlignmentKeyButton';
 import PartnerSectionIntroPage from '@/components/PartnerSectionIntroPage';
 import { useApp } from '@/store/AppContext';
-import { hasPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
+import { hasRecoveredPartnerJourneyBadge } from '@/services/partnerJourneyBadgeService';
 
 const HealthyPartnerSection: React.FC = () => {
   const { currentUser } = useApp();
-  const badgeEarned = hasPartnerJourneyBadge(
+  const badgeEarned = hasRecoveredPartnerJourneyBadge(
+    currentUser.id,
     currentUser.partnerJourneyBadges,
+    currentUser.growthStyleBadges,
     'healthy-partner-badge'
   );
 
