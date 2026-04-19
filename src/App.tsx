@@ -284,8 +284,8 @@ const AppContent: React.FC = () => {
           <EmailModal />
           <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
           <div
-            className={`fixed right-4 z-[115] flex flex-col items-end gap-3 sm:right-8 ${
-              currentView === 'landing' ? 'top-8' : 'top-24'
+            className={`fixed right-3 z-[115] flex flex-col items-end gap-2 sm:right-8 sm:gap-3 ${
+              currentView === 'landing' ? 'top-6 sm:top-8' : 'top-20 sm:top-24'
             }`}
           >
             <UserAccessButton />

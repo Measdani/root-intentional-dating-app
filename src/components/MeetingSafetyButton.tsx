@@ -31,12 +31,11 @@ const MeetingSafetyButton: React.FC<MeetingSafetyButtonProps> = ({ variant = 'fl
         ) : (
           <button
             type="button"
-            className="flex items-center gap-2 rounded-full border border-[#D9FF3D]/35 bg-[#0B0F0C] px-4 py-2 text-[#F6FFF2] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#D9FF3D]/35 bg-[#0B0F0C] text-[#F6FFF2] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
             title="Open Rooted Hearts Trust Protocol"
             aria-label="Open Rooted Hearts Trust Protocol"
           >
             <Shield className="h-4 w-4 text-[#D9FF3D]" />
-            <span className="text-sm font-semibold">Trust Protocol</span>
           </button>
         )}
       </DialogTrigger>

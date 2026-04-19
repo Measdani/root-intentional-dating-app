@@ -549,7 +549,7 @@ const GrowthModeSection: React.FC = () => {
     <div className="min-h-screen bg-[#0B0F0C]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
           <h1 className="font-display text-xl text-[#F6FFF2]">{PATH_LABELS.intentional}</h1>
           <button
             onClick={() => window.dispatchEvent(new Event('open-forest-assistant'))}
@@ -563,7 +563,7 @@ const GrowthModeSection: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-10">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
         {/* Admin Notifications */}
         {getUnreadNotifications().map(notification => (
           <div
@@ -592,29 +592,29 @@ const GrowthModeSection: React.FC = () => {
         ))}
 
         {/* Tab Navigation */}
-        <div className="mb-10 flex gap-4 border-b border-[#1A211A]">
+        <div className="mb-10 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-4 sm:border-b sm:border-[#1A211A]">
           <button
             onClick={() => setActiveTab('browse')}
-            className={`pb-3 px-4 font-medium transition-all ${
+            className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all sm:rounded-none sm:border-0 sm:px-4 sm:pb-3 sm:pt-0 ${
               activeTab === 'browse'
-                ? 'text-[#D9FF3D] border-b-2 border-[#D9FF3D]'
-                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+                ? 'border-[#D9FF3D]/50 bg-[#D9FF3D]/10 text-[#D9FF3D] sm:border-b-2 sm:border-[#D9FF3D] sm:bg-transparent'
+                : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#2A312A] hover:text-[#F6FFF2] sm:border-transparent'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 leading-tight">
               <Users className="w-4 h-4" />
               Explore Connections
             </div>
           </button>
           <button
             onClick={() => setActiveTab('inbox')}
-            className={`pb-3 px-4 font-medium transition-all relative ${
+            className={`relative rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all sm:rounded-none sm:border-0 sm:px-4 sm:pb-3 sm:pt-0 ${
               activeTab === 'inbox'
-                ? 'text-[#D9FF3D] border-b-2 border-[#D9FF3D]'
-                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+                ? 'border-[#D9FF3D]/50 bg-[#D9FF3D]/10 text-[#D9FF3D] sm:border-b-2 sm:border-[#D9FF3D] sm:bg-transparent'
+                : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#2A312A] hover:text-[#F6FFF2] sm:border-transparent'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 leading-tight">
               <MessageCircle className="w-4 h-4" />
               Inbox
               {unreadMessageCount > 0 && (
@@ -626,35 +626,35 @@ const GrowthModeSection: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('resources')}
-            className={`pb-3 px-4 font-medium transition-all ${
+            className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all sm:rounded-none sm:border-0 sm:px-4 sm:pb-3 sm:pt-0 ${
               activeTab === 'resources'
-                ? 'text-[#D9FF3D] border-b-2 border-[#D9FF3D]'
-                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+                ? 'border-[#D9FF3D]/50 bg-[#D9FF3D]/10 text-[#D9FF3D] sm:border-b-2 sm:border-[#D9FF3D] sm:bg-transparent'
+                : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#2A312A] hover:text-[#F6FFF2] sm:border-transparent'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 leading-tight">
               <BookOpen className="w-4 h-4" />
               The Garden
             </div>
           </button>
           <button
             onClick={() => setActiveTab('blog')}
-            className={`pb-3 px-4 font-medium transition-all ${
+            className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all sm:rounded-none sm:border-0 sm:px-4 sm:pb-3 sm:pt-0 ${
               activeTab === 'blog'
-                ? 'text-[#D9FF3D] border-b-2 border-[#D9FF3D]'
-                : 'text-[#A9B5AA] hover:text-[#F6FFF2]'
+                ? 'border-[#D9FF3D]/50 bg-[#D9FF3D]/10 text-[#D9FF3D] sm:border-b-2 sm:border-[#D9FF3D] sm:bg-transparent'
+                : 'border-[#1A211A] text-[#A9B5AA] hover:border-[#2A312A] hover:text-[#F6FFF2] sm:border-transparent'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 leading-tight">
               <BookOpen className="w-4 h-4" />
               Blog
             </div>
           </button>
           <button
             onClick={() => setCurrentView('clarity-room')}
-            className="pb-3 px-4 font-medium transition-all text-[#A9B5AA] hover:text-[#D9FF3D]"
+            className="col-span-2 rounded-2xl border border-[#1A211A] px-4 py-3 text-left text-sm font-medium text-[#A9B5AA] transition-all hover:border-[#2A312A] hover:text-[#D9FF3D] sm:col-span-1 sm:rounded-none sm:border-0 sm:px-4 sm:pb-3 sm:pt-0"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 leading-tight">
               <Brain className="w-4 h-4" />
               Clarity Room
             </div>

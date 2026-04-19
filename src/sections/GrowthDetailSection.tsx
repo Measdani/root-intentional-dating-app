@@ -1101,7 +1101,7 @@ const GrowthDetailSection: React.FC = () => {
     <div className="min-h-screen bg-[#0F140F] text-white">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-[#111611]/95 backdrop-blur border-b border-[#1A211A] px-4 sm:px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={handleBackNavigation}
@@ -1109,19 +1109,19 @@ const GrowthDetailSection: React.FC = () => {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-bold">Garden Mastery</h1>
+            <h1 className="text-xl font-bold sm:text-2xl">Garden Mastery</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={navigateToExploreConnections}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] hover:border-[#2A312A] transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#1A211A] px-3 py-2 text-sm text-[#A9B5AA] transition hover:border-[#2A312A] hover:text-[#F6FFF2]"
             >
               <Users className="w-4 h-4" />
               Explore Connections
             </button>
             <button
               onClick={() => setCurrentView('clarity-room')}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1A211A] text-[#A9B5AA] hover:text-[#F6FFF2] hover:border-[#2A312A] transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#1A211A] px-3 py-2 text-sm text-[#A9B5AA] transition hover:border-[#2A312A] hover:text-[#F6FFF2]"
             >
               <BookOpen className="w-4 h-4" />
               Journal

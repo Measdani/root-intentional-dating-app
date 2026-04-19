@@ -92,12 +92,11 @@ const ForestFloatingAssistant: React.FC = () => {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-2 rounded-full border border-[#D9FF3D]/50 bg-[#0B0F0C] px-4 py-2 text-[#D9FF3D] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-[#D9FF3D]/50 bg-[#0B0F0C] text-[#D9FF3D] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
           aria-label="Open Forest"
           title="Open Forest"
         >
           <Sparkles className="w-4 h-4" />
-          <span className="text-sm font-semibold">Forest</span>
         </button>
       </DialogTrigger>
 
