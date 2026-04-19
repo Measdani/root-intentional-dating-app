@@ -40,6 +40,10 @@ import {
 } from '@/services/userSettingsService';
 import { PATH_LABELS } from '@/lib/pathways';
 import { ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
+import {
+  consumeExclusiveModeSettingsFocus,
+  getExclusiveModeSettingsFocusEvent,
+} from '@/lib/exclusiveModeNavigation';
 
 const LOCK_COPY_TITLE = 'Intentional Stability Policy';
 const SUPPORT_MESSAGES_STORAGE_KEY = 'rooted-admin-support-messages';
@@ -183,6 +187,9 @@ const UserSettingsSection: React.FC = () => {
   const [isSubmittingIssueReport, setIsSubmittingIssueReport] = useState(false);
   const [issueReportSubmitted, setIssueReportSubmitted] = useState(false);
   const [isDeactivatingAccount, setIsDeactivatingAccount] = useState(false);
+  const [highlightExclusiveModeSection, setHighlightExclusiveModeSection] = useState(false);
+  const exclusiveModeSectionRef = useRef<HTMLElement | null>(null);
+  const exclusiveModeHighlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const supportSectionRef = useRef<HTMLElement | null>(null);
   const isLgbtqUser = false;
 
@@ -255,6 +262,43 @@ const UserSettingsSection: React.FC = () => {
       window.clearInterval(interval);
     };
   }, []);
+
+  const focusExclusiveModeSection = useCallback(() => {
+    if (!exclusiveModeSectionRef.current) return;
+
+    exclusiveModeSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setHighlightExclusiveModeSection(true);
+
+    if (exclusiveModeHighlightTimeoutRef.current) {
+      clearTimeout(exclusiveModeHighlightTimeoutRef.current);
+    }
+
+    exclusiveModeHighlightTimeoutRef.current = setTimeout(() => {
+      setHighlightExclusiveModeSection(false);
+    }, 2200);
+  }, []);
+
+  useEffect(() => {
+    const focusFromRequest = () => {
+      if (!consumeExclusiveModeSettingsFocus()) return;
+      window.requestAnimationFrame(() => focusExclusiveModeSection());
+    };
+
+    const handleFocusRequest = () => {
+      consumeExclusiveModeSettingsFocus();
+      focusExclusiveModeSection();
+    };
+
+    focusFromRequest();
+    window.addEventListener(getExclusiveModeSettingsFocusEvent(), handleFocusRequest);
+
+    return () => {
+      window.removeEventListener(getExclusiveModeSettingsFocusEvent(), handleFocusRequest);
+      if (exclusiveModeHighlightTimeoutRef.current) {
+        clearTimeout(exclusiveModeHighlightTimeoutRef.current);
+      }
+    };
+  }, [focusExclusiveModeSection]);
 
   const persistSettings = (next: UserSettings) => {
     if (!currentUser?.id) return;
@@ -1209,7 +1253,14 @@ const UserSettingsSection: React.FC = () => {
           )}
         </section>
 
-        <section className="bg-[#111611] border border-[#1A211A] rounded-2xl p-6 space-y-5">
+        <section
+          ref={exclusiveModeSectionRef}
+          className={`rounded-2xl border p-6 space-y-5 transition-all duration-300 ${
+            highlightExclusiveModeSection
+              ? 'bg-[#162015] border-[#D9FF3D] shadow-[0_0_0_1px_rgba(217,255,61,0.28),0_0_32px_rgba(217,255,61,0.14)]'
+              : 'bg-[#111611] border-[#1A211A]'
+          }`}
+        >
           <h2 className="font-display text-xl">Break & Relationship Mode</h2>
           <p className="text-sm text-[#A9B5AA]">
             Use Break Mode for a solo pause or Exclusive Mode for a mutual relationship agreement.

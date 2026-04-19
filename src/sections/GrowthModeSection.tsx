@@ -25,6 +25,7 @@ import {
   hasRecoveredPartnerJourneyBadge,
 } from '@/services/partnerJourneyBadgeService';
 import { rememberResourceSpaceOrigin } from '@/lib/resourceSpaceNavigation';
+import { openExclusiveModeSettings } from '@/lib/exclusiveModeNavigation';
 import type { AppView, User, AssessmentCoreStyle, PartnerJourneyBadge, BlogArticle } from '@/types';
 import { PATH_LABELS } from '@/lib/pathways';
 
@@ -518,6 +519,10 @@ const GrowthModeSection: React.FC = () => {
     getConversation,
     modeRefreshTick,
   ]);
+  const incomingExclusiveRequesterUser = useMemo(
+    () => users.find((user) => user.id === relationshipModeSnapshot.incomingExclusiveRequestFrom) ?? null,
+    [users, relationshipModeSnapshot.incomingExclusiveRequestFrom]
+  );
 
   const handleBrowseAction = (user: User) => {
     const existingConversation = getConversation(user.id);
@@ -529,6 +534,10 @@ const GrowthModeSection: React.FC = () => {
 
     setSelectedUser(user);
     setCurrentView('profile');
+  };
+
+  const handleReviewExclusiveRequest = () => {
+    openExclusiveModeSettings(setCurrentView);
   };
 
   const handleLogout = async () => {
@@ -652,6 +661,23 @@ const GrowthModeSection: React.FC = () => {
           </button>
         </div>
 
+        {incomingExclusiveRequesterUser && (
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#D9FF3D]/40 bg-[#D9FF3D]/10 p-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#D9FF3D]">Exclusive Request</p>
+              <p className="mt-2 text-sm text-[#F6FFF2]">
+                {incomingExclusiveRequesterUser.name} sent you an exclusive request. Review it in Settings to accept or decline.
+              </p>
+            </div>
+            <button
+              onClick={handleReviewExclusiveRequest}
+              className="rounded-full bg-[#D9FF3D] px-5 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
+            >
+              Review Request
+            </button>
+          </div>
+        )}
+
         {/* Browse View */}
         {activeTab === 'browse' && (
           <div>
@@ -670,9 +696,20 @@ const GrowthModeSection: React.FC = () => {
                 {growthModeUsers.map((user) => (
                   <div
                     key={user.id}
-                    onClick={() => handleBrowseAction(user)}
+                    onClick={() =>
+                      relationshipModeSnapshot.incomingExclusiveRequestFrom === user.id
+                        ? handleReviewExclusiveRequest()
+                        : handleBrowseAction(user)
+                    }
                     className="bg-[#111611] rounded-[20px] border border-[#1A211A] p-6 hover:border-[#D9FF3D] transition-colors group cursor-pointer"
                   >
+                    {relationshipModeSnapshot.incomingExclusiveRequestFrom === user.id && (
+                      <div className="mb-3">
+                        <span className="rounded-full bg-[#D9FF3D] px-3 py-1 text-xs font-medium text-[#0B0F0C]">
+                          Exclusive request
+                        </span>
+                      </div>
+                    )}
                     <div className="mb-4">
                       <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
                       <p className="text-[#A9B5AA] text-sm">{user.city}</p>
@@ -696,11 +733,19 @@ const GrowthModeSection: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (relationshipModeSnapshot.incomingExclusiveRequestFrom === user.id) {
+                          handleReviewExclusiveRequest();
+                          return;
+                        }
                         handleBrowseAction(user);
                       }}
                       className="w-full py-2 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors flex items-center justify-center gap-2 group-hover:gap-3"
                     >
-                      {getConversation(user.id) ? 'Continue Conversation' : 'View Profile'}
+                      {relationshipModeSnapshot.incomingExclusiveRequestFrom === user.id
+                        ? 'Review Request'
+                        : getConversation(user.id)
+                          ? 'Continue Conversation'
+                          : 'View Profile'}
                       <Send className="w-4 h-4 transition-transform" />
                     </button>
                   </div>
@@ -769,6 +814,7 @@ const GrowthModeSection: React.FC = () => {
                     if (!user) return null;
                     const conversation = getConversation(user.id);
                     const lastMessage = conversation?.messages?.[conversation.messages.length - 1];
+                    const isIncomingExclusiveRequester = relationshipModeSnapshot.incomingExclusiveRequestFrom === user.id;
 
                     return (
                       <div
@@ -779,6 +825,11 @@ const GrowthModeSection: React.FC = () => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="text-[#F6FFF2] font-medium text-lg">{user.name}, {user.age}</h3>
+                              {isIncomingExclusiveRequester && (
+                                <span className="inline-block rounded-full bg-[#D9FF3D] px-2 py-0.5 text-xs font-medium text-[#0B0F0C]">
+                                  Exclusive request
+                                </span>
+                              )}
                               {conversation?.messages && conversation.messages.length > 0 && (
                                 <span className="inline-block px-2 py-0.5 bg-[#D9FF3D]/20 text-[#D9FF3D] text-xs font-medium rounded-full">
                                   {conversation.messages.length}
@@ -792,15 +843,29 @@ const GrowthModeSection: React.FC = () => {
                               </p>
                             )}
                           </div>
-                          <button
-                            onClick={() => {
-                              setSelectedConversation(conversation);
-                              setCurrentView('conversation');
-                            }}
-                            className="flex-shrink-0 py-2 px-4 bg-[#D9FF3D]/10 text-[#D9FF3D] rounded-lg font-medium hover:bg-[#D9FF3D]/20 transition-colors whitespace-nowrap"
-                          >
-                            Message
-                          </button>
+                          <div className="flex flex-shrink-0 flex-col gap-2">
+                            {isIncomingExclusiveRequester && (
+                              <button
+                                onClick={handleReviewExclusiveRequest}
+                                className="py-2 px-4 bg-[#D9FF3D] text-[#0B0F0C] rounded-lg font-medium hover:scale-[1.02] transition-transform whitespace-nowrap"
+                              >
+                                Review Request
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                setSelectedConversation(conversation);
+                                setCurrentView('conversation');
+                              }}
+                              className={`py-2 px-4 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                                isIncomingExclusiveRequester
+                                  ? 'border border-[#D9FF3D]/30 bg-transparent text-[#D9FF3D] hover:bg-[#D9FF3D]/10'
+                                  : 'bg-[#D9FF3D]/10 text-[#D9FF3D] hover:bg-[#D9FF3D]/20'
+                              }`}
+                            >
+                              Message
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );

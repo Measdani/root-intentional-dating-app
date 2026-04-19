@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useApp } from '@/store/AppContext';
-import { useCommunity } from '@/modules';
+import { getRelationshipModeSnapshot, useCommunity } from '@/modules';
 import { MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag, BookOpen } from 'lucide-react';
 import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
@@ -13,6 +13,7 @@ import {
   getPartnerJourneyBadgeLabel,
 } from '@/services/partnerJourneyBadgeService';
 import { PATH_LABELS } from '@/lib/pathways';
+import { openExclusiveModeSettings } from '@/lib/exclusiveModeNavigation';
 
 const formatGenderIdentity = (value?: UserGenderIdentity): string => {
   switch (value) {
@@ -64,6 +65,23 @@ const ProfileDetailSection: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  const profileUser = selectedUser ?? currentUser;
+
+  const sharedValues = profileUser.values.filter(v => currentUser.values.includes(v));
+  const photosUnlocked = arePhotosUnlocked(profileUser.id);
+  const conversation = getConversation(profileUser.id);
+  const isLgbtqCommunity = activeCommunity.matchingMode === 'inclusive';
+  const hasMutualInterest = Boolean(conversation && conversation.status !== 'pending_response');
+  const relationshipModeSnapshot = useMemo(
+    () => getRelationshipModeSnapshot(currentUser.id),
+    [currentUser.id]
+  );
+  const selectedUserSettings = useMemo(
+    () => getUserSettingsForUser(profileUser.id, profileUser),
+    [profileUser]
+  );
+  const isIncomingExclusiveRequesterProfile =
+    relationshipModeSnapshot.incomingExclusiveRequestFrom === profileUser.id;
 
   if (!selectedUser) return null;
 
@@ -91,16 +109,6 @@ const ProfileDetailSection: React.FC = () => {
       </div>
     );
   }
-
-  const sharedValues = selectedUser.values.filter(v => currentUser.values.includes(v));
-  const photosUnlocked = arePhotosUnlocked(selectedUser.id);
-  const conversation = getConversation(selectedUser.id);
-  const isLgbtqCommunity = activeCommunity.matchingMode === 'inclusive';
-  const hasMutualInterest = Boolean(conversation && conversation.status !== 'pending_response');
-  const selectedUserSettings = useMemo(
-    () => getUserSettingsForUser(selectedUser.id, selectedUser),
-    [selectedUser.id]
-  );
 
   const genderIdentityValue = selectedUser.genderIdentity ?? selectedUser.gender;
   const genderIdentityLabel =
@@ -188,6 +196,10 @@ const ProfileDetailSection: React.FC = () => {
     }
   };
 
+  const handleReviewExclusiveRequest = () => {
+    openExclusiveModeSettings(setCurrentView);
+  };
+
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
       {/* Header */}
@@ -196,7 +208,7 @@ const ProfileDetailSection: React.FC = () => {
           <button
             onClick={() => {
               const view = currentUser.assessmentPassed ? 'paid-growth-mode' : 'growth-mode';
-              setCurrentView(view as any);
+              setCurrentView(view);
             }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
           >
@@ -295,6 +307,23 @@ const ProfileDetailSection: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-10">
               {/* Left Column */}
               <div>
+                {isIncomingExclusiveRequesterProfile && (
+                  <div className="mb-8 rounded-2xl border border-[#D9FF3D]/40 bg-[#D9FF3D]/10 p-6">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#D9FF3D]">
+                      Exclusive Request
+                    </p>
+                    <p className="mt-3 text-sm leading-relaxed text-[#F6FFF2]">
+                      {selectedUser.name} sent you an exclusive request. Review it in Settings to accept or decline.
+                    </p>
+                    <button
+                      onClick={handleReviewExclusiveRequest}
+                      className="mt-4 rounded-full bg-[#D9FF3D] px-5 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
+                    >
+                      Review Request
+                    </button>
+                  </div>
+                )}
+
                 {/* Relationship Vision */}
                 {selectedUser.relationshipVision && (
                   <div className="mb-8 bg-[#1A211A]/50 rounded-2xl p-6 border border-[#D9FF3D]/20">
@@ -304,7 +333,28 @@ const ProfileDetailSection: React.FC = () => {
                 )}
 
                 {/* Express Interest / Conversation Button */}
-                {!conversation ? (
+                {isIncomingExclusiveRequesterProfile ? (
+                  <div className="mb-8">
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button
+                        onClick={handleReviewExclusiveRequest}
+                        className="flex-1 py-3.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-2xl font-medium hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        Review Exclusive Request
+                      </button>
+                      {conversation && (
+                        <button
+                          onClick={handleViewConversation}
+                          className="flex-1 py-3.5 rounded-2xl border border-[#D9FF3D]/30 bg-transparent text-[#D9FF3D] font-medium hover:bg-[#D9FF3D]/10 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          View Conversation
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : !conversation ? (
                   <div className="mb-8">
                     {isBlockedByUser(selectedUser.id) ? (
                       <button

@@ -5,6 +5,7 @@ import type { User, UserInteraction } from '@/types';
 import { ArrowLeft, MessageCircle, Check, Clock, Flag, HelpCircle, BookOpen } from 'lucide-react';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getLatestUniqueInteractions } from '@/lib/interactions';
+import { openExclusiveModeSettings } from '@/lib/exclusiveModeNavigation';
 
 const InboxSection: React.FC = () => {
   const { setCurrentView, currentUser, interactions, users, setSelectedConversation, startRelationshipRoom, reportUser, blockUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
@@ -49,6 +50,9 @@ const InboxSection: React.FC = () => {
   const relationshipModeSnapshot = getRelationshipModeSnapshot(currentUser.id);
   const exclusivePartner = relationshipModeSnapshot.exclusivePartnerId
     ? users.find((user) => user.id === relationshipModeSnapshot.exclusivePartnerId) ?? null
+    : null;
+  const incomingExclusiveRequester = relationshipModeSnapshot.incomingExclusiveRequestFrom
+    ? users.find((user) => user.id === relationshipModeSnapshot.incomingExclusiveRequestFrom) ?? null
     : null;
   const modeStatusMessage = relationshipModeSnapshot.mode === 'break'
     ? "You're now in Break Mode. You can exit anytime from Settings."
@@ -134,6 +138,9 @@ const InboxSection: React.FC = () => {
   };
 
   const getOtherUser = (interest: UserInteraction) => users.find(u => u.id === getOtherUserId(interest));
+  const handleReviewExclusiveRequest = () => {
+    openExclusiveModeSettings(setCurrentView);
+  };
 
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
@@ -184,6 +191,23 @@ const InboxSection: React.FC = () => {
         {modeStatusMessage && (
           <div className="mb-6 rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 px-4 py-3 text-sm text-[#F6FFF2]">
             {modeStatusMessage}
+          </div>
+        )}
+
+        {incomingExclusiveRequester && (
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#D9FF3D]/40 bg-[#D9FF3D]/10 p-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#D9FF3D]">Exclusive Request</p>
+              <p className="mt-2 text-sm text-[#F6FFF2]">
+                {incomingExclusiveRequester.name} sent you an exclusive request. Review it in Settings to accept or decline.
+              </p>
+            </div>
+            <button
+              onClick={handleReviewExclusiveRequest}
+              className="rounded-full bg-[#D9FF3D] px-5 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
+            >
+              Review Request
+            </button>
           </div>
         )}
 
@@ -287,13 +311,22 @@ const InboxSection: React.FC = () => {
               const badge = getStatusBadge(interest.status, interest);
               const BadgeIcon = badge.icon;
               const latestMessage = getLatestMessage(interest);
+              const isIncomingExclusiveRequester = relationshipModeSnapshot.incomingExclusiveRequestFrom === otherUser.id;
 
               return (
-                <button
+                <div
                   key={interest.conversationId}
                   onClick={() => {
                     handleInterestClick(getOtherUserId(interest));
                   }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleInterestClick(getOtherUserId(interest));
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                   className="w-full text-left bg-[#111611] rounded-2xl border border-[#1A211A] p-6 hover:border-[#D9FF3D]/50 hover:bg-[#1A211A] transition-all"
                 >
                   <div className="flex items-start gap-4 w-full">
@@ -335,6 +368,23 @@ const InboxSection: React.FC = () => {
                       <p className="text-[#F6FFF2] text-sm line-clamp-2">
                         {latestMessage ? getMessagePreview(latestMessage.message) : 'No messages'}
                       </p>
+
+                      {isIncomingExclusiveRequester && (
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[#D9FF3D] px-2.5 py-1 text-xs font-medium text-[#0B0F0C]">
+                            Exclusive request
+                          </span>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleReviewExclusiveRequest();
+                            }}
+                            className="text-xs font-medium text-[#D9FF3D] hover:underline"
+                          >
+                            Review in Settings
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Report Button */}
@@ -350,7 +400,7 @@ const InboxSection: React.FC = () => {
                       <Flag className="w-4 h-4" />
                     </button>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

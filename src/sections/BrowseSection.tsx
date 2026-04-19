@@ -15,9 +15,10 @@ import { signOutAndClearLocalUser } from '@/services/authService';
 import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { calculateAlignmentScore } from '@/data/users';
-import type { User } from '@/types';
+import type { User, UserInteraction } from '@/types';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
 import { PATH_LABELS } from '@/lib/pathways';
+import { openExclusiveModeSettings } from '@/lib/exclusiveModeNavigation';
 
 const EXCLUSIVE_LETTERS_STORAGE_KEY = 'rooted_exclusive_letters_v1';
 
@@ -76,11 +77,11 @@ const BrowseSection: React.FC = () => {
 
   const viewerSettings = useMemo(
     () => getUserSettingsForUser(currentUser.id, currentUser),
-    [currentUser.id]
+    [currentUser]
   );
   const relationshipModeSnapshot = useMemo(
     () => getRelationshipModeSnapshot(currentUser.id),
-    [currentUser.id, currentUser.mode]
+    [currentUser.id]
   );
   const isExclusiveMode = relationshipModeSnapshot.mode === 'exclusive';
   const canReceiveNewMatches = isUserAvailableForNewMatches(currentUser.id);
@@ -119,6 +120,10 @@ const BrowseSection: React.FC = () => {
   const exclusivePartner = useMemo(
     () => users.find((user) => user.id === exclusivePartnerId) || null,
     [users, exclusivePartnerId]
+  );
+  const incomingExclusiveRequesterUser = useMemo(
+    () => users.find((user) => user.id === relationshipModeSnapshot.incomingExclusiveRequestFrom) || null,
+    [users, relationshipModeSnapshot.incomingExclusiveRequestFrom]
   );
 
   const allKnownConversations = useMemo(() => {
@@ -278,7 +283,7 @@ const BrowseSection: React.FC = () => {
     return true;
   });
 
-  const handleBrowseAction = (user: User, conversation: any) => {
+  const handleBrowseAction = (user: User, conversation: UserInteraction | undefined) => {
     const shouldOpenConversationDirectly = conversation && conversation.status !== 'pending_response';
 
     if (shouldOpenConversationDirectly) {
@@ -297,6 +302,10 @@ const BrowseSection: React.FC = () => {
     setCurrentView('landing');
   };
 
+  const handleReviewExclusiveRequest = () => {
+    openExclusiveModeSettings(setCurrentView);
+  };
+
   return (
     <div className="min-h-screen bg-[#0B0F0C]">
       {/* Header */}
@@ -305,7 +314,7 @@ const BrowseSection: React.FC = () => {
           <button
             onClick={() => {
               const view = currentUser.assessmentPassed ? 'paid-growth-mode' : 'growth-mode';
-              setCurrentView(view as any);
+              setCurrentView(view);
             }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
           >
@@ -416,6 +425,23 @@ const BrowseSection: React.FC = () => {
         {modeStatusMessage && (
           <div className="mb-6 rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/10 px-4 py-3 text-sm text-[#F6FFF2]">
             {modeStatusMessage}
+          </div>
+        )}
+
+        {incomingExclusiveRequesterUser && (
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#D9FF3D]/40 bg-[#D9FF3D]/10 p-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#D9FF3D]">Exclusive Request</p>
+              <p className="mt-2 text-sm text-[#F6FFF2]">
+                {incomingExclusiveRequesterUser.name} sent you an exclusive request. Review it in Settings to accept or decline.
+              </p>
+            </div>
+            <button
+              onClick={handleReviewExclusiveRequest}
+              className="rounded-full bg-[#D9FF3D] px-5 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
+            >
+              Review Request
+            </button>
           </div>
         )}
 
@@ -623,6 +649,7 @@ const BrowseSection: React.FC = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredUsers.map((user, idx) => {
                 const conversation = getConversation(user.id);
+                const isIncomingExclusiveRequester = relationshipModeSnapshot.incomingExclusiveRequestFrom === user.id;
                 const candidateSettings = getUserSettingsForUser(user.id, user);
                 const firstPhoto = (user.photoUrl || '').split('|').filter(Boolean)[0];
                 const canShowPhoto =
@@ -644,19 +671,19 @@ const BrowseSection: React.FC = () => {
                 >
                   {/* Card Header */}
                   <div className="p-5 relative">
-                    {/* Interest Sent Badge */}
-                    {hasExpressedInterest(user.id) && !conversation && (
-                      <div className="absolute top-3 left-3 z-10">
-                        <Badge className="bg-green-600 text-white">Interest Sent</Badge>
-                      </div>
-                    )}
-
-                    {/* Waiting for Response Badge */}
-                    {conversation && conversation.status === 'pending_response' && (
-                      <div className="absolute top-3 left-3 z-10">
-                        <Badge className="bg-amber-600 text-white">Waiting for response</Badge>
-                      </div>
-                    )}
+                    <div className="absolute top-3 left-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-col gap-2">
+                      {isIncomingExclusiveRequester && (
+                        <Badge className="w-fit max-w-full bg-[#D9FF3D] text-[#0B0F0C]">
+                          Exclusive request
+                        </Badge>
+                      )}
+                      {hasExpressedInterest(user.id) && !conversation && (
+                        <Badge className="w-fit bg-green-600 text-white">Interest Sent</Badge>
+                      )}
+                      {conversation && conversation.status === 'pending_response' && (
+                        <Badge className="w-fit bg-amber-600 text-white">Waiting for response</Badge>
+                      )}
+                    </div>
 
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -735,11 +762,17 @@ const BrowseSection: React.FC = () => {
                     {/* Actions */}
                     <div className="flex gap-3">
                       <button
-                        onClick={() => handleBrowseAction(user, conversation)}
+                        onClick={() =>
+                          isIncomingExclusiveRequester
+                            ? handleReviewExclusiveRequest()
+                            : handleBrowseAction(user, conversation)
+                        }
                         className="flex-1 py-2.5 bg-[#F6FFF2] text-[#0B0F0C] rounded-full text-sm font-medium hover:bg-[#D9FF3D] transition-colors flex items-center justify-center gap-2"
                       >
                         <Eye className="w-4 h-4" />
-                        {conversation
+                        {isIncomingExclusiveRequester
+                          ? 'Review Request'
+                          : conversation
                           ? conversation.status === 'pending_response'
                             ? 'View Profile'
                             : 'Continue Conversation'
