@@ -445,6 +445,9 @@ const getForestSourceLabel = (match: Pick<ForestKnowledgeEntry, 'category'>): st
   return 'Forest doctrine';
 };
 
+export const getForestMatchSourceLabel = (match: Pick<ForestKnowledgeEntry, 'category'>): string =>
+  getForestSourceLabel(match);
+
 const buildDirectLead = (
   primaryMatch: ForestKnowledgeMatch,
   secondaryMatch?: ForestKnowledgeMatch,
@@ -486,6 +489,13 @@ const buildPrimaryResponse = (match: ForestKnowledgeMatch): string => `What that
 
 const buildSecondaryResponse = (match: ForestKnowledgeMatch): string =>
   `Supporting guidance from ${getForestMatchLabel(match)}: ${match.content}`;
+
+export const getForestTopicAnswer = (match: ForestKnowledgeMatch): string =>
+  [
+    `Forest's read on ${getForestMatchLabel(match)} from ${getForestSourceLabel(match)}.`,
+    buildPrimaryResponse(match),
+    buildForestAction(match),
+  ].join('\n\n');
 
 const needsQuestionRefinement = (question: string): boolean => {
   const normalizedQuestion = normalizeForestValue(question);

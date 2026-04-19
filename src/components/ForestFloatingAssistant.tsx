@@ -11,6 +11,9 @@ import {
 import {
   askForest,
   getForestMatchLabel,
+  getForestMatchSourceLabel,
+  getForestTopicAnswer,
+  type ForestKnowledgeMatch,
   type ForestResponse,
 } from '@/services/forestRagService';
 import { logForestUnmatchedQuery } from '@/services/forestTelemetryService';
@@ -21,7 +24,16 @@ const ForestFloatingAssistant: React.FC = () => {
   const [question, setQuestion] = useState('');
   const [response, setResponse] = useState<ForestResponse | null>(null);
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+  const [selectedMatchKey, setSelectedMatchKey] = useState<string | null>(null);
   const activeRequestRef = useRef(0);
+
+  const selectedMatch =
+    response?.matches.find((match) => `${match.category}-${match.topic}` === selectedMatchKey) ?? null;
+
+  const handleMatchSelect = (match: ForestKnowledgeMatch) => {
+    const matchKey = `${match.category}-${match.topic}`;
+    setSelectedMatchKey((currentKey) => (currentKey === matchKey ? null : matchKey));
+  };
 
   useEffect(() => {
     const handleOpenForest = () => setIsOpen(true);
@@ -37,6 +49,7 @@ const ForestFloatingAssistant: React.FC = () => {
     activeRequestRef.current = requestId;
     setQuestion('');
     setResponse(null);
+    setSelectedMatchKey(null);
     setIsLoadingResponse(true);
 
     try {
@@ -159,16 +172,55 @@ const ForestFloatingAssistant: React.FC = () => {
                   <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">
                     {response.redirectUsed ? 'Closest Grounded Topics' : 'Grounded In'}
                   </p>
+                  <p className="mt-2 text-xs text-[#738073]">
+                    Click a topic to open the exact grounded entry Forest is pulling from.
+                  </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {response.matches.map((match) => (
-                      <span
+                      <button
+                        type="button"
                         key={`${match.category}-${match.topic}`}
-                        className="rounded-full border border-[#D9FF3D]/25 px-3 py-1 text-xs font-medium text-[#D9FF3D]"
+                        onClick={() => handleMatchSelect(match)}
+                        className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                          selectedMatchKey === `${match.category}-${match.topic}`
+                            ? 'border-[#D9FF3D] bg-[#D9FF3D]/15 text-[#F6FFF2]'
+                            : 'border-[#D9FF3D]/25 text-[#D9FF3D] hover:bg-[#D9FF3D]/10'
+                        }`}
                       >
                         {getForestMatchLabel(match)}
-                      </span>
+                      </button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {selectedMatch && (
+                <div className="mt-4 rounded-2xl border border-[#D9FF3D]/20 bg-[#111611] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-[#A9B5AA]">Topic Entry</p>
+                      <p className="mt-1 text-sm font-semibold text-[#D9FF3D]">
+                        {getForestMatchLabel(selectedMatch)}
+                      </p>
+                      <p className="mt-1 text-xs text-[#738073]">
+                        Source: {getForestMatchSourceLabel(selectedMatch)}
+                      </p>
+                    </div>
+                    {selectedMatch.starterPrompt && (
+                      <button
+                        type="button"
+                        onClick={() => void handleAskForest(selectedMatch.starterPrompt)}
+                        disabled={isLoadingResponse}
+                        className="rounded-full border border-[#D9FF3D]/40 px-3 py-1.5 text-xs font-medium text-[#D9FF3D] transition-colors hover:bg-[#D9FF3D]/10 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Ask This Topic
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-[#F6FFF2]">
+                    {getForestTopicAnswer(selectedMatch)}
+                  </p>
                 </div>
               )}
             </div>
