@@ -124,7 +124,7 @@ const MembershipSection: React.FC = () => {
         <footer className="border-t border-[#0B0F0C]/10 pt-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-              <span className="font-display text-2xl text-[#0B0F0C]">ROOTED</span>
+              <span className="font-display text-2xl text-[#0B0F0C]">Rooted Hearts</span>
               <p className="text-[#0B0F0C]/50 text-sm mt-2">
                 Dating for people who are ready.
               </p>
