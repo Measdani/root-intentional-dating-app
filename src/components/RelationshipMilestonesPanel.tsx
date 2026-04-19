@@ -1,6 +1,7 @@
 ﻿import React, { useMemo, useState } from 'react';
 import type { User, UserInteraction } from '@/types';
 import {
+  buildForestTempCheckReflection,
   VALUE_DEEP_DIVE_OPTIONS,
   createInitialMilestones,
   type MilestoneAction,
@@ -138,6 +139,14 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
 
   const bridgeProgressComplete = milestones.mirror.revealed &&
     participants.every((userId) => Boolean(milestones.valueDeepDive.picksByUser[userId]?.length));
+  const forestTempCheckReflection = useMemo(() => {
+    if (milestones.stage !== 'temp-check') return null;
+    return buildForestTempCheckReflection({
+      milestones,
+      currentUser: { id: currentUser.id, name: currentUser.name },
+      otherUser: { id: otherUser.id, name: otherUser.name },
+    });
+  }, [milestones, currentUser.id, currentUser.name, otherUser.id, otherUser.name]);
 
   const pushAction = (action: MilestoneAction) => {
     onApplyAction(conversation.conversationId, action);
@@ -370,6 +379,13 @@ const RelationshipMilestonesPanel: React.FC<RelationshipMilestonesPanelProps> = 
         <div className={`rounded-lg border px-3 py-2 ${getStepClassName(4, milestones.stage === 'date-offer')}`}>Decision</div>
       </div>
       <p className="text-[11px] uppercase tracking-wider text-[#D9FF3D]">Current milestone: {currentStepLabel}</p>
+
+      {milestones.stage === 'temp-check' && forestTempCheckReflection && (
+        <div className="rounded-xl border border-[#D9FF3D]/30 bg-[#D9FF3D]/8 p-4">
+          <p className="text-[11px] uppercase tracking-wider text-[#D9FF3D]">Forest's Read So Far</p>
+          <p className="mt-3 whitespace-pre-line text-sm leading-6 text-[#F6FFF2]">{forestTempCheckReflection}</p>
+        </div>
+      )}
 
       {activeHandoff && (
         <div className="rounded-xl border border-[#D9FF3D]/40 bg-[#D9FF3D]/8 p-4 space-y-3">

@@ -6,6 +6,7 @@ import type {
   RelationshipMilestones,
   TempCheckAnswer,
   TempCheckOutcome,
+  User,
   UserInteraction,
 } from '@/types';
 
@@ -49,7 +50,7 @@ export const OPPOSITE_PROMPT_ROUNDS: OppositePromptRound[] = [
     title: 'Open or Explore',
     options: [
       { id: 'open', label: 'Open', prompt: 'Answer something honestly.', responseKind: 'answer' },
-      { id: 'explore', label: 'Explore', prompt: 'Ask your partner something new.', responseKind: 'ask' },
+      { id: 'explore', label: 'Explore', prompt: 'What do you enjoy doing when you feel at peace?', responseKind: 'answer' },
     ],
   },
   {
@@ -234,6 +235,19 @@ const SHARED_VIBE_THEME_LABELS: Record<'cozy' | 'adventure' | 'culture' | 'playf
   foodie: 'sensory connection',
 };
 
+const OPPOSITE_PROMPT_THEME_LABELS: Record<string, string> = {
+  root: 'commitment',
+  reveal: 'how each person is often misunderstood',
+  depth: 'fears that rarely get named out loud',
+  light: 'what consistency means in practice',
+  open: 'honest self-disclosure',
+  explore: 'what peace feels like in daily life',
+  stay: 'what trust looks like',
+  share: 'the kind of life each person is building',
+  align: 'what helps each person feel most like themselves',
+  ask: 'what makes each person feel appreciated',
+};
+
 const evaluateSharedVibeUnlock = (
   picksByUser: Record<string, string[]>,
   users: [string, string]
@@ -413,6 +427,13 @@ const getSharedItems = (picksByUser: Record<string, string[]>, users: [string, s
   return [...a].filter((item) => b.has(item));
 };
 
+const formatForestList = (values: string[]): string => {
+  if (values.length === 0) return '';
+  if (values.length === 1) return values[0];
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(', ')}, and ${values[values.length - 1]}`;
+};
+
 const getRoundResponses = (
   responses: OppositePromptResponse[],
   roundId: string
@@ -439,6 +460,63 @@ const getCurrentIncompleteRound = (
   responses: OppositePromptResponse[],
   users: [string, string]
 ): OppositePromptRound | null => rounds.find((round) => !isRoundComplete(round, responses, users)) ?? null;
+
+export const buildForestTempCheckReflection = ({
+  milestones,
+  currentUser,
+  otherUser,
+}: {
+  milestones: RelationshipMilestones;
+  currentUser: Pick<User, 'id' | 'name'>;
+  otherUser: Pick<User, 'id' | 'name'>;
+}): string | null => {
+  const users = [currentUser.id, otherUser.id] as [string, string];
+  const sharedVibeSummary = milestones.sharedVibe.summary?.trim()
+    || buildSharedVibeSummary(milestones.sharedVibe.picksByUser, users);
+
+  const completedRounds = milestones.truthOrDare.rounds
+    .map((round) => {
+      const responses = getRoundResponses(milestones.truthOrDare.responses, round.id);
+      const currentResponse = responses.find((response) => response.userId === currentUser.id);
+      const otherResponse = responses.find((response) => response.userId === otherUser.id);
+
+      if (!currentResponse || !otherResponse) return null;
+
+      const currentOption = getRoundOption(round, currentResponse.optionId);
+      const otherOption = getRoundOption(round, otherResponse.optionId);
+      if (!currentOption || !otherOption) return null;
+
+      return {
+        currentOption,
+        otherOption,
+      };
+    })
+    .filter((entry): entry is {
+      currentOption: NonNullable<ReturnType<typeof getRoundOption>>;
+      otherOption: NonNullable<ReturnType<typeof getRoundOption>>;
+    } => Boolean(entry));
+
+  if (!sharedVibeSummary && completedRounds.length === 0) return null;
+
+  const currentLabels = completedRounds.map((entry) => entry.currentOption.label);
+  const otherLabels = completedRounds.map((entry) => entry.otherOption.label);
+  const themes = Array.from(new Set(
+    completedRounds.flatMap((entry) => [
+      OPPOSITE_PROMPT_THEME_LABELS[entry.currentOption.id],
+      OPPOSITE_PROMPT_THEME_LABELS[entry.otherOption.id],
+    ]).filter((value): value is string => Boolean(value))
+  ));
+
+  const sections = [
+    sharedVibeSummary ? `Shared vibe signal: ${sharedVibeSummary}` : null,
+    completedRounds.length > 0
+      ? `Across Root / Reveal, ${currentUser.name} moved through ${formatForestList(currentLabels)}, while ${otherUser.name} moved through ${formatForestList(otherLabels)}. Together, you have already talked about ${formatForestList(themes)}.`
+      : null,
+    "Forest's direct read: this connection looks strongest when honesty stays calm, expectations stay spoken, and consistency is given room to speak louder than chemistry alone. Use Temp Check to notice whether that grounded signal feels heard, aligned, and ready on both sides.",
+  ].filter((section): section is string => Boolean(section));
+
+  return sections.join('\n\n');
+};
 
 const isTruthOrDareCompleteForUser = (
   rounds: OppositePromptRound[],
