@@ -22,7 +22,7 @@ import { blogService } from '@/services/blogService';
 import { ASSESSMENT_CORE_STYLES, ASSESSMENT_STYLE_META } from '@/services/assessmentStyleService';
 import {
   getPartnerJourneyBadgeLabel,
-  hasPartnerJourneyBadge,
+  hasRecoveredPartnerJourneyBadge,
 } from '@/services/partnerJourneyBadgeService';
 import { rememberResourceSpaceOrigin } from '@/lib/resourceSpaceNavigation';
 import type { AppView, User, AssessmentCoreStyle, PartnerJourneyBadge, BlogArticle } from '@/types';
@@ -867,8 +867,10 @@ const GrowthModeSection: React.FC = () => {
                     : section.view === 'intentional-partner'
                       ? 'Open this section to practice maintaining alignment.'
                       : 'Open this section to enter The Pace Meter.';
-              const sectionBadgeEarned = hasPartnerJourneyBadge(
+              const sectionBadgeEarned = hasRecoveredPartnerJourneyBadge(
+                currentUser.id,
                 currentUser.partnerJourneyBadges,
+                currentUser.growthStyleBadges,
                 section.badge
               );
               const baseCardClassName = `rounded-2xl border p-5 ${

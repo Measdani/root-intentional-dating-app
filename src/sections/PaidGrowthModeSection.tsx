@@ -7,7 +7,7 @@ import type { AppView, BlogArticle, PartnerJourneyBadge } from '@/types';
 import { blogService } from '@/services/blogService';
 import {
   getPartnerJourneyBadgeLabel,
-  hasPartnerJourneyBadge,
+  hasRecoveredPartnerJourneyBadge,
 } from '@/services/partnerJourneyBadgeService';
 import { rememberResourceSpaceOrigin } from '@/lib/resourceSpaceNavigation';
 
@@ -201,8 +201,10 @@ const PaidGrowthModeSection: React.FC = () => {
                     : section.view === 'intentional-partner'
                       ? 'Open this section to practice maintaining alignment.'
                       : 'Open this section to enter The Pace Meter.';
-                const sectionBadgeEarned = hasPartnerJourneyBadge(
+                const sectionBadgeEarned = hasRecoveredPartnerJourneyBadge(
+                  currentUser.id,
                   currentUser.partnerJourneyBadges,
+                  currentUser.growthStyleBadges,
                   section.badge
                 );
 
