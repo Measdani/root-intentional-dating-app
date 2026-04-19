@@ -36,9 +36,14 @@ import {
   isAssessmentCoreStyle,
   normalizeStyleScores,
 } from '@/services/assessmentStyleService';
+import {
+  normalizeGrowthStyleBadges,
+  normalizePartnerJourneyBadges,
+} from '@/services/partnerJourneyBadgeService';
 import type { AppView } from '@/types';
 
 const GROWTH_MODE_TAB_STORAGE_KEY = 'rooted_growth_mode_active_tab';
+const ADMIN_USERS_STORAGE_KEY = 'rooted-admin-users';
 
 const UserLoginSection: React.FC = () => {
   const { setCurrentView, setAssessmentResult } = useApp();
@@ -62,10 +67,42 @@ const UserLoginSection: React.FC = () => {
     return kept || undefined;
   };
 
+  const upsertLocalUserDirectoryEntry = (user: any) => {
+    try {
+      const savedUsersRaw = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
+      const parsedUsers = savedUsersRaw ? JSON.parse(savedUsersRaw) : [];
+      const existingUsers = Array.isArray(parsedUsers) ? parsedUsers : [];
+      const sanitizedUser = { ...user };
+      delete sanitizedUser.password;
+
+      const existingIndex = existingUsers.findIndex(
+        (entry) =>
+          entry &&
+          typeof entry === 'object' &&
+          (entry.id === sanitizedUser.id ||
+            (typeof entry.email === 'string' &&
+              typeof sanitizedUser.email === 'string' &&
+              entry.email.trim().toLowerCase() === sanitizedUser.email.trim().toLowerCase()))
+      );
+
+      const nextUsers =
+        existingIndex >= 0
+          ? existingUsers.map((entry, index) =>
+              index === existingIndex ? { ...entry, ...sanitizedUser } : entry
+            )
+          : [...existingUsers, sanitizedUser];
+
+      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(nextUsers));
+    } catch (error) {
+      console.warn('Failed to persist user directory entry:', error);
+    }
+  };
+
   const persistCurrentUserSession = (user: any) => {
     const sessionUser = applyRelationshipModeToUser(user);
     try {
       localStorage.setItem('currentUser', JSON.stringify(sessionUser));
+      upsertLocalUserDirectoryEntry(sessionUser);
       return sessionUser;
     } catch (error) {
       console.warn('Primary currentUser save failed, retrying with trimmed payload:', error);
@@ -78,6 +115,7 @@ const UserLoginSection: React.FC = () => {
 
     try {
       localStorage.setItem('currentUser', JSON.stringify(lightweightUser));
+      upsertLocalUserDirectoryEntry(lightweightUser);
       return lightweightUser;
     } catch (error) {
       console.warn('Lightweight currentUser save failed, clearing low-priority caches and retrying:', error);
@@ -113,6 +151,7 @@ const UserLoginSection: React.FC = () => {
     cacheKeysToPurge.forEach((key) => localStorage.removeItem(key));
 
     localStorage.setItem('currentUser', JSON.stringify(lightweightUser));
+    upsertLocalUserDirectoryEntry(lightweightUser);
     return lightweightUser;
   };
 
@@ -128,7 +167,7 @@ const UserLoginSection: React.FC = () => {
     );
     if (!tester) return null;
     if (checkPassword !== undefined && tester.password !== checkPassword) return null;
-    return { ...tester };
+    return mergePersistedTesterState({ ...tester });
   };
 
   const normalizeAssessmentResult = (raw: any): AssessmentResult | null => {
@@ -170,6 +209,101 @@ const UserLoginSection: React.FC = () => {
     }
 
     return null;
+  };
+
+  const mergePersistedTesterState = (canonicalTester: any) => {
+    const normalizedEmail = typeof canonicalTester?.email === 'string'
+      ? canonicalTester.email.trim().toLowerCase()
+      : '';
+    const mergedUser = { ...canonicalTester };
+
+    const applyPersistedUser = (value: unknown) => {
+      if (!value || typeof value !== 'object') return;
+
+      const candidate = value as Record<string, unknown>;
+      const candidateId = typeof candidate.id === 'string' ? candidate.id : null;
+      const candidateEmail =
+        typeof candidate.email === 'string' ? candidate.email.trim().toLowerCase() : null;
+      const matchesTester =
+        candidateId === canonicalTester.id || (normalizedEmail && candidateEmail === normalizedEmail);
+
+      if (!matchesTester) return;
+
+      if (typeof candidate.assessmentPassed === 'boolean') {
+        mergedUser.assessmentPassed = candidate.assessmentPassed;
+      }
+      if (typeof candidate.alignmentScore === 'number') {
+        mergedUser.alignmentScore = candidate.alignmentScore;
+      }
+      if (typeof candidate.userStatus === 'string') {
+        mergedUser.userStatus = candidate.userStatus;
+      }
+      if (typeof candidate.primaryStyle === 'string') {
+        mergedUser.primaryStyle = candidate.primaryStyle;
+      }
+      if (typeof candidate.secondaryStyle === 'string') {
+        mergedUser.secondaryStyle = candidate.secondaryStyle;
+      }
+      if (typeof candidate.poolId === 'string') {
+        mergedUser.poolId = candidate.poolId;
+      }
+      if (typeof candidate.backgroundCheckVerified === 'boolean') {
+        mergedUser.backgroundCheckVerified = candidate.backgroundCheckVerified;
+      }
+      if (typeof candidate.backgroundCheckStatus === 'string') {
+        mergedUser.backgroundCheckStatus = candidate.backgroundCheckStatus;
+      }
+      if (typeof candidate.backgroundCheckDate === 'number') {
+        mergedUser.backgroundCheckDate = candidate.backgroundCheckDate;
+      }
+
+      const normalizedGrowthBadges = normalizeGrowthStyleBadges(candidate.growthStyleBadges);
+      if (normalizedGrowthBadges.length > 0) {
+        mergedUser.growthStyleBadges = normalizedGrowthBadges;
+      }
+
+      const normalizedJourneyBadges = normalizePartnerJourneyBadges(candidate.partnerJourneyBadges);
+      if (normalizedJourneyBadges.length > 0) {
+        mergedUser.partnerJourneyBadges = normalizedJourneyBadges;
+      }
+    };
+
+    try {
+      const savedCurrentUser = localStorage.getItem('currentUser');
+      if (savedCurrentUser) {
+        applyPersistedUser(JSON.parse(savedCurrentUser));
+      }
+    } catch (error) {
+      console.warn('Failed to inspect current tester session state:', error);
+    }
+
+    try {
+      const savedUsersRaw = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
+      if (savedUsersRaw) {
+        const parsedUsers = JSON.parse(savedUsersRaw);
+        if (Array.isArray(parsedUsers)) {
+          parsedUsers.forEach(applyPersistedUser);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to inspect cached tester user directory:', error);
+    }
+
+    const savedResult = getSavedAssessmentResult(canonicalTester.id);
+    if (savedResult) {
+      mergedUser.assessmentPassed = savedResult.passed;
+      mergedUser.alignmentScore = savedResult.percentage;
+      mergedUser.userStatus = savedResult.passed ? 'active' : 'needs-growth';
+
+      if (savedResult.primaryStyle) {
+        mergedUser.primaryStyle = savedResult.primaryStyle;
+      }
+      if (savedResult.secondaryStyle) {
+        mergedUser.secondaryStyle = savedResult.secondaryStyle;
+      }
+    }
+
+    return mergedUser;
   };
 
   const resolveUserForActivePool = (rawUser: any) => {
@@ -307,10 +441,8 @@ const UserLoginSection: React.FC = () => {
       return;
     }
 
-    // Tester accounts must stay canonical and not inherit persisted results
-    // from other test sessions/users.
-    let savedResult = canonicalTester ? null : getSavedAssessmentResult(effectiveUser.id);
-    if (!canonicalTester && !savedResult && effectiveUser.id) {
+    let savedResult = getSavedAssessmentResult(effectiveUser.id);
+    if (!savedResult && !canonicalTester && effectiveUser.id) {
       savedResult = await assessmentService.getLatestAssessmentResult(effectiveUser.id);
       if (savedResult) {
         try {
@@ -379,8 +511,8 @@ const UserLoginSection: React.FC = () => {
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      // Tester accounts are canonical and should never drift.
-      // If email matches a tester, never fall back to Supabase.
+      // Tester accounts keep their seeded identity, but we still merge
+      // user-scoped local progress back in so earned badges/styles persist.
       const testerByEmail = getCanonicalTestUser(normalizedEmail);
       let user: any = null;
 

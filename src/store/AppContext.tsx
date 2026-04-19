@@ -708,7 +708,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         const currentUserMissingRemotely = Boolean(
           persistedCurrentUserId &&
-          persistedCurrentUserId !== defaultUser.id &&
+          !SEEDED_USER_IDS.has(persistedCurrentUserId) &&
           !remoteUserIds.has(persistedCurrentUserId)
         );
 
@@ -891,8 +891,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const remoteUserIds = remoteUserIdsRef.current;
     const shouldKeepCurrentUserVisible =
-      currentUser.id === defaultUser.id ||
       !isUserAuthenticated ||
+      SEEDED_USER_IDS.has(currentUser.id) ||
       !remoteUserIds ||
       remoteUserIds.has(currentUser.id);
 
@@ -921,7 +921,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currentUser, currentView, selectedUser?.id, users]);
 
   useEffect(() => {
-    if (!isUserAuthenticated || currentUser.id === defaultUser.id) return;
+    if (!isUserAuthenticated) return;
     if (badgeRecoveryInFlightRef.current.has(currentUser.id)) return;
 
     const currentJourneyBadges = normalizePartnerJourneyBadges(currentUser.partnerJourneyBadges);
@@ -1044,7 +1044,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Check for assessment abandonment and apply cooling period
   useEffect(() => {
-    if (currentUser.id === defaultUser.id) return; // Skip for default user
+    if (!isUserAuthenticated) return;
 
     try {
       let abandonmentRaw = localStorage.getItem('assessmentAbandonment');
@@ -1103,7 +1103,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (error) {
       console.error('Failed to check assessment abandonment:', error);
     }
-  }, [currentUser.assessmentPassed, currentUser.id]);
+  }, [currentUser.assessmentPassed, currentUser.id, isUserAuthenticated]);
 
   const [hasJoinedList, setHasJoinedList] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -1247,7 +1247,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (error) {
       console.error('Failed to reload interactions on user change:', error);
     }
-  }, [currentUser.id]);
+  }, [currentUser.id, isUserAuthenticated]);
 
   useEffect(() => {
     if (currentView !== 'profile' || selectedUser) return;

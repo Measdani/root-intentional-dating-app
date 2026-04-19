@@ -102,6 +102,27 @@ const persistUserBadgeCollection = async <T extends string>({
     awardedNewBadge = true;
   };
 
+  const upsertUserDirectoryEntry = (user: Record<string, unknown>) => {
+    try {
+      const savedUsers = localStorage.getItem('rooted-admin-users');
+      const parsedUsers = savedUsers ? JSON.parse(savedUsers) : [];
+      const existingUsers = Array.isArray(parsedUsers) ? parsedUsers : [];
+      const existingIndex = existingUsers.findIndex(
+        (entry) => entry && typeof entry === 'object' && entry.id === user.id
+      );
+
+      const nextUsers =
+        existingIndex >= 0
+          ? existingUsers.map((entry, index) => (index === existingIndex ? { ...entry, ...user } : entry))
+          : [...existingUsers, user];
+
+      localStorage.setItem('rooted-admin-users', JSON.stringify(nextUsers));
+      window.dispatchEvent(new Event('storage'));
+    } catch (error) {
+      console.warn(`Failed to upsert ${storageField} in user directory:`, error);
+    }
+  };
+
   try {
     const savedCurrent = localStorage.getItem('currentUser');
     if (savedCurrent) {
@@ -124,6 +145,7 @@ const persistUserBadgeCollection = async <T extends string>({
         };
         nextValuesForUser = nextValues;
         localStorage.setItem('currentUser', JSON.stringify(nextCurrent));
+        upsertUserDirectoryEntry(nextCurrent);
         window.dispatchEvent(new CustomEvent('user-login', { detail: nextCurrent }));
       }
     }
