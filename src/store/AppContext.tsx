@@ -3,6 +3,11 @@ import type { AppView, AssessmentAnswer, AssessmentOptionStyle, AssessmentResult
 import { sampleUsers, currentUser as defaultUser } from '@/data/users';
 import { normalizeUserProfile } from '@/lib/userProfile';
 import {
+  findLatestConversationById,
+  findLatestConversationForUsers,
+  getLatestUniqueInteractions,
+} from '@/lib/interactions';
+import {
   applyRelationshipModeToUser,
   canUsersExchangeMessages,
   getMessageBlockReason,
@@ -479,15 +484,7 @@ const parseStoredInteractionState = (raw: string | null): InteractionState => {
 const findConversationById = (
   state: InteractionState,
   conversationId: string
-): UserInteraction | null => {
-  const matches = [
-    ...Object.values(state.sentInterests),
-    ...Object.values(state.receivedInterests),
-  ].filter((interaction) => interaction.conversationId === conversationId);
-
-  if (matches.length === 0) return null;
-  return matches.sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
-};
+): UserInteraction | null => findLatestConversationById(state, conversationId);
 
 const getInitialSelectedUser = (): User | null => {
   if (typeof window === 'undefined') return null;
@@ -1283,7 +1280,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const restoredConversation = findConversationById(interactions, storedConversationId);
-    if (restoredConversation) {
+    if (
+      restoredConversation &&
+      (restoredConversation.fromUserId === currentUser.id ||
+        restoredConversation.toUserId === currentUser.id)
+    ) {
       setSelectedConversation(restoredConversation);
       return;
     }
@@ -1291,17 +1292,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (interactionsHydratedRef.current) {
       setCurrentViewState('inbox');
     }
-  }, [currentView, selectedConversation, interactions, isUserAuthenticated]);
+  }, [currentView, selectedConversation, interactions, currentUser.id, isUserAuthenticated]);
 
   // Keep selected conversation aligned to the canonical interaction state.
   useEffect(() => {
     setSelectedConversation((prev) => {
       if (!prev) return prev;
 
-      const refreshedConversation = findConversationById(interactions, prev.conversationId);
-      return refreshedConversation ?? null;
+      if (prev.fromUserId !== currentUser.id && prev.toUserId !== currentUser.id) {
+        return null;
+      }
+
+      const otherUserId = prev.fromUserId === currentUser.id
+        ? prev.toUserId
+        : prev.fromUserId;
+
+      return (
+        findLatestConversationForUsers(interactions, currentUser.id, otherUserId) ??
+        findConversationById(interactions, prev.conversationId) ??
+        null
+      );
     });
-  }, [interactions]);
+  }, [currentUser.id, interactions]);
 
   // Check for expired suspensions and transition to needs-growth status
   useEffect(() => {
@@ -1572,9 +1584,11 @@ useEffect(() => {
       return { sent: false, feedback: blockReason };
     }
 
-    // Check if already expressed interest to this user
-    if (interactions.sentInterests[toUserId]) {
-      return { sent: false, feedback: 'You already expressed interest in this person.' };
+    const existingConversation = findLatestConversationForUsers(interactions, currentUser.id, toUserId);
+    if (existingConversation) {
+      return existingConversation.fromUserId === currentUser.id
+        ? { sent: false, feedback: 'You already expressed interest in this person.' }
+        : { sent: false, feedback: 'This conversation already exists. Open the thread to reply.' };
     }
 
     // Create deterministic conversationId using sorted user pair so both users share same thread
@@ -1653,7 +1667,7 @@ useEffect(() => {
       sent: true,
       feedback: moderationResult.resetMessage ?? moderationResult.rewritePrompt ?? undefined,
     };
-  }, [currentUser.id, currentUser.email, interactions.sentInterests, users]);
+  }, [currentUser.id, currentUser.email, interactions, users]);
 
   const respondToInterest = useCallback(async (
     fromUserId: string,
@@ -1706,14 +1720,14 @@ useEffect(() => {
       } else {
         // Search all interactions if not found by simple key
         const foundInReceived = Object.entries(prev.receivedInterests).find(
-          ([_, i]) => i.fromUserId === fromUserId || i.toUserId === fromUserId
+          ([, interaction]) => interaction.fromUserId === fromUserId || interaction.toUserId === fromUserId
         );
         if (foundInReceived) {
           baseInteraction = foundInReceived[1];
           foundInReceivedAt = foundInReceived[0];
         } else {
           const foundInSent = Object.entries(prev.sentInterests).find(
-            ([_, i]) => i.fromUserId === fromUserId || i.toUserId === fromUserId
+            ([, interaction]) => interaction.fromUserId === fromUserId || interaction.toUserId === fromUserId
           );
           if (foundInSent) {
             baseInteraction = foundInSent[1];
@@ -2123,27 +2137,8 @@ useEffect(() => {
   }, []);
 
   const getConversation = useCallback((userId: string): UserInteraction | null => {
-    // First check direct keys
-    if (interactions.sentInterests[userId]) {
-      return interactions.sentInterests[userId];
-    }
-    if (interactions.receivedInterests[userId]) {
-      return interactions.receivedInterests[userId];
-    }
-
-    // If not found by direct key, search through all interactions to find one with this userId
-    const sentConversation = Object.values(interactions.sentInterests).find(i => i.fromUserId === userId || i.toUserId === userId);
-    if (sentConversation) {
-      return sentConversation;
-    }
-
-    const receivedConversation = Object.values(interactions.receivedInterests).find(i => i.fromUserId === userId || i.toUserId === userId);
-    if (receivedConversation) {
-      return receivedConversation;
-    }
-
-    return null;
-  }, [interactions]);
+    return findLatestConversationForUsers(interactions, currentUser.id, userId);
+  }, [currentUser.id, interactions]);
 
   const hasExpressedInterest = useCallback((userId: string): boolean => {
     // Check if current user initiated the conversation with this user
@@ -2169,44 +2164,21 @@ useEffect(() => {
   }, [currentUser.id, getConversation]);
 
   const getReceivedInterests = useCallback((): UserInteraction[] => {
-    // Get all conversations and filter for ones where currentUser is the recipient
-    const allInteractions = [
-      ...Object.values(interactions.sentInterests),
-      ...Object.values(interactions.receivedInterests),
-    ];
-    const uniqueConversations = Array.from(new Map(
-      allInteractions.map(i => [i.conversationId, i])
-    ).values());
-    return uniqueConversations
+    return getLatestUniqueInteractions(interactions)
       .filter(i => i.toUserId === currentUser.id)
       .filter(i => canUsersExchangeMessages(currentUser.id, i.fromUserId));
   }, [currentUser.id, interactions]);
 
   const getSentInterests = useCallback((): UserInteraction[] => {
-    // Get all conversations and filter for ones where currentUser is the initiator
-    const allInteractions = [
-      ...Object.values(interactions.sentInterests),
-      ...Object.values(interactions.receivedInterests),
-    ];
-    const uniqueConversations = Array.from(new Map(
-      allInteractions.map(i => [i.conversationId, i])
-    ).values());
-    return uniqueConversations
+    return getLatestUniqueInteractions(interactions)
       .filter(i => i.fromUserId === currentUser.id)
       .filter(i => canUsersExchangeMessages(currentUser.id, i.toUserId));
   }, [currentUser.id, interactions]);
 
   const getUnreadCount = useCallback((): number => {
-    const allInteractions = [
-      ...Object.values(interactions.sentInterests),
-      ...Object.values(interactions.receivedInterests),
-    ];
     const knownUserIds = new Set(users.map((user) => user.id));
-    const uniqueConversations = Array.from(
-      new Map(allInteractions.map((interaction) => [interaction.conversationId, interaction])).values()
-    );
 
-    return uniqueConversations.filter((conversation) => {
+    return getLatestUniqueInteractions(interactions).filter((conversation) => {
       const otherUserId = conversation.fromUserId === currentUser.id
         ? conversation.toUserId
         : conversation.fromUserId;
