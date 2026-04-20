@@ -7,7 +7,7 @@ const Footer: React.FC = () => {
 
   return (
     <footer className="bg-[#111611] border-t border-[#1A211A] mt-12">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           {/* Brand */}
           <div className="text-center md:text-left">
@@ -16,24 +16,27 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Links */}
-          <div className="flex items-center gap-6 text-sm text-[#A9B5AA]">
+          <div className="flex flex-col items-center gap-2 text-sm text-[#A9B5AA] sm:flex-row sm:gap-6">
             <button
+              type="button"
               onClick={() => setCurrentView('privacy-policy')}
-              className="hover:text-[#D9FF3D] transition-colors"
+              className="rounded-full px-3 py-1.5 transition-colors hover:text-[#D9FF3D] focus:outline-none focus:ring-2 focus:ring-[#D9FF3D]/40"
             >
               Privacy Policy
             </button>
-            <div className="w-px h-4 bg-[#1A211A]" />
+            <div className="hidden h-4 w-px bg-[#1A211A] sm:block" />
             <button
+              type="button"
               onClick={() => setCurrentView('terms-of-service')}
-              className="hover:text-[#D9FF3D] transition-colors"
+              className="rounded-full px-3 py-1.5 transition-colors hover:text-[#D9FF3D] focus:outline-none focus:ring-2 focus:ring-[#D9FF3D]/40"
             >
               Terms of Service
             </button>
-            <div className="w-px h-4 bg-[#1A211A]" />
+            <div className="hidden h-4 w-px bg-[#1A211A] sm:block" />
             <button
+              type="button"
               onClick={() => setCurrentView('community-guidelines')}
-              className="hover:text-[#D9FF3D] transition-colors"
+              className="rounded-full px-3 py-1.5 text-center transition-colors hover:text-[#D9FF3D] focus:outline-none focus:ring-2 focus:ring-[#D9FF3D]/40"
             >
               Community Guidelines
             </button>

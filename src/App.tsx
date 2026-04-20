@@ -105,6 +105,10 @@ const AppContent: React.FC = () => {
     }
   }, [currentView, hasSitePreviewAccess, setCurrentView, siteLockEnabled]);
 
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [currentView]);
+
   const showLaunchPreview = currentView === 'launching-soon-preview';
   const showWaitlistConfirmation = currentView === 'lgbtq-email-confirmation';
   const showLaunchHold =
