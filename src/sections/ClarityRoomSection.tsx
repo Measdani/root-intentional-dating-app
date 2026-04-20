@@ -69,18 +69,21 @@ const ClarityRoomSection: React.FC = () => {
       return;
     }
 
-    if (formData.editingId) {
-      await journalService.updateEntry(
-        formData.editingId,
-        formData.content,
-        formData.title || undefined
-      );
-    } else {
-      await journalService.createEntry(
-        formData.sectionKey,
-        formData.content,
-        formData.title || undefined
-      );
+    const savedEntry = formData.editingId
+      ? await journalService.updateEntry(
+          formData.editingId,
+          formData.content,
+          formData.title || undefined
+        )
+      : await journalService.createEntry(
+          formData.sectionKey,
+          formData.content,
+          formData.title || undefined
+        );
+
+    if (!savedEntry) {
+      alert('We could not save this reflection right now. Please try again.');
+      return;
     }
 
     // Reload entries
