@@ -39,6 +39,8 @@ type ModuleInputFormState = {
   published: boolean;
 };
 
+type BlogListFilter = 'all' | 'articles' | 'modules';
+
 const MODULE_INPUT_CATEGORY = 'Module Input';
 const MODULE_INPUT_CONTENT_START = '[[MODULE_INPUT_JSON]]';
 const MODULE_INPUT_CONTENT_END = '[[/MODULE_INPUT_JSON]]';
@@ -138,6 +140,8 @@ const AdminContentSection: React.FC = () => {
   const [showBlogForm, setShowBlogForm] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState<BlogArticle | null>(null);
   const [blogFormData, setBlogFormData] = useState<Partial<BlogArticle>>({});
+  const [blogListFilter, setBlogListFilter] = useState<BlogListFilter>('all');
+  const [blogSearchQuery, setBlogSearchQuery] = useState('');
   const [showModuleInputForm, setShowModuleInputForm] = useState(false);
   const [moduleInputFormData, setModuleInputFormData] = useState<ModuleInputFormState>(() =>
     createEmptyModuleInputForm()
@@ -221,6 +225,46 @@ const AdminContentSection: React.FC = () => {
 
     return Object.entries(grouped).sort((a, b) => a[0].localeCompare(b[0]));
   }, [blogs]);
+
+  const blogCounts = React.useMemo(
+    () => ({
+      all: blogs.length,
+      articles: blogs.filter((blog) => !blog.moduleOnly).length,
+      modules: blogs.filter((blog) => blog.moduleOnly).length,
+    }),
+    [blogs]
+  );
+
+  const filteredBlogs = React.useMemo(() => {
+    const normalizedSearch = blogSearchQuery.trim().toLowerCase();
+
+    return blogs.filter((blog) => {
+      const matchesType =
+        blogListFilter === 'all' ||
+        (blogListFilter === 'articles' ? !blog.moduleOnly : blog.moduleOnly);
+
+      if (!matchesType) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const searchableFields = [
+        blog.title,
+        blog.category,
+        blog.excerpt,
+        blog.author,
+        blog.readTime,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return searchableFields.includes(normalizedSearch);
+    });
+  }, [blogs, blogListFilter, blogSearchQuery]);
 
   const selectedBehaviorPreviewOption = React.useMemo(
     () =>
@@ -629,26 +673,63 @@ const AdminContentSection: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="blogs" className="space-y-4">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Rooted Insights Blog Articles ({blogs.length})</h3>
-            <div className="flex items-center gap-2">
-              <Button onClick={() => {
-                setBlogFormData({
-                  title: '',
-                  content: '',
-                  category: '',
-                  excerpt: '',
-                  published: false,
-                });
-                setSelectedBlog(null);
-                setShowBlogForm(true);
-              }} className="bg-[#D9FF3D] text-[#0B0F0C] hover:bg-[#C4E622]"><Plus className="w-4 h-4 mr-2" />New Article</Button>
-              <Button onClick={openModuleInputForm} className="bg-[#1A211A] border border-[#2A312A] text-[#D9FF3D] hover:bg-[#252C25]"><Plus className="w-4 h-4 mr-2" />Module Input</Button>
+          <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-xl font-display font-bold text-[#F6FFF2]">Rooted Insights Blog Content</h3>
+                <p className="mt-1 text-sm text-[#A9B5AA]">
+                  Showing {filteredBlogs.length} of {blogs.length} total entries.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { id: 'all', label: 'All', count: blogCounts.all },
+                  { id: 'articles', label: 'Articles', count: blogCounts.articles },
+                  { id: 'modules', label: 'Module Only', count: blogCounts.modules },
+                ] as const).map((filterOption) => (
+                  <button
+                    key={filterOption.id}
+                    type="button"
+                    onClick={() => setBlogListFilter(filterOption.id)}
+                    className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                      blogListFilter === filterOption.id
+                        ? 'border-[#D9FF3D] bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                        : 'border-[#2A312A] text-[#A9B5AA] hover:border-[#D9FF3D]/40 hover:text-[#F6FFF2]'
+                    }`}
+                  >
+                    {filterOption.label} ({filterOption.count})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <input
+                type="text"
+                value={blogSearchQuery}
+                onChange={(e) => setBlogSearchQuery(e.target.value)}
+                className="w-full rounded-xl border border-[#1A211A] bg-[#0B0F0C] px-4 py-3 text-sm text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] lg:w-80"
+                placeholder="Search title, category, excerpt, author..."
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={() => {
+                  setBlogFormData({
+                    title: '',
+                    content: '',
+                    category: '',
+                    excerpt: '',
+                    published: false,
+                  });
+                  setSelectedBlog(null);
+                  setShowBlogForm(true);
+                }} className="bg-[#D9FF3D] text-[#0B0F0C] hover:bg-[#C4E622]"><Plus className="w-4 h-4 mr-2" />New Article</Button>
+                <Button onClick={openModuleInputForm} className="bg-[#1A211A] border border-[#2A312A] text-[#D9FF3D] hover:bg-[#252C25]"><Plus className="w-4 h-4 mr-2" />Module Input</Button>
+              </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            {blogs.map((blog) => (
+            {filteredBlogs.map((blog) => (
               <Card key={blog.id} className="bg-[#111611] border-[#1A211A] p-6">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -677,7 +758,7 @@ const AdminContentSection: React.FC = () => {
                     <Button size="sm" variant="ghost" onClick={() => {
                       if (confirm('Delete this article?')) {
                         blogService.deleteBlog(blog.id);
-                        setBlogs(blogs.filter(b => b.id !== blog.id));
+                        setBlogs((previous) => previous.filter((b) => b.id !== blog.id));
                         toast.success('Article deleted');
                       }
                     }} className="text-red-400"><Trash2 className="w-4 h-4" /></Button>
@@ -685,10 +766,20 @@ const AdminContentSection: React.FC = () => {
                 </div>
               </Card>
             ))}
-            {blogs.length === 0 && (
+            {filteredBlogs.length === 0 && (
               <div className="text-center py-12 text-[#A9B5AA]">
                 <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No articles yet. Create one to help your community learn.</p>
+                <p>
+                  {blogs.length === 0
+                    ? 'No articles yet. Create one to help your community learn.'
+                    : blogSearchQuery.trim()
+                      ? 'No entries match that search yet.'
+                      : blogListFilter === 'articles'
+                        ? 'No standard blog articles in this view.'
+                        : blogListFilter === 'modules'
+                          ? 'No module-only entries in this view.'
+                          : 'No blog entries found.'}
+                </p>
               </div>
             )}
           </div>
@@ -764,7 +855,12 @@ const AdminContentSection: React.FC = () => {
                 <label className="block text-sm font-medium text-[#F6FFF2] mb-2">Difficulty</label>
                 <select
                   value={formData.difficulty || 'beginner'}
-                  onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as any })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      difficulty: e.target.value as GrowthResource['difficulty'],
+                    })
+                  }
                   className="w-full px-4 py-3 bg-[#0B0F0C] border border-[#1A211A] rounded-xl text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D]"
                 >
                   <option value="beginner">Beginner</option>
