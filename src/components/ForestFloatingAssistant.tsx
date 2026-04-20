@@ -6,7 +6,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   askForest,
@@ -89,16 +88,15 @@ const ForestFloatingAssistant: React.FC = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-[#D9FF3D]/50 bg-[#0B0F0C] text-[#D9FF3D] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
-          aria-label="Open Forest"
-          title="Open Forest"
-        >
-          <Sparkles className="w-4 h-4" />
-        </button>
-      </DialogTrigger>
+      <button
+        type="button"
+        onClick={() => setIsOpen((previous) => !previous)}
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-[#D9FF3D]/50 bg-[#0B0F0C] text-[#D9FF3D] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
+        aria-label={isOpen ? 'Close Forest' : 'Open Forest'}
+        title={isOpen ? 'Close Forest' : 'Open Forest'}
+      >
+        <Sparkles className="w-4 h-4" />
+      </button>
 
       <DialogContent
         overlayClassName="bg-[#0B0F0C]/75 backdrop-blur-sm"

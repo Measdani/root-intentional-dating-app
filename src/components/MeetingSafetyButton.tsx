@@ -6,7 +6,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 
 type MeetingSafetyButtonProps = {
@@ -15,30 +14,31 @@ type MeetingSafetyButtonProps = {
 
 const MeetingSafetyButton: React.FC<MeetingSafetyButtonProps> = ({ variant = 'floating' }) => {
   const isIconOnly = variant === 'icon';
+  const [isOpen, setIsOpen] = React.useState(false);
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {isIconOnly ? (
-          <button
-            type="button"
-            className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
-            title="Open Rooted Hearts Trust Protocol"
-            aria-label="Open Rooted Hearts Trust Protocol"
-          >
-            <Shield className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#D9FF3D]/35 bg-[#0B0F0C] text-[#F6FFF2] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
-            title="Open Rooted Hearts Trust Protocol"
-            aria-label="Open Rooted Hearts Trust Protocol"
-          >
-            <Shield className="h-4 w-4 text-[#D9FF3D]" />
-          </button>
-        )}
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {isIconOnly ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen((previous) => !previous)}
+          className="text-[#A9B5AA] hover:text-[#D9FF3D] transition-colors"
+          title={isOpen ? 'Close Rooted Hearts Trust Protocol' : 'Open Rooted Hearts Trust Protocol'}
+          aria-label={isOpen ? 'Close Rooted Hearts Trust Protocol' : 'Open Rooted Hearts Trust Protocol'}
+        >
+          <Shield className="w-4 h-4" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsOpen((previous) => !previous)}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-[#D9FF3D]/35 bg-[#0B0F0C] text-[#F6FFF2] shadow-lg shadow-black/30 transition-colors hover:bg-[#121A12]"
+          title={isOpen ? 'Close Rooted Hearts Trust Protocol' : 'Open Rooted Hearts Trust Protocol'}
+          aria-label={isOpen ? 'Close Rooted Hearts Trust Protocol' : 'Open Rooted Hearts Trust Protocol'}
+        >
+          <Shield className="h-4 w-4 text-[#D9FF3D]" />
+        </button>
+      )}
 
       <DialogContent
         overlayClassName="bg-[#0B0F0C]/75 backdrop-blur-sm"
