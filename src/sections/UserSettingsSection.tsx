@@ -74,6 +74,17 @@ type DeactivationStep =
   | 'final-confirmation'
   | 'exit-message';
 
+type MfaAssuranceLevel = 'aal1' | 'aal2' | null;
+
+type PendingTotpEnrollment = {
+  factorId: string;
+  friendlyName: string;
+  qrCode: string;
+  secret: string;
+  uri: string;
+  verifyCode: string;
+};
+
 const SETTINGS_SUPPORT_ISSUE_OPTIONS: {
   value: SettingsSupportIssueType;
   label: string;
@@ -188,6 +199,26 @@ const UserSettingsSection: React.FC = () => {
   const [issueReportSubmitted, setIssueReportSubmitted] = useState(false);
   const [isDeactivatingAccount, setIsDeactivatingAccount] = useState(false);
   const [highlightExclusiveModeSection, setHighlightExclusiveModeSection] = useState(false);
+  const [hasSupabaseSession, setHasSupabaseSession] = useState(false);
+  const [isLoadingMfa, setIsLoadingMfa] = useState(true);
+  const [mfaError, setMfaError] = useState('');
+  const [verifiedTotpFactors, setVerifiedTotpFactors] = useState<
+    Array<{
+      id: string;
+      friendlyName?: string;
+      createdAt: string;
+      updatedAt: string;
+      lastChallengedAt?: string;
+    }>
+  >([]);
+  const [mfaCurrentLevel, setMfaCurrentLevel] = useState<MfaAssuranceLevel>(null);
+  const [mfaNextLevel, setMfaNextLevel] = useState<MfaAssuranceLevel>(null);
+  const [pendingTotpEnrollment, setPendingTotpEnrollment] = useState<PendingTotpEnrollment | null>(null);
+  const [mfaStepUpCode, setMfaStepUpCode] = useState('');
+  const [isStartingMfaEnrollment, setIsStartingMfaEnrollment] = useState(false);
+  const [isVerifyingMfaEnrollment, setIsVerifyingMfaEnrollment] = useState(false);
+  const [isVerifyingMfaSession, setIsVerifyingMfaSession] = useState(false);
+  const [isDisablingMfa, setIsDisablingMfa] = useState(false);
   const exclusiveModeSectionRef = useRef<HTMLElement | null>(null);
   const exclusiveModeHighlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const supportSectionRef = useRef<HTMLElement | null>(null);
@@ -300,6 +331,233 @@ const UserSettingsSection: React.FC = () => {
     };
   }, [focusExclusiveModeSection]);
 
+  const refreshMfaState = useCallback(async () => {
+    setIsLoadingMfa(true);
+    setMfaError('');
+
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await authService.getSession();
+
+      if (sessionError) {
+        setHasSupabaseSession(false);
+        setVerifiedTotpFactors([]);
+        setMfaCurrentLevel(null);
+        setMfaNextLevel(null);
+        setPendingTotpEnrollment(null);
+        setMfaStepUpCode('');
+        setMfaError(sessionError.message);
+        return;
+      }
+
+      if (!session?.user) {
+        setHasSupabaseSession(false);
+        setVerifiedTotpFactors([]);
+        setMfaCurrentLevel(null);
+        setMfaNextLevel(null);
+        setPendingTotpEnrollment(null);
+        setMfaStepUpCode('');
+        return;
+      }
+
+      setHasSupabaseSession(true);
+
+      const [factorResult, assuranceResult] = await Promise.all([
+        authService.listMfaFactors(),
+        authService.getAuthenticatorAssuranceLevel(),
+      ]);
+
+      if (factorResult.error) {
+        setVerifiedTotpFactors([]);
+        setMfaError(factorResult.error.message);
+      } else {
+        setVerifiedTotpFactors(
+          (factorResult.data?.totp ?? []).map((factor) => ({
+            id: factor.id,
+            friendlyName: factor.friendly_name,
+            createdAt: factor.created_at,
+            updatedAt: factor.updated_at,
+            lastChallengedAt: factor.last_challenged_at,
+          }))
+        );
+      }
+
+      if (assuranceResult.error) {
+        setMfaCurrentLevel(null);
+        setMfaNextLevel(null);
+        setMfaError((previous) => previous || assuranceResult.error?.message || '');
+      } else {
+        setMfaCurrentLevel(assuranceResult.data.currentLevel);
+        setMfaNextLevel(assuranceResult.data.nextLevel);
+      }
+    } catch (error) {
+      console.error('Failed to refresh MFA state:', error);
+      setHasSupabaseSession(false);
+      setVerifiedTotpFactors([]);
+      setMfaCurrentLevel(null);
+      setMfaNextLevel(null);
+      setMfaError('Unable to load two-factor authentication right now.');
+    } finally {
+      setIsLoadingMfa(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshMfaState();
+  }, [refreshMfaState, currentUser.id]);
+
+  const handleStartMfaEnrollment = useCallback(async () => {
+    setIsStartingMfaEnrollment(true);
+    setMfaError('');
+
+    try {
+      const friendlyName = currentUser.name
+        ? `${currentUser.name}'s Authenticator`
+        : 'Rooted Hearts Authenticator';
+      const { data, error } = await authService.enrollTotpFactor(friendlyName);
+
+      if (error) {
+        setMfaError(error.message);
+        return;
+      }
+
+      if (!data?.totp) {
+        setMfaError('Supabase did not return authenticator setup details.');
+        return;
+      }
+
+      setPendingTotpEnrollment({
+        factorId: data.id,
+        friendlyName: data.friendly_name || friendlyName,
+        qrCode: `data:image/svg+xml;utf-8,${encodeURIComponent(data.totp.qr_code)}`,
+        secret: data.totp.secret,
+        uri: data.totp.uri,
+        verifyCode: '',
+      });
+    } catch (error) {
+      console.error('Failed to start MFA enrollment:', error);
+      setMfaError('Unable to start two-factor setup right now.');
+    } finally {
+      setIsStartingMfaEnrollment(false);
+    }
+  }, [currentUser.name]);
+
+  const handleCancelPendingMfaEnrollment = useCallback(async () => {
+    if (!pendingTotpEnrollment) return;
+
+    try {
+      await authService.unenrollMfaFactor(pendingTotpEnrollment.factorId);
+    } catch (error) {
+      console.warn('Failed to clean up pending MFA factor:', error);
+    } finally {
+      setPendingTotpEnrollment(null);
+    }
+  }, [pendingTotpEnrollment]);
+
+  const handleVerifyPendingMfaEnrollment = useCallback(async () => {
+    if (!pendingTotpEnrollment) return;
+
+    const code = pendingTotpEnrollment.verifyCode.trim();
+    if (!code) {
+      setMfaError('Enter the 6-digit code from your authenticator app.');
+      return;
+    }
+
+    setIsVerifyingMfaEnrollment(true);
+    setMfaError('');
+
+    try {
+      const { error } = await authService.challengeAndVerifyMfaFactor(
+        pendingTotpEnrollment.factorId,
+        code
+      );
+
+      if (error) {
+        setMfaError(error.message);
+        return;
+      }
+
+      setPendingTotpEnrollment(null);
+      toast.success('Two-factor authentication is now enabled.');
+      await refreshMfaState();
+    } catch (error) {
+      console.error('Failed to verify MFA enrollment:', error);
+      setMfaError('Unable to verify that code right now.');
+    } finally {
+      setIsVerifyingMfaEnrollment(false);
+    }
+  }, [pendingTotpEnrollment, refreshMfaState]);
+
+  const handleVerifyMfaSession = useCallback(async () => {
+    const code = mfaStepUpCode.trim();
+    const primaryFactor = verifiedTotpFactors[0];
+
+    if (!primaryFactor) {
+      setMfaError('No verified authenticator was found for this account.');
+      return;
+    }
+
+    if (!code) {
+      setMfaError('Enter the current code from your authenticator app.');
+      return;
+    }
+
+    setIsVerifyingMfaSession(true);
+    setMfaError('');
+
+    try {
+      const { error } = await authService.challengeAndVerifyMfaFactor(primaryFactor.id, code);
+      if (error) {
+        setMfaError(error.message);
+        return;
+      }
+
+      setMfaStepUpCode('');
+      toast.success('This settings session is now verified with two-factor auth.');
+      await refreshMfaState();
+    } catch (error) {
+      console.error('Failed to step up MFA session:', error);
+      setMfaError('Unable to verify this session right now.');
+    } finally {
+      setIsVerifyingMfaSession(false);
+    }
+  }, [mfaStepUpCode, refreshMfaState, verifiedTotpFactors]);
+
+  const handleDisableMfa = useCallback(async () => {
+    const primaryFactor = verifiedTotpFactors[0];
+    if (!primaryFactor) return;
+
+    if (!window.confirm('Turn off two-factor authentication for this account?')) {
+      return;
+    }
+
+    setIsDisablingMfa(true);
+    setMfaError('');
+
+    try {
+      const { error } = await authService.unenrollMfaFactor(primaryFactor.id);
+
+      if (error) {
+        setMfaError(
+          mfaCurrentLevel !== 'aal2'
+            ? 'Verify this settings session with your authenticator code before turning off two-factor auth.'
+            : error.message
+        );
+        return;
+      }
+
+      toast.success('Two-factor authentication has been turned off.');
+      await refreshMfaState();
+    } catch (error) {
+      console.error('Failed to disable MFA:', error);
+      setMfaError('Unable to turn off two-factor authentication right now.');
+    } finally {
+      setIsDisablingMfa(false);
+    }
+  }, [mfaCurrentLevel, refreshMfaState, verifiedTotpFactors]);
+
   const persistSettings = (next: UserSettings) => {
     if (!currentUser?.id) return;
     setSettings(next);
@@ -350,6 +608,19 @@ const UserSettingsSection: React.FC = () => {
         : relationshipModeSnapshot.remainingCooldownMs > 0
           ? `Re-entry cooldown is active for ${formatModeDuration(relationshipModeSnapshot.remainingCooldownMs)}.`
           : 'Active mode is available for normal browsing and matching.';
+  const isMfaEnabled = verifiedTotpFactors.length > 0;
+  const needsMfaStepUp = isMfaEnabled && mfaCurrentLevel !== 'aal2' && mfaNextLevel === 'aal2';
+  const mfaStatusCopy = isLoadingMfa
+    ? 'Checking your authenticator status...'
+    : !hasSupabaseSession
+      ? 'Sign in with a live account to manage two-factor auth.'
+      : pendingTotpEnrollment
+        ? 'Scan the QR code and confirm the 6-digit code to finish setup.'
+        : isMfaEnabled
+          ? mfaCurrentLevel === 'aal2'
+            ? 'Your account is protected with an authenticator app.'
+            : 'Two-factor auth is enabled. Verify this settings session with your authenticator code to manage it.'
+          : 'Add an authenticator app for an extra security step at sign-in.';
   const finalBillingDateLabel = currentUser.billingPeriodEnd
     ? formatDate(new Date(currentUser.billingPeriodEnd))
     : 'No billing date on file';
@@ -513,16 +784,24 @@ const UserSettingsSection: React.FC = () => {
 
       const tickets = parsed
         .filter(
-          (entry: any) =>
-            entry &&
-            entry.userId === currentUser.id &&
-            typeof entry.id === 'string' &&
-            typeof entry.subject === 'string' &&
-            typeof entry.message === 'string' &&
-            typeof entry.status === 'string'
+          (entry: unknown): entry is SupportMessage =>
+            Boolean(
+              entry &&
+              typeof entry === 'object' &&
+              'userId' in entry &&
+              'id' in entry &&
+              'subject' in entry &&
+              'message' in entry &&
+              'status' in entry &&
+              (entry as SupportMessage).userId === currentUser.id &&
+              typeof (entry as SupportMessage).id === 'string' &&
+              typeof (entry as SupportMessage).subject === 'string' &&
+              typeof (entry as SupportMessage).message === 'string' &&
+              typeof (entry as SupportMessage).status === 'string'
+            )
         )
-        .sort((a: any, b: any) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
-        .slice(0, 5) as SupportMessage[];
+        .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+        .slice(0, 5);
 
       setRecentSupportTickets(tickets);
     } catch (error) {
@@ -1023,8 +1302,190 @@ const UserSettingsSection: React.FC = () => {
             </div>
             <div>
               <p className="text-xs text-[#A9B5AA] mb-1">Two-Factor Auth</p>
-              <p className="text-[#A9B5AA]">Coming soon</p>
+              <p className="text-[#A9B5AA]">
+                {isLoadingMfa ? 'Checking status...' : isMfaEnabled ? 'Enabled' : 'Not enabled'}
+              </p>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-[#1A211A] bg-[#0B0F0C] p-4 space-y-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-[#F6FFF2]">Authenticator app</p>
+                  <span
+                    className={`rounded-full border px-2.5 py-1 text-xs ${
+                      isMfaEnabled
+                        ? 'border-[#D9FF3D]/40 bg-[#D9FF3D]/10 text-[#D9FF3D]'
+                        : 'border-[#1A211A] text-[#A9B5AA]'
+                    }`}
+                  >
+                    {isLoadingMfa ? 'Loading' : isMfaEnabled ? 'Enabled' : 'Available'}
+                  </span>
+                  {mfaCurrentLevel === 'aal2' && (
+                    <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-xs text-emerald-300">
+                      Session verified
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-[#A9B5AA]">{mfaStatusCopy}</p>
+                {verifiedTotpFactors[0] && (
+                  <p className="text-xs text-[#A9B5AA]">
+                    Active factor: <span className="text-[#F6FFF2]">{verifiedTotpFactors[0].friendlyName || 'Rooted Hearts Authenticator'}</span>
+                  </p>
+                )}
+              </div>
+
+              {!isLoadingMfa && hasSupabaseSession && !pendingTotpEnrollment && (
+                isMfaEnabled ? (
+                  <button
+                    type="button"
+                    onClick={handleDisableMfa}
+                    disabled={isDisablingMfa || needsMfaStepUp}
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm ${
+                      isDisablingMfa || needsMfaStepUp
+                        ? 'border-[#1A211A] text-[#6E776E] cursor-not-allowed'
+                        : 'border-red-500/40 text-red-300 hover:bg-red-500/10'
+                    }`}
+                  >
+                    {isDisablingMfa ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    Turn Off 2FA
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void handleStartMfaEnrollment()}
+                    disabled={isStartingMfaEnrollment}
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm ${
+                      isStartingMfaEnrollment
+                        ? 'border-[#1A211A] text-[#6E776E] cursor-not-allowed'
+                        : 'border-[#D9FF3D] text-[#D9FF3D] hover:bg-[#D9FF3D]/10'
+                    }`}
+                  >
+                    {isStartingMfaEnrollment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                    Set Up 2FA
+                  </button>
+                )
+              )}
+            </div>
+
+            {mfaError && (
+              <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                {mfaError}
+              </div>
+            )}
+
+            {needsMfaStepUp && !pendingTotpEnrollment && (
+              <div className="rounded-xl border border-[#D9FF3D]/20 bg-[#111611] p-4 space-y-3">
+                <p className="text-sm font-medium text-[#F6FFF2]">Verify this settings session</p>
+                <p className="text-xs text-[#A9B5AA]">
+                  Enter the current 6-digit code from your authenticator app to manage your two-factor settings in this session.
+                </p>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={mfaStepUpCode}
+                    onChange={(event) => setMfaStepUpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="w-full rounded-lg border border-[#1A211A] bg-[#0B0F0C] px-4 py-3 text-sm text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] md:max-w-[220px]"
+                    placeholder="123456"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleVerifyMfaSession()}
+                    disabled={isVerifyingMfaSession}
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm ${
+                      isVerifyingMfaSession
+                        ? 'border-[#1A211A] text-[#6E776E] cursor-not-allowed'
+                        : 'border-[#D9FF3D] text-[#D9FF3D] hover:bg-[#D9FF3D]/10'
+                    }`}
+                  >
+                    {isVerifyingMfaSession ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                    Verify Session
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {pendingTotpEnrollment && (
+              <div className="rounded-xl border border-[#D9FF3D]/20 bg-[#111611] p-4 space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-[#F6FFF2]">Finish authenticator setup</p>
+                  <p className="text-xs text-[#A9B5AA]">
+                    Scan this QR code with your authenticator app, or paste the setup key manually if you prefer.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-[220px,1fr]">
+                  <div className="rounded-xl border border-[#1A211A] bg-white p-3">
+                    <img
+                      src={pendingTotpEnrollment.qrCode}
+                      alt="Rooted Hearts two-factor QR code"
+                      className="mx-auto h-auto w-full max-w-[180px]"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C] p-3">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-[#A9B5AA]">Authenticator Label</p>
+                      <p className="mt-1 text-sm text-[#F6FFF2]">{pendingTotpEnrollment.friendlyName}</p>
+                    </div>
+                    <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C] p-3">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-[#A9B5AA]">Manual Setup Key</p>
+                      <p className="mt-1 break-all font-mono text-sm text-[#F6FFF2]">{pendingTotpEnrollment.secret}</p>
+                    </div>
+                    <div className="rounded-lg border border-[#1A211A] bg-[#0B0F0C] p-3">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-[#A9B5AA]">Setup URI</p>
+                      <p className="mt-1 break-all text-xs text-[#A9B5AA]">{pendingTotpEnrollment.uri}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={pendingTotpEnrollment.verifyCode}
+                    onChange={(event) =>
+                      setPendingTotpEnrollment((previous) =>
+                        previous
+                          ? {
+                              ...previous,
+                              verifyCode: event.target.value.replace(/\D/g, '').slice(0, 6),
+                            }
+                          : previous
+                      )
+                    }
+                    className="w-full rounded-lg border border-[#1A211A] bg-[#0B0F0C] px-4 py-3 text-sm text-[#F6FFF2] focus:outline-none focus:border-[#D9FF3D] md:max-w-[220px]"
+                    placeholder="Enter 6-digit code"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleVerifyPendingMfaEnrollment()}
+                    disabled={isVerifyingMfaEnrollment}
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm ${
+                      isVerifyingMfaEnrollment
+                        ? 'border-[#1A211A] text-[#6E776E] cursor-not-allowed'
+                        : 'border-[#D9FF3D] text-[#D9FF3D] hover:bg-[#D9FF3D]/10'
+                    }`}
+                  >
+                    {isVerifyingMfaEnrollment ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                    Confirm Code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleCancelPendingMfaEnrollment()}
+                    className="inline-flex items-center justify-center rounded-lg border border-[#1A211A] px-4 py-2 text-sm text-[#A9B5AA] hover:text-[#F6FFF2]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 bg-[#0B0F0C] border border-[#1A211A] rounded-xl">

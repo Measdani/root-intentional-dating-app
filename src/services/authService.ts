@@ -100,6 +100,10 @@ export const signOutAndClearLocalUser = async (): Promise<void> => {
 };
 
 export const authService = {
+  async getSession() {
+    return supabase.auth.getSession();
+  },
+
   async signUpWithPassword(email: string, password: string) {
     return supabase.auth.signUp({
       email: email.trim().toLowerCase(),
@@ -118,6 +122,33 @@ export const authService = {
     return supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: getPasswordResetRedirectUrl(),
     });
+  },
+
+  async listMfaFactors() {
+    return supabase.auth.mfa.listFactors();
+  },
+
+  async getAuthenticatorAssuranceLevel() {
+    return supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  },
+
+  async enrollTotpFactor(friendlyName?: string) {
+    return supabase.auth.mfa.enroll({
+      factorType: 'totp',
+      issuer: 'Rooted Hearts',
+      friendlyName,
+    });
+  },
+
+  async challengeAndVerifyMfaFactor(factorId: string, code: string) {
+    return supabase.auth.mfa.challengeAndVerify({
+      factorId,
+      code: code.trim(),
+    });
+  },
+
+  async unenrollMfaFactor(factorId: string) {
+    return supabase.auth.mfa.unenroll({ factorId });
   },
 
   async preparePasswordRecovery() {
