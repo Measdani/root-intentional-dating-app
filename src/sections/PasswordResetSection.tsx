@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import {
   authService,
   clearPasswordResetUrlState,
+  getAuthErrorMessage,
   signOutSupabaseSession,
 } from '@/services/authService';
 
@@ -86,7 +87,7 @@ const PasswordResetSection: React.FC = () => {
     try {
       const { error: resetError } = await authService.sendPasswordResetEmail(trimmedEmail);
       if (resetError) {
-        setError(resetError.message);
+        setError(getAuthErrorMessage(resetError, 'password-reset'));
         return;
       }
 
@@ -120,7 +121,7 @@ const PasswordResetSection: React.FC = () => {
     try {
       const { error: updateError } = await authService.updatePassword(newPassword);
       if (updateError) {
-        setError(updateError.message);
+        setError(getAuthErrorMessage(updateError, 'password-update'));
         return;
       }
 

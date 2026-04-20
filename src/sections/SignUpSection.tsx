@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '@/store/AppContext';
 import AuthPoolTabs from '@/components/AuthPoolTabs';
 import { communityIdToPoolId, persistUserPoolMembership, useCommunity } from '@/modules';
-import { authService, signOutSupabaseSession } from '@/services/authService';
+import {
+  authService,
+  getAuthErrorMessage,
+  signOutSupabaseSession,
+} from '@/services/authService';
 import { userService } from '@/services/userService';
 import { accountEnforcementService } from '@/services/accountEnforcementService';
 import { pendingSignupService } from '@/services/pendingSignupService';
@@ -551,9 +555,10 @@ const SignUpSection: React.FC = () => {
           return;
         }
 
-        console.warn('Supabase auth sign up failed:', signUpError.message);
-        setErrors({ submit: signUpError.message || 'Account creation failed. Please try again.' });
-        toast.error(signUpError.message || 'Account creation failed. Please try again.');
+        const message = getAuthErrorMessage(signUpError, 'sign-up');
+        console.warn('Supabase auth sign up failed:', signUpError);
+        setErrors({ submit: message });
+        toast.error(message);
         return;
       }
 

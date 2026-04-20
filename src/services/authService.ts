@@ -2,6 +2,111 @@ import { supabase } from '@/lib/supabase';
 
 const PASSWORD_RESET_VIEW = 'password-reset';
 const EMAIL_CONFIRMATION_NOTICE_KEY = 'rooted_email_confirmation_notice';
+const PLACEHOLDER_ERROR_VALUES = new Set(['{}', '[]', 'null', 'undefined']);
+
+type AuthErrorContext = 'general' | 'sign-up' | 'password-reset' | 'password-update';
+
+const sanitizeErrorText = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed || PLACEHOLDER_ERROR_VALUES.has(trimmed)) return null;
+  return trimmed;
+};
+
+const parseErrorJson = (value: string): unknown => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+const collectErrorMessages = (value: unknown, depth = 0): string[] => {
+  if (depth > 2 || value == null) return [];
+
+  const direct = sanitizeErrorText(value);
+  if (direct) {
+    const parsed = parseErrorJson(direct);
+    if (parsed && parsed !== value) {
+      const nested = collectErrorMessages(parsed, depth + 1);
+      if (nested.length > 0) return nested;
+    }
+    return [direct];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((entry) => collectErrorMessages(entry, depth + 1));
+  }
+
+  if (typeof value === 'object') {
+    const candidateKeys = [
+      'message',
+      'msg',
+      'error',
+      'error_description',
+      'description',
+      'details',
+      'detail',
+      'hint',
+      'code',
+      'statusText',
+    ] as const;
+
+    const collected = candidateKeys.flatMap((key) =>
+      collectErrorMessages((value as Record<string, unknown>)[key], depth + 1)
+    );
+
+    if (collected.length > 0) return collected;
+  }
+
+  return [];
+};
+
+const getAuthFallbackMessage = (context: AuthErrorContext): string => {
+  switch (context) {
+    case 'sign-up':
+      return "We couldn't create the account or send the confirmation email. Check your Supabase SMTP sender address, Zoho app password, and verified From email, then try again.";
+    case 'password-reset':
+      return "We couldn't send the password reset email. Check your Supabase SMTP sender address, Zoho app password, and verified From email, then try again.";
+    case 'password-update':
+      return "We couldn't update your password right now. Please try again.";
+    default:
+      return 'Something went wrong. Please try again.';
+  }
+};
+
+export const getAuthErrorMessage = (
+  error: unknown,
+  context: AuthErrorContext = 'general'
+): string => {
+  const parts = Array.from(new Set(collectErrorMessages(error)));
+  const combined = parts.join(' ').trim();
+
+  if (!combined) return getAuthFallbackMessage(context);
+
+  const normalized = combined.toLowerCase();
+  const looksLikeEmailDeliveryError =
+    normalized.includes('smtp') ||
+    normalized.includes('mail') ||
+    normalized.includes('email') ||
+    normalized.includes('sender') ||
+    normalized.includes('from address') ||
+    normalized.includes('invalid login') ||
+    normalized.includes('authentication failed') ||
+    normalized.includes('535') ||
+    normalized.includes('550');
+
+  if (
+    (context === 'sign-up' || context === 'password-reset') &&
+    looksLikeEmailDeliveryError &&
+    !normalized.includes('check your supabase smtp')
+  ) {
+    return `${combined} Check your Supabase SMTP sender address, Zoho app password, and verified From email.`;
+  }
+
+  return combined;
+};
 
 const getHashParams = (): URLSearchParams => {
   if (typeof window === 'undefined') return new URLSearchParams();
