@@ -259,12 +259,12 @@ const AppContent: React.FC = () => {
           <main className="relative">
             <div className="grain-overlay" />
             <HeroSection />
-            <LandingDatingStyleQuiz />
             <ProblemSection />
             <CommunityBlogPreviewSection />
             <AlignmentSection />
             <FamilySection />
             <GrowthSection />
+            <LandingDatingStyleQuiz />
             <MembershipSection />
           </main>
         );
