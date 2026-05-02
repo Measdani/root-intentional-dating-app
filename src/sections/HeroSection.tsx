@@ -33,7 +33,7 @@ const HeroSection: React.FC = () => {
   }, []);
 
   const scrollToNext = () => {
-    const nextSection = document.getElementById('section-problem');
+    const nextSection = document.getElementById('section-dating-style-quiz');
     if (nextSection) {
       nextSection.scrollIntoView({ behavior: 'smooth' });
     }
@@ -181,14 +181,24 @@ const HeroSection: React.FC = () => {
             >
               {activeCommunity.heroTagline}
             </p>
-            <button
-              onClick={openWaitlistSurvey}
-              className={`inline-flex items-center justify-center rounded-xl border border-[#D9FF3D]/60 bg-[#D9FF3D]/10 px-5 py-2.5 text-sm font-medium text-[#D9FF3D] transition-all hover:bg-[#D9FF3D]/20 ${
+            <div
+              className={`flex flex-col items-center justify-center gap-3 transition-all duration-700 delay-700 sm:flex-row ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
             >
-              LGBTQ+ Waitlist + Survey
-            </button>
+              <button
+                onClick={scrollToNext}
+                className="inline-flex items-center justify-center rounded-xl bg-[#D9FF3D] px-5 py-2.5 text-sm font-semibold text-[#0B0F0C] transition-all hover:scale-[1.02]"
+              >
+                Take Dating Style Quiz
+              </button>
+              <button
+                onClick={openWaitlistSurvey}
+                className="inline-flex items-center justify-center rounded-xl border border-[#D9FF3D]/60 bg-[#D9FF3D]/10 px-5 py-2.5 text-sm font-medium text-[#D9FF3D] transition-all hover:bg-[#D9FF3D]/20"
+              >
+                LGBTQ+ Waitlist + Survey
+              </button>
+            </div>
           </div>
         </div>
       </div>
