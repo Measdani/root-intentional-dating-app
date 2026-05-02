@@ -6,6 +6,7 @@ import { AdminProvider, useAdmin } from '@/store/AdminContext';
 import { Toaster } from 'sonner';
 import HeroSection from '@/sections/HeroSection';
 import ProblemSection from '@/sections/ProblemSection';
+import LandingDatingStyleQuiz from '@/sections/LandingDatingStyleQuiz';
 import AssessmentSection from '@/sections/AssessmentSection';
 import CommunityBlogPreviewSection from '@/sections/CommunityBlogPreviewSection';
 import AssessmentResultSection from '@/sections/AssessmentResultSection';
@@ -258,8 +259,8 @@ const AppContent: React.FC = () => {
           <main className="relative">
             <div className="grain-overlay" />
             <HeroSection />
+            <LandingDatingStyleQuiz />
             <ProblemSection />
-            <AssessmentSection />
             <CommunityBlogPreviewSection />
             <AlignmentSection />
             <FamilySection />
