@@ -98,20 +98,22 @@ const InboxSection: React.FC = () => {
       case 'pending_response':
         return {
           label: latestFromCurrentUser ? 'Waiting for response' : 'Respond',
-          color: latestFromCurrentUser ? 'bg-amber-600 text-white' : 'bg-blue-600 text-white',
+          color: latestFromCurrentUser
+            ? 'bg-amber-400/15 text-amber-300 border border-amber-400/25'
+            : 'bg-sky-400/15 text-sky-300 border border-sky-400/25',
           icon: MessageCircle,
         };
       case 'both_messaged':
       case 'awaiting_consent':
         return {
           label: 'Photos Ready',
-          color: 'bg-yellow-600 text-white',
+          color: 'bg-[#D9FF3D]/15 text-[#D9FF3D] border border-[#D9FF3D]/25',
           icon: Clock,
         };
       case 'photos_unlocked':
         return {
           label: 'Connected',
-          color: 'bg-green-600 text-white',
+          color: 'bg-emerald-400/15 text-emerald-300 border border-emerald-400/25',
           icon: Check,
         };
       default:
@@ -148,11 +150,11 @@ const InboxSection: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
-            onClick={() => setCurrentView(currentUser.assessmentPassed ? 'browse' : 'growth-mode')}
+            onClick={() => setCurrentView('home')}
             className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back</span>
+            <span className="text-sm">Home</span>
           </button>
 
           <div className="text-center">
@@ -215,22 +217,22 @@ const InboxSection: React.FC = () => {
         {getUnreadNotifications().map(notification => (
           <div
             key={notification.id}
-            className={`mb-6 p-4 rounded-lg border-l-4 ${
+            className={`mb-4 rounded-xl border-l-4 px-4 py-3 ${
               notification.type === 'warning'
-                ? 'bg-blue-600/10 border-blue-500 text-blue-100'
+                ? 'border-sky-400 bg-sky-400/10'
                 : notification.type === 'suspension'
-                ? 'bg-orange-600/10 border-orange-500 text-orange-100'
-                : 'bg-red-600/10 border-red-500 text-red-100'
+                ? 'border-amber-400 bg-amber-400/10'
+                : 'border-red-400 bg-red-400/10'
             }`}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <h3 className="font-medium mb-1">{notification.title}</h3>
-                <p className="text-sm opacity-90">{notification.message}</p>
+                <h3 className="text-sm font-medium text-[#F6FFF2] mb-0.5">{notification.title}</h3>
+                <p className="text-sm text-[#A9B5AA]">{notification.message}</p>
               </div>
               <button
                 onClick={() => markNotificationAsRead(notification.id)}
-                className="text-xs opacity-60 hover:opacity-100 transition-opacity ml-4 whitespace-nowrap"
+                className="text-xs text-[#6E776E] hover:text-[#A9B5AA] transition-colors whitespace-nowrap"
               >
                 Dismiss
               </button>

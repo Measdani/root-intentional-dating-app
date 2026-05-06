@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useApp } from '@/store/AppContext';
 import { getRelationshipModeSnapshot, useCommunity } from '@/modules';
-import { MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag, BookOpen } from 'lucide-react';
+import { MapPin, Heart, MessageCircle, Shield, Users, Lock, Flag, BookOpen, ArrowLeft } from 'lucide-react';
 import ExpressInterestModal from '@/components/ExpressInterestModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
@@ -12,7 +12,6 @@ import {
   getRecoveredBadgeCollections,
   getPartnerJourneyBadgeLabel,
 } from '@/services/partnerJourneyBadgeService';
-import { PATH_LABELS } from '@/lib/pathways';
 import { openExclusiveModeSettings } from '@/lib/exclusiveModeNavigation';
 
 const formatGenderIdentity = (value?: UserGenderIdentity): string => {
@@ -206,13 +205,11 @@ const ProfileDetailSection: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
-            onClick={() => {
-              const view = currentUser.assessmentPassed ? 'paid-growth-mode' : 'growth-mode';
-              setCurrentView(view);
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
+            onClick={() => setCurrentView('browse')}
+            className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
           >
-            <span>{currentUser.assessmentPassed ? `${PATH_LABELS.alignment} Resources` : `${PATH_LABELS.intentional} Resources`}</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm hidden sm:inline">Browse</span>
           </button>
 
           <div className="flex items-center gap-6">
@@ -235,7 +232,7 @@ const ProfileDetailSection: React.FC = () => {
 
       {/* Profile Content */}
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-[#111611] rounded-[32px] border border-[#1A211A] overflow-hidden">
+        <div className="bg-[#111611] rounded-2xl border border-[#1A211A] overflow-hidden">
           {/* Profile Header */}
           <div className="p-8 md:p-10 border-b border-[#1A211A]">
             <div className="flex flex-col md:flex-row md:items-center gap-6">

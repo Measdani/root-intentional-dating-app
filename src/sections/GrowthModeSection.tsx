@@ -14,7 +14,7 @@ import {
   useCommunity,
 } from '@/modules';
 import { toast } from 'sonner';
-import { BookOpen, Clock, Sparkles, Brain, Target, Heart, Users, MessageCircle, Send, X } from 'lucide-react';
+import { BookOpen, Clock, Sparkles, Brain, Target, Heart, Users, MessageCircle, Send, X, ArrowLeft } from 'lucide-react';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import ReportUserModal from '@/components/ReportUserModal';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
@@ -550,6 +550,13 @@ const GrowthModeSection: React.FC = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
+          <button
+            onClick={() => setCurrentView('home')}
+            className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm hidden sm:inline">Home</span>
+          </button>
           <h1 className="font-display text-xl text-[#F6FFF2]">{PATH_LABELS.intentional}</h1>
           <button
             onClick={() => window.dispatchEvent(new Event('open-forest-assistant'))}
@@ -568,22 +575,22 @@ const GrowthModeSection: React.FC = () => {
         {getUnreadNotifications().map(notification => (
           <div
             key={notification.id}
-            className={`mb-6 p-4 rounded-lg border-l-4 ${
+            className={`mb-4 rounded-xl border-l-4 px-4 py-3 ${
               notification.type === 'warning'
-                ? 'bg-blue-600/10 border-blue-500 text-blue-100'
+                ? 'border-sky-400 bg-sky-400/10'
                 : notification.type === 'suspension'
-                ? 'bg-orange-600/10 border-orange-500 text-orange-100'
-                : 'bg-red-600/10 border-red-500 text-red-100'
+                ? 'border-amber-400 bg-amber-400/10'
+                : 'border-red-400 bg-red-400/10'
             }`}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <h3 className="font-medium mb-1">{notification.title}</h3>
-                <p className="text-sm opacity-90">{notification.message}</p>
+                <h3 className="text-sm font-medium text-[#F6FFF2] mb-0.5">{notification.title}</h3>
+                <p className="text-sm text-[#A9B5AA]">{notification.message}</p>
               </div>
               <button
                 onClick={() => markNotificationAsRead(notification.id)}
-                className="text-xs opacity-60 hover:opacity-100 transition-opacity ml-4 whitespace-nowrap"
+                className="text-xs text-[#6E776E] hover:text-[#A9B5AA] transition-colors whitespace-nowrap"
               >
                 Dismiss
               </button>
@@ -618,7 +625,7 @@ const GrowthModeSection: React.FC = () => {
               <MessageCircle className="w-4 h-4" />
               Inbox
               {unreadMessageCount > 0 && (
-                <span className="ml-1 px-2 py-0.5 bg-red-500 text-white rounded-full text-xs font-medium">
+                <span className="ml-1 px-2 py-0.5 bg-[#D9FF3D] text-[#0B0F0C] rounded-full text-xs font-medium">
                   {unreadMessageCount}
                 </span>
               )}

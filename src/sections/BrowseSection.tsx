@@ -12,7 +12,7 @@ import {
 } from '@/modules';
 import { useApp } from '@/store/AppContext';
 import { signOutAndClearLocalUser } from '@/services/authService';
-import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle, BookOpen } from 'lucide-react';
+import { MapPin, Heart, Eye, SlidersHorizontal, Lock, Mail, LogOut, HelpCircle, BookOpen, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { calculateAlignmentScore } from '@/data/users';
 import type { User, UserInteraction } from '@/types';
@@ -342,13 +342,11 @@ const BrowseSection: React.FC = () => {
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
-            onClick={() => {
-              const view = currentUser.assessmentPassed ? 'paid-growth-mode' : 'growth-mode';
-              setCurrentView(view);
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1A211A] text-[#D9FF3D] hover:bg-[#2A3A2A] transition-colors text-sm font-medium"
+            onClick={() => setCurrentView('home')}
+            className="flex items-center gap-2 text-[#A9B5AA] hover:text-[#F6FFF2] transition-colors"
           >
-            <span>{currentUser.assessmentPassed ? PATH_LABELS.alignment : PATH_LABELS.intentional}</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm hidden sm:inline">Home</span>
           </button>
 
           <div className="text-center">
@@ -360,8 +358,6 @@ const BrowseSection: React.FC = () => {
                   : 'New matching is paused while exclusive mode is active.'
                 : `${filteredUsers.length} curated matches`}
             </p>
-            {/* Current User Display */}
-            <p className="text-[10px] text-[#D9FF3D] mt-1">Logged in as: <span className="font-semibold">{currentUser.name}</span></p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -441,17 +437,17 @@ const BrowseSection: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
         {canShowRelationshipRoomShortcut && featuredGamePartner && (
-          <div className="mb-6 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-5">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-sky-200">Relationship Room</p>
+          <div className="mb-6 rounded-2xl border border-[#D9FF3D]/25 bg-[#D9FF3D]/5 p-5">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-[#D9FF3D]">Relationship Room</p>
             <h3 className="mt-1 text-lg font-semibold text-[#F6FFF2]">Couple Milestones Ready with {featuredGamePartner.name}</h3>
-            <p className="mt-1 text-sm text-sky-100">
+            <p className="mt-1 text-sm text-[#A9B5AA]">
               {featuredGameConversation
                 ? 'Launch Shared Vibe, Root / Reveal, Temp Check, and Date Offer directly from here.'
                 : 'Open your couple thread first, then milestones will start immediately.'}
             </p>
             <button
               onClick={launchRelationshipGames}
-              className="mt-4 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
+              className="mt-4 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] hover:bg-[#E8FF66] transition-colors"
             >
               {featuredGameConversation ? 'Start Couple Milestones' : 'Open Couple Thread'}
             </button>
@@ -482,24 +478,24 @@ const BrowseSection: React.FC = () => {
         )}
 
         {shouldShowFeaturedDateOffer && featuredDateOffer?.proposal && featuredGamePartner && (
-          <div className="mb-6 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-200">
+          <div className="mb-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/8 p-5">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-emerald-300">
               {featuredDateOffer.status === 'confirmed' ? 'Confirmed Date' : 'Date Offer'}
             </p>
             <h3 className="mt-1 text-lg font-semibold text-[#F6FFF2]">{featuredDateOfferTitle}</h3>
-            <p className="mt-1 text-sm text-emerald-100">{featuredDateOfferDescription}</p>
-            <div className="mt-4 grid gap-2 text-sm text-[#F6FFF2] sm:grid-cols-2">
-              <p>Plan: <span className="text-emerald-100">{featuredDateOffer.proposal.title}</span></p>
-              <p>When: <span className="text-emerald-100">{formatDateOfferDateTime(featuredDateOffer.proposal.dateTime)}</span></p>
-              <p>Location: <span className="text-emerald-100">{featuredDateOffer.proposal.location}</span></p>
-              <p>Length: <span className="text-emerald-100">{featuredDateOffer.proposal.durationMinutes} minutes</span></p>
+            <p className="mt-1 text-sm text-[#A9B5AA]">{featuredDateOfferDescription}</p>
+            <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+              <p className="text-[#A9B5AA]">Plan: <span className="text-[#F6FFF2]">{featuredDateOffer.proposal.title}</span></p>
+              <p className="text-[#A9B5AA]">When: <span className="text-[#F6FFF2]">{formatDateOfferDateTime(featuredDateOffer.proposal.dateTime)}</span></p>
+              <p className="text-[#A9B5AA]">Location: <span className="text-[#F6FFF2]">{featuredDateOffer.proposal.location}</span></p>
+              <p className="text-[#A9B5AA]">Length: <span className="text-[#F6FFF2]">{featuredDateOffer.proposal.durationMinutes} minutes</span></p>
             </div>
             {featuredDateOffer.proposal.safetyNotes && (
-              <p className="mt-3 text-sm text-emerald-100">Safety notes: {featuredDateOffer.proposal.safetyNotes}</p>
+              <p className="mt-3 text-sm text-[#A9B5AA]">Safety notes: {featuredDateOffer.proposal.safetyNotes}</p>
             )}
             <button
               onClick={launchRelationshipGames}
-              className="mt-4 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] hover:scale-[1.02] transition-transform"
+              className="mt-4 rounded-lg bg-[#D9FF3D] px-4 py-2 text-sm font-medium text-[#0B0F0C] hover:bg-[#E8FF66] transition-colors"
             >
               {featuredDateOfferCtaLabel}
             </button>
@@ -510,22 +506,22 @@ const BrowseSection: React.FC = () => {
         {getUnreadNotifications().map(notification => (
           <div
             key={notification.id}
-            className={`mb-6 p-4 rounded-lg border-l-4 ${
+            className={`mb-4 rounded-xl border-l-4 px-4 py-3 ${
               notification.type === 'warning'
-                ? 'bg-blue-600/10 border-blue-500 text-blue-100'
+                ? 'border-sky-400 bg-sky-400/10'
                 : notification.type === 'suspension'
-                ? 'bg-orange-600/10 border-orange-500 text-orange-100'
-                : 'bg-red-600/10 border-red-500 text-red-100'
+                ? 'border-amber-400 bg-amber-400/10'
+                : 'border-red-400 bg-red-400/10'
             }`}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <h3 className="font-medium mb-1">{notification.title}</h3>
-                <p className="text-sm opacity-90">{notification.message}</p>
+                <h3 className="text-sm font-medium text-[#F6FFF2] mb-0.5">{notification.title}</h3>
+                <p className="text-sm text-[#A9B5AA]">{notification.message}</p>
               </div>
               <button
                 onClick={() => markNotificationAsRead(notification.id)}
-                className="text-xs opacity-60 hover:opacity-100 transition-opacity ml-4 whitespace-nowrap"
+                className="text-xs text-[#6E776E] hover:text-[#A9B5AA] transition-colors whitespace-nowrap"
               >
                 Dismiss
               </button>
@@ -729,7 +725,7 @@ const BrowseSection: React.FC = () => {
                 return (
                 <div
                   key={user.id}
-                  className="bg-[#111611] rounded-[24px] border border-[#1A211A] overflow-hidden hover:border-[#D9FF3D]/30 transition-all duration-300 group"
+                  className="bg-[#111611] rounded-2xl border border-[#1A211A] overflow-hidden hover:border-[#D9FF3D]/30 transition-all duration-300 group"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   {/* Card Header */}
@@ -741,10 +737,10 @@ const BrowseSection: React.FC = () => {
                         </Badge>
                       )}
                       {hasExpressedInterest(user.id) && !conversation && (
-                        <Badge className="w-fit bg-green-600 text-white">Interest Sent</Badge>
+                        <Badge className="w-fit border border-emerald-400/25 bg-emerald-400/15 text-emerald-300">Interest Sent</Badge>
                       )}
                       {conversation && conversation.status === 'pending_response' && (
-                        <Badge className="w-fit bg-amber-600 text-white">Waiting for response</Badge>
+                        <Badge className="w-fit border border-amber-400/25 bg-amber-400/15 text-amber-300">Waiting for response</Badge>
                       )}
                     </div>
 
