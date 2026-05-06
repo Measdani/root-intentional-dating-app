@@ -1385,6 +1385,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (isUserAuthenticated &&
       shouldRedirect &&
+      currentView !== 'home' &&
       currentView !== 'growth-mode' &&
       currentView !== 'aware-partner' &&
       currentView !== 'intentional-partner' &&
@@ -1418,7 +1419,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser.userStatus, currentUser.assessmentPassed, currentView, isUserAuthenticated]);
 
-// Auto-redirect users who passed assessment to their Garden home
+// Auto-redirect users who passed assessment to their home when on landing
 useEffect(() => {
   if (
     isUserAuthenticated &&
@@ -1428,7 +1429,7 @@ useEffect(() => {
   ) {
     primeGardenLandingTab();
     setPreviousView(currentView);
-    setCurrentViewState('paid-growth-mode');
+    setCurrentViewState('home');
   }
 }, [currentUser.assessmentPassed, currentUser.userStatus, currentView, isUserAuthenticated]);
 
