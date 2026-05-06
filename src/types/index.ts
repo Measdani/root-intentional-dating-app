@@ -188,6 +188,7 @@ export type AppView =
   | 'user-login'
   | 'password-reset'
   | 'user-settings'
+  | 'home'
   | 'privacy-policy'
   | 'terms-of-service'
   | 'community-guidelines'

@@ -350,8 +350,7 @@ const UserLoginSection: React.FC = () => {
     return sessionUser;
   };
 
-  const getPostLoginHomeView = (passedAssessment: boolean): AppView =>
-    passedAssessment ? 'paid-growth-mode' : 'growth-mode';
+  const getPostLoginHomeView = (_passedAssessment: boolean): AppView => 'home';
 
   const primeGardenLanding = () => {
     try {

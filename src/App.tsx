@@ -36,6 +36,7 @@ import AdminReportsSection from '@/sections/AdminReportsSection';
 import AdminAssessmentsSection from '@/sections/AdminAssessmentsSection';
 import AdminContentSection from '@/sections/AdminContentSection';
 import AdminSupportSection from '@/sections/AdminSupportSection';
+import HomeDashboardSection from '@/sections/HomeDashboardSection';
 import UserLoginSection from '@/sections/UserLoginSection';
 import PasswordResetSection from '@/sections/PasswordResetSection';
 import SignUpSection from '@/sections/SignUpSection';
@@ -205,6 +206,7 @@ const AppContent: React.FC = () => {
       'paid-growth-mode',
       'user-settings',
       'clarity-room',
+      'home',
     ]);
 
     if (userProtectedViews.has(currentView) && !isUserAuthenticated) {
@@ -253,6 +255,8 @@ const AppContent: React.FC = () => {
         return <CommunityGuidelinesSection />;
       case 'clarity-room':
         return <ClarityRoomSection />;
+      case 'home':
+        return <HomeDashboardSection />;
       case 'landing':
       default:
         return (

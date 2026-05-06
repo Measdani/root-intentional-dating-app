@@ -193,6 +193,7 @@ const RESTORABLE_APP_VIEWS = new Set<AppView>([
   'conversation',
   'clarity-room',
   'user-settings',
+  'home',
   'privacy-policy',
   'terms-of-service',
   'community-guidelines',
