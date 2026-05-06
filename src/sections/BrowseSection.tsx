@@ -17,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { calculateAlignmentScore } from '@/data/users';
 import type { User, UserInteraction } from '@/types';
 import { getUserSettingsForUser } from '@/services/userSettingsService';
-import { PATH_LABELS } from '@/lib/pathways';
 import { openExclusiveModeSettings } from '@/lib/exclusiveModeNavigation';
 
 const EXCLUSIVE_LETTERS_STORAGE_KEY = 'rooted_exclusive_letters_v1';
