@@ -122,14 +122,34 @@ export const userService = {
     return mapRowToUser(data)
   },
 
+  // Safe for regular in-app use (Browse/Inbox/Profile): reads the public-safe
+  // column subset, not the raw table, so it works for every authenticated
+  // user without exposing email/billing/admin/moderation fields.
   async getAllUsers(): Promise<User[]> {
+    const { data, error } = await supabase
+      .from('user_profiles_public')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error || !data) {
+      console.warn('Failed to fetch users from Supabase:', error?.message)
+      return []
+    }
+
+    return data.map(mapRowToUser)
+  },
+
+  // Admin-only: reads the full row set, including PII/billing/moderation
+  // columns. Relies on the users_authenticated_select RLS policy, which only
+  // returns full rows to an admin (or the row owner).
+  async getAllUsersAdmin(): Promise<User[]> {
     const { data, error } = await supabase
       .from('users')
       .select('*')
       .order('created_at', { ascending: false })
 
     if (error || !data) {
-      console.warn('Failed to fetch users from Supabase:', error?.message)
+      console.warn('Failed to fetch users (admin) from Supabase:', error?.message)
       return []
     }
 

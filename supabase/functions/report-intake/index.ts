@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { resolveCallerContext } from "../_shared/accountModeration.ts";
 
 type ReportTargetType = "message" | "profile" | "photo" | "behavior" | "other";
 
@@ -541,6 +542,28 @@ serve(async (request) => {
     });
   }
 
+  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false },
+  });
+
+  let callerContext;
+  try {
+    callerContext = await resolveCallerContext(adminClient, request);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Authentication required";
+    const status =
+      message === "Missing authentication token" || message === "Authentication required"
+        ? 401
+        : 500;
+    return jsonResponse(status, { error: message });
+  }
+
+  // The reporter must be the authenticated caller, never a client-supplied
+  // value — otherwise anyone can file reports attributed to any user id.
+  if (payload.reporter_app_user_id !== callerContext.callerUser.id && !callerContext.callerIsAdmin) {
+    return jsonResponse(403, { error: "reporter_app_user_id must match the authenticated caller" });
+  }
+
   if (payload.dry_run) {
     const dryDecision = classifyReport(reasonSelected, freeText, [], null);
     return jsonResponse(200, {
@@ -551,10 +574,6 @@ serve(async (request) => {
       ...dryDecision,
     });
   }
-
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false },
-  });
 
   let reporterRhUserId: string;
   let reportedRhUserId: string;

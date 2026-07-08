@@ -162,6 +162,10 @@ const UserLoginSection: React.FC = () => {
   };
 
   const getCanonicalTestUser = (userEmail: string, checkPassword?: string): any | null => {
+    // Demo/test accounts only work in local dev — never in a deployed build,
+    // so a real visitor can never authenticate as a seeded fake profile.
+    if (!import.meta.env.DEV) return null;
+
     const tester = testUsers.find(
       (u) => u.email.toLowerCase() === userEmail.trim().toLowerCase()
     );
@@ -698,7 +702,7 @@ const UserLoginSection: React.FC = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="maya@test.com"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-[#0B0F0C] border-[#1A211A] text-[#F6FFF2]"
@@ -753,35 +757,39 @@ const UserLoginSection: React.FC = () => {
             </button>
           </p>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#1A211A]"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-[#111611] text-[#A9B5AA]">Demo Accounts</span>
-            </div>
-          </div>
+          {import.meta.env.DEV && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#1A211A]"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-[#111611] text-[#A9B5AA]">Demo Accounts (dev only)</span>
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Button
-              onClick={() => handleDemoLogin('maya@test.com')}
-              className="w-full bg-green-600/20 text-green-300 border border-green-500/30 hover:bg-green-600/30"
-            >
-              ✓ Maya (Passed Assessment)
-            </Button>
-            <Button
-              onClick={() => handleDemoLogin('alex@test.com')}
-              className="w-full bg-green-600/20 text-green-300 border border-green-500/30 hover:bg-green-600/30"
-            >
-              ✓ Alex (Passed Assessment)
-            </Button>
-            <Button
-              onClick={() => handleDemoLogin('james@test.com')}
-              className="w-full bg-orange-600/20 text-orange-300 border border-orange-500/30 hover:bg-orange-600/30"
-            >
-              ✗ James (Needs Growth)
-            </Button>
-          </div>
+              <div className="space-y-2">
+                <Button
+                  onClick={() => handleDemoLogin('maya@test.com')}
+                  className="w-full bg-green-600/20 text-green-300 border border-green-500/30 hover:bg-green-600/30"
+                >
+                  ✓ Maya (Passed Assessment)
+                </Button>
+                <Button
+                  onClick={() => handleDemoLogin('alex@test.com')}
+                  className="w-full bg-green-600/20 text-green-300 border border-green-500/30 hover:bg-green-600/30"
+                >
+                  ✓ Alex (Passed Assessment)
+                </Button>
+                <Button
+                  onClick={() => handleDemoLogin('james@test.com')}
+                  className="w-full bg-orange-600/20 text-orange-300 border border-orange-500/30 hover:bg-orange-600/30"
+                >
+                  ✗ James (Needs Growth)
+                </Button>
+              </div>
+            </>
+          )}
 
           <div className="pt-4 border-t border-[#1A211A]">
             <button

@@ -1,2 +1,8 @@
 node_modules
 supabase/.temp
+dist
+.env
+.env.local
+.env.*.local
+.npm-cache
+.codex-*

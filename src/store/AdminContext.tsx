@@ -244,7 +244,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Load users: try Supabase first, fall back to localStorage
     (async () => {
       try {
-        const supabaseUsers = await userService.getAllUsers();
+        const supabaseUsers = await userService.getAllUsersAdmin();
         if (supabaseUsers.length > 0) {
           // Map User to UserWithAdminData format
           const adminUsers = supabaseUsers.map(user => ({

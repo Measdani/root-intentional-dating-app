@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { resolveCallerContext } from "../_shared/accountModeration.ts";
 
 type AdminCopilotAction =
   | "generate_daily_summary"
@@ -249,6 +250,22 @@ serve(async (request) => {
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
   });
+
+  let callerContext;
+  try {
+    callerContext = await resolveCallerContext(adminClient, request);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Authentication required";
+    const status =
+      message === "Missing authentication token" || message === "Authentication required"
+        ? 401
+        : 500;
+    return jsonResponse(status, { error: message });
+  }
+
+  if (!callerContext.callerIsAdmin) {
+    return jsonResponse(403, { error: "Admin access is required" });
+  }
 
   const [blockedMessagesRes, profilesNeedsEditsRes, reportsRes, urgentReportsRes, risingRiskRes] =
     await Promise.all([
