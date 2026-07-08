@@ -8,7 +8,7 @@ import { getLatestUniqueInteractions } from '@/lib/interactions';
 import { openExclusiveModeSettings } from '@/lib/exclusiveModeNavigation';
 
 const InboxSection: React.FC = () => {
-  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, startRelationshipRoom, reportUser, blockUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
+  const { setCurrentView, currentUser, interactions, users, setSelectedConversation, startRelationshipRoom, reportUser, blockUser, isUserBlocked, isBlockedByUser, setShowSupportModal, getUnreadNotifications, markNotificationAsRead, reloadNotifications } = useApp();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingUser, setReportingUser] = useState<User | null>(null);
@@ -68,9 +68,12 @@ const InboxSection: React.FC = () => {
           conversation.toUserId === relationshipModeSnapshot.exclusivePartnerId
       )
     : uniqueConversations;
-  const visibleConversations = modeFilteredConversations.filter((interest) =>
-    users.some((user) => user.id === getOtherUserId(interest))
-  );
+  const visibleConversations = modeFilteredConversations.filter((interest) => {
+    const otherUserId = getOtherUserId(interest);
+    if (!users.some((user) => user.id === otherUserId)) return false;
+    if (isUserBlocked(otherUserId) || isBlockedByUser(otherUserId)) return false;
+    return true;
+  });
 
   console.log('InboxSection - uniqueConversations:', uniqueConversations);
 

@@ -9,7 +9,7 @@ import RelationshipMilestonesPanel from '@/components/RelationshipMilestonesPane
 import MeetingSafetyButton from '@/components/MeetingSafetyButton';
 
 const ConversationSection: React.FC = () => {
-  const { selectedConversation, setCurrentView, respondToInterest, markMessagesAsRead, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked, applyMilestoneAction } = useApp();
+  const { selectedConversation, setCurrentView, respondToInterest, markMessagesAsRead, grantPhotoConsent, withdrawPhotoConsent, users, currentUser, reportUser, blockUser, isUserBlocked, isBlockedByUser, applyMilestoneAction } = useApp();
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showConsentPrompt, setShowConsentPrompt] = useState(true);
@@ -73,8 +73,8 @@ const ConversationSection: React.FC = () => {
     );
   }
 
-  // Prevent viewing conversations with blocked users
-  if (isUserBlocked(otherUserId)) {
+  // Prevent viewing conversations with blocked users, in either direction
+  if (isUserBlocked(otherUserId) || isBlockedByUser(otherUserId)) {
     return (
       <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center">
         <div className="text-center">

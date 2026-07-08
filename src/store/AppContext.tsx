@@ -18,6 +18,7 @@ import { reportService } from '@/services/reportService';
 import { triageReportIntake } from '@/services/reportIntakeService';
 import { supportService } from '@/services/supportService';
 import { userService } from '@/services/userService';
+import { blockService } from '@/services/blockService';
 import { moderateFirstMessage } from '@/services/firstMessageSafetyService';
 import { evaluateConciergeForInteraction } from '@/services/conciergeService';
 import { enrichConciergeSnapshotWithAI } from '@/services/conciergeAiService';
@@ -1131,16 +1132,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       interactionsHydratedRef.current = true;
     }
 
-    // Load blocked users
-    try {
-      const savedBlocked = localStorage.getItem('rooted_blocked_users');
-      if (savedBlocked) {
-        setBlockedUsers(JSON.parse(savedBlocked));
-      }
-    } catch (error) {
-      console.error('Failed to load blocked users:', error);
-    }
-
     return () => {
       // Clean up timeouts on unmount
       timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
@@ -1157,37 +1148,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [interactions]);
 
-  // Save blocked users to localStorage
+  // Blocking is stored server-side (user_blocks table) so it's visible to the
+  // blocked party's own session, not just the browser that created the block.
   useEffect(() => {
-    try {
-      localStorage.setItem('rooted_blocked_users', JSON.stringify(blockedUsers));
-    } catch (error) {
-      console.error('Failed to save blocked users:', error);
-    }
-  }, [blockedUsers]);
+    if (!currentUser?.id) return;
+    let cancelled = false;
 
-  // Load users who have blocked current user
-  useEffect(() => {
-    try {
-      const allBlocks = JSON.parse(localStorage.getItem('rooted_all_blocks') || '{}');
-      const usersWhoBlockedMe = allBlocks[currentUser.id] || [];
-      console.log(`👤 Loading blockedByUsers for ${currentUser.id}:`, usersWhoBlockedMe);
-      setBlockedByUsers(usersWhoBlockedMe);
-    } catch (error) {
-      console.error('Failed to load blocked by users:', error);
-    }
+    (async () => {
+      const [blockedByMe, blockedMe] = await Promise.all([
+        blockService.getBlockedByMe(currentUser.id),
+        blockService.getBlockedMe(currentUser.id),
+      ]);
+      if (cancelled) return;
+      setBlockedUsers(blockedByMe);
+      setBlockedByUsers(blockedMe);
+    })();
 
-    // Listen for blocks-updated events (when another user blocks current user)
-    const handleBlocksUpdated = (event: any) => {
-      const allBlocks = event.detail;
-      const usersWhoBlockedMe = allBlocks[currentUser.id] || [];
-      console.log(`🔄 Blocks updated for ${currentUser.id}:`, usersWhoBlockedMe);
-      setBlockedByUsers(usersWhoBlockedMe);
+    return () => {
+      cancelled = true;
     };
-
-    window.addEventListener('blocks-updated', handleBlocksUpdated);
-    return () => window.removeEventListener('blocks-updated', handleBlocksUpdated);
-  }, [currentUser.id]);
+  }, [currentUser?.id]);
 
   // Load notifications for current user
   useEffect(() => {
@@ -1581,6 +1561,10 @@ useEffect(() => {
   ): Promise<{ sent: boolean; feedback?: string }> => {
     console.log('expressInterest called:', { toUserId, message, currentUserId: currentUser.id });
 
+    if (blockedUsers.includes(toUserId) || blockedByUsers.includes(toUserId)) {
+      return { sent: false, feedback: 'You can no longer contact this person.' };
+    }
+
     const blockReason = getNewMatchBlockReason(currentUser.id, toUserId);
     if (blockReason) {
       return { sent: false, feedback: blockReason };
@@ -1669,12 +1653,16 @@ useEffect(() => {
       sent: true,
       feedback: moderationResult.resetMessage ?? moderationResult.rewritePrompt ?? undefined,
     };
-  }, [currentUser.id, currentUser.email, interactions, users]);
+  }, [currentUser.id, currentUser.email, interactions, users, blockedUsers, blockedByUsers]);
 
   const respondToInterest = useCallback(async (
     fromUserId: string,
     message: string
   ): Promise<{ sent: boolean; feedback?: string }> => {
+    if (blockedUsers.includes(fromUserId) || blockedByUsers.includes(fromUserId)) {
+      return { sent: false, feedback: 'You can no longer contact this person.' };
+    }
+
     const blockReason = getMessageBlockReason(currentUser.id, fromUserId);
     if (blockReason) {
       return { sent: false, feedback: blockReason };
@@ -1846,7 +1834,7 @@ useEffect(() => {
       sent: true,
       feedback: moderationResult.resetMessage ?? moderationResult.rewritePrompt ?? undefined,
     };
-  }, [currentUser.id, currentUser.email, users, maybeEnrichSnapshotsWithAI, maybeCreateConciergeAutoReports]);
+  }, [currentUser.id, currentUser.email, users, maybeEnrichSnapshotsWithAI, maybeCreateConciergeAutoReports, blockedUsers, blockedByUsers]);
 
   const startRelationshipRoom = useCallback((partnerUserId: string): UserInteraction | null => {
     const blockReason = getMessageBlockReason(currentUser.id, partnerUserId);
@@ -2308,10 +2296,13 @@ useEffect(() => {
       console.error('Failed to save report:', error);
     }
 
-    // Dual-write to Supabase for persistent storage
-    reportService.createReport(report).catch(err => {
-      console.warn('Supabase report write failed (localStorage fallback active):', err)
-    })
+    // Persist to Supabase — this is the durable copy admins actually see, so
+    // a failure here must surface to the caller rather than be swallowed.
+    const { error: reportWriteError } = await reportService.createReport(report);
+    if (reportWriteError) {
+      console.warn('Supabase report write failed:', reportWriteError);
+      throw new Error('Failed to submit report. Please try again.');
+    }
 
     const targetType: 'message' | 'profile' | 'behavior' =
       reason === 'fake-profile'
@@ -2339,33 +2330,27 @@ useEffect(() => {
 
   // Block a user
   const blockUser = useCallback((userId: string) => {
-    setBlockedUsers(prev => {
-      if (prev.includes(userId)) return prev;
-      return [...prev, userId];
-    });
+    setBlockedUsers(prev => (prev.includes(userId) ? prev : [...prev, userId]));
 
-    // Also record this block globally so the blocked user knows they're blocked by current user
-    try {
-      const allBlocks = JSON.parse(localStorage.getItem('rooted_all_blocks') || '{}');
-      if (!allBlocks[userId]) {
-        allBlocks[userId] = [];
+    void blockService.blockUser(currentUser.id, userId).then((success) => {
+      if (!success) {
+        setBlockedUsers(prev => prev.filter(id => id !== userId));
+        toast.error('Could not save this block. Please try again.');
       }
-      if (!allBlocks[userId].includes(currentUser.id)) {
-        allBlocks[userId].push(currentUser.id);
-        localStorage.setItem('rooted_all_blocks', JSON.stringify(allBlocks));
-        console.log(`✅ Block recorded: ${currentUser.id} blocked by ${userId}. AllBlocks:`, allBlocks);
-        // Dispatch event so other tabs/users can reload
-        window.dispatchEvent(new CustomEvent('blocks-updated', { detail: allBlocks }));
-      }
-    } catch (e) {
-      console.error('Error saving block record:', e);
-    }
+    });
   }, [currentUser.id]);
 
   // Unblock a user
   const unblockUser = useCallback((userId: string) => {
     setBlockedUsers(prev => prev.filter(id => id !== userId));
-  }, []);
+
+    void blockService.unblockUser(currentUser.id, userId).then((success) => {
+      if (!success) {
+        setBlockedUsers(prev => (prev.includes(userId) ? prev : [...prev, userId]));
+        toast.error('Could not remove this block. Please try again.');
+      }
+    });
+  }, [currentUser.id]);
 
   // Check if a user is blocked
   const isUserBlocked = useCallback((userId: string): boolean => {

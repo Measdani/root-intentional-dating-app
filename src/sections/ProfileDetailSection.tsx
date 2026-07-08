@@ -86,13 +86,22 @@ const ProfileDetailSection: React.FC = () => {
 
   // Show message if report was just submitted or user is blocked
   if (reportSubmitted || isUserBlocked(selectedUser.id)) {
+    const isBlocked = isUserBlocked(selectedUser.id);
     return (
       <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center p-6">
         <div className="text-center max-w-md">
-          <h2 className="font-display text-2xl text-[#F6FFF2] mb-4">Report Submitted</h2>
+          <h2 className="font-display text-2xl text-[#F6FFF2] mb-4">
+            {reportSubmitted ? 'Report Submitted' : 'User Blocked'}
+          </h2>
           <div className="space-y-4 text-[#A9B5AA] mb-6">
-            <p>Thank you for your report. We take all reports seriously and will review this promptly.</p>
-            <p>The reported user is no longer in your search history or able to contact you.</p>
+            {reportSubmitted && (
+              <p>Thank you for your report. We take all reports seriously and will review this promptly.</p>
+            )}
+            {isBlocked ? (
+              <p>This person is blocked. They can no longer message you, and you won't see each other in search.</p>
+            ) : (
+              <p>This person has not been blocked. If you'd rather stop hearing from them, you can block them from their profile at any time.</p>
+            )}
             <p>If you need further assistance or have additional information, contact {SUPPORT_EMAIL}.</p>
           </div>
           <button
@@ -372,6 +381,17 @@ const ProfileDetailSection: React.FC = () => {
                       </button>
                     )}
                   </div>
+                ) : isBlockedByUser(selectedUser.id) ? (
+                  <div className="mb-8">
+                    <button
+                      disabled
+                      className="w-full py-3.5 bg-[#1A211A] text-[#A9B5AA] rounded-2xl font-medium cursor-not-allowed flex items-center justify-center gap-2"
+                      title="This user has blocked you"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      User blocked you
+                    </button>
+                  </div>
                 ) : (
                   <div className="mb-8 flex gap-3">
                     <button
@@ -648,12 +668,13 @@ const ProfileDetailSection: React.FC = () => {
         reportedUser={selectedUser}
         onClose={() => setShowReportModal(false)}
         onSubmit={async (reason, details, shouldBlock) => {
-          setShowReportModal(false);
           await reportUser(selectedUser.id, reason, details);
-          // Block user if checkbox is selected or if it's a safety concern
-          if (shouldBlock) {
+          // Block user if the checkbox is selected or it's a safety concern,
+          // matching the auto-block behavior in Inbox/Conversation reports.
+          if (shouldBlock || reason === 'underage' || reason === 'safety-concern') {
             blockUser(selectedUser.id, reason);
           }
+          setShowReportModal(false);
           // Show the success message screen
           setReportSubmitted(true);
         }}

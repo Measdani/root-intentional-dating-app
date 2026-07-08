@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import type { AdminUser, AdminSession, UserWithAdminData, UserStatus, UserFilters, AnalyticsSnapshot } from '@/types/admin';
 import type { AssessmentQuestion, GrowthResource, MembershipTier, Report, ReportStatus, ReportStatistics, ReportFilters, SupportMessage, SupportMessageStatistics, SupportMessageFilters } from '@/types/index';
 import { reportService } from '@/services/reportService';
@@ -417,12 +418,24 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateUserStatus = useCallback(
     (userId: string, status: UserStatus) => {
+      const previousStatus = users.find((u) => u.id === userId)?.status;
+
       setUsers((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, status } : u))
       );
       saveData();
+
+      void userService.updateUser(userId, { userStatus: status } as any).then((success) => {
+        if (!success) {
+          setUsers((prev) =>
+            prev.map((u) => (u.id === userId ? { ...u, status: previousStatus ?? u.status } : u))
+          );
+          saveData();
+          toast.error("Couldn't update this user's status. Please try again.");
+        }
+      });
     },
-    [saveData]
+    [saveData, users]
   );
 
   const deleteUser = useCallback(
@@ -505,6 +518,8 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Update report status
   const updateReportStatus = useCallback((reportId: string, status: ReportStatus) => {
+    const previous = reports.find((r) => r.id === reportId);
+
     setReports(prev =>
       prev.map(r =>
         r.id === reportId
@@ -512,7 +527,14 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           : r
       )
     );
-  }, []);
+
+    void reportService.updateReportStatus(reportId, status).then((success) => {
+      if (!success) {
+        setReports(prev => prev.map(r => (r.id === reportId && previous ? previous : r)));
+        toast.error("Couldn't update this report. Please try again.");
+      }
+    });
+  }, [reports]);
 
   // Compute report statistics
   const reportStats = useMemo((): ReportStatistics => {
@@ -572,6 +594,8 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     status: 'unread' | 'in-progress' | 'resolved',
     adminResponse?: string
   ) => {
+    const previous = supportMessages.find((m) => m.id === messageId);
+
     setSupportMessages(prev =>
       prev.map(m => m.id === messageId
         ? {
@@ -585,11 +609,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )
     );
 
-    // Dual-write to Supabase
-    supportService.updateStatus(messageId, status, adminResponse).catch(err => {
+    supportService.updateStatus(messageId, status, adminResponse).then((success) => {
+      if (!success) {
+        setSupportMessages(prev => prev.map(m => (m.id === messageId && previous ? previous : m)));
+        toast.error("Couldn't update this support message. Please try again.");
+      }
+    }).catch(err => {
       console.warn('Failed to update support message status in Supabase:', err);
+      setSupportMessages(prev => prev.map(m => (m.id === messageId && previous ? previous : m)));
+      toast.error("Couldn't update this support message. Please try again.");
     });
-  }, []);
+  }, [supportMessages]);
 
   // Compute support message statistics
   const supportMessageStats = useMemo((): SupportMessageStatistics => {

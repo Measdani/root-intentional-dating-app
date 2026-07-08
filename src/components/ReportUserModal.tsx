@@ -8,7 +8,7 @@ interface ReportUserModalProps {
   reportedUser: User | null;
   conversationId?: string;
   onClose: () => void;
-  onSubmit: (reason: ReportReason, details: string, shouldBlock: boolean) => void;
+  onSubmit: (reason: ReportReason, details: string, shouldBlock: boolean) => void | Promise<void>;
 }
 
 const REPORT_REASONS: { value: ReportReason; label: string; description: string }[] = [
@@ -65,6 +65,7 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
   const [shouldBlock, setShouldBlock] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!isOpen || !reportedUser) {
     return null;
@@ -84,13 +85,20 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      await onSubmit(selectedReason, details, shouldBlock);
+    } catch (error) {
+      setIsSubmitting(false);
+      setSubmitError(
+        error instanceof Error ? error.message : 'Failed to submit report. Please try again.'
+      );
+      return;
+    }
 
     setIsSubmitting(false);
     setIsSuccess(true);
-    onSubmit(selectedReason, details, shouldBlock);
 
     // Show success toast
     toast.success('Thank you for your report. We\'ll review this promptly.');
@@ -140,7 +148,7 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
             <p className="text-[#A9B5AA] text-sm mb-3">
               Thank you for helping keep our community safe. We'll review your report.
             </p>
-            {shouldBlock && (
+            {(shouldBlock || selectedReason === 'underage' || selectedReason === 'safety-concern') && (
               <div className="p-3 bg-[#0B0F0C]/50 rounded-lg border border-[#1A211A] text-xs text-[#A9B5AA]">
                 ✓ {reportedUser.name} has been blocked. You won't receive messages from them.
               </div>
@@ -276,6 +284,12 @@ const ReportUserModal: React.FC<ReportUserModalProps> = ({
                       <span>If this is a safety emergency, contact local authorities immediately</span>
                     </li>
                   </ul>
+                </div>
+              )}
+
+              {submitError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-300">
+                  {submitError}
                 </div>
               )}
 
