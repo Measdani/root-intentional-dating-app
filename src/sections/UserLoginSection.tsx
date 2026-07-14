@@ -800,11 +800,13 @@ const UserLoginSection: React.FC = () => {
             </button>
           </div>
 
-          <div className="bg-[#0B0F0C] p-4 rounded-lg text-xs text-[#A9B5AA]">
-            <p className="font-semibold text-[#F6FFF2] mb-2">Test Credentials:</p>
-            <p>Email: maya@test.com / alex@test.com / james@test.com</p>
-            <p>Password: password123</p>
-          </div>
+          {import.meta.env.DEV && (
+            <div className="bg-[#0B0F0C] p-4 rounded-lg text-xs text-[#A9B5AA]">
+              <p className="font-semibold text-[#F6FFF2] mb-2">Test Credentials (dev only):</p>
+              <p>Email: maya@test.com / alex@test.com / james@test.com</p>
+              <p>Password: password123</p>
+            </div>
+          )}
         </div>
       </Card>
     </div>
