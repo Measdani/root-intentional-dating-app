@@ -8,6 +8,16 @@ const normalizeFlag = (value?: string): boolean =>
 export const isSiteLockEnabled = (): boolean =>
   normalizeFlag(import.meta.env.VITE_SITE_LOCKED);
 
+// Client-visible mirror of the server-side SITE_PREVIEW_ENABLED flag used by
+// api/unlock.ts / middleware.ts. That flag lives behind an HttpOnly cookie
+// check the client JS can't read, so anything that needs to know "is this
+// deployment currently behind the preview password" (e.g. allowing seeded
+// test-account logins on preview-locked deployments only) needs its own
+// copy. Set VITE_SITE_PREVIEW_ENABLED=true on Preview env vars in Vercel
+// only — never on Production — so it turns itself off at real launch.
+export const isPreviewLockActive = (): boolean =>
+  normalizeFlag(import.meta.env.VITE_SITE_PREVIEW_ENABLED);
+
 const getSitePreviewKey = (): string =>
   import.meta.env.VITE_SITE_PREVIEW_KEY?.trim() ?? '';
 

@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { testUsers } from '@/data/testUsers';
+import { isPreviewLockActive } from '@/lib/siteLock';
 import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import type { AssessmentResult } from '@/types';
 import {
@@ -44,6 +45,12 @@ import type { AppView } from '@/types';
 
 const GROWTH_MODE_TAB_STORAGE_KEY = 'rooted_growth_mode_active_tab';
 const ADMIN_USERS_STORAGE_KEY = 'rooted-admin-users';
+
+// Seeded test accounts work in local dev, and on deployments where the
+// site-wide preview password lock is active (VITE_SITE_PREVIEW_ENABLED) —
+// never on a real public deployment, since that flag should only be set on
+// Vercel's Preview environment, not Production.
+const TEST_ACCOUNTS_ENABLED = import.meta.env.DEV || isPreviewLockActive();
 
 const UserLoginSection: React.FC = () => {
   const { setCurrentView, setAssessmentResult } = useApp();
@@ -162,9 +169,10 @@ const UserLoginSection: React.FC = () => {
   };
 
   const getCanonicalTestUser = (userEmail: string, checkPassword?: string): any | null => {
-    // Demo/test accounts only work in local dev — never in a deployed build,
-    // so a real visitor can never authenticate as a seeded fake profile.
-    if (!import.meta.env.DEV) return null;
+    // Demo/test accounts only work in local dev, or on a deployment that's
+    // still behind the preview password lock — never on a real public
+    // deployment, so a real visitor can never authenticate as a fake profile.
+    if (!TEST_ACCOUNTS_ENABLED) return null;
 
     const tester = testUsers.find(
       (u) => u.email.toLowerCase() === userEmail.trim().toLowerCase()
@@ -757,14 +765,14 @@ const UserLoginSection: React.FC = () => {
             </button>
           </p>
 
-          {import.meta.env.DEV && (
+          {TEST_ACCOUNTS_ENABLED && (
             <>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-[#1A211A]"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-[#111611] text-[#A9B5AA]">Demo Accounts (dev only)</span>
+                  <span className="px-2 bg-[#111611] text-[#A9B5AA]">Demo Accounts (dev/preview only)</span>
                 </div>
               </div>
 
@@ -800,9 +808,9 @@ const UserLoginSection: React.FC = () => {
             </button>
           </div>
 
-          {import.meta.env.DEV && (
+          {TEST_ACCOUNTS_ENABLED && (
             <div className="bg-[#0B0F0C] p-4 rounded-lg text-xs text-[#A9B5AA]">
-              <p className="font-semibold text-[#F6FFF2] mb-2">Test Credentials (dev only):</p>
+              <p className="font-semibold text-[#F6FFF2] mb-2">Test Credentials (dev/preview only):</p>
               <p>Email: maya@test.com / alex@test.com / james@test.com</p>
               <p>Password: password123</p>
             </div>
