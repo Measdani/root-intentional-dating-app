@@ -165,7 +165,7 @@ const SignUpSection: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#0B0F0C] px-5 py-8 text-[#F6FFF2] sm:px-8">
+    <main className="rh-page-background min-h-screen px-5 py-8 text-[#F6FFF2] sm:px-8">
       <div className="mx-auto max-w-lg">
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => setCurrentView('sign-up')} className="inline-flex items-center gap-2 text-sm text-[#A9B5AA] hover:text-[#D9FF3D]">

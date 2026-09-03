@@ -30,7 +30,7 @@ const NewLandingSection: React.FC = () => {
   const { setCurrentView } = useApp();
 
   return (
-    <main className="min-h-screen bg-[#0B0F0C] text-[#F6FFF2]">
+    <main className="rh-page-background min-h-screen text-[#F6FFF2]">
       <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
         <button type="button" onClick={() => setCurrentView('landing')} aria-label="Rooted Hearts home">
           <BrandLogo imageClassName="w-[104px] sm:w-[122px]" />

@@ -4,6 +4,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .rh-page-background {
+    background-color: #0b0f0c;
+    background-image:
+      linear-gradient(rgba(11, 15, 12, 0.78), rgba(11, 15, 12, 0.88)),
+      url('/rooted-hearts-background-pattern.png');
+    background-position: center top;
+    background-repeat: repeat;
+    background-size: min(900px, 100vw) auto;
+    background-attachment: fixed;
+  }
+}
+
 @layer base {
   :root {
     --background: 140 20% 4%;

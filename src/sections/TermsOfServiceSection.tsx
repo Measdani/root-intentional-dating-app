@@ -6,7 +6,7 @@ const TermsOfServiceSection: React.FC = () => {
   const { setCurrentView } = useApp();
 
   return (
-    <div className="min-h-screen bg-[#0B0F0C] text-[#F6FFF2]">
+    <div className="rh-page-background min-h-screen text-[#F6FFF2]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0B0F0C]/90 backdrop-blur-md border-b border-[#1A211A]">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">

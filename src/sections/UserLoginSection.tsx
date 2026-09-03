@@ -625,7 +625,7 @@ const UserLoginSection: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F0C] flex items-center justify-center px-4">
+    <div className="rh-page-background min-h-screen flex items-center justify-center px-4">
       <div className="absolute inset-0">
         <div className="absolute inset-0 grain-overlay" />
       </div>

@@ -120,7 +120,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F0C]">
+    <div className="rh-page-background min-h-screen">
       {renderView()}
       <ContactSupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
       <Toaster theme="dark" position="bottom-right" />

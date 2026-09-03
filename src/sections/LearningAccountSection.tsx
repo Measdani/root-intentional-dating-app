@@ -12,7 +12,7 @@ const LearningAccountSection: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#0B0F0C] px-5 py-10 text-[#F6FFF2] sm:px-8">
+    <main className="rh-page-background min-h-screen px-5 py-10 text-[#F6FFF2] sm:px-8">
       <div className="mx-auto max-w-2xl">
         <button type="button" onClick={() => setCurrentView('home')} className="inline-flex items-center gap-2 text-sm text-[#A9B5AA] hover:text-[#D9FF3D]"><ArrowLeft className="h-4 w-4" /> Back to learning</button>
         <h1 className="mt-10 font-display text-5xl">My account</h1>
