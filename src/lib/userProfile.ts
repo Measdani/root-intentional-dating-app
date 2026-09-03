@@ -73,6 +73,10 @@ export const normalizeUserProfile = (user: Partial<User>): User => {
       typeof user.guidelinesAcknowledgedAt === 'number' ? user.guidelinesAcknowledgedAt : undefined,
     moderationNote: user.moderationNote,
     membershipStatus: user.membershipStatus ?? 'active',
+    accessPlan: user.accessPlan ?? 'lifetime',
+    accessStatus: user.accessStatus ?? 'active',
+    accessGrantedAt: user.accessGrantedAt,
+    lastViewingPerspective: user.lastViewingPerspective ?? 'female',
     cancelAtPeriodEnd:
       typeof user.cancelAtPeriodEnd === 'boolean' ? user.cancelAtPeriodEnd : false,
     poolId: user.poolId,

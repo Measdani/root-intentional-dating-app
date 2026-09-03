@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '@/store/AppContext';
 import { useAdmin } from '@/store/AdminContext';
-import AuthPoolTabs from '@/components/AuthPoolTabs';
 import {
   applyRelationshipModeToUser,
   communityIdToPoolId,
@@ -22,7 +21,6 @@ import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { testUsers } from '@/data/testUsers';
 import { isPreviewLockActive } from '@/lib/siteLock';
-import BackgroundCheckModal from '@/components/BackgroundCheckModal';
 import type { AssessmentResult } from '@/types';
 import {
   authService,
@@ -61,8 +59,6 @@ const UserLoginSection: React.FC = () => {
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
-  const [loginUser, setLoginUser] = useState<any>(null);
 
   const stripInlinePhotoPayloads = (photoUrl?: string) => {
     if (!photoUrl) return photoUrl;
@@ -593,38 +589,13 @@ const UserLoginSection: React.FC = () => {
       window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
       toast.success(`Welcome back, ${sessionUser.name}!`);
 
-      // Show background check modal only if user passed assessment AND hasn't verified yet
-      if (sessionUser.assessmentPassed && !sessionUser.backgroundCheckVerified) {
-        setLoginUser(sessionUser);
-        setShowBackgroundCheckModal(true);
-      } else {
-        await routeAfterLogin(sessionUser);
-      }
+      await routeAfterLogin(sessionUser);
     } catch (error) {
       console.error('Login failed:', error);
       setError('Unable to complete sign in. Please clear storage and try again.');
       toast.error('Unable to complete sign in. Please try again.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleBackgroundCheckVerified = () => {
-    setShowBackgroundCheckModal(false);
-    if (loginUser) {
-      try {
-        // Update user in localStorage with verified status
-        const updatedUser = { ...loginUser, backgroundCheckVerified: true, backgroundCheckStatus: 'verified', backgroundCheckDate: Date.now() };
-        const sessionUser = persistCurrentUserSession(updatedUser);
-        window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
-
-        // Now redirect to appropriate view
-        void routeAfterLogin(sessionUser);
-      } catch (error) {
-        console.error('Failed to persist verified user session:', error);
-        setError('Unable to complete sign in. Please clear storage and try again.');
-        toast.error('Unable to complete sign in. Please try again.');
-      }
     }
   };
 
@@ -644,13 +615,7 @@ const UserLoginSection: React.FC = () => {
         window.dispatchEvent(new CustomEvent('user-login', { detail: sessionUser }));
         toast.success(`Welcome, ${sessionUser.name}!`);
 
-        // Show background check modal only if user passed assessment AND hasn't verified yet
-        if (sessionUser.assessmentPassed && !sessionUser.backgroundCheckVerified) {
-          setLoginUser(sessionUser);
-          setShowBackgroundCheckModal(true);
-        } else {
-          await routeAfterLogin(sessionUser);
-        }
+        await routeAfterLogin(sessionUser);
       }
     } catch (error) {
       console.error('Demo login failed:', error);
@@ -665,21 +630,8 @@ const UserLoginSection: React.FC = () => {
         <div className="absolute inset-0 grain-overlay" />
       </div>
 
-      <BackgroundCheckModal
-        isOpen={showBackgroundCheckModal}
-        onClose={() => {
-          setShowBackgroundCheckModal(false);
-          // Redirect without verification
-          if (loginUser) {
-            void routeAfterLogin(loginUser);
-          }
-        }}
-        onVerified={handleBackgroundCheckVerified}
-      />
-
       <Card className="relative w-full max-w-md bg-[#111611] border-[#1A211A] shadow-2xl">
         <div className="p-8 space-y-6">
-          <AuthPoolTabs />
 
           <div className="space-y-2 text-center">
             <h1 className="text-3xl font-display font-bold text-[#F6FFF2]">

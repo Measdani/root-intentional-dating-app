@@ -69,6 +69,10 @@ export interface User {
   guidelinesAcknowledgedAt?: number; // Timestamp of the latest guideline acknowledgement
   moderationNote?: string; // Internal moderation note surfaced when access is restricted
   membershipStatus?: 'active' | 'inactive' | 'cancelled'; // Subscription state
+  accessPlan?: 'lifetime';
+  accessStatus?: 'pending' | 'active' | 'revoked';
+  accessGrantedAt?: string;
+  lastViewingPerspective?: 'female' | 'male';
   cancelAtPeriodEnd?: boolean; // Whether subscription cancels at period end
   poolId?: 'core-inner' | 'core-advanced'; // Which lane this account belongs to
   mode?: RelationshipMode;
@@ -189,6 +193,12 @@ export type AppView =
   | 'password-reset'
   | 'user-settings'
   | 'home'
+  | 'learning-library'
+  | 'ask-rooted-hearts'
+  | 'saved-content'
+  | 'journal'
+  | 'learning-progress'
+  | 'create-account'
   | 'privacy-policy'
   | 'terms-of-service'
   | 'community-guidelines'

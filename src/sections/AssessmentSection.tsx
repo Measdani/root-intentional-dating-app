@@ -172,7 +172,7 @@ const AssessmentSection: React.FC = () => {
     if (currentUser.assessmentPassed === true && currentUser.userStatus === 'active') {
       clearAssessmentInProgress(currentUser.id);
       console.log('[AssessmentSection] User has already passed - redirecting to browse');
-      setCurrentView('browse');
+      setCurrentView('home');
     }
   }, [currentUser.assessmentPassed, currentUser.userStatus, setCurrentView]);
 

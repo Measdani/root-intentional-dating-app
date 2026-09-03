@@ -44,6 +44,7 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showGuidelines, setShowGuidelines] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -63,11 +64,17 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
     if (!isReady || !selectedCategory) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    await submitSupportRequest(selectedCategory, subject, message);
+    try {
+      await submitSupportRequest(selectedCategory, subject, message);
+    } catch (error) {
+      setIsSubmitting(false);
+      setSubmitError(
+        error instanceof Error ? error.message : 'Failed to send your message. Please try again.'
+      );
+      return;
+    }
 
     setIsSubmitting(false);
     setIsSuccess(true);
@@ -90,6 +97,7 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
       setMessage('');
       setIsSuccess(false);
       setShowGuidelines(false);
+      setSubmitError(null);
     }
   };
 
@@ -311,6 +319,12 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
                       <span>Be as detailed as possible to help us assist you faster</span>
                     </li>
                   </ul>
+                </div>
+              )}
+
+              {submitError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-300">
+                  {submitError}
                 </div>
               )}
 

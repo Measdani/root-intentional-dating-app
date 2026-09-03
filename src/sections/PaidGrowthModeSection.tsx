@@ -86,7 +86,7 @@ const PaidGrowthModeSection: React.FC = () => {
   };
 
   const handleBrowseProfiles = () => {
-    setCurrentView('browse');
+    setCurrentView('home');
   };
 
   return (

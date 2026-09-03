@@ -155,7 +155,7 @@ const AssessmentResultSection: React.FC = () => {
     }
 
     if (assessmentResult.passed) {
-      setCurrentView('browse');
+      setCurrentView('home');
     } else {
       setCurrentView('growth-mode');
     }

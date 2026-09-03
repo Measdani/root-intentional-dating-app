@@ -9,13 +9,12 @@ export const COMMUNITIES: Record<CommunityId, CommunityDefinition> = {
     name: 'Rooted Hearts',
     shortName: 'Rooted',
     heroTitle: 'ROOTED HEARTS',
-    heroTagline: 'Dating for people who are intentional.',
+    heroTagline: 'Relationship education for real life.',
     loginTitle: 'Welcome to Rooted Hearts',
-    loginSubtitle: 'Sign in to browse profiles',
-    signupGenderGuidance:
-      'Rooted Hearts currently supports men and women seeking opposite-sex partnerships.',
+    loginSubtitle: 'Sign in to continue learning',
+    signupGenderGuidance: '',
     signupPlatformConfirmation:
-      'I confirm that Rooted Hearts is a men and women platform designed for opposite-sex partnerships, currently available to residents of the United States, and understand that my experience depends on my participation, alignment, and engagement within this ecosystem.',
+      'I understand that Rooted Hearts is a self-paced relationship education platform and that results depend on my participation and application of the material.',
     matchingMode: 'opposite-gender',
   },
 };

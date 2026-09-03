@@ -242,13 +242,15 @@ const PARTNER_JOURNEY_SECTIONS: PartnerJourneySection[] = [
   },
 ];
 
+const DATING_FEATURES_ENABLED: boolean = false;
+
 const GrowthModeSection: React.FC = () => {
   const growthModeTabStorageKey = 'rooted_growth_mode_active_tab';
-  const resolveInitialGrowthModeTab = (): 'browse' | 'inbox' | 'resources' | 'blog' => {
+  const resolveInitialGrowthModeTab = (): 'resources' | 'blog' => {
     const saved = localStorage.getItem(growthModeTabStorageKey);
-    return saved === 'browse' || saved === 'inbox' || saved === 'resources' || saved === 'blog'
+    return saved === 'resources' || saved === 'blog'
       ? saved
-      : 'browse';
+      : 'resources';
   };
   const { activeCommunity } = useCommunity();
   const {
@@ -273,8 +275,7 @@ const GrowthModeSection: React.FC = () => {
     reloadNotifications,
     reloadInteractions,
   } = useApp();
-  const [activeTab, setActiveTab] =
-    useState<'browse' | 'inbox' | 'resources' | 'blog'>(resolveInitialGrowthModeTab);
+  const [activeTab, setActiveTab] = useState<'browse' | 'inbox' | 'resources' | 'blog'>(resolveInitialGrowthModeTab);
   const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
   const [showBackgroundCheckModal, setShowBackgroundCheckModal] = useState(false);
   const [messageText, setMessageText] = useState('');
@@ -600,6 +601,7 @@ const GrowthModeSection: React.FC = () => {
 
         {/* Tab Navigation */}
         <div className="mb-10 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-4 sm:border-b sm:border-[#1A211A]">
+          {DATING_FEATURES_ENABLED && <>
           <button
             onClick={() => setActiveTab('browse')}
             className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all sm:rounded-none sm:border-0 sm:px-4 sm:pb-3 sm:pt-0 ${
@@ -631,6 +633,7 @@ const GrowthModeSection: React.FC = () => {
               )}
             </div>
           </button>
+          </>}
           <button
             onClick={() => setActiveTab('resources')}
             className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all sm:rounded-none sm:border-0 sm:px-4 sm:pb-3 sm:pt-0 ${
@@ -668,12 +671,12 @@ const GrowthModeSection: React.FC = () => {
           </button>
         </div>
 
-        {incomingExclusiveRequesterUser && (
+        {DATING_FEATURES_ENABLED && incomingExclusiveRequesterUser && (
           <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#D9FF3D]/40 bg-[#D9FF3D]/10 p-5 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#D9FF3D]">Exclusive Request</p>
               <p className="mt-2 text-sm text-[#F6FFF2]">
-                {incomingExclusiveRequesterUser.name} sent you an exclusive request. Review it in Settings to accept or decline.
+                {incomingExclusiveRequesterUser?.name} sent you an exclusive request. Review it in Settings to accept or decline.
               </p>
             </div>
             <button

@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import ErrorBoundary from './components/ErrorBoundary.tsx'
 import {
   CommunityProvider,
   installStorageNamespace,
@@ -15,8 +16,10 @@ persistActiveCommunityId(activeCommunityId)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <CommunityProvider initialCommunityId={activeCommunityId}>
-      <App />
-    </CommunityProvider>
+    <ErrorBoundary>
+      <CommunityProvider initialCommunityId={activeCommunityId}>
+        <App />
+      </CommunityProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

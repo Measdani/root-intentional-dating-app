@@ -38,9 +38,9 @@ const PrivacyPolicySection: React.FC = () => {
             <h2 className="text-xl font-display text-[#F6FFF2] mb-4">1. Information We Collect</h2>
             <p className="mb-4">We collect personal information that you provide to us when you sign up for Rooted Hearts and use the platform. The types of personal information we collect include:</p>
             <ul className="space-y-2 ml-4">
-              <li><strong>Account Information:</strong> Your name, email address, age, and profile information (e.g., preferences, photos).</li>
+              <li><strong>Account Information:</strong> Your name, email address, authentication details, and lifetime-access status.</li>
               <li><strong>Usage Data:</strong> Information about how you interact with Rooted Hearts, including device data, IP address, pages visited, and usage patterns.</li>
-              <li><strong>Communication Data:</strong> Messages, interactions, and content you send or receive through the platform.</li>
+              <li><strong>Learning Data:</strong> Saved resources, journal entries, progress, and questions you privately submit through the platform.</li>
             </ul>
           </section>
 
@@ -48,8 +48,8 @@ const PrivacyPolicySection: React.FC = () => {
             <h2 className="text-xl font-display text-[#F6FFF2] mb-4">2. How We Use Your Information</h2>
             <p className="mb-4">We use your personal information for the following purposes:</p>
             <ul className="space-y-2 ml-4">
-              <li><strong>Account Management:</strong> To create and manage your account and profile.</li>
-              <li><strong>Service Delivery:</strong> To provide access to Rooted Hearts' services, including connecting users, allowing messaging, and enabling features.</li>
+              <li><strong>Account Management:</strong> To create, secure, and manage your private learning account.</li>
+              <li><strong>Service Delivery:</strong> To provide learning resources, saved content, journals, progress tools, and private question submission.</li>
               <li><strong>User Safety:</strong> To ensure the safety of users, protect against misuse of the platform, and address any reported violations of our Community Guidelines.</li>
               <li><strong>Improvement of Services:</strong> To analyze usage data and improve the functionality and security of Rooted Hearts.</li>
               <li><strong>Communication:</strong> To send you updates, notifications, and important information about the platform.</li>
@@ -108,7 +108,7 @@ const PrivacyPolicySection: React.FC = () => {
           <section>
             <h2 className="text-xl font-display text-[#F6FFF2] mb-4">8. Children's Privacy</h2>
             <p>
-              Rooted Hearts is intended for users aged 25 and older. We do not knowingly collect or solicit personal information from children under the age of 25. If we learn that we have collected personal information from a user under the age of 25, we will take steps to delete that information.
+              Rooted Hearts is intended for adults. We do not knowingly collect or solicit personal information from children. If we learn that we have collected personal information from a child, we will take steps to delete that information.
             </p>
           </section>
 

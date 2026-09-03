@@ -40,7 +40,7 @@ const TermsOfServiceSection: React.FC = () => {
               By using Rooted Hearts, you represent and warrant that:
             </p>
             <ul className="space-y-2 ml-4">
-              <li>• You are at least 25 years of age.</li>
+              <li>• You are at least 18 years of age.</li>
               <li>• You have the legal capacity to enter into a binding agreement.</li>
               <li>• You are not prohibited by any applicable laws from using the Platform.</li>
               <li>• You will not use the Platform for any illegal or unauthorized purpose.</li>
@@ -66,13 +66,11 @@ const TermsOfServiceSection: React.FC = () => {
               Users of Rooted Hearts must adhere to our Community Guidelines. Prohibited conduct includes, but is not limited to:
             </p>
             <ul className="space-y-2 ml-4">
-              <li>• Harassment, bullying, or threatening behavior toward other users.</li>
-              <li>• Posting or sharing explicit, obscene, or inappropriate content.</li>
-              <li>• Creating fake or misleading profiles or misrepresenting your identity.</li>
-              <li>• Spamming or sending unsolicited messages.</li>
-              <li>• Engaging in sexual exploitation or abuse.</li>
-              <li>• Violating the privacy or rights of other users.</li>
-              <li>• Attempting to manipulate or defraud other users.</li>
+              <li>• Attempting to gain unauthorized access to another account or restricted platform systems.</li>
+              <li>• Submitting unlawful, threatening, exploitative, or abusive content.</li>
+              <li>• Providing false account or payment information.</li>
+              <li>• Using automated tools to scrape, copy, or disrupt the learning platform.</li>
+              <li>• Violating the privacy, intellectual property, or other rights of another person.</li>
             </ul>
             <p className="mt-4">
               Users who violate these guidelines may face warnings, temporary suspension, soft reset, or permanent ban from the Platform, at our sole discretion.

@@ -177,6 +177,11 @@ const LAST_APP_VIEW_STORAGE_KEY = 'rooted_last_app_view';
 const LAST_SELECTED_USER_ID_STORAGE_KEY = 'rooted_last_selected_user_id';
 const LAST_SELECTED_CONVERSATION_ID_STORAGE_KEY = 'rooted_last_selected_conversation_id';
 const RESTORABLE_APP_VIEWS = new Set<AppView>([
+  'learning-library',
+  'ask-rooted-hearts',
+  'saved-content',
+  'journal',
+  'learning-progress',
   'assessment',
   'assessment-reflection',
   'assessment-result',
@@ -188,16 +193,19 @@ const RESTORABLE_APP_VIEWS = new Set<AppView>([
   'paid-growth-mode',
   'growth-detail',
   'community-blog',
-  'browse',
-  'profile',
-  'inbox',
-  'conversation',
   'clarity-room',
   'user-settings',
   'home',
   'privacy-policy',
   'terms-of-service',
   'community-guidelines',
+]);
+
+const REMOVED_DATING_VIEWS = new Set<AppView>([
+  'browse',
+  'profile',
+  'inbox',
+  'conversation',
 ]);
 
 const isRestorableAppView = (value: string | null): value is AppView =>
@@ -1416,7 +1424,7 @@ useEffect(() => {
   // Wrapper function to track previous view when changing views
   const setCurrentView = useCallback((view: AppView) => {
     setPreviousView(currentView);
-    setCurrentViewState(view);
+    setCurrentViewState(REMOVED_DATING_VIEWS.has(view) ? 'home' : view);
   }, [currentView]);
 
   const addAssessmentAnswer = useCallback((
@@ -2474,15 +2482,18 @@ useEffect(() => {
       updatedAt: Date.now(),
     };
 
+    // Persist to Supabase — this is the durable copy admins actually see, so
+    // a failure here must surface to the caller rather than be swallowed.
+    const { error: supportWriteError } = await supportService.createSupportMessage(supportMessage);
+    if (supportWriteError) {
+      console.warn('Supabase support message write failed:', supportWriteError);
+      throw new Error('Failed to send your message. Please try again.');
+    }
+
     // Dispatch event for AdminContext to listen
     window.dispatchEvent(new CustomEvent('new-support-message', {
       detail: supportMessage
     }));
-
-    // Dual-write to Supabase for persistent storage
-    supportService.createSupportMessage(supportMessage).catch(err => {
-      console.warn('Supabase support message write failed (localStorage fallback active):', err)
-    })
 
     toast.success(isPriority
       ? 'Message sent! Priority support will respond within 24 hours.'

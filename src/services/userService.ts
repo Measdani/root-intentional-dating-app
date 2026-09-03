@@ -6,9 +6,13 @@ import type { User } from '@/types'
 
 export const userService = {
   async createUser(user: User): Promise<{ error: string | null; data?: User }> {
-    const locationValidation = await validateUsCityState(user.city)
-    if (!locationValidation.isValid) {
-      return { error: locationValidation.error }
+    let canonicalCityState = ''
+    if (user.city.trim()) {
+      const locationValidation = await validateUsCityState(user.city)
+      if (!locationValidation.isValid) {
+        return { error: locationValidation.error }
+      }
+      canonicalCityState = locationValidation.canonicalCityState
     }
 
     const basePayload = {
@@ -16,7 +20,7 @@ export const userService = {
       email: user.email,
       name: user.name,
       age: user.age,
-      city: locationValidation.canonicalCityState,
+      city: canonicalCityState,
       gender: user.gender,
       partnership_intent: user.partnershipIntent,
       family_alignment: user.familyAlignment,
@@ -30,6 +34,10 @@ export const userService = {
       alignment_score: user.alignmentScore,
       membership_tier: user.membershipTier,
       membership_status: user.membershipStatus,
+      access_plan: user.accessPlan ?? 'lifetime',
+      access_status: user.accessStatus ?? 'active',
+      access_granted_at: user.accessGrantedAt ?? new Date().toISOString(),
+      last_viewing_perspective: user.lastViewingPerspective ?? 'female',
       billing_period_end: user.billingPeriodEnd,
       consent_timestamp: user.consentTimestamp,
       consent_version: user.consentVersion,
@@ -122,21 +130,11 @@ export const userService = {
     return mapRowToUser(data)
   },
 
-  // Safe for regular in-app use (Browse/Inbox/Profile): reads the public-safe
-  // column subset, not the raw table, so it works for every authenticated
-  // user without exposing email/billing/admin/moderation fields.
+  // The member directory was removed in phase 1 of the app transition.
+  // Keep the method temporarily so legacy callers fail closed while those
+  // features are removed in later cleanup phases.
   async getAllUsers(): Promise<User[]> {
-    const { data, error } = await supabase
-      .from('user_profiles_public')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error || !data) {
-      console.warn('Failed to fetch users from Supabase:', error?.message)
-      return []
-    }
-
-    return data.map(mapRowToUser)
+    return []
   },
 
   // Admin-only: reads the full row set, including PII/billing/moderation
@@ -186,6 +184,10 @@ export const userService = {
     if (updates.alignmentScore !== undefined) updateData.alignment_score = updates.alignmentScore
     if (updates.membershipTier !== undefined) updateData.membership_tier = updates.membershipTier
     if (updates.membershipStatus !== undefined) updateData.membership_status = updates.membershipStatus
+    if (updates.accessPlan !== undefined) updateData.access_plan = updates.accessPlan
+    if (updates.accessStatus !== undefined) updateData.access_status = updates.accessStatus
+    if (updates.accessGrantedAt !== undefined) updateData.access_granted_at = updates.accessGrantedAt
+    if (updates.lastViewingPerspective !== undefined) updateData.last_viewing_perspective = updates.lastViewingPerspective
     if (updates.billingPeriodEnd !== undefined) updateData.billing_period_end = updates.billingPeriodEnd
     if (updates.consentTimestamp !== undefined) updateData.consent_timestamp = updates.consentTimestamp
     if (updates.consentVersion !== undefined) updateData.consent_version = updates.consentVersion
@@ -281,6 +283,10 @@ function mapRowToUser(row: any): User {
     alignmentScore: row.alignment_score,
     membershipTier: row.membership_tier,
     membershipStatus: row.membership_status,
+    accessPlan: row.access_plan,
+    accessStatus: row.access_status,
+    accessGrantedAt: row.access_granted_at,
+    lastViewingPerspective: row.last_viewing_perspective,
     billingPeriodEnd: row.billing_period_end,
     consentTimestamp: row.consent_timestamp,
     consentVersion: row.consent_version,

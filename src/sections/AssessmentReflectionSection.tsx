@@ -91,7 +91,7 @@ const AssessmentReflectionSection: React.FC = () => {
 
     // Route based on assessment result
     if (assessmentResult.passed) {
-      setCurrentView('browse');
+      setCurrentView('home');
     } else {
       setCurrentView('growth-mode');
     }
