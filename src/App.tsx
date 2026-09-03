@@ -19,6 +19,7 @@ import AdminDashboardSection from '@/sections/AdminDashboardSection';
 import AdminReportsSection from '@/sections/AdminReportsSection';
 import AdminAssessmentsSection from '@/sections/AdminAssessmentsSection';
 import AdminContentSection from '@/sections/AdminContentSection';
+import AdminLearningSection from '@/sections/AdminLearningSection';
 import AdminSupportSection from '@/sections/AdminSupportSection';
 import ContactSupportModal from '@/components/ContactSupportModal';
 import LaunchingSoonSection from '@/sections/LaunchingSoonSection';
@@ -74,6 +75,8 @@ const AppContent: React.FC = () => {
           return <AdminReportsSection />;
         case 'admin-content':
           return <AdminContentSection />;
+        case 'admin-learning':
+          return <AdminLearningSection />;
         case 'admin-support':
           return <AdminSupportSection />;
         case 'admin-settings':

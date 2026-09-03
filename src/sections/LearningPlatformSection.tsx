@@ -7,7 +7,7 @@ import {
 import { toast } from 'sonner';
 import BrandLogo from '@/components/BrandLogo';
 import { useApp } from '@/store/AppContext';
-import { approvedQuestions, learningAreaMeta, learningLessons } from '@/data/learningLibrary';
+import { approvedQuestions as starterQuestions, learningAreaMeta, learningLessons as starterLessons } from '@/data/learningLibrary';
 import { learningPlatformService } from '@/services/learningPlatformService';
 import { journalService, type JournalEntry } from '@/services/journalService';
 import { userService } from '@/services/userService';
@@ -44,6 +44,8 @@ const LearningPlatformSection: React.FC = () => {
     return currentUser?.lastViewingPerspective === 'male' ? 'male' : 'female';
   });
   const [progress, setProgress] = useState<LearningProgressRecord[]>([]);
+  const [learningLessons, setLearningLessons] = useState<LearningLesson[]>(starterLessons);
+  const [approvedQuestions, setApprovedQuestions] = useState(starterQuestions);
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [selectedArea, setSelectedArea] = useState<LearningAreaId | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<LearningLesson | null>(null);
@@ -62,16 +64,20 @@ const LearningPlatformSection: React.FC = () => {
   const lastViewedLesson = useMemo(() => {
     const latest = [...progress].sort((a, b) => b.lastViewedAt.localeCompare(a.lastViewedAt))[0];
     return latest ? learningLessons.find((lesson) => lesson.id === latest.lessonId) ?? null : null;
-  }, [progress]);
+  }, [progress, learningLessons]);
 
   useEffect(() => {
     let active = true;
     Promise.all([
+      learningPlatformService.getPublishedLessons(starterLessons),
+      learningPlatformService.getApprovedAnswers(starterQuestions),
       learningPlatformService.getProgress(userId),
       learningPlatformService.getSavedLessonIds(userId),
       journalService.getEntriesBySection('notes'),
-    ]).then(([nextProgress, nextSaved, nextEntries]) => {
+    ]).then(([nextLessons, nextQuestions, nextProgress, nextSaved, nextEntries]) => {
       if (!active) return;
+      setLearningLessons(nextLessons);
+      setApprovedQuestions(nextQuestions);
       setProgress(nextProgress);
       setSavedIds(nextSaved);
       setJournalEntries(nextEntries);

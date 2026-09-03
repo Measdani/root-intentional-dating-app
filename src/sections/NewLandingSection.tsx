@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, BookOpen, HeartHandshake, RefreshCw, ShieldCheck, Sprout } from 'lucide-react';
+import { ArrowRight, BookOpen, Check, HeartHandshake, RefreshCw, ShieldCheck, Sprout } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 import { useApp } from '@/store/AppContext';
 
@@ -26,11 +26,21 @@ const learningAreas = [
   },
 ];
 
+const lifetimeBenefits = [
+  'All four learning areas',
+  'Female and male perspectives',
+  'Ask Rooted Hearts answers',
+  'Progress, journal, and saved resources',
+  'Every future lesson and platform update',
+];
+
 const NewLandingSection: React.FC = () => {
   const { setCurrentView } = useApp();
 
   return (
-    <main className="rh-page-background min-h-screen text-[#F6FFF2]">
+    <main className="rh-page-background relative min-h-screen overflow-hidden text-[#F6FFF2]">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[clamp(90px,12vw,220px)] bg-[url('/rooted-hearts-edge-pattern.png')] bg-[length:280px_auto] bg-repeat opacity-[0.045] xl:block" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 hidden w-[clamp(90px,12vw,220px)] bg-[url('/rooted-hearts-edge-pattern.png')] bg-[length:280px_auto] bg-repeat opacity-[0.045] xl:block" />
       <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
         <button type="button" onClick={() => setCurrentView('landing')} aria-label="Rooted Hearts home">
           <BrandLogo imageClassName="w-[104px] sm:w-[122px]" />
@@ -133,6 +143,25 @@ const NewLandingSection: React.FC = () => {
           <div className="min-w-[240px] rounded-2xl border border-[#D9FF3D]/20 bg-[#0B0F0C] p-4">
             <p className="mb-2 text-xs uppercase tracking-[0.16em] text-[#6E776E]">Viewing perspective</p>
             <div className="rounded-xl bg-[#1A211A] px-4 py-3 font-medium text-[#D9FF3D]">Female perspective ↕</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative px-5 py-24 sm:px-8 sm:py-28">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(217,255,61,0.10),transparent_48%)]" />
+        <div className="relative mx-auto grid max-w-5xl overflow-hidden rounded-[36px] border border-[#D9FF3D]/25 bg-[#111611]/95 shadow-[0_32px_100px_rgba(0,0,0,.35)] lg:grid-cols-[1.05fr_.95fr]">
+          <div className="p-8 sm:p-11">
+            <p className="font-mono text-xs uppercase tracking-[0.24em] text-[#D9FF3D]">Join during our early rollout</p>
+            <h2 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">Keep growing for life.</h2>
+            <p className="mt-5 max-w-xl text-lg leading-8 text-[#A9B5AA]">Learn at your own pace and return whenever life brings a new question. Your access includes everything we add in the future.</p>
+            <ul className="mt-8 grid gap-3 sm:grid-cols-2">{lifetimeBenefits.map((benefit) => <li key={benefit} className="flex items-start gap-3 text-sm leading-6 text-[#DDE8DD]"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#D9FF3D]/10 text-[#D9FF3D]"><Check className="h-3 w-3" /></span>{benefit}</li>)}</ul>
+          </div>
+          <div className="flex flex-col justify-center border-t border-white/10 bg-[#0D120E] p-8 sm:p-11 lg:border-l lg:border-t-0">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#D9FF3D]">Founding price</p>
+            <div className="mt-3 flex items-end gap-3"><span className="font-display text-7xl leading-none">$60</span><span className="pb-2 text-[#A9B5AA]">one time</span></div>
+            <p className="mt-4 leading-7 text-[#A9B5AA]">The price will increase to <span className="font-semibold text-[#F6FFF2]">$99</span> as the learning library expands. Founding members never pay again.</p>
+            <button type="button" onClick={() => setCurrentView('sign-up')} className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#D9FF3D] px-6 py-4 font-semibold text-[#0B0F0C] transition hover:scale-[1.01]">View lifetime access <ArrowRight className="h-4 w-4" /></button>
+            <p className="mt-3 text-center text-xs text-[#6F7A70]">No subscription. No recurring charges.</p>
           </div>
         </div>
       </section>

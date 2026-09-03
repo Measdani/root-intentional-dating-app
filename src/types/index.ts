@@ -186,6 +186,7 @@ export type AppView =
   | 'admin-users'
   | 'admin-assessments'
   | 'admin-content'
+  | 'admin-learning'
   | 'admin-settings'
   | 'admin-reports'
   | 'admin-support'

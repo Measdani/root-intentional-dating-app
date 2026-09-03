@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { LearningPerspective, LearningProgressRecord } from '@/types/learning';
+import type { ApprovedQuestion, LearningAreaId, LearningLesson, LearningPerspective, LearningProgressRecord } from '@/types/learning';
 
 const progressKey = (userId: string) => `rooted-learning-progress:${userId}`;
 const savedKey = (userId: string) => `rooted-learning-saved:${userId}`;
@@ -23,6 +23,52 @@ const writeJson = (key: string, value: unknown) => {
 };
 
 export const learningPlatformService = {
+  async getPublishedLessons(fallback: LearningLesson[]): Promise<LearningLesson[]> {
+    try {
+      const { data, error } = await supabase
+        .from('rh_learning_lessons')
+        .select('*')
+        .eq('published', true)
+        .order('area_id')
+        .order('order_index');
+      if (error || !data?.length) return fallback;
+      return data.map((row) => ({
+        id: row.id,
+        areaId: row.area_id as LearningAreaId,
+        title: row.title,
+        summary: row.summary,
+        estimatedMinutes: row.estimated_minutes,
+        sharedFoundation: row.shared_foundation,
+        perspective: { female: row.female_perspective, male: row.male_perspective },
+        reflectionPrompt: row.reflection_prompt,
+        actionStep: row.action_step,
+        order: row.order_index,
+      }));
+    } catch {
+      return fallback;
+    }
+  },
+
+  async getApprovedAnswers(fallback: ApprovedQuestion[]): Promise<ApprovedQuestion[]> {
+    try {
+      const { data, error } = await supabase
+        .from('rh_approved_answers')
+        .select('id, question, answer, area_id, perspective')
+        .eq('published', true)
+        .order('updated_at', { ascending: false });
+      if (error || !data?.length) return fallback;
+      return data.map((row) => ({
+        id: row.id,
+        question: row.question,
+        answer: row.answer,
+        areaId: row.area_id as LearningAreaId,
+        perspective: row.perspective as LearningPerspective | 'shared',
+      }));
+    } catch {
+      return fallback;
+    }
+  },
+
   async getProgress(userId: string): Promise<LearningProgressRecord[]> {
     const local = readJson<LearningProgressRecord[]>(progressKey(userId), []);
     try {

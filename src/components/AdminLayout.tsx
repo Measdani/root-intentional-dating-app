@@ -9,6 +9,7 @@ import {
   Flag,
   ClipboardCheck,
   FileText,
+  LibraryBig,
   Settings,
   MessageCircle,
   LogOut,
@@ -33,6 +34,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { id: 'admin-support', label: 'Support', icon: MessageCircle },
     { id: 'admin-assessments', label: 'Assessments', icon: ClipboardCheck },
     { id: 'admin-content', label: 'Content', icon: FileText },
+    { id: 'admin-learning', label: 'Learning Content', icon: LibraryBig },
     { id: 'admin-settings', label: 'Settings', icon: Settings },
   ];
 
